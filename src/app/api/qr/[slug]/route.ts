@@ -6,33 +6,28 @@ import { createPublicClient } from "@/utils/supabase/public";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET(
-  req: NextRequest,
-  ctx: { params: Promise<{ slug: string }> }
-) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
 
-  if (!slug) {
-    return NextResponse.json({ error: "missing_slug" }, { status: 400 });
-  }
+  if (!slug) return NextResponse.json({ error: "missing_slug" }, { status: 400 });
 
   const supabase = createPublicClient();
 
-  // Ajuste este select conforme seu schema real (mantive abordagem mínima)
-  const { data: card, error } = await supabase
+  const { data: card } = await supabase
     .from("cards")
-    .select("slug")
-    .eq("slug", slug)
+    .select("slug, is_published")
+    .eq("slug", String(slug).toLowerCase())
     .single();
 
-  if (error || !card?.slug) {
+  if (!card?.slug || !card.is_published) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   const origin = req.nextUrl.origin;
-  const url = `${origin}/u/${card.slug}`;
 
-  // QRCode.toBuffer retorna Buffer no Node; convertendo para Uint8Array para BodyInit
+  // ✅ Premium direto
+  const url = `${origin}/${card.slug}`;
+
   const pngBuffer = await QRCode.toBuffer(url, {
     type: "png",
     width: 512,
@@ -40,9 +35,7 @@ export async function GET(
     errorCorrectionLevel: "M",
   });
 
-  const body = new Uint8Array(pngBuffer);
-
-  return new NextResponse(body, {
+  return new NextResponse(new Uint8Array(pngBuffer), {
     status: 200,
     headers: {
       "Content-Type": "image/png",
