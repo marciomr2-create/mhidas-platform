@@ -1,12 +1,10 @@
 // src/app/[slug]/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
-
-// Se você já tem um layout público completo, podemos integrar depois.
-// Aqui é o resolver seguro e mínimo para manter URLs antigas vivas.
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -23,6 +21,18 @@ const RESERVED = new Set([
   "_next",
   "favicon.ico",
 ]);
+
+async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPublicClient>, slug: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc("increment_public_profile_click", { p_slug: slug });
+    if (error) return 0;
+
+    const n = typeof data === "string" ? Number(data) : Number(data ?? 0);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export default async function PremiumProfilePage({ params }: PageProps) {
   const { slug } = await params;
@@ -42,11 +52,19 @@ export default async function PremiumProfilePage({ params }: PageProps) {
   if (card?.card_id) {
     if (!card.is_published) notFound();
 
+    // TESTE 1: incrementa e lê contador sem quebrar SSR
+    const clicks = await incrementAndGetClicksSafe(supabase, card.slug);
+
     // Render mínimo estável (não mexe em arquitetura)
     return (
       <main style={{ padding: 24, maxWidth: 920 }}>
         <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>{card.label ?? "MHIDAS"}</h1>
         <p style={{ marginTop: 10, opacity: 0.85 }}>Perfil público: {card.slug}</p>
+
+        <div style={{ marginTop: 14 }}>
+          <strong>Cliques</strong>
+          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{clicks}</div>
+        </div>
       </main>
     );
   }
