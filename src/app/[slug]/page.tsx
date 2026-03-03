@@ -22,10 +22,7 @@ const RESERVED = new Set([
   "favicon.ico",
 ]);
 
-async function incrementAndGetClicksSafe(
-  supabase: ReturnType<typeof createPublicClient>,
-  slug: string
-): Promise<number> {
+async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPublicClient>, slug: string): Promise<number> {
   try {
     const { data, error } = await supabase.rpc("increment_public_profile_click", { p_slug: slug });
     if (error) return 0;
@@ -38,6 +35,7 @@ async function incrementAndGetClicksSafe(
 }
 
 type PublicSocialLink = {
+  id: string;
   platform: string;
   url: string;
   label: string | null;
@@ -52,7 +50,7 @@ async function getActiveSocialLinksSafe(
   try {
     const { data, error } = await supabase
       .from("social_links")
-      .select("platform, url, label, sort_order, position")
+      .select("id, platform, url, label, sort_order, position")
       .eq("user_id", userId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
@@ -73,7 +71,6 @@ export default async function PremiumProfilePage({ params }: PageProps) {
 
   const supabase = createPublicClient();
 
-  // 1) Tenta resolver como slug atual (cards.slug)
   const { data: card } = await supabase
     .from("cards")
     .select("card_id, slug, is_published, label, user_id")
@@ -83,10 +80,8 @@ export default async function PremiumProfilePage({ params }: PageProps) {
   if (card?.card_id) {
     if (!card.is_published) notFound();
 
-    // TESTE 1: incrementa e lê contador sem quebrar SSR
     const clicks = await incrementAndGetClicksSafe(supabase, card.slug);
 
-    // TESTE 3: carrega apenas links ativos
     const userId = String((card as any).user_id || "");
     const socialLinks = userId ? await getActiveSocialLinksSafe(supabase, userId) : [];
 
@@ -107,9 +102,9 @@ export default async function PremiumProfilePage({ params }: PageProps) {
             <p style={{ marginTop: 8, opacity: 0.75 }}>Nenhum link ativo.</p>
           ) : (
             <ul style={{ marginTop: 10, paddingLeft: 18 }}>
-              {socialLinks.map((l, idx) => (
-                <li key={`${l.platform}-${idx}`} style={{ marginBottom: 8 }}>
-                  <a href={l.url} rel="noopener noreferrer" target="_blank">
+              {socialLinks.map((l) => (
+                <li key={l.id} style={{ marginBottom: 8 }}>
+                  <a href={`/r/${l.id}`} rel="noopener noreferrer" target="_blank">
                     {l.label?.trim() ? l.label : l.platform}
                   </a>
                 </li>
@@ -121,7 +116,6 @@ export default async function PremiumProfilePage({ params }: PageProps) {
     );
   }
 
-  // 2) Se não achou, tenta resolver como slug antigo no histórico
   const { data: hist } = await supabase
     .from("card_slug_history")
     .select("card_id, slug, is_current")
@@ -130,7 +124,6 @@ export default async function PremiumProfilePage({ params }: PageProps) {
 
   if (!hist?.card_id) notFound();
 
-  // Descobre slug atual do card e redireciona permanentemente (308)
   const { data: current } = await supabase
     .from("cards")
     .select("slug, is_published")
