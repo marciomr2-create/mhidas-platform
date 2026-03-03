@@ -22,7 +22,10 @@ const RESERVED = new Set([
   "favicon.ico",
 ]);
 
-async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPublicClient>, slug: string): Promise<number> {
+async function incrementAndGetClicksSafe(
+  supabase: ReturnType<typeof createPublicClient>,
+  slug: string
+): Promise<number> {
   try {
     const { data, error } = await supabase.rpc("increment_public_profile_click", { p_slug: slug });
     if (error) return 0;
@@ -31,6 +34,34 @@ async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPubli
     return Number.isFinite(n) ? n : 0;
   } catch {
     return 0;
+  }
+}
+
+type PublicSocialLink = {
+  platform: string;
+  url: string;
+  label: string | null;
+  sort_order: number;
+  position: number;
+};
+
+async function getActiveSocialLinksSafe(
+  supabase: ReturnType<typeof createPublicClient>,
+  userId: string
+): Promise<PublicSocialLink[]> {
+  try {
+    const { data, error } = await supabase
+      .from("social_links")
+      .select("platform, url, label, sort_order, position")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("position", { ascending: true });
+
+    if (error || !data) return [];
+    return data as PublicSocialLink[];
+  } catch {
+    return [];
   }
 }
 
@@ -45,7 +76,7 @@ export default async function PremiumProfilePage({ params }: PageProps) {
   // 1) Tenta resolver como slug atual (cards.slug)
   const { data: card } = await supabase
     .from("cards")
-    .select("card_id, slug, is_published, label")
+    .select("card_id, slug, is_published, label, user_id")
     .eq("slug", s)
     .single();
 
@@ -55,7 +86,10 @@ export default async function PremiumProfilePage({ params }: PageProps) {
     // TESTE 1: incrementa e lê contador sem quebrar SSR
     const clicks = await incrementAndGetClicksSafe(supabase, card.slug);
 
-    // Render mínimo estável (não mexe em arquitetura)
+    // TESTE 3: carrega apenas links ativos
+    const userId = String((card as any).user_id || "");
+    const socialLinks = userId ? await getActiveSocialLinksSafe(supabase, userId) : [];
+
     return (
       <main style={{ padding: 24, maxWidth: 920 }}>
         <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>{card.label ?? "MHIDAS"}</h1>
@@ -64,6 +98,24 @@ export default async function PremiumProfilePage({ params }: PageProps) {
         <div style={{ marginTop: 14 }}>
           <strong>Cliques</strong>
           <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{clicks}</div>
+        </div>
+
+        <div style={{ marginTop: 18 }}>
+          <strong>Links</strong>
+
+          {socialLinks.length === 0 ? (
+            <p style={{ marginTop: 8, opacity: 0.75 }}>Nenhum link ativo.</p>
+          ) : (
+            <ul style={{ marginTop: 10, paddingLeft: 18 }}>
+              {socialLinks.map((l, idx) => (
+                <li key={`${l.platform}-${idx}`} style={{ marginBottom: 8 }}>
+                  <a href={l.url} rel="noopener noreferrer" target="_blank">
+                    {l.label?.trim() ? l.label : l.platform}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </main>
     );
