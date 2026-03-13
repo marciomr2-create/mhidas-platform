@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/server";
 
 import QrBlock from "./QrBlock";
 import SocialLinksManager from "./SocialLinksManager";
+import ProfessionalProfileManager from "./ProfessionalProfileManager";
 
 type CardRow = {
   card_id: string;
@@ -49,7 +50,7 @@ export default async function CardPage({ params }: PageProps) {
   if (!card) {
     return (
       <main style={{ padding: 24 }}>
-        <h1>MHIDAS CLUB</h1>
+        <h1>USECLUBBERS</h1>
         <p>Card não encontrado ou acesso negado.</p>
         <Link href="/dashboard/cards">Voltar</Link>
       </main>
@@ -58,7 +59,6 @@ export default async function CardPage({ params }: PageProps) {
 
   const c = card as CardRow;
 
-  // 🔎 Buscar métricas agregadas
   const { data: clickCounts } = await supabase
     .from("social_link_click_counts")
     .select("link_id, clicks")
@@ -66,18 +66,28 @@ export default async function CardPage({ params }: PageProps) {
     .order("clicks", { ascending: false });
 
   const metrics = (clickCounts as ClickCountRow[]) || [];
-
   const totalClicks = metrics.reduce((acc, m) => acc + Number(m.clicks), 0);
 
   return (
     <main style={{ padding: 24, maxWidth: 920 }}>
-      <h1 style={{ fontWeight: 900 }}>MHIDAS CLUB</h1>
+      <h1 style={{ fontWeight: 900 }}>USECLUBBERS</h1>
 
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginTop: 8, opacity: 0.8 }}>
+        <div>
+          <strong>Card:</strong> {c.label ?? "Sem título"}
+        </div>
+        <div>
+          <strong>Slug:</strong> {c.slug ?? "—"}
+        </div>
+        <div>
+          <strong>Status de publicação:</strong> {c.is_published ? "Publicado" : "Não publicado"}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 20, marginBottom: 20 }}>
         <strong>Total de cliques:</strong> {totalClicks}
       </div>
 
-      {/* Ranking por link */}
       {metrics.length > 0 && (
         <section style={{ marginBottom: 30 }}>
           <h2 style={{ fontWeight: 900 }}>Ranking de Links</h2>
@@ -101,11 +111,45 @@ export default async function CardPage({ params }: PageProps) {
         </section>
       )}
 
-      <QrBlock slug={c.slug ?? ""} />
+      <section
+        style={{
+          marginTop: 24,
+          padding: 18,
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 16,
+          display: "grid",
+          gap: 14,
+        }}
+      >
+        <h2 style={{ margin: 0, fontWeight: 900 }}>Club Mode</h2>
+        <p style={{ margin: 0, opacity: 0.78 }}>
+          Aqui você gerencia a presença cultural do seu perfil, incluindo links sociais e acesso público.
+        </p>
 
-      <section style={{ marginTop: 30 }}>
-        <h2 style={{ fontWeight: 900 }}>Social Links</h2>
-        <SocialLinksManager cardId={c.card_id} />
+        <QrBlock slug={c.slug ?? ""} />
+
+        <section style={{ marginTop: 10 }}>
+          <h3 style={{ fontWeight: 900 }}>Links do Club Mode</h3>
+          <SocialLinksManager cardId={c.card_id} />
+        </section>
+      </section>
+
+      <section
+        style={{
+          marginTop: 24,
+          padding: 18,
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 16,
+          display: "grid",
+          gap: 14,
+        }}
+      >
+        <h2 style={{ margin: 0, fontWeight: 900 }}>Pro Mode</h2>
+        <p style={{ margin: 0, opacity: 0.78 }}>
+          Aqui você gerencia sua identidade profissional, contatos de negócio, apresentação e visibilidade no networking.
+        </p>
+
+        <ProfessionalProfileManager />
       </section>
     </main>
   );

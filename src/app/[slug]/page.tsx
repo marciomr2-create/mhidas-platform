@@ -8,6 +8,7 @@ import { createPublicClient } from "@/utils/supabase/public";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ mode?: string }>;
 };
 
 const RESERVED = new Set([
@@ -22,9 +23,40 @@ const RESERVED = new Set([
   "favicon.ico",
 ]);
 
-async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPublicClient>, slug: string): Promise<number> {
+type ProfileMode = "club" | "pro";
+
+type PublicSocialLink = {
+  id: string;
+  platform: string;
+  url: string;
+  label: string | null;
+  sort_order: number;
+  position: number;
+  mode: "club" | "pro" | "both" | null;
+};
+
+function normalizeMode(input: string | undefined): ProfileMode {
+  const value = String(input || "")
+    .trim()
+    .toLowerCase();
+
+  if (value === "pro") return "pro";
+  return "club";
+}
+
+function getModeLabel(mode: ProfileMode): string {
+  return mode === "pro" ? "Pro Mode" : "Club Mode";
+}
+
+async function incrementAndGetClicksSafe(
+  supabase: ReturnType<typeof createPublicClient>,
+  slug: string
+): Promise<number> {
   try {
-    const { data, error } = await supabase.rpc("increment_public_profile_click", { p_slug: slug });
+    const { data, error } = await supabase.rpc("increment_public_profile_click", {
+      p_slug: slug,
+    });
+
     if (error) return 0;
 
     const n = typeof data === "string" ? Number(data) : Number(data ?? 0);
@@ -34,25 +66,18 @@ async function incrementAndGetClicksSafe(supabase: ReturnType<typeof createPubli
   }
 }
 
-type PublicSocialLink = {
-  id: string;
-  platform: string;
-  url: string;
-  label: string | null;
-  sort_order: number;
-  position: number;
-};
-
 async function getActiveSocialLinksSafe(
   supabase: ReturnType<typeof createPublicClient>,
-  userId: string
+  userId: string,
+  mode: ProfileMode
 ): Promise<PublicSocialLink[]> {
   try {
     const { data, error } = await supabase
       .from("social_links")
-      .select("id, platform, url, label, sort_order, position")
+      .select("id, platform, url, label, sort_order, position, mode")
       .eq("user_id", userId)
       .eq("is_active", true)
+      .in("mode", [mode, "both"])
       .order("sort_order", { ascending: true })
       .order("position", { ascending: true });
 
@@ -63,9 +88,15 @@ async function getActiveSocialLinksSafe(
   }
 }
 
-export default async function PremiumProfilePage({ params }: PageProps) {
+export default async function PremiumProfilePage({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
+  const qp = searchParams ? await searchParams : undefined;
+
   const s = String(slug || "").trim().toLowerCase();
+  const mode = normalizeMode(qp?.mode);
 
   if (!s || RESERVED.has(s)) notFound();
 
@@ -83,12 +114,31 @@ export default async function PremiumProfilePage({ params }: PageProps) {
     const clicks = await incrementAndGetClicksSafe(supabase, card.slug);
 
     const userId = String((card as any).user_id || "");
-    const socialLinks = userId ? await getActiveSocialLinksSafe(supabase, userId) : [];
+    const socialLinks = userId
+      ? await getActiveSocialLinksSafe(supabase, userId, mode)
+      : [];
 
     return (
       <main style={{ padding: 24, maxWidth: 920 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>{card.label ?? "MHIDAS"}</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>
+          {card.label ?? "USECLUBBERS"}
+        </h1>
+
         <p style={{ marginTop: 10, opacity: 0.85 }}>Perfil público: {card.slug}</p>
+
+        <div
+          style={{
+            marginTop: 12,
+            display: "inline-block",
+            padding: "8px 12px",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.06)",
+            fontWeight: 800,
+          }}
+        >
+          {getModeLabel(mode)}
+        </div>
 
         <div style={{ marginTop: 14 }}>
           <strong>Cliques</strong>
@@ -99,7 +149,9 @@ export default async function PremiumProfilePage({ params }: PageProps) {
           <strong>Links</strong>
 
           {socialLinks.length === 0 ? (
-            <p style={{ marginTop: 8, opacity: 0.75 }}>Nenhum link ativo.</p>
+            <p style={{ marginTop: 8, opacity: 0.75 }}>
+              Nenhum link ativo disponível para este modo.
+            </p>
           ) : (
             <ul style={{ marginTop: 10, paddingLeft: 18 }}>
               {socialLinks.map((l) => (
