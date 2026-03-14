@@ -11,6 +11,7 @@ type PageProps = {
   searchParams?: Promise<{
     q?: string;
     city?: string;
+    industry?: string;
   }>;
 };
 
@@ -68,19 +69,19 @@ function normalize(value: string | undefined): string {
   return String(value || "").trim().toLowerCase();
 }
 
-function containerStyle(): CSSProperties {
+function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1180,
+    maxWidth: 1200,
     margin: "0 auto",
     padding: 24,
   };
 }
 
-function sectionCardStyle(): CSSProperties {
+function panelStyle(): CSSProperties {
   return {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.03)",
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
   };
 }
@@ -102,7 +103,7 @@ function buttonStyle(): CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "12px 16px",
+    padding: "11px 14px",
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.14)",
     background: "rgba(255,255,255,0.06)",
@@ -110,6 +111,13 @@ function buttonStyle(): CSSProperties {
     textDecoration: "none",
     fontWeight: 700,
     cursor: "pointer",
+  };
+}
+
+function primaryButtonStyle(): CSSProperties {
+  return {
+    ...buttonStyle(),
+    background: "rgba(255,255,255,0.12)",
   };
 }
 
@@ -125,14 +133,14 @@ function badgeStyle(): CSSProperties {
   };
 }
 
-function profileCardStyle(): CSSProperties {
+function cardStyle(): CSSProperties {
   return {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.03)",
     borderRadius: 22,
     padding: 18,
     display: "grid",
-    gap: 14,
+    gap: 16,
   };
 }
 
@@ -143,7 +151,7 @@ function getSummary(item: NetworkItem): string {
   return "Perfil profissional disponível para networking dentro da rede.";
 }
 
-function includesText(item: NetworkItem, q: string): boolean {
+function matchesQuery(item: NetworkItem, q: string): boolean {
   if (!q) return true;
 
   const haystack = [
@@ -156,51 +164,55 @@ function includesText(item: NetworkItem, q: string): boolean {
     item.bio_text,
     item.ai_summary,
   ]
-    .map((x) => String(x || "").toLowerCase())
+    .map((v) => String(v || "").toLowerCase())
     .join(" ");
 
   return haystack.includes(q);
 }
 
-function cityMatches(item: NetworkItem, city: string): boolean {
+function matchesCity(item: NetworkItem, city: string): boolean {
   if (!city) return true;
   return String(item.city || "").trim().toLowerCase().includes(city);
+}
+
+function matchesIndustry(item: NetworkItem, industry: string): boolean {
+  if (!industry) return true;
+  return String(item.industry || "").trim().toLowerCase().includes(industry);
 }
 
 export default async function NetworkPage({ searchParams }: PageProps) {
   const qp = searchParams ? await searchParams : undefined;
   const q = normalize(qp?.q);
   const city = normalize(qp?.city);
+  const industry = normalize(qp?.industry);
 
   const supabase = createPublicClient();
 
-  const { data: professionalRows, error: professionalError } = await supabase
+  const { data: professionalRows } = await supabase
     .from("professional_profiles")
-    .select(
-      [
-        "user_id",
-        "profession",
-        "company_name",
-        "industry",
-        "city",
-        "services",
-        "looking_for",
-        "business_instagram",
-        "website",
-        "portfolio",
-        "linkedin",
-        "whatsapp_business",
-        "professional_email",
-        "bio_text",
-        "ai_summary",
-        "pro_photo_url",
-        "visible_in_network",
-        "accepts_professional_contact",
-      ].join(",")
-    )
+    .select(`
+      user_id,
+      profession,
+      company_name,
+      industry,
+      city,
+      services,
+      looking_for,
+      business_instagram,
+      website,
+      portfolio,
+      linkedin,
+      whatsapp_business,
+      professional_email,
+      bio_text,
+      ai_summary,
+      pro_photo_url,
+      visible_in_network,
+      accepts_professional_contact
+    `)
     .eq("visible_in_network", true);
 
-  const { data: cardsRows, error: cardsError } = await supabase
+  const { data: cardsRows } = await supabase
     .from("cards")
     .select("user_id, slug, label, is_published")
     .eq("is_published", true);
@@ -208,16 +220,16 @@ export default async function NetworkPage({ searchParams }: PageProps) {
   const professionalProfiles = (professionalRows ?? []) as ProfessionalProfileRow[];
   const publishedCards = ((cardsRows ?? []) as CardRow[]).filter((c) => c.slug);
 
-  const cardByUserId = new Map<string, CardRow>();
+  const cardByUser = new Map<string, CardRow>();
   for (const card of publishedCards) {
-    if (!cardByUserId.has(card.user_id)) {
-      cardByUserId.set(card.user_id, card);
+    if (!cardByUser.has(card.user_id)) {
+      cardByUser.set(card.user_id, card);
     }
   }
 
   const items: NetworkItem[] = professionalProfiles
     .map((profile) => {
-      const card = cardByUserId.get(profile.user_id);
+      const card = cardByUser.get(profile.user_id);
       if (!card || !card.slug) return null;
 
       return {
@@ -245,52 +257,53 @@ export default async function NetworkPage({ searchParams }: PageProps) {
     .filter(Boolean) as NetworkItem[];
 
   const filteredItems = items
-    .filter((item) => includesText(item, q))
-    .filter((item) => cityMatches(item, city))
+    .filter((item) => matchesQuery(item, q))
+    .filter((item) => matchesCity(item, city))
+    .filter((item) => matchesIndustry(item, industry))
     .sort((a, b) => {
-      const cityA = String(a.city || "").toLowerCase();
-      const cityB = String(b.city || "").toLowerCase();
-      return cityA.localeCompare(cityB);
+      const aProfession = String(a.profession || "").toLowerCase();
+      const bProfession = String(b.profession || "").toLowerCase();
+      return aProfession.localeCompare(bProfession);
     });
 
   return (
-    <main style={containerStyle()}>
+    <main style={pageContainerStyle()}>
       <header style={{ display: "grid", gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
           Network profissional
         </h1>
 
-        <p style={{ margin: 0, opacity: 0.82, maxWidth: 860, lineHeight: 1.6 }}>
+        <p style={{ margin: 0, opacity: 0.82, maxWidth: 900, lineHeight: 1.6 }}>
           Descubra profissionais da rede USECLUBBERS que escolheram aparecer
-          publicamente no networking. Encontre pessoas por profissão, área de
-          atuação ou cidade e abra diretamente o perfil profissional.
+          publicamente no networking. Busque por profissão, cidade ou área de
+          atuação e abra diretamente o perfil profissional de cada membro.
         </p>
       </header>
 
-      <section style={{ ...sectionCardStyle(), marginTop: 22 }}>
+      <section style={{ ...panelStyle(), marginTop: 24 }}>
         <form
           action="/network"
           method="get"
           style={{
             display: "grid",
             gap: 12,
-            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) auto",
+            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto",
             alignItems: "end",
           }}
         >
           <label style={{ display: "grid", gap: 8 }}>
-            <span>Buscar por profissão, área ou empresa</span>
+            <span>Buscar por profissão, empresa ou serviço</span>
             <input
               type="text"
               name="q"
               defaultValue={qp?.q || ""}
-              placeholder="Ex.: advogado, tecnologia, marketing, design"
+              placeholder="Ex.: advogado, designer, marketing, software"
               style={inputStyle()}
             />
           </label>
 
           <label style={{ display: "grid", gap: 8 }}>
-            <span>Filtrar por cidade</span>
+            <span>Cidade</span>
             <input
               type="text"
               name="city"
@@ -300,27 +313,30 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             />
           </label>
 
+          <label style={{ display: "grid", gap: 8 }}>
+            <span>Área de atuação</span>
+            <input
+              type="text"
+              name="industry"
+              defaultValue={qp?.industry || ""}
+              placeholder="Ex.: tecnologia, direito"
+              style={inputStyle()}
+            />
+          </label>
+
           <button type="submit" style={buttonStyle()}>
             Buscar
           </button>
         </form>
 
-        <div style={{ marginTop: 14, opacity: 0.78, fontSize: 14 }}>
-          {professionalError || cardsError ? (
-            <span>
-              Alguns dados podem não ter sido carregados corretamente.
-            </span>
-          ) : (
-            <span>
-              {filteredItems.length} perfil(is) encontrado(s) no networking.
-            </span>
-          )}
+        <div style={{ marginTop: 14, fontSize: 14, opacity: 0.78 }}>
+          {filteredItems.length} perfil(is) encontrado(s) no networking.
         </div>
       </section>
 
       <section style={{ marginTop: 24 }}>
         {filteredItems.length === 0 ? (
-          <div style={sectionCardStyle()}>
+          <div style={panelStyle()}>
             <h2 style={{ marginTop: 0 }}>Nenhum perfil encontrado</h2>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
               Ajuste os filtros ou aguarde novos membros publicarem seus perfis
@@ -332,19 +348,19 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
             }}
           >
             {filteredItems.map((item) => (
-              <article key={item.user_id} style={profileCardStyle()}>
+              <article key={item.user_id} style={cardStyle()}>
                 <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                   {item.pro_photo_url ? (
                     <img
                       src={item.pro_photo_url}
                       alt="Foto profissional"
                       style={{
-                        width: 72,
-                        height: 72,
+                        width: 76,
+                        height: 76,
                         borderRadius: 18,
                         objectFit: "cover",
                         border: "1px solid rgba(255,255,255,0.12)",
@@ -354,8 +370,8 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                   ) : (
                     <div
                       style={{
-                        width: 72,
-                        height: 72,
+                        width: 76,
+                        height: 76,
                         borderRadius: 18,
                         border: "1px solid rgba(255,255,255,0.12)",
                         background: "rgba(255,255,255,0.05)",
@@ -383,7 +399,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       {item.industry ? (
                         <span style={badgeStyle()}>{item.industry}</span>
                       ) : null}
-                      {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
+
+                      {item.city ? (
+                        <span style={badgeStyle()}>{item.city}</span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -402,10 +421,30 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   <Link
                     href={`/${item.slug}?mode=pro`}
-                    style={buttonStyle()}
+                    style={primaryButtonStyle()}
                   >
-                    Abrir perfil profissional
+                    Ver perfil profissional
                   </Link>
+
+                  {item.accepts_professional_contact && item.whatsapp_business ? (
+                    <a
+                      href={item.whatsapp_business}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={buttonStyle()}
+                    >
+                      WhatsApp
+                    </a>
+                  ) : null}
+
+                  {item.accepts_professional_contact && item.professional_email ? (
+                    <a
+                      href={`mailto:${item.professional_email}`}
+                      style={buttonStyle()}
+                    >
+                      E-mail
+                    </a>
+                  ) : null}
 
                   {item.website ? (
                     <a
@@ -437,6 +476,17 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       style={buttonStyle()}
                     >
                       Instagram
+                    </a>
+                  ) : null}
+
+                  {item.portfolio ? (
+                    <a
+                      href={item.portfolio}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={buttonStyle()}
+                    >
+                      Portfólio
                     </a>
                   ) : null}
                 </div>

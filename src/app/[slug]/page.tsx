@@ -38,7 +38,6 @@ type PublicSocialLink = {
 };
 
 type ProfessionalProfile = {
-  id: string;
   user_id: string;
   profession: string | null;
   company_name: string | null;
@@ -55,12 +54,8 @@ type ProfessionalProfile = {
   bio_text: string | null;
   ai_summary: string | null;
   pro_photo_url: string | null;
-  pro_photo_prompt: string | null;
-  pro_photo_style: string | null;
   visible_in_network: boolean;
   accepts_professional_contact: boolean;
-  created_at: string;
-  updated_at: string;
 };
 
 function normalizeMode(input: string | undefined): ProfileMode {
@@ -104,14 +99,32 @@ async function getProfessionalProfile(
   supabase: ReturnType<typeof createPublicClient>,
   userId: string
 ): Promise<ProfessionalProfile | null> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("professional_profiles")
-    .select("*")
+    .select(`
+      user_id,
+      profession,
+      company_name,
+      industry,
+      city,
+      services,
+      looking_for,
+      business_instagram,
+      website,
+      portfolio,
+      linkedin,
+      whatsapp_business,
+      professional_email,
+      bio_text,
+      ai_summary,
+      pro_photo_url,
+      visible_in_network,
+      accepts_professional_contact
+    `)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data as ProfessionalProfile;
+  return (data as ProfessionalProfile | null) ?? null;
 }
 
 function modeButtonStyle(active: boolean): CSSProperties {
@@ -125,17 +138,6 @@ function modeButtonStyle(active: boolean): CSSProperties {
     fontWeight: 700,
     textDecoration: "none",
     marginRight: 10,
-    transition: "all .2s ease",
-  };
-}
-
-function cardStyle(): CSSProperties {
-  return {
-    marginTop: 24,
-    padding: 18,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
   };
 }
 
@@ -149,6 +151,16 @@ function channelButtonStyle(): CSSProperties {
     color: "#fff",
     textDecoration: "none",
     fontWeight: 700,
+  };
+}
+
+function sectionCardStyle(): CSSProperties {
+  return {
+    marginTop: 24,
+    padding: 18,
+    borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)",
   };
 }
 
@@ -234,56 +246,53 @@ export default async function PremiumProfilePage({
       </div>
 
       {showProfessionalBlock ? (
-        <section style={cardStyle()}>
-          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Perfil profissional</h2>
+        <section style={sectionCardStyle()}>
+          <h2 style={{ marginTop: 0 }}>Perfil profissional</h2>
 
           {professionalProfile.pro_photo_url ? (
-            <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: 16 }}>
               <img
                 src={professionalProfile.pro_photo_url}
                 alt="Foto profissional"
                 style={{
-                  width: 120,
-                  height: 120,
+                  width: 110,
+                  height: 110,
                   objectFit: "cover",
                   borderRadius: 18,
                   border: "1px solid rgba(255,255,255,0.12)",
-                  display: "block",
                 }}
               />
             </div>
           ) : null}
 
-          <div style={{ display: "grid", gap: 8 }}>
-            {professionalProfile.profession ? (
-              <div>
-                <strong>Profissão:</strong> {professionalProfile.profession}
-              </div>
-            ) : null}
+          {professionalProfile.profession ? (
+            <div>
+              <strong>Profissão:</strong> {professionalProfile.profession}
+            </div>
+          ) : null}
 
-            {professionalProfile.company_name ? (
-              <div>
-                <strong>Empresa ou marca:</strong> {professionalProfile.company_name}
-              </div>
-            ) : null}
+          {professionalProfile.company_name ? (
+            <div>
+              <strong>Empresa ou marca:</strong> {professionalProfile.company_name}
+            </div>
+          ) : null}
 
-            {professionalProfile.industry ? (
-              <div>
-                <strong>Área de atuação:</strong> {professionalProfile.industry}
-              </div>
-            ) : null}
+          {professionalProfile.industry ? (
+            <div>
+              <strong>Área de atuação:</strong> {professionalProfile.industry}
+            </div>
+          ) : null}
 
-            {professionalProfile.city ? (
-              <div>
-                <strong>Cidade:</strong> {professionalProfile.city}
-              </div>
-            ) : null}
-          </div>
+          {professionalProfile.city ? (
+            <div>
+              <strong>Cidade:</strong> {professionalProfile.city}
+            </div>
+          ) : null}
 
           {professionalProfile.ai_summary || professionalProfile.bio_text ? (
-            <div style={{ marginTop: 18 }}>
+            <div style={{ marginTop: 14 }}>
               <strong>Apresentação</strong>
-              <p style={{ marginTop: 8, opacity: 0.9, lineHeight: 1.6 }}>
+              <p style={{ marginTop: 8, lineHeight: 1.6 }}>
                 {professionalProfile.ai_summary?.trim()
                   ? professionalProfile.ai_summary
                   : professionalProfile.bio_text}
@@ -292,24 +301,20 @@ export default async function PremiumProfilePage({
           ) : null}
 
           {professionalProfile.services ? (
-            <div style={{ marginTop: 18 }}>
+            <div style={{ marginTop: 14 }}>
               <strong>O que oferece</strong>
-              <p style={{ marginTop: 8, opacity: 0.9, lineHeight: 1.6 }}>
-                {professionalProfile.services}
-              </p>
+              <p style={{ marginTop: 8 }}>{professionalProfile.services}</p>
             </div>
           ) : null}
 
           {professionalProfile.looking_for ? (
-            <div style={{ marginTop: 18 }}>
+            <div style={{ marginTop: 14 }}>
               <strong>O que procura</strong>
-              <p style={{ marginTop: 8, opacity: 0.9, lineHeight: 1.6 }}>
-                {professionalProfile.looking_for}
-              </p>
+              <p style={{ marginTop: 8 }}>{professionalProfile.looking_for}</p>
             </div>
           ) : null}
 
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 18 }}>
             <strong>Canais profissionais</strong>
 
             <div
@@ -320,17 +325,6 @@ export default async function PremiumProfilePage({
                 gap: 10,
               }}
             >
-              {professionalProfile.business_instagram ? (
-                <a
-                  href={professionalProfile.business_instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={channelButtonStyle()}
-                >
-                  Instagram do negócio
-                </a>
-              ) : null}
-
               {professionalProfile.website ? (
                 <a
                   href={professionalProfile.website}
@@ -364,27 +358,53 @@ export default async function PremiumProfilePage({
                 </a>
               ) : null}
 
-              {professionalProfile.whatsapp_business ? (
+              {professionalProfile.business_instagram ? (
                 <a
-                  href={professionalProfile.whatsapp_business}
+                  href={professionalProfile.business_instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={channelButtonStyle()}
                 >
-                  WhatsApp profissional
-                </a>
-              ) : null}
-
-              {professionalProfile.professional_email ? (
-                <a
-                  href={`mailto:${professionalProfile.professional_email}`}
-                  style={channelButtonStyle()}
-                >
-                  E-mail profissional
+                  Instagram do negócio
                 </a>
               ) : null}
             </div>
           </div>
+
+          {professionalProfile.accepts_professional_contact ? (
+            <div style={{ marginTop: 22 }}>
+              <strong>Contato profissional</strong>
+
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 10,
+                }}
+              >
+                {professionalProfile.whatsapp_business ? (
+                  <a
+                    href={professionalProfile.whatsapp_business}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={channelButtonStyle()}
+                  >
+                    WhatsApp profissional
+                  </a>
+                ) : null}
+
+                {professionalProfile.professional_email ? (
+                  <a
+                    href={`mailto:${professionalProfile.professional_email}`}
+                    style={channelButtonStyle()}
+                  >
+                    E-mail
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -392,9 +412,7 @@ export default async function PremiumProfilePage({
         <strong>Links</strong>
 
         {links.length === 0 ? (
-          <p style={{ opacity: 0.7 }}>
-            Nenhum link ativo disponível para este modo.
-          </p>
+          <p>Nenhum link ativo disponível para este modo.</p>
         ) : (
           <ul>
             {links.map((l) => (
