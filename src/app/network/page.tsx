@@ -6,6 +6,7 @@ export const fetchCache = "force-no-store";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
+import { createClient } from "@/utils/supabase/server";
 import { connectProfessional } from "./actions";
 
 type PageProps = {
@@ -42,6 +43,11 @@ type CardRow = {
   slug: string;
   label: string | null;
   is_published: boolean;
+};
+
+type ConnectionRow = {
+  requester_user_id: string;
+  target_user_id: string;
 };
 
 type NetworkItem = {
@@ -122,6 +128,15 @@ function primaryButtonStyle(): CSSProperties {
   };
 }
 
+function mutedButtonStyle(): CSSProperties {
+  return {
+    ...buttonStyle(),
+    background: "rgba(255,255,255,0.03)",
+    opacity: 0.78,
+    cursor: "default",
+  };
+}
+
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
@@ -187,9 +202,16 @@ export default async function NetworkPage({ searchParams }: PageProps) {
   const city = normalize(qp?.city);
   const industry = normalize(qp?.industry);
 
-  const supabase = createPublicClient();
+  const publicSupabase = createPublicClient();
+  const serverSupabase = await createClient();
 
-  const { data: professionalRows } = await supabase
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
+
+  const currentUserId = user?.id ?? null;
+
+  const { data: professionalRows } = await publicSupabase
     .from("professional_profiles")
     .select(`
       user_id,
@@ -213,10 +235,29 @@ export default async function NetworkPage({ searchParams }: PageProps) {
     `)
     .eq("visible_in_network", true);
 
-  const { data: cardsRows } = await supabase
+  const { data: cardsRows } = await publicSupabase
     .from("cards")
     .select("user_id, slug, label, is_published")
     .eq("is_published", true);
+
+  let connectedUserIds = new Set<string>();
+
+  if (currentUserId) {
+    const { data: connectionsRows } = await serverSupabase
+      .from("professional_connections")
+      .select("requester_user_id, target_user_id")
+      .or(`requester_user_id.eq.${currentUserId},target_user_id.eq.${currentUserId}`);
+
+    const connections = (connectionsRows ?? []) as ConnectionRow[];
+
+    connectedUserIds = new Set(
+      connections.map((row) =>
+        row.requester_user_id === currentUserId
+          ? row.target_user_id
+          : row.requester_user_id
+      )
+    );
+  }
 
   const professionalProfiles = (professionalRows ?? []) as ProfessionalProfileRow[];
   const publishedCards = ((cardsRows ?? []) as CardRow[]).filter((c) => c.slug);
@@ -352,155 +393,172 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
             }}
           >
-            {filteredItems.map((item) => (
-              <article key={item.user_id} style={cardStyle()}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  {item.pro_photo_url ? (
-                    <img
-                      src={item.pro_photo_url}
-                      alt="Foto profissional"
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        objectFit: "cover",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        opacity: 0.75,
-                        flexShrink: 0,
-                      }}
+            {filteredItems.map((item) => {
+              const isOwnProfile = currentUserId === item.user_id;
+              const isConnected = currentUserId
+                ? connectedUserIds.has(item.user_id)
+                : false;
+
+              return (
+                <article key={item.user_id} style={cardStyle()}>
+                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                    {item.pro_photo_url ? (
+                      <img
+                        src={item.pro_photo_url}
+                        alt="Foto profissional"
+                        style={{
+                          width: 76,
+                          height: 76,
+                          borderRadius: 18,
+                          objectFit: "cover",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 76,
+                          height: 76,
+                          borderRadius: 18,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.05)",
+                          display: "grid",
+                          placeItems: "center",
+                          fontWeight: 800,
+                          opacity: 0.75,
+                          flexShrink: 0,
+                        }}
+                      >
+                        PRO
+                      </div>
+                    )}
+
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <div style={{ fontSize: 20, fontWeight: 900 }}>
+                        {item.profession || item.card_label || "Perfil profissional"}
+                      </div>
+
+                      {item.company_name ? (
+                        <div style={{ opacity: 0.88 }}>{item.company_name}</div>
+                      ) : null}
+
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {item.industry ? (
+                          <span style={badgeStyle()}>{item.industry}</span>
+                        ) : null}
+
+                        {item.city ? (
+                          <span style={badgeStyle()}>{item.city}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
+                    {getSummary(item)}
+                  </p>
+
+                  {item.looking_for ? (
+                    <div>
+                      <strong>Busca na rede:</strong>{" "}
+                      <span style={{ opacity: 0.9 }}>{item.looking_for}</span>
+                    </div>
+                  ) : null}
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    <Link
+                      href={`/${item.slug}?mode=pro`}
+                      style={primaryButtonStyle()}
                     >
-                      PRO
-                    </div>
-                  )}
+                      Ver perfil profissional
+                    </Link>
 
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>
-                      {item.profession || item.card_label || "Perfil profissional"}
-                    </div>
+                    {!currentUserId ? (
+                      <Link href="/login" style={buttonStyle()}>
+                        Entrar para conectar
+                      </Link>
+                    ) : isOwnProfile ? (
+                      <span style={mutedButtonStyle()}>Seu perfil</span>
+                    ) : isConnected ? (
+                      <span style={mutedButtonStyle()}>Já conectado</span>
+                    ) : (
+                      <form action={connectProfessional.bind(null, item.user_id)}>
+                        <button type="submit" style={buttonStyle()}>
+                          Conectar
+                        </button>
+                      </form>
+                    )}
+                  </div>
 
-                    {item.company_name ? (
-                      <div style={{ opacity: 0.88 }}>{item.company_name}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {item.accepts_professional_contact && item.whatsapp_business ? (
+                      <a
+                        href={item.whatsapp_business}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        WhatsApp
+                      </a>
                     ) : null}
 
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {item.industry ? (
-                        <span style={badgeStyle()}>{item.industry}</span>
-                      ) : null}
+                    {item.accepts_professional_contact && item.professional_email ? (
+                      <a
+                        href={`mailto:${item.professional_email}`}
+                        style={buttonStyle()}
+                      >
+                        E-mail
+                      </a>
+                    ) : null}
 
-                      {item.city ? (
-                        <span style={badgeStyle()}>{item.city}</span>
-                      ) : null}
-                    </div>
+                    {item.website ? (
+                      <a
+                        href={item.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        Website
+                      </a>
+                    ) : null}
+
+                    {item.linkedin ? (
+                      <a
+                        href={item.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        LinkedIn
+                      </a>
+                    ) : null}
+
+                    {item.business_instagram ? (
+                      <a
+                        href={item.business_instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        Instagram
+                      </a>
+                    ) : null}
+
+                    {item.portfolio ? (
+                      <a
+                        href={item.portfolio}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        Portfólio
+                      </a>
+                    ) : null}
                   </div>
-                </div>
-
-                <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                  {getSummary(item)}
-                </p>
-
-                {item.looking_for ? (
-                  <div>
-                    <strong>Busca na rede:</strong>{" "}
-                    <span style={{ opacity: 0.9 }}>{item.looking_for}</span>
-                  </div>
-                ) : null}
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  <Link
-                    href={`/${item.slug}?mode=pro`}
-                    style={primaryButtonStyle()}
-                  >
-                    Ver perfil profissional
-                  </Link>
-
-                  <form action={connectProfessional.bind(null, item.user_id)}>
-                    <button type="submit" style={buttonStyle()}>
-                      Conectar
-                    </button>
-                  </form>
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {item.accepts_professional_contact && item.whatsapp_business ? (
-                    <a
-                      href={item.whatsapp_business}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      WhatsApp
-                    </a>
-                  ) : null}
-
-                  {item.accepts_professional_contact && item.professional_email ? (
-                    <a
-                      href={`mailto:${item.professional_email}`}
-                      style={buttonStyle()}
-                    >
-                      E-mail
-                    </a>
-                  ) : null}
-
-                  {item.website ? (
-                    <a
-                      href={item.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      Website
-                    </a>
-                  ) : null}
-
-                  {item.linkedin ? (
-                    <a
-                      href={item.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      LinkedIn
-                    </a>
-                  ) : null}
-
-                  {item.business_instagram ? (
-                    <a
-                      href={item.business_instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      Instagram
-                    </a>
-                  ) : null}
-
-                  {item.portfolio ? (
-                    <a
-                      href={item.portfolio}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      Portfólio
-                    </a>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
