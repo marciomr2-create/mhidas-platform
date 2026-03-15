@@ -6,6 +6,7 @@ export const fetchCache = "force-no-store";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
+import { connectProfessional } from "./actions";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -426,6 +427,14 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                     Ver perfil profissional
                   </Link>
 
+                  <form action={connectProfessional.bind(null, item.user_id)}>
+                    <button type="submit" style={buttonStyle()}>
+                      Conectar
+                    </button>
+                  </form>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   {item.accepts_professional_contact && item.whatsapp_business ? (
                     <a
                       href={item.whatsapp_business}
