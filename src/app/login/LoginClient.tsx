@@ -1,25 +1,22 @@
-// src/app/login/LoginClient.tsx
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
 
 export default function LoginClient() {
-  const supabase = useMemo(() => createBrowserClient(), []);
-  const searchParams = useSearchParams();
-
-  const next = searchParams.get("next") || "/dashboard/cards";
+  const router = useRouter();
+  const supabase = createBrowserClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErr(null);
     setLoading(true);
+    setErrorMsg(null);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -28,103 +25,103 @@ export default function LoginClient() {
       });
 
       if (error) {
-        setErr(error.message);
-        return;
+        throw new Error(error.message);
       }
 
-      // redireciona mantendo o comportamento simples e estável
-      window.location.href = next;
-    } catch (e: any) {
-      setErr(e?.message || "Falha ao autenticar.");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Falha ao entrar.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 520 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Login</h1>
-
-      <p style={{ marginTop: 10, opacity: 0.85, lineHeight: 1.5 }}>
-        Acesse sua conta para gerenciar seu card.
-      </p>
-
-      {err ? (
+    <form
+      onSubmit={handleLogin}
+      style={{
+        maxWidth: 660,
+        display: "grid",
+        gap: 18,
+        marginTop: 24,
+      }}
+    >
+      {errorMsg ? (
         <div
           style={{
-            marginTop: 12,
             padding: 12,
             borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.04)",
-            fontSize: 13,
-            lineHeight: 1.5,
+            border: "1px solid rgba(255,80,80,0.35)",
+            background: "rgba(255,80,80,0.08)",
+            color: "#fff",
           }}
         >
-          <strong>Erro:</strong> {err}
+          {errorMsg}
         </div>
       ) : null}
 
-      <form onSubmit={onSubmit} style={{ marginTop: 14, display: "grid", gap: 10 }}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>E-mail</div>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            autoComplete="email"
-            required
-            style={{
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.03)",
-              color: "inherit",
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>Senha</div>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-            required
-            style={{
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.03)",
-              color: "inherit",
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
+      <label style={{ display: "grid", gap: 8 }}>
+        <span>E-mail</span>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
           style={{
-            padding: "10px 14px",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.06)",
-            color: "inherit",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontWeight: 900,
-            marginTop: 6,
+            width: "100%",
+            padding: "14px 16px",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#fff",
+            outline: "none",
           }}
-        >
-          {loading ? "Entrando…" : "Entrar"}
-        </button>
+        />
+      </label>
 
-        <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
-          Após autenticar, você será redirecionado para: <strong>{next}</strong>
-        </div>
-      </form>
-    </main>
+      <label style={{ display: "grid", gap: 8 }}>
+        <span>Senha</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          style={{
+            width: "100%",
+            padding: "14px 16px",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#fff",
+            outline: "none",
+          }}
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={loading}
+        style={{
+          width: "100%",
+          padding: "16px 18px",
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.14)",
+          background: "rgba(255,255,255,0.06)",
+          color: "#fff",
+          fontWeight: 800,
+          fontSize: 18,
+          cursor: loading ? "not-allowed" : "pointer",
+        }}
+      >
+        {loading ? "Entrando..." : "Entrar"}
+      </button>
+
+      <p style={{ margin: 0, opacity: 0.75 }}>
+        Após autenticar, você será redirecionado para: <strong>/dashboard</strong>
+      </p>
+    </form>
   );
 }

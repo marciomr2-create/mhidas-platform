@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+// src/utils/supabase/client.ts
+import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr";
 
 export function createBrowserClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,11 +9,5 @@ export function createBrowserClient() {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return createClient(url, anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
+  return createSupabaseBrowserClient(url, anonKey);
 }

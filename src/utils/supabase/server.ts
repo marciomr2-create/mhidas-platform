@@ -2,37 +2,29 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 
-type CookiePair = { name: string; value: string };
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: any;
+};
 
-function parseCookieHeader(cookieHeader: string): CookiePair[] {
+function parseCookieHeader(cookieHeader: string): Array<{ name: string; value: string }> {
   if (!cookieHeader) return [];
   return cookieHeader
     .split(";")
-    .map((p) => p.trim())
+    .map((part) => part.trim())
     .filter(Boolean)
     .map((part) => {
       const eq = part.indexOf("=");
       if (eq === -1) return { name: part, value: "" };
-      return {
-        name: part.slice(0, eq).trim(),
-        value: part.slice(eq + 1).trim(),
-      };
+      const name = part.slice(0, eq).trim();
+      const value = part.slice(eq + 1).trim();
+      return { name, value };
     });
 }
 
 export async function createClient() {
-  // No seu runtime, cookies()/headers() podem ser async.
-  const cookieStore: any = await cookies();
-  const headerStore: any = await headers();
-
-  const getCookieHeader = () => {
-    if (headerStore && typeof headerStore.get === "function") {
-      return headerStore.get("cookie") || "";
-    }
-    // fallback ultra defensivo
-    const raw = headerStore?.cookie || headerStore?.Cookie || "";
-    return typeof raw === "string" ? raw : "";
-  };
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,26 +32,32 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          // Se existir getAll, ótimo.
-          if (cookieStore && typeof cookieStore.getAll === "function") {
-            return cookieStore.getAll();
+          const anyStore = cookieStore as any;
+
+          if (typeof anyStore.getAll === "function") {
+            return anyStore.getAll();
           }
 
-          // Senão, parse do header Cookie.
-          const cookieHeader = getCookieHeader();
-          return parseCookieHeader(cookieHeader);
+          const h = headers() as any;
+          const cookieHeader =
+            typeof h.get === "function" ? h.get("cookie") || "" : "";
+
+          return parseCookieHeader(cookieHeader).map(({ name, value }) => ({
+            name,
+            value,
+          }));
         },
 
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          // Em Server Components, set pode falhar. Mantemos resiliente.
-          if (!cookieStore || typeof cookieStore.set !== "function") return;
+        setAll(cookiesToSet: CookieToSet[]) {
+          const anyStore = cookieStore as any;
+
+          if (typeof anyStore.set !== "function") return;
 
           try {
-            for (const c of cookiesToSet) {
-              cookieStore.set(c.name, c.value, c.options);
+            for (const { name, value, options } of cookiesToSet) {
+              anyStore.set(name, value, options);
             }
           } catch {
-            // não quebra render
           }
         },
       },
