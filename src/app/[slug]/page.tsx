@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
+import ProfessionalConnectButton from "@/components/network/ProfessionalConnectButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -299,6 +300,12 @@ export default async function PremiumProfilePage({
               </p>
             </div>
           ) : null}
+
+          <div style={{ marginTop: 18 }}>
+            <ProfessionalConnectButton
+              targetUserId={String(professionalProfile.user_id)}
+            />
+          </div>
 
           {professionalProfile.services ? (
             <div style={{ marginTop: 14 }}>

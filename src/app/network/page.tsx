@@ -1,20 +1,22 @@
-// src/app/network/page.tsx
+// src/app/dashboard/network/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { createPublicClient } from "@/utils/supabase/public";
+import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { connectProfessional } from "./actions";
 
-type PageProps = {
-  searchParams?: Promise<{
-    q?: string;
-    city?: string;
-    industry?: string;
-  }>;
+type ConnectionStatus = "pending" | "accepted" | "declined" | "cancelled";
+
+type ConnectionRow = {
+  id: string;
+  requester_user_id: string;
+  target_user_id: string;
+  status: ConnectionStatus;
+  created_at: string;
+  responded_at: string | null;
 };
 
 type ProfessionalProfileRow = {
@@ -34,8 +36,8 @@ type ProfessionalProfileRow = {
   bio_text: string | null;
   ai_summary: string | null;
   pro_photo_url: string | null;
-  visible_in_network: boolean;
   accepts_professional_contact: boolean;
+  visible_in_network: boolean;
 };
 
 type CardRow = {
@@ -45,12 +47,8 @@ type CardRow = {
   is_published: boolean;
 };
 
-type ConnectionRow = {
-  requester_user_id: string;
-  target_user_id: string;
-};
-
-type NetworkItem = {
+type ConnectionItem = {
+  connection_id: string;
   user_id: string;
   slug: string;
   card_label: string | null;
@@ -70,15 +68,14 @@ type NetworkItem = {
   ai_summary: string | null;
   pro_photo_url: string | null;
   accepts_professional_contact: boolean;
+  created_at: string;
+  responded_at: string | null;
+  status: ConnectionStatus;
 };
-
-function normalize(value: string | undefined): string {
-  return String(value || "").trim().toLowerCase();
-}
 
 function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1200,
+    maxWidth: 1100,
     margin: "0 auto",
     padding: 24,
   };
@@ -93,15 +90,14 @@ function panelStyle(): CSSProperties {
   };
 }
 
-function inputStyle(): CSSProperties {
+function cardStyle(): CSSProperties {
   return {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.04)",
-    color: "#fff",
-    outline: "none",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)",
+    borderRadius: 22,
+    padding: 18,
+    display: "grid",
+    gap: 16,
   };
 }
 
@@ -128,15 +124,6 @@ function primaryButtonStyle(): CSSProperties {
   };
 }
 
-function mutedButtonStyle(): CSSProperties {
-  return {
-    ...buttonStyle(),
-    background: "rgba(255,255,255,0.03)",
-    opacity: 0.78,
-    cursor: "default",
-  };
-}
-
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
@@ -149,132 +136,40 @@ function badgeStyle(): CSSProperties {
   };
 }
 
-function cardStyle(): CSSProperties {
-  return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 22,
-    padding: 18,
-    display: "grid",
-    gap: 16,
-  };
+function formatDate(value: string | null): string {
+  if (!value) return "Data indisponível";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data indisponível";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
-function getSummary(item: NetworkItem): string {
+function getSummary(item: ConnectionItem): string {
   if (item.ai_summary?.trim()) return item.ai_summary.trim();
   if (item.bio_text?.trim()) return item.bio_text.trim();
   if (item.services?.trim()) return item.services.trim();
-  return "Perfil profissional disponível para networking dentro da rede.";
+  return "Perfil profissional disponível para networking.";
 }
 
-function matchesQuery(item: NetworkItem, q: string): boolean {
-  if (!q) return true;
+function buildConnectionItems(
+  connections: ConnectionRow[],
+  lookupUserIdField: "requester_user_id" | "target_user_id",
+  profileByUserId: Map<string, ProfessionalProfileRow>,
+  cardByUserId: Map<string, CardRow>
+): ConnectionItem[] {
+  return connections
+    .map((connection) => {
+      const lookupUserId = connection[lookupUserIdField];
+      const profile = profileByUserId.get(lookupUserId);
+      const card = cardByUserId.get(lookupUserId);
 
-  const haystack = [
-    item.profession,
-    item.company_name,
-    item.industry,
-    item.city,
-    item.services,
-    item.looking_for,
-    item.bio_text,
-    item.ai_summary,
-  ]
-    .map((v) => String(v || "").toLowerCase())
-    .join(" ");
-
-  return haystack.includes(q);
-}
-
-function matchesCity(item: NetworkItem, city: string): boolean {
-  if (!city) return true;
-  return String(item.city || "").trim().toLowerCase().includes(city);
-}
-
-function matchesIndustry(item: NetworkItem, industry: string): boolean {
-  if (!industry) return true;
-  return String(item.industry || "").trim().toLowerCase().includes(industry);
-}
-
-export default async function NetworkPage({ searchParams }: PageProps) {
-  const qp = searchParams ? await searchParams : undefined;
-  const q = normalize(qp?.q);
-  const city = normalize(qp?.city);
-  const industry = normalize(qp?.industry);
-
-  const publicSupabase = createPublicClient();
-  const serverSupabase = await createClient();
-
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
-
-  const currentUserId = user?.id ?? null;
-
-  const { data: professionalRows } = await publicSupabase
-    .from("professional_profiles")
-    .select(`
-      user_id,
-      profession,
-      company_name,
-      industry,
-      city,
-      services,
-      looking_for,
-      business_instagram,
-      website,
-      portfolio,
-      linkedin,
-      whatsapp_business,
-      professional_email,
-      bio_text,
-      ai_summary,
-      pro_photo_url,
-      visible_in_network,
-      accepts_professional_contact
-    `)
-    .eq("visible_in_network", true);
-
-  const { data: cardsRows } = await publicSupabase
-    .from("cards")
-    .select("user_id, slug, label, is_published")
-    .eq("is_published", true);
-
-  let connectedUserIds = new Set<string>();
-
-  if (currentUserId) {
-    const { data: connectionsRows } = await serverSupabase
-      .from("professional_connections")
-      .select("requester_user_id, target_user_id")
-      .or(`requester_user_id.eq.${currentUserId},target_user_id.eq.${currentUserId}`);
-
-    const connections = (connectionsRows ?? []) as ConnectionRow[];
-
-    connectedUserIds = new Set(
-      connections.map((row) =>
-        row.requester_user_id === currentUserId
-          ? row.target_user_id
-          : row.requester_user_id
-      )
-    );
-  }
-
-  const professionalProfiles = (professionalRows ?? []) as ProfessionalProfileRow[];
-  const publishedCards = ((cardsRows ?? []) as CardRow[]).filter((c) => c.slug);
-
-  const cardByUser = new Map<string, CardRow>();
-  for (const card of publishedCards) {
-    if (!cardByUser.has(card.user_id)) {
-      cardByUser.set(card.user_id, card);
-    }
-  }
-
-  const items: NetworkItem[] = professionalProfiles
-    .map((profile) => {
-      const card = cardByUser.get(profile.user_id);
-      if (!card || !card.slug) return null;
+      if (!profile || !card || !card.slug) return null;
 
       return {
+        connection_id: connection.id,
         user_id: profile.user_id,
         slug: card.slug,
         card_label: card.label,
@@ -294,19 +189,285 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         ai_summary: profile.ai_summary,
         pro_photo_url: profile.pro_photo_url,
         accepts_professional_contact: profile.accepts_professional_contact,
+        created_at: connection.created_at,
+        responded_at: connection.responded_at,
+        status: connection.status,
       };
     })
-    .filter(Boolean) as NetworkItem[];
+    .filter(Boolean) as ConnectionItem[];
+}
 
-  const filteredItems = items
-    .filter((item) => matchesQuery(item, q))
-    .filter((item) => matchesCity(item, city))
-    .filter((item) => matchesIndustry(item, industry))
-    .sort((a, b) => {
-      const aProfession = String(a.profession || "").toLowerCase();
-      const bProfession = String(b.profession || "").toLowerCase();
-      return aProfession.localeCompare(bProfession);
-    });
+function ConnectionGrid({
+  items,
+  emptyTitle,
+  emptyDescription,
+  showRespondedAt = false,
+}: {
+  items: ConnectionItem[];
+  emptyTitle: string;
+  emptyDescription: string;
+  showRespondedAt?: boolean;
+}) {
+  if (items.length === 0) {
+    return (
+      <div style={panelStyle()}>
+        <h2 style={{ marginTop: 0 }}>{emptyTitle}</h2>
+        <p style={{ marginBottom: 0, opacity: 0.82 }}>{emptyDescription}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 18,
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+      }}
+    >
+      {items.map((item) => (
+        <article key={item.connection_id} style={cardStyle()}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            {item.pro_photo_url ? (
+              <img
+                src={item.pro_photo_url}
+                alt="Foto profissional"
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: 18,
+                  objectFit: "cover",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: 18,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.05)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontWeight: 800,
+                  opacity: 0.75,
+                  flexShrink: 0,
+                }}
+              >
+                PRO
+              </div>
+            )}
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 20, fontWeight: 900 }}>
+                {item.profession || item.card_label || "Perfil profissional"}
+              </div>
+
+              {item.company_name ? (
+                <div style={{ opacity: 0.88 }}>{item.company_name}</div>
+              ) : null}
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {item.industry ? <span style={badgeStyle()}>{item.industry}</span> : null}
+                {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
+                <span style={badgeStyle()}>{item.status}</span>
+              </div>
+            </div>
+          </div>
+
+          <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
+            {getSummary(item)}
+          </p>
+
+          <div style={{ fontSize: 13, opacity: 0.72 }}>
+            Solicitação em: {formatDate(item.created_at)}
+          </div>
+
+          {showRespondedAt ? (
+            <div style={{ fontSize: 13, opacity: 0.72 }}>
+              Confirmada em: {formatDate(item.responded_at)}
+            </div>
+          ) : null}
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
+              Abrir perfil profissional
+            </Link>
+
+            {item.accepts_professional_contact && item.whatsapp_business ? (
+              <a
+                href={item.whatsapp_business}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={buttonStyle()}
+              >
+                WhatsApp
+              </a>
+            ) : null}
+
+            {item.accepts_professional_contact && item.professional_email ? (
+              <a href={`mailto:${item.professional_email}`} style={buttonStyle()}>
+                E-mail
+              </a>
+            ) : null}
+
+            {item.linkedin ? (
+              <a
+                href={item.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={buttonStyle()}
+              >
+                LinkedIn
+              </a>
+            ) : null}
+
+            {item.website ? (
+              <a
+                href={item.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={buttonStyle()}
+              >
+                Website
+              </a>
+            ) : null}
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export default async function DashboardNetworkPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const currentUserId = user.id;
+
+  const { data: receivedPendingRows } = await supabase
+    .from("professional_connections")
+    .select("id, requester_user_id, target_user_id, status, created_at, responded_at")
+    .eq("target_user_id", currentUserId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  const { data: sentPendingRows } = await supabase
+    .from("professional_connections")
+    .select("id, requester_user_id, target_user_id, status, created_at, responded_at")
+    .eq("requester_user_id", currentUserId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  const { data: acceptedRows } = await supabase
+    .from("professional_connections")
+    .select("id, requester_user_id, target_user_id, status, created_at, responded_at")
+    .or(`requester_user_id.eq.${currentUserId},target_user_id.eq.${currentUserId}`)
+    .eq("status", "accepted")
+    .order("responded_at", { ascending: false });
+
+  const receivedPending = (receivedPendingRows ?? []) as ConnectionRow[];
+  const sentPending = (sentPendingRows ?? []) as ConnectionRow[];
+  const acceptedConnections = (acceptedRows ?? []) as ConnectionRow[];
+
+  const relatedUserIds = Array.from(
+    new Set(
+      [
+        ...receivedPending.map((row) => row.requester_user_id),
+        ...sentPending.map((row) => row.target_user_id),
+        ...acceptedConnections.map((row) =>
+          row.requester_user_id === currentUserId
+            ? row.target_user_id
+            : row.requester_user_id
+        ),
+      ].filter(Boolean)
+    )
+  );
+
+  let profiles: ProfessionalProfileRow[] = [];
+  let cards: CardRow[] = [];
+
+  if (relatedUserIds.length > 0) {
+    const { data: profileRows } = await supabase
+      .from("professional_profiles")
+      .select(`
+        user_id,
+        profession,
+        company_name,
+        industry,
+        city,
+        services,
+        looking_for,
+        business_instagram,
+        website,
+        portfolio,
+        linkedin,
+        whatsapp_business,
+        professional_email,
+        bio_text,
+        ai_summary,
+        pro_photo_url,
+        accepts_professional_contact,
+        visible_in_network
+      `)
+      .in("user_id", relatedUserIds);
+
+    const { data: cardRows } = await supabase
+      .from("cards")
+      .select("user_id, slug, label, is_published")
+      .in("user_id", relatedUserIds)
+      .eq("is_published", true);
+
+    profiles = (profileRows ?? []) as ProfessionalProfileRow[];
+    cards = ((cardRows ?? []) as CardRow[]).filter((c) => c.slug);
+  }
+
+  const profileByUserId = new Map<string, ProfessionalProfileRow>();
+  for (const profile of profiles) {
+    profileByUserId.set(profile.user_id, profile);
+  }
+
+  const cardByUserId = new Map<string, CardRow>();
+  for (const card of cards) {
+    if (!cardByUserId.has(card.user_id)) {
+      cardByUserId.set(card.user_id, card);
+    }
+  }
+
+  const receivedItems = buildConnectionItems(
+    receivedPending,
+    "requester_user_id",
+    profileByUserId,
+    cardByUserId
+  );
+
+  const sentItems = buildConnectionItems(
+    sentPending,
+    "target_user_id",
+    profileByUserId,
+    cardByUserId
+  );
+
+  const acceptedItems = buildConnectionItems(
+    acceptedConnections.map((row) => ({
+      ...row,
+      requester_user_id:
+        row.requester_user_id === currentUserId ? row.target_user_id : row.requester_user_id,
+      target_user_id: currentUserId,
+    })),
+    "requester_user_id",
+    profileByUserId,
+    cardByUserId
+  );
 
   return (
     <main style={pageContainerStyle()}>
@@ -315,252 +476,54 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           Network profissional
         </h1>
 
-        <p style={{ margin: 0, opacity: 0.82, maxWidth: 900, lineHeight: 1.6 }}>
-          Descubra profissionais da rede USECLUBBERS que escolheram aparecer
-          publicamente no networking. Busque por profissão, cidade ou área de
-          atuação e abra diretamente o perfil profissional de cada membro.
+        <p style={{ margin: 0, opacity: 0.82, maxWidth: 880, lineHeight: 1.6 }}>
+          Gerencie suas solicitações de conexão e acompanhe suas conexões
+          profissionais confirmadas dentro da rede USECLUBBERS.
         </p>
+
+        <div style={{ marginTop: 8 }}>
+          <Link href="/dashboard" style={{ textDecoration: "underline" }}>
+            Voltar ao dashboard
+          </Link>
+        </div>
       </header>
 
       <section style={{ ...panelStyle(), marginTop: 24 }}>
-        <form
-          action="/network"
-          method="get"
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto",
-            alignItems: "end",
-          }}
-        >
-          <label style={{ display: "grid", gap: 8 }}>
-            <span>Buscar por profissão, empresa ou serviço</span>
-            <input
-              type="text"
-              name="q"
-              defaultValue={qp?.q || ""}
-              placeholder="Ex.: advogado, designer, marketing, software"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label style={{ display: "grid", gap: 8 }}>
-            <span>Cidade</span>
-            <input
-              type="text"
-              name="city"
-              defaultValue={qp?.city || ""}
-              placeholder="Ex.: São Paulo"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label style={{ display: "grid", gap: 8 }}>
-            <span>Área de atuação</span>
-            <input
-              type="text"
-              name="industry"
-              defaultValue={qp?.industry || ""}
-              placeholder="Ex.: tecnologia, direito"
-              style={inputStyle()}
-            />
-          </label>
-
-          <button type="submit" style={buttonStyle()}>
-            Buscar
-          </button>
-        </form>
-
-        <div style={{ marginTop: 14, fontSize: 14, opacity: 0.78 }}>
-          {filteredItems.length} perfil(is) encontrado(s) no networking.
+        <div style={{ fontSize: 14, opacity: 0.82 }}>
+          {receivedItems.length} recebida(s) • {sentItems.length} enviada(s) •{" "}
+          {acceptedItems.length} confirmada(s)
         </div>
       </section>
 
       <section style={{ marginTop: 24 }}>
-        {filteredItems.length === 0 ? (
-          <div style={panelStyle()}>
-            <h2 style={{ marginTop: 0 }}>Nenhum perfil encontrado</h2>
-            <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Ajuste os filtros ou aguarde novos membros publicarem seus perfis
-              profissionais na rede.
-            </p>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            }}
-          >
-            {filteredItems.map((item) => {
-              const isOwnProfile = currentUserId === item.user_id;
-              const isConnected = currentUserId
-                ? connectedUserIds.has(item.user_id)
-                : false;
+        <h2 style={{ marginTop: 0, marginBottom: 16 }}>Solicitações recebidas</h2>
 
-              return (
-                <article key={item.user_id} style={cardStyle()}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                    {item.pro_photo_url ? (
-                      <img
-                        src={item.pro_photo_url}
-                        alt="Foto profissional"
-                        style={{
-                          width: 76,
-                          height: 76,
-                          borderRadius: 18,
-                          objectFit: "cover",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          flexShrink: 0,
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: 76,
-                          height: 76,
-                          borderRadius: 18,
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.05)",
-                          display: "grid",
-                          placeItems: "center",
-                          fontWeight: 800,
-                          opacity: 0.75,
-                          flexShrink: 0,
-                        }}
-                      >
-                        PRO
-                      </div>
-                    )}
+        <ConnectionGrid
+          items={receivedItems}
+          emptyTitle="Nenhuma solicitação recebida"
+          emptyDescription="Quando outro profissional enviar uma solicitação para você, ela aparecerá aqui."
+        />
+      </section>
 
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <div style={{ fontSize: 20, fontWeight: 900 }}>
-                        {item.profession || item.card_label || "Perfil profissional"}
-                      </div>
+      <section style={{ marginTop: 32 }}>
+        <h2 style={{ marginTop: 0, marginBottom: 16 }}>Solicitações enviadas</h2>
 
-                      {item.company_name ? (
-                        <div style={{ opacity: 0.88 }}>{item.company_name}</div>
-                      ) : null}
+        <ConnectionGrid
+          items={sentItems}
+          emptyTitle="Nenhuma solicitação enviada"
+          emptyDescription="Quando você enviar novas solicitações profissionais, elas aparecerão aqui."
+        />
+      </section>
 
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {item.industry ? (
-                          <span style={badgeStyle()}>{item.industry}</span>
-                        ) : null}
+      <section style={{ marginTop: 32 }}>
+        <h2 style={{ marginTop: 0, marginBottom: 16 }}>Conexões confirmadas</h2>
 
-                        {item.city ? (
-                          <span style={badgeStyle()}>{item.city}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                    {getSummary(item)}
-                  </p>
-
-                  {item.looking_for ? (
-                    <div>
-                      <strong>Busca na rede:</strong>{" "}
-                      <span style={{ opacity: 0.9 }}>{item.looking_for}</span>
-                    </div>
-                  ) : null}
-
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    <Link
-                      href={`/${item.slug}?mode=pro`}
-                      style={primaryButtonStyle()}
-                    >
-                      Ver perfil profissional
-                    </Link>
-
-                    {!currentUserId ? (
-                      <Link href="/login" style={buttonStyle()}>
-                        Entrar para conectar
-                      </Link>
-                    ) : isOwnProfile ? (
-                      <span style={mutedButtonStyle()}>Seu perfil</span>
-                    ) : isConnected ? (
-                      <span style={mutedButtonStyle()}>Já conectado</span>
-                    ) : (
-                      <form action={connectProfessional.bind(null, item.user_id)}>
-                        <button type="submit" style={buttonStyle()}>
-                          Conectar
-                        </button>
-                      </form>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {item.accepts_professional_contact && item.whatsapp_business ? (
-                      <a
-                        href={item.whatsapp_business}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        WhatsApp
-                      </a>
-                    ) : null}
-
-                    {item.accepts_professional_contact && item.professional_email ? (
-                      <a
-                        href={`mailto:${item.professional_email}`}
-                        style={buttonStyle()}
-                      >
-                        E-mail
-                      </a>
-                    ) : null}
-
-                    {item.website ? (
-                      <a
-                        href={item.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        Website
-                      </a>
-                    ) : null}
-
-                    {item.linkedin ? (
-                      <a
-                        href={item.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        LinkedIn
-                      </a>
-                    ) : null}
-
-                    {item.business_instagram ? (
-                      <a
-                        href={item.business_instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        Instagram
-                      </a>
-                    ) : null}
-
-                    {item.portfolio ? (
-                      <a
-                        href={item.portfolio}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        Portfólio
-                      </a>
-                    ) : null}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+        <ConnectionGrid
+          items={acceptedItems}
+          emptyTitle="Nenhuma conexão confirmada"
+          emptyDescription="Quando uma solicitação for aceita, a conexão aparecerá aqui."
+          showRespondedAt
+        />
       </section>
     </main>
   );
