@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 type ConnectionState =
   | "self"
