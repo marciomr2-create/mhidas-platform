@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
 const RESERVED = new Set([
@@ -68,7 +68,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
     throw new Error("Este slug é reservado e não pode ser utilizado.");
   }
 
-  // Carrega card
   const { data: card, error: cardErr } = await supabase
     .from("cards")
     .select("card_id,user_id,slug,slug_changes")
@@ -89,8 +88,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
     throw new Error("O novo slug é igual ao atual.");
   }
 
-  // Verifica unicidade global considerando cards + histórico (o histórico tem índice unique_ci)
-  // Primeiro checa cards
   const { data: clashCards } = await supabase
     .from("cards")
     .select("card_id")
@@ -101,7 +98,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
     throw new Error("Este slug já está em uso. Escolha outro.");
   }
 
-  // Depois checa histórico
   const { data: clashHist } = await supabase
     .from("card_slug_history")
     .select("card_id, slug")
@@ -112,9 +108,7 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
     throw new Error("Este slug já foi utilizado por outro perfil. Escolha outro.");
   }
 
-  // 1) Se houver slug atual, registra no histórico como não current (preservação de QR/link antigo)
   if (currentSlug) {
-    // garante que exista no histórico (idempotente)
     const { data: existingOld } = await supabase
       .from("card_slug_history")
       .select("id, slug")
@@ -132,7 +126,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
     }
   }
 
-  // 2) Desmarca current antigo e marca o novo como current no histórico
   await supabase
     .from("card_slug_history")
     .update({ is_current: false })
@@ -146,7 +139,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
 
   if (insNewErr) throw new Error(insNewErr.message);
 
-  // 3) Atualiza cards.slug e incrementa contador
   const { error: updErr } = await supabase
     .from("cards")
     .update({
@@ -159,7 +151,6 @@ export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
 
   if (updErr) throw new Error(updErr.message);
 
-  // Revalida páginas
   revalidatePath(`/dashboard/cards/${card_id}`);
   revalidatePath(`/dashboard/cards`);
   revalidatePath(`/${nextSlug}`);
