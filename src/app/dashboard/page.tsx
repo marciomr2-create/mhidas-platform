@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 type CardRow = {
   card_id: string;
