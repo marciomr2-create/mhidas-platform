@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
+
+type RespondAction = "accept" | "decline";
 
 export async function POST(req: Request) {
   try {
@@ -7,83 +9,88 @@ export async function POST(req: Request) {
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    if (authError || !user) {
+      return NextResponse.json(
+        { ok: false, code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    const connectionId = String(body?.connectionId || "").trim();
+    const action = String(body?.action || "").trim() as RespondAction;
 
-    const connectionId = body.connection_id as string;
-    const action = body.action as "accept" | "decline";
-
-    if (!connectionId || !action) {
+    if (!connectionId) {
       return NextResponse.json(
-        { error: "Dados inválidos" },
+        { ok: false, code: "MISSING_CONNECTION_ID" },
         { status: 400 }
       );
     }
 
-    if (!["accept", "decline"].includes(action)) {
+    if (action !== "accept" && action !== "decline") {
       return NextResponse.json(
-        { error: "Ação inválida" },
+        { ok: false, code: "INVALID_ACTION" },
         { status: 400 }
       );
     }
 
-    // Verifica se a conexão pertence ao usuário (segurança)
-    const { data: connection } = await supabase
+    const { data: relation, error: relationError } = await supabase
       .from("professional_connections")
-      .select("id, target_user_id, status")
+      .select("*")
       .eq("id", connectionId)
       .single();
 
-    if (!connection) {
+    if (relationError || !relation) {
       return NextResponse.json(
-        { error: "Conexão não encontrada" },
+        { ok: false, code: "CONNECTION_NOT_FOUND" },
         { status: 404 }
       );
     }
 
-    if (connection.target_user_id !== user.id) {
+    if (relation.target_user_id !== user.id) {
       return NextResponse.json(
-        { error: "Acesso negado" },
+        { ok: false, code: "FORBIDDEN" },
         { status: 403 }
       );
     }
 
-    if (connection.status !== "pending") {
+    if (relation.status !== "pending") {
       return NextResponse.json(
-        { error: "Conexão já processada" },
+        { ok: false, code: "INVALID_STATUS" },
         { status: 400 }
       );
     }
 
-    const newStatus = action === "accept" ? "accepted" : "declined";
+    const nextStatus = action === "accept" ? "accepted" : "declined";
 
-    const { error } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("professional_connections")
       .update({
-        status: newStatus,
+        status: nextStatus,
         responded_at: new Date().toISOString(),
       })
-      .eq("id", connectionId);
+      .eq("id", connectionId)
+      .select()
+      .single();
 
-    if (error) {
+    if (updateError) {
       return NextResponse.json(
-        { error: "Erro ao atualizar conexão" },
+        { ok: false, code: "UPDATE_ERROR", message: updateError.message },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      success: true,
-      status: newStatus,
+      ok: true,
+      relation: updated,
     });
-  } catch (err) {
+  } catch (error) {
+    console.error("[network/respond] unexpected error:", error);
     return NextResponse.json(
-      { error: "Erro interno" },
+      { ok: false, code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }
