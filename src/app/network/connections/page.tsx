@@ -6,7 +6,7 @@ export const fetchCache = "force-no-store";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 type ConnectionRow = {
   requester_user_id: string;
