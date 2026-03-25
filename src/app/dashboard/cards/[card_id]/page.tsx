@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 import QrBlock from "./QrBlock";
 import SocialLinksManager from "./SocialLinksManager";
