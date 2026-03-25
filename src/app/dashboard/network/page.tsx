@@ -183,7 +183,7 @@ function buildItems(
 }
 
 export default async function DashboardNetworkPage() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },
@@ -201,7 +201,7 @@ export default async function DashboardNetworkPage() {
     const connectionId = String(formData.get("connection_id") || "").trim();
     if (!connectionId) return;
 
-    const actionSupabase = await createClient();
+    const actionSupabase = await createServerSupabaseClient();
 
     const {
       data: { user: actionUser },
@@ -231,7 +231,7 @@ export default async function DashboardNetworkPage() {
     const connectionId = String(formData.get("connection_id") || "").trim();
     if (!connectionId) return;
 
-    const actionSupabase = await createClient();
+    const actionSupabase = await createServerSupabaseClient();
 
     const {
       data: { user: actionUser },

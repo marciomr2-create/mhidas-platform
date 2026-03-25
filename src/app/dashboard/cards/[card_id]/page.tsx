@@ -31,7 +31,7 @@ type PageProps = {
 };
 
 export default async function CardPage({ params }: PageProps) {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
   const { card_id: cardId } = await params;
 
   const {

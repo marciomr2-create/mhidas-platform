@@ -12,7 +12,7 @@ type ConnectionState =
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },

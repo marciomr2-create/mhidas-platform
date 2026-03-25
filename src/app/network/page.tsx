@@ -342,7 +342,7 @@ function ConnectionGrid({
 }
 
 export default async function DashboardNetworkPage() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },

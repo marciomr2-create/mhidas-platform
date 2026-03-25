@@ -18,7 +18,7 @@ type ConnectionRow = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },

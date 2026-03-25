@@ -25,7 +25,7 @@ function normalizeSlug(input: string) {
 }
 
 export async function togglePublish(card_id: string, current: boolean) {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },
@@ -51,7 +51,7 @@ export async function togglePublish(card_id: string, current: boolean) {
 }
 
 export async function changeSlugOnce(card_id: string, nextSlugRaw: string) {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },
