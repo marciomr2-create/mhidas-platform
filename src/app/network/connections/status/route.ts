@@ -10,9 +10,18 @@ type ConnectionState =
   | "declined"
   | "cancelled";
 
+type ProfessionalConnectionRow = {
+  id: string;
+  requester_user_id: string;
+  target_user_id: string;
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  responded_at: string | null;
+  created_at: string;
+};
+
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },
@@ -44,9 +53,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const { data: rows, error } = await supabase
+    const { data, error } = await supabase
       .from("professional_connections")
-      .select("id, requester_user_id, target_user_id, status, responded_at, created_at")
+      .select(
+        "id, requester_user_id, target_user_id, status, responded_at, created_at"
+      )
       .or(
         `and(requester_user_id.eq.${user.id},target_user_id.eq.${targetUserId}),and(requester_user_id.eq.${targetUserId},target_user_id.eq.${user.id})`
       )
@@ -60,7 +71,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!rows || rows.length === 0) {
+    const rows = (data ?? []) as ProfessionalConnectionRow[];
+
+    if (rows.length === 0) {
       return NextResponse.json({
         ok: true,
         state: "none" satisfies ConnectionState,
