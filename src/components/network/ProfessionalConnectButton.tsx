@@ -197,7 +197,23 @@ export default function ProfessionalConnectButton({
   }
 
   if (state === "self") {
-    return null;
+    return (
+      <div className={`flex flex-wrap gap-2 ${className}`}>
+        <a
+          href="/dashboard/network"
+          className="inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
+        >
+          Ver meus contatos
+        </a>
+
+        <a
+          href="/dashboard"
+          className="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+        >
+          Abrir minha área
+        </a>
+      </div>
+    );
   }
 
   if (state === "unauthenticated") {

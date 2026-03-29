@@ -13,9 +13,15 @@ export async function createServerSupabaseClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Em Server Components comuns, o Next pode bloquear escrita de cookie.
+            // Nesse caso, ignoramos aqui e deixamos a escrita ocorrer apenas
+            // em Server Actions e Route Handlers.
+          }
         },
       },
     }

@@ -127,6 +127,7 @@ function badgeStyle(): CSSProperties {
 
 function formatDate(value: string | null): string {
   if (!value) return "Data indisponível";
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Data indisponível";
 
@@ -154,9 +155,7 @@ function buildItems(
 
     const subtitle =
       profile?.company_name?.trim() ||
-      (card?.label?.trim() && profile?.profession?.trim()
-        ? card.label
-        : null) ||
+      (card?.label?.trim() && profile?.profession?.trim() ? card.label : null) ||
       "Perfil em configuração";
 
     const summary =
@@ -180,6 +179,115 @@ function buildItems(
       is_fallback: !profile || !card?.slug,
     };
   });
+}
+
+function ContactCard({
+  item,
+  dateLabel,
+  showActions = false,
+  acceptAction,
+  declineAction,
+}: {
+  item: ConnectionItem;
+  dateLabel: string;
+  showActions?: boolean;
+  acceptAction?: (formData: FormData) => Promise<void>;
+  declineAction?: (formData: FormData) => Promise<void>;
+}) {
+  return (
+    <article key={item.connection_id} style={cardStyle()}>
+      <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+        {item.pro_photo_url ? (
+          <img
+            src={item.pro_photo_url}
+            alt="Foto profissional"
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 18,
+              objectFit: "cover",
+              border: "1px solid rgba(255,255,255,0.12)",
+              flexShrink: 0,
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.05)",
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 800,
+              opacity: 0.75,
+              flexShrink: 0,
+            }}
+          >
+            PRO
+          </div>
+        )}
+
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 900 }}>{item.title}</div>
+
+          {item.subtitle ? (
+            <div style={{ opacity: 0.88 }}>{item.subtitle}</div>
+          ) : null}
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
+            {item.is_fallback ? (
+              <span style={badgeStyle()}>perfil em configuração</span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>{item.summary}</p>
+
+      <div style={{ fontSize: 13, opacity: 0.72 }}>
+        {dateLabel}: {formatDate(item.created_at)}
+      </div>
+
+      {item.responded_at ? (
+        <div style={{ fontSize: 13, opacity: 0.72 }}>
+          Atualizado em: {formatDate(item.responded_at)}
+        </div>
+      ) : null}
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {item.slug ? (
+          <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
+            Ver perfil
+          </Link>
+        ) : (
+          <span style={{ ...buttonStyle(), opacity: 0.55, cursor: "default" }}>
+            Perfil ainda indisponível
+          </span>
+        )}
+
+        {showActions && acceptAction && declineAction ? (
+          <>
+            <form action={acceptAction}>
+              <input type="hidden" name="connection_id" value={item.connection_id} />
+              <button type="submit" style={primaryButtonStyle()}>
+                Aceitar contato
+              </button>
+            </form>
+
+            <form action={declineAction}>
+              <input type="hidden" name="connection_id" value={item.connection_id} />
+              <button type="submit" style={dangerButtonStyle()}>
+                Recusar
+              </button>
+            </form>
+          </>
+        ) : null}
+      </div>
+    </article>
+  );
 }
 
 export default async function DashboardNetworkPage() {
@@ -368,39 +476,39 @@ export default async function DashboardNetworkPage() {
     <main style={pageContainerStyle()}>
       <header style={{ display: "grid", gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
-          Network profissional
+          Meus contatos
         </h1>
 
         <p style={{ margin: 0, opacity: 0.82, maxWidth: 880, lineHeight: 1.6 }}>
-          Aqui você acompanha quem tentou se conectar com você, o que você enviou
-          e suas conexões profissionais confirmadas.
+          Aqui você acompanha quem quer falar com você, os convites que enviou e
+          as pessoas com quem já está conectado.
         </p>
 
         <div style={{ marginTop: 8 }}>
           <Link href="/dashboard" style={{ textDecoration: "underline" }}>
-            Voltar ao dashboard
+            Voltar para minha área
           </Link>
         </div>
       </header>
 
       <section style={{ ...panelStyle(), marginTop: 24 }}>
         <div style={{ fontSize: 14, opacity: 0.82 }}>
-          {receivedItems.length} recebida(s) • {sentItems.length} enviada(s) •{" "}
-          {acceptedItems.length} confirmada(s)
+          {receivedItems.length} novo(s) contato(s) • {sentItems.length} convite(s) enviado(s) •{" "}
+          {acceptedItems.length} contato(s)
         </div>
       </section>
 
       <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Solicitações recebidas</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Novos contatos</h2>
         <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Veja quem entrou em contato com você pela rede profissional.
+          Pessoas interessadas em falar com você.
         </p>
 
         {receivedItems.length === 0 ? (
           <div style={panelStyle()}>
-            <h3 style={{ marginTop: 0 }}>Nenhuma solicitação recebida</h3>
+            <h3 style={{ marginTop: 0 }}>Nenhum novo contato</h3>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Quando outro profissional enviar uma solicitação para você, ela aparecerá aqui.
+              Quando alguém entrar em contato com você, aparecerá aqui.
             </p>
           </div>
         ) : (
@@ -412,107 +520,30 @@ export default async function DashboardNetworkPage() {
             }}
           >
             {receivedItems.map((item) => (
-              <article key={item.connection_id} style={cardStyle()}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  {item.pro_photo_url ? (
-                    <img
-                      src={item.pro_photo_url}
-                      alt="Foto profissional"
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        objectFit: "cover",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        opacity: 0.75,
-                        flexShrink: 0,
-                      }}
-                    >
-                      PRO
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>{item.title}</div>
-
-                    {item.subtitle ? (
-                      <div style={{ opacity: 0.88 }}>{item.subtitle}</div>
-                    ) : null}
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-                      <span style={badgeStyle()}>{item.status}</span>
-                      {item.is_fallback ? (
-                        <span style={badgeStyle()}>perfil em configuração</span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                  {item.summary}
-                </p>
-
-                <div style={{ fontSize: 13, opacity: 0.72 }}>
-                  Recebida em: {formatDate(item.created_at)}
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {item.slug ? (
-                    <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
-                      Abrir perfil profissional
-                    </Link>
-                  ) : (
-                    <span style={{ ...buttonStyle(), opacity: 0.55, cursor: "default" }}>
-                      Perfil ainda indisponível
-                    </span>
-                  )}
-
-                  <form action={acceptConnection}>
-                    <input type="hidden" name="connection_id" value={item.connection_id} />
-                    <button type="submit" style={primaryButtonStyle()}>
-                      Aceitar
-                    </button>
-                  </form>
-
-                  <form action={declineConnection}>
-                    <input type="hidden" name="connection_id" value={item.connection_id} />
-                    <button type="submit" style={dangerButtonStyle()}>
-                      Recusar
-                    </button>
-                  </form>
-                </div>
-              </article>
+              <ContactCard
+                key={item.connection_id}
+                item={item}
+                dateLabel="Recebido em"
+                showActions={true}
+                acceptAction={acceptConnection}
+                declineAction={declineConnection}
+              />
             ))}
           </div>
         )}
       </section>
 
       <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Solicitações enviadas</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Convites enviados</h2>
         <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Acompanhe os contatos profissionais que você já iniciou.
+          Pessoas que você convidou para se conectar.
         </p>
 
         {sentItems.length === 0 ? (
           <div style={panelStyle()}>
-            <h3 style={{ marginTop: 0 }}>Nenhuma solicitação enviada</h3>
+            <h3 style={{ marginTop: 0 }}>Nenhum convite enviado</h3>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Quando você enviar novas solicitações profissionais, elas aparecerão aqui.
+              Quando você convidar alguém para se conectar, essa pessoa aparecerá aqui.
             </p>
           </div>
         ) : (
@@ -524,93 +555,27 @@ export default async function DashboardNetworkPage() {
             }}
           >
             {sentItems.map((item) => (
-              <article key={item.connection_id} style={cardStyle()}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  {item.pro_photo_url ? (
-                    <img
-                      src={item.pro_photo_url}
-                      alt="Foto profissional"
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        objectFit: "cover",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        opacity: 0.75,
-                        flexShrink: 0,
-                      }}
-                    >
-                      PRO
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>{item.title}</div>
-
-                    {item.subtitle ? (
-                      <div style={{ opacity: 0.88 }}>{item.subtitle}</div>
-                    ) : null}
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-                      <span style={badgeStyle()}>{item.status}</span>
-                      {item.is_fallback ? (
-                        <span style={badgeStyle()}>perfil em configuração</span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                  {item.summary}
-                </p>
-
-                <div style={{ fontSize: 13, opacity: 0.72 }}>
-                  Enviada em: {formatDate(item.created_at)}
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {item.slug ? (
-                    <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
-                      Abrir perfil profissional
-                    </Link>
-                  ) : (
-                    <span style={{ ...buttonStyle(), opacity: 0.55, cursor: "default" }}>
-                      Perfil ainda indisponível
-                    </span>
-                  )}
-                </div>
-              </article>
+              <ContactCard
+                key={item.connection_id}
+                item={item}
+                dateLabel="Enviado em"
+              />
             ))}
           </div>
         )}
       </section>
 
       <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Conexões confirmadas</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Meus contatos</h2>
         <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Aqui ficam seus contatos profissionais já confirmados.
+          Pessoas com quem você já está conectado.
         </p>
 
         {acceptedItems.length === 0 ? (
           <div style={panelStyle()}>
-            <h3 style={{ marginTop: 0 }}>Nenhuma conexão confirmada</h3>
+            <h3 style={{ marginTop: 0 }}>Nenhum contato confirmado</h3>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Quando uma solicitação for aceita, a conexão aparecerá aqui.
+              Quando você aceitar um contato, ele aparecerá aqui.
             </p>
           </div>
         ) : (
@@ -622,83 +587,11 @@ export default async function DashboardNetworkPage() {
             }}
           >
             {acceptedItems.map((item) => (
-              <article key={item.connection_id} style={cardStyle()}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  {item.pro_photo_url ? (
-                    <img
-                      src={item.pro_photo_url}
-                      alt="Foto profissional"
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        objectFit: "cover",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        opacity: 0.75,
-                        flexShrink: 0,
-                      }}
-                    >
-                      PRO
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>{item.title}</div>
-
-                    {item.subtitle ? (
-                      <div style={{ opacity: 0.88 }}>{item.subtitle}</div>
-                    ) : null}
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-                      <span style={badgeStyle()}>{item.status}</span>
-                      {item.is_fallback ? (
-                        <span style={badgeStyle()}>perfil em configuração</span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                  {item.summary}
-                </p>
-
-                <div style={{ fontSize: 13, opacity: 0.72 }}>
-                  Criada em: {formatDate(item.created_at)}
-                </div>
-
-                {item.responded_at ? (
-                  <div style={{ fontSize: 13, opacity: 0.72 }}>
-                    Atualizado em: {formatDate(item.responded_at)}
-                  </div>
-                ) : null}
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {item.slug ? (
-                    <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
-                      Abrir perfil profissional
-                    </Link>
-                  ) : (
-                    <span style={{ ...buttonStyle(), opacity: 0.55, cursor: "default" }}>
-                      Perfil ainda indisponível
-                    </span>
-                  )}
-                </div>
-              </article>
+              <ContactCard
+                key={item.connection_id}
+                item={item}
+                dateLabel="Conectado em"
+              />
             ))}
           </div>
         )}
