@@ -51,7 +51,7 @@ export default async function CardPage({ params }: PageProps) {
     return (
       <main style={{ padding: 24 }}>
         <h1>USECLUBBERS</h1>
-        <p>Card não encontrado ou acesso negado.</p>
+        <p>Perfil não encontrado ou acesso negado.</p>
         <Link href="/dashboard/cards">Voltar</Link>
       </main>
     );
@@ -74,13 +74,13 @@ export default async function CardPage({ params }: PageProps) {
 
       <div style={{ marginTop: 8, opacity: 0.8 }}>
         <div>
-          <strong>Card:</strong> {c.label ?? "Sem título"}
+          <strong>Perfil:</strong> {c.label ?? "Sem título"}
         </div>
         <div>
-          <strong>Slug:</strong> {c.slug ?? "—"}
+          <strong>Link do perfil:</strong> {c.slug ?? "—"}
         </div>
         <div>
-          <strong>Status de publicação:</strong> {c.is_published ? "Publicado" : "Não publicado"}
+          <strong>Status do perfil:</strong> {c.is_published ? "Publicado" : "Não publicado"}
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export default async function CardPage({ params }: PageProps) {
 
       {metrics.length > 0 && (
         <section style={{ marginBottom: 30 }}>
-          <h2 style={{ fontWeight: 900 }}>Ranking de Links</h2>
+          <h2 style={{ fontWeight: 900 }}>Desempenho dos links</h2>
           <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
             {metrics.map((m, index) => (
               <div
@@ -103,7 +103,9 @@ export default async function CardPage({ params }: PageProps) {
                   justifyContent: "space-between",
                 }}
               >
-                <span>#{index + 1} — {m.link_id}</span>
+                <span>
+                  #{index + 1} — {m.link_id}
+                </span>
                 <strong>{m.clicks} cliques</strong>
               </div>
             ))}
@@ -129,7 +131,7 @@ export default async function CardPage({ params }: PageProps) {
         <QrBlock slug={c.slug ?? ""} />
 
         <section style={{ marginTop: 10 }}>
-          <h3 style={{ fontWeight: 900 }}>Links do Club Mode</h3>
+          <h3 style={{ fontWeight: 900 }}>Links do perfil Club</h3>
           <SocialLinksManager cardId={c.card_id} />
         </section>
       </section>

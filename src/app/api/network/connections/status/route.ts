@@ -1,3 +1,4 @@
+// src/app/api/network/connections/status/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
@@ -8,7 +9,18 @@ type ConnectionState =
   | "incoming_pending"
   | "connected"
   | "declined"
-  | "cancelled";
+  | "cancelled"
+  | "suspended"
+  | "blocked";
+
+type ControlStatus = "suspended" | "blocked";
+
+type RelationshipControlRow = {
+  id: string;
+  owner_user_id: string;
+  target_user_id: string;
+  status: ControlStatus;
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,6 +53,48 @@ export async function GET(request: NextRequest) {
         ok: true,
         state: "self" satisfies ConnectionState,
         relation: null,
+        control: null,
+      });
+    }
+
+    const { data: controlRows, error: controlError } = await supabase
+      .from("professional_relationship_controls")
+      .select("id, owner_user_id, target_user_id, status")
+      .or(
+        `and(owner_user_id.eq.${user.id},target_user_id.eq.${targetUserId}),and(owner_user_id.eq.${targetUserId},target_user_id.eq.${user.id})`
+      );
+
+    if (controlError) {
+      console.error("[api/network/connections/status] control select error:", controlError);
+      return NextResponse.json(
+        { ok: false, code: "CONTROL_SELECT_ERROR", message: controlError.message },
+        { status: 500 }
+      );
+    }
+
+    const controls = (controlRows ?? []) as RelationshipControlRow[];
+
+    const blockedControl =
+      controls.find((row) => row.status === "blocked") ?? null;
+
+    if (blockedControl) {
+      return NextResponse.json({
+        ok: true,
+        state: "blocked" satisfies ConnectionState,
+        relation: null,
+        control: blockedControl,
+      });
+    }
+
+    const suspendedControl =
+      controls.find((row) => row.status === "suspended") ?? null;
+
+    if (suspendedControl) {
+      return NextResponse.json({
+        ok: true,
+        state: "suspended" satisfies ConnectionState,
+        relation: null,
+        control: suspendedControl,
       });
     }
 
@@ -65,6 +119,7 @@ export async function GET(request: NextRequest) {
         ok: true,
         state: "none" satisfies ConnectionState,
         relation: null,
+        control: null,
       });
     }
 
@@ -92,6 +147,7 @@ export async function GET(request: NextRequest) {
       ok: true,
       state,
       relation,
+      control: null,
     });
   } catch (error) {
     console.error("[api/network/connections/status] unexpected error:", error);

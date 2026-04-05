@@ -1,3 +1,4 @@
+// src/components/network/ProfessionalConnectButton.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,7 +12,9 @@ type ConnectionState =
   | "incoming_pending"
   | "connected"
   | "declined"
-  | "cancelled";
+  | "cancelled"
+  | "suspended"
+  | "blocked";
 
 type StatusResponse = {
   ok?: boolean;
@@ -110,20 +113,30 @@ export default function ProfessionalConnectButton({
           return;
         }
 
+        if (data?.code === "RELATIONSHIP_BLOCKED") {
+          setState("blocked");
+          return;
+        }
+
+        if (data?.code === "RELATIONSHIP_SUSPENDED") {
+          setState("suspended");
+          return;
+        }
+
         if (data?.code === "UNAUTHORIZED") {
           setState("unauthenticated");
           return;
         }
 
-        setMessage("Não foi possível enviar a solicitação.");
+        setMessage("Não foi possível enviar a conexão agora.");
         return;
       }
 
       setState("outgoing_pending");
-      window.location.reload();
+      setMessage("");
     } catch (error) {
       console.error("[ProfessionalConnectButton] create error:", error);
-      setMessage("Erro ao enviar solicitação.");
+      setMessage("Erro ao enviar a conexão.");
     } finally {
       setSubmitting(false);
     }
@@ -154,6 +167,16 @@ export default function ProfessionalConnectButton({
           return;
         }
 
+        if (data?.code === "RELATIONSHIP_BLOCKED") {
+          setState("blocked");
+          return;
+        }
+
+        if (data?.code === "RELATIONSHIP_SUSPENDED") {
+          setState("suspended");
+          return;
+        }
+
         setMessage("Não foi possível atualizar a conexão.");
         return;
       }
@@ -166,10 +189,10 @@ export default function ProfessionalConnectButton({
         setState("cancelled");
       }
 
-      window.location.reload();
+      setMessage("");
     } catch (error) {
       console.error("[ProfessionalConnectButton] patch error:", error);
-      setMessage("Erro ao atualizar conexão.");
+      setMessage("Erro ao atualizar a conexão.");
     } finally {
       setSubmitting(false);
     }
@@ -188,9 +211,9 @@ export default function ProfessionalConnectButton({
         <button
           type="button"
           disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/60"
+          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
         >
-          Carregando...
+          Verificando conexão...
         </button>
       </div>
     );
@@ -203,14 +226,14 @@ export default function ProfessionalConnectButton({
           href="/dashboard/network"
           className="inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
         >
-          Ver meus contatos
+          Abrir conexões
         </a>
 
         <a
           href="/dashboard"
           className="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
         >
-          Abrir minha área
+          Abrir meu painel
         </a>
       </div>
     );
@@ -221,7 +244,7 @@ export default function ProfessionalConnectButton({
       <div className={className}>
         <a
           href={loginHref}
-          className="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+          className="inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
         >
           Entrar para conectar
         </a>
@@ -235,9 +258,37 @@ export default function ProfessionalConnectButton({
         <button
           type="button"
           disabled
-          className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300"
+          className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300"
         >
-          Conectado
+          Conexão confirmada
+        </button>
+      </div>
+    );
+  }
+
+  if (state === "blocked") {
+    return (
+      <div className={className}>
+        <button
+          type="button"
+          disabled
+          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
+        >
+          Conexão indisponível
+        </button>
+      </div>
+    );
+  }
+
+  if (state === "suspended") {
+    return (
+      <div className={className}>
+        <button
+          type="button"
+          disabled
+          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
+        >
+          Perfil suspenso para conexão
         </button>
       </div>
     );
@@ -252,7 +303,7 @@ export default function ProfessionalConnectButton({
           disabled={submitting}
           className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Processando..." : "Aceitar"}
+          {submitting ? "Processando..." : "Aceitar conexão"}
         </button>
 
         <button
@@ -273,9 +324,9 @@ export default function ProfessionalConnectButton({
         <button
           type="button"
           disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70"
+          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/70"
         >
-          Solicitação enviada
+          Conexão enviada
         </button>
 
         <button
@@ -298,7 +349,7 @@ export default function ProfessionalConnectButton({
         disabled={submitting}
         className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {submitting ? "Enviando..." : "Conectar"}
+        {submitting ? "Enviando..." : "Iniciar conexão profissional"}
       </button>
 
       {message ? (

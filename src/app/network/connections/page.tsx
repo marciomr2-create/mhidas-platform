@@ -14,6 +14,14 @@ type ConnectionRow = {
   created_at: string;
 };
 
+type RelationshipControlStatus = "suspended" | "blocked";
+
+type RelationshipControlRow = {
+  owner_user_id: string;
+  target_user_id: string;
+  status: RelationshipControlStatus;
+};
+
 type ProfessionalProfileRow = {
   user_id: string;
   profession: string | null;
@@ -353,13 +361,33 @@ export default async function NetworkConnectionsPage() {
     .eq("requester_user_id", currentUserId)
     .order("created_at", { ascending: false });
 
+  const { data: controlRows } = await supabase
+    .from("professional_relationship_controls")
+    .select("owner_user_id, target_user_id, status")
+    .eq("owner_user_id", currentUserId);
+
   const incomingConnections = (incomingRows ?? []) as ConnectionRow[];
   const outgoingConnections = (outgoingRows ?? []) as ConnectionRow[];
+  const controls = (controlRows ?? []) as RelationshipControlRow[];
+
+  const hiddenUserIds = new Set(
+    controls
+      .filter((row) => row.status === "suspended" || row.status === "blocked")
+      .map((row) => row.target_user_id)
+  );
+
+  const visibleIncomingConnections = incomingConnections.filter(
+    (row) => !hiddenUserIds.has(row.requester_user_id)
+  );
+
+  const visibleOutgoingConnections = outgoingConnections.filter(
+    (row) => !hiddenUserIds.has(row.target_user_id)
+  );
 
   const relatedUserIds = Array.from(
     new Set([
-      ...incomingConnections.map((row) => row.requester_user_id),
-      ...outgoingConnections.map((row) => row.target_user_id),
+      ...visibleIncomingConnections.map((row) => row.requester_user_id),
+      ...visibleOutgoingConnections.map((row) => row.target_user_id),
     ].filter(Boolean))
   );
 
@@ -389,7 +417,8 @@ export default async function NetworkConnectionsPage() {
         accepts_professional_contact,
         visible_in_network
       `)
-      .in("user_id", relatedUserIds);
+      .in("user_id", relatedUserIds)
+      .eq("visible_in_network", true);
 
     const { data: cardRows } = await supabase
       .from("cards")
@@ -414,14 +443,14 @@ export default async function NetworkConnectionsPage() {
   }
 
   const incomingItems = buildConnectionItems(
-    incomingConnections,
+    visibleIncomingConnections,
     "requester_user_id",
     profileByUserId,
     cardByUserId
   );
 
   const outgoingItems = buildConnectionItems(
-    outgoingConnections,
+    visibleOutgoingConnections,
     "target_user_id",
     profileByUserId,
     cardByUserId
