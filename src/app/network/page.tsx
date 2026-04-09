@@ -65,7 +65,9 @@ type NetworkProfileItem = {
   services: string | null;
   looking_for: string | null;
   website: string | null;
+  portfolio: string | null;
   linkedin: string | null;
+  business_instagram: string | null;
   whatsapp_business: string | null;
   professional_email: string | null;
   ai_summary: string | null;
@@ -206,14 +208,32 @@ function badgeStyle(): CSSProperties {
   };
 }
 
-function cardStyle(): CSSProperties {
+function quickBadgeStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 22,
+    display: "inline-block",
+    padding: "7px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.05)",
+    fontSize: 12,
+    fontWeight: 700,
+    opacity: 0.94,
+  };
+}
+
+function cardStyle(isFeatured = false): CSSProperties {
+  return {
+    border: isFeatured
+      ? "1px solid rgba(255,255,255,0.18)"
+      : "1px solid rgba(255,255,255,0.12)",
+    background: isFeatured
+      ? "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)"
+      : "rgba(255,255,255,0.03)",
+    borderRadius: 24,
     padding: 18,
     display: "grid",
     gap: 16,
+    boxShadow: isFeatured ? "0 10px 28px rgba(0,0,0,0.16)" : "none",
   };
 }
 
@@ -225,6 +245,33 @@ function statCardStyle(): CSSProperties {
     padding: 16,
     display: "grid",
     gap: 6,
+  };
+}
+
+function infoGridStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gap: 10,
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  };
+}
+
+function infoCardStyle(): CSSProperties {
+  return {
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 14,
+    display: "grid",
+    gap: 6,
+  };
+}
+
+function actionGroupStyle(): CSSProperties {
+  return {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
   };
 }
 
@@ -245,16 +292,16 @@ function limitText(value: string | null | undefined, max = 150): string {
 
 function buildSummary(item: NetworkProfileItem): string {
   const aiSummary = normalizeText(item.ai_summary);
-  if (aiSummary) return limitText(aiSummary, 160);
+  if (aiSummary) return limitText(aiSummary, 170);
 
   const services = normalizeText(item.services);
-  if (services) return limitText(services, 160);
+  if (services) return limitText(services, 170);
 
   const bioText = normalizeText(item.bio_text);
-  if (bioText) return limitText(bioText, 160);
+  if (bioText) return limitText(bioText, 170);
 
   const lookingFor = normalizeText(item.looking_for);
-  if (lookingFor) return `Busca atual: ${limitText(lookingFor, 140)}`;
+  if (lookingFor) return `Busca atual: ${limitText(lookingFor, 150)}`;
 
   return "Perfil profissional disponível para novas conexões.";
 }
@@ -328,6 +375,7 @@ function computeRelevanceScore(
   if (normalizeText(item.professional_email)) score += 4;
   if (normalizeText(item.linkedin)) score += 3;
   if (normalizeText(item.website)) score += 3;
+  if (normalizeText(item.portfolio)) score += 3;
 
   return score;
 }
@@ -398,6 +446,96 @@ function sortItems(items: NetworkProfileItem[], sort: SortOption): NetworkProfil
   });
 
   return sorted;
+}
+
+function getAvailabilityText(item: NetworkProfileItem): string {
+  if (item.accepts_professional_contact && item.whatsapp_business) {
+    return "Conexão profissional e WhatsApp disponíveis.";
+  }
+
+  if (item.accepts_professional_contact && item.professional_email) {
+    return "Conexão profissional e e-mail disponíveis.";
+  }
+
+  if (item.accepts_professional_contact) {
+    return "Conexão profissional disponível.";
+  }
+
+  if (item.website || item.linkedin || item.portfolio || item.business_instagram) {
+    return "Canais profissionais disponíveis para avaliação.";
+  }
+
+  return "Perfil visível para descoberta na rede.";
+}
+
+function getPrimaryValueText(item: NetworkProfileItem): string {
+  const services = normalizeText(item.services);
+  if (services) return limitText(services, 95);
+
+  const aiSummary = normalizeText(item.ai_summary);
+  if (aiSummary) return limitText(aiSummary, 95);
+
+  const bioText = normalizeText(item.bio_text);
+  if (bioText) return limitText(bioText, 95);
+
+  return "Perfil profissional preparado para iniciar novas conversas.";
+}
+
+function getCurrentGoalText(item: NetworkProfileItem): string {
+  const lookingFor = normalizeText(item.looking_for);
+  if (lookingFor) return limitText(lookingFor, 95);
+
+  if (item.industry) return item.industry;
+  if (item.city) return `Atuação em ${item.city}`;
+  return "Aberto a novas conexões";
+}
+
+function getQuickBadges(item: NetworkProfileItem): string[] {
+  const badges: string[] = [];
+
+  if (item.accepts_professional_contact) {
+    badges.push("Conexão disponível");
+  }
+
+  if (item.whatsapp_business) {
+    badges.push("WhatsApp");
+  }
+
+  if (item.profession) {
+    badges.push(item.profession);
+  }
+
+  if (item.industry) {
+    badges.push(item.industry);
+  }
+
+  if (item.city) {
+    badges.push(item.city);
+  }
+
+  return badges.slice(0, 4);
+}
+
+function getSecondaryChannels(item: NetworkProfileItem): Array<{ label: string; href: string }> {
+  const channels: Array<{ label: string; href: string }> = [];
+
+  if (item.linkedin) {
+    channels.push({ label: "LinkedIn", href: item.linkedin });
+  }
+
+  if (item.website) {
+    channels.push({ label: "Website", href: item.website });
+  }
+
+  if (item.portfolio) {
+    channels.push({ label: "Portfólio", href: item.portfolio });
+  }
+
+  if (item.business_instagram) {
+    channels.push({ label: "Instagram", href: item.business_instagram });
+  }
+
+  return channels.slice(0, 3);
 }
 
 export default async function NetworkPage({ searchParams }: PageProps) {
@@ -501,7 +639,9 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         services: profile.services,
         looking_for: profile.looking_for,
         website: profile.website,
+        portfolio: profile.portfolio,
         linkedin: profile.linkedin,
+        business_instagram: profile.business_instagram,
         whatsapp_business: profile.whatsapp_business,
         professional_email: profile.professional_email,
         ai_summary: profile.ai_summary,
@@ -720,111 +860,145 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
             }}
           >
-            {sortedItems.map((item) => (
-              <article key={item.user_id} style={cardStyle()}>
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  {item.pro_photo_url ? (
-                    <img
-                      src={item.pro_photo_url}
-                      alt="Foto profissional"
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        objectFit: "cover",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 76,
-                        height: 76,
-                        borderRadius: 18,
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.05)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontWeight: 800,
-                        opacity: 0.75,
-                        flexShrink: 0,
-                      }}
-                    >
-                      PRO
-                    </div>
-                  )}
+            {sortedItems.map((item, index) => {
+              const isFeatured = index === 0 && sort === "relevance";
+              const quickBadges = getQuickBadges(item);
+              const secondaryChannels = getSecondaryChannels(item);
 
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900 }}>
-                      {item.profile_name}
-                    </div>
+              return (
+                <article key={item.user_id} style={cardStyle(isFeatured)}>
+                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                    {item.pro_photo_url ? (
+                      <img
+                        src={item.pro_photo_url}
+                        alt="Foto profissional"
+                        style={{
+                          width: 82,
+                          height: 82,
+                          borderRadius: 20,
+                          objectFit: "cover",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 82,
+                          height: 82,
+                          borderRadius: 20,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          background: "rgba(255,255,255,0.05)",
+                          display: "grid",
+                          placeItems: "center",
+                          fontWeight: 900,
+                          opacity: 0.75,
+                          flexShrink: 0,
+                        }}
+                      >
+                        PRO
+                      </div>
+                    )}
 
-                    {item.company_name ? (
-                      <div style={{ opacity: 0.88 }}>{item.company_name}</div>
-                    ) : null}
+                    <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {isFeatured ? (
+                          <span style={quickBadgeStyle()}>Perfil em destaque</span>
+                        ) : null}
+                        {item.whatsapp_business ? (
+                          <span style={quickBadgeStyle()}>Canal rápido ativo</span>
+                        ) : null}
+                      </div>
 
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {item.profession ? (
-                        <span style={badgeStyle()}>{item.profession}</span>
+                      <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}>
+                        {item.profile_name}
+                      </div>
+
+                      {item.company_name ? (
+                        <div style={{ opacity: 0.88, lineHeight: 1.4 }}>
+                          {item.company_name}
+                        </div>
                       ) : null}
-                      {item.industry ? (
-                        <span style={badgeStyle()}>{item.industry}</span>
+
+                      {quickBadges.length > 0 ? (
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {quickBadges.map((badge) => (
+                            <span key={badge} style={badgeStyle()}>
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
                       ) : null}
-                      {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
                     </div>
                   </div>
-                </div>
 
-                <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
-                  {buildSummary(item)}
-                </p>
+                  <p style={{ margin: 0, opacity: 0.92, lineHeight: 1.65 }}>
+                    {buildSummary(item)}
+                  </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
-                    Abrir perfil profissional
-                  </Link>
+                  <div style={infoGridStyle()}>
+                    <div style={infoCardStyle()}>
+                      <strong style={{ fontSize: 14 }}>Entrega principal</strong>
+                      <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
+                        {getPrimaryValueText(item)}
+                      </span>
+                    </div>
 
-                  <ProfessionalConnectButton targetUserId={item.user_id} />
+                    <div style={infoCardStyle()}>
+                      <strong style={{ fontSize: 14 }}>Busca atual</strong>
+                      <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
+                        {getCurrentGoalText(item)}
+                      </span>
+                    </div>
 
-                  {item.accepts_professional_contact && item.whatsapp_business ? (
-                    <a
-                      href={item.whatsapp_business}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      WhatsApp
-                    </a>
+                    <div style={infoCardStyle()}>
+                      <strong style={{ fontSize: 14 }}>Disponível agora</strong>
+                      <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
+                        {getAvailabilityText(item)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={actionGroupStyle()}>
+                    <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
+                      Abrir perfil profissional
+                    </Link>
+
+                    <ProfessionalConnectButton targetUserId={item.user_id} />
+
+                    {item.accepts_professional_contact && item.whatsapp_business ? (
+                      <a
+                        href={item.whatsapp_business}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        Falar no WhatsApp
+                      </a>
+                    ) : null}
+                  </div>
+
+                  {secondaryChannels.length > 0 ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      {secondaryChannels.map((channel) => (
+                        <a
+                          key={`${item.user_id}-${channel.label}`}
+                          href={channel.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={buttonStyle()}
+                        >
+                          {channel.label}
+                        </a>
+                      ))}
+                    </div>
                   ) : null}
-
-                  {item.linkedin ? (
-                    <a
-                      href={item.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      LinkedIn
-                    </a>
-                  ) : null}
-
-                  {item.website ? (
-                    <a
-                      href={item.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={buttonStyle()}
-                    >
-                      Website
-                    </a>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

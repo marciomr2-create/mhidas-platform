@@ -81,9 +81,21 @@ type ControlItem = PersonCardData & {
 
 function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1100,
+    maxWidth: 1120,
     margin: "0 auto",
     padding: 24,
+  };
+}
+
+function heroPanelStyle(): CSSProperties {
+  return {
+    border: "1px solid rgba(255,255,255,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
+    borderRadius: 24,
+    padding: 22,
+    display: "grid",
+    gap: 14,
   };
 }
 
@@ -115,6 +127,18 @@ function statCardStyle(): CSSProperties {
     padding: 16,
     display: "grid",
     gap: 6,
+  };
+}
+
+function sectionHeaderCardStyle(): CSSProperties {
+  return {
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.03)",
+    borderRadius: 18,
+    padding: 16,
+    display: "grid",
+    gap: 8,
+    marginBottom: 16,
   };
 }
 
@@ -189,6 +213,19 @@ function badgeStyle(): CSSProperties {
   };
 }
 
+function quickBadgeStyle(): CSSProperties {
+  return {
+    display: "inline-block",
+    padding: "7px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.05)",
+    fontSize: 12,
+    fontWeight: 700,
+    opacity: 0.94,
+  };
+}
+
 function infoBoxStyle(): CSSProperties {
   return {
     border: "1px solid rgba(255,255,255,0.10)",
@@ -197,6 +234,21 @@ function infoBoxStyle(): CSSProperties {
     padding: 14,
     display: "grid",
     gap: 6,
+  };
+}
+
+function anchorLinkStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.04)",
+    color: "#fff",
+    textDecoration: "none",
+    fontWeight: 700,
   };
 }
 
@@ -215,6 +267,13 @@ function formatDate(value: string | null): string {
 function normalizeText(value: string | null | undefined): string | null {
   const text = String(value || "").trim();
   return text ? text : null;
+}
+
+function limitText(value: string | null | undefined, max = 160): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trim()}...`;
 }
 
 function buildPersonCardData(
@@ -318,6 +377,13 @@ function ContactCard({
   suspendAction?: (formData: FormData) => Promise<void>;
   blockAction?: (formData: FormData) => Promise<void>;
 }) {
+  const quickBadges: string[] = [];
+
+  if (item.city) quickBadges.push(item.city);
+  if (item.is_fallback) quickBadges.push("perfil em configuração");
+  if (showConnectionActions) quickBadges.push("resposta recomendada");
+  if (item.whatsapp_business) quickBadges.push("WhatsApp disponível");
+
   return (
     <article key={item.connection_id} style={cardStyle(emphasize)}>
       <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
@@ -360,19 +426,21 @@ function ContactCard({
             <div style={{ opacity: 0.88 }}>{item.subtitle}</div>
           ) : null}
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-            {item.is_fallback ? (
-              <span style={badgeStyle()}>perfil em configuração</span>
-            ) : null}
-            {showConnectionActions ? (
-              <span style={badgeStyle()}>resposta recomendada</span>
-            ) : null}
-          </div>
+          {quickBadges.length > 0 ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {quickBadges.map((badge) => (
+                <span key={badge} style={quickBadgeStyle()}>
+                  {badge}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>{item.summary}</p>
+      <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
+        {limitText(item.summary, 180)}
+      </p>
 
       <div
         style={{
@@ -390,8 +458,8 @@ function ContactCard({
           <strong style={{ fontSize: 14 }}>Próximo passo</strong>
           <span style={{ opacity: 0.8 }}>
             {showConnectionActions
-              ? "Aceite ou recuse agora para manter sua rede organizada."
-              : "Você também pode suspender ou bloquear este perfil quando necessário."}
+              ? "Aceite ou recuse agora para não perder timing de conversa."
+              : "Mantenha a sua rede organizada com ações rápidas quando necessário."}
           </span>
         </div>
       </div>
@@ -520,15 +588,17 @@ function ControlledProfileCard({
           ) : null}
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-            <span style={badgeStyle()}>
+            {item.city ? <span style={quickBadgeStyle()}>{item.city}</span> : null}
+            <span style={quickBadgeStyle()}>
               {item.control_status === "blocked" ? "perfil bloqueado" : "perfil suspenso"}
             </span>
           </div>
         </div>
       </div>
 
-      <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>{item.summary}</p>
+      <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
+        {limitText(item.summary, 180)}
+      </p>
 
       <div
         style={{
@@ -609,6 +679,8 @@ export default async function DashboardNetworkPage() {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/network");
+    revalidatePath("/network");
+    revalidatePath("/network/connections");
   }
 
   async function declineConnection(formData: FormData) {
@@ -639,6 +711,8 @@ export default async function DashboardNetworkPage() {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/network");
+    revalidatePath("/network");
+    revalidatePath("/network/connections");
   }
 
   async function suspendProfile(formData: FormData) {
@@ -672,6 +746,8 @@ export default async function DashboardNetworkPage() {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/network");
+    revalidatePath("/network");
+    revalidatePath("/network/connections");
   }
 
   async function blockProfile(formData: FormData) {
@@ -705,6 +781,8 @@ export default async function DashboardNetworkPage() {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/network");
+    revalidatePath("/network");
+    revalidatePath("/network/connections");
   }
 
   async function restoreProfile(formData: FormData) {
@@ -731,6 +809,8 @@ export default async function DashboardNetworkPage() {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/network");
+    revalidatePath("/network");
+    revalidatePath("/network/connections");
   }
 
   const { data: receivedPendingRows } = await supabase
@@ -887,15 +967,15 @@ export default async function DashboardNetworkPage() {
 
   const priorityText =
     activeReceivedItems.length > 0
-      ? "Responder agora aumenta suas chances de gerar novas conexões e oportunidades."
+      ? "Responder agora aumenta suas chances de gerar novas conexões, negócios e continuidade de conversa."
       : activeAcceptedItems.length > 0
-      ? "Você já tem conexões confirmadas. Continue acompanhando sua rede para manter o ritmo de crescimento."
-      : "Quando alguém quiser falar com você, essa área será o ponto central para acompanhar tudo.";
+      ? "Você já tem conexões confirmadas. Continue acompanhando sua rede para manter ritmo e qualidade de relacionamento."
+      : "Quando alguém quiser falar com você, esta área será o ponto central para acompanhar tudo com clareza.";
 
   const priorityButtonHref =
-    activeReceivedItems.length > 0 ? "#novos-contatos" : "/dashboard";
+    activeReceivedItems.length > 0 ? "#novos-contatos" : "/network";
   const priorityButtonLabel =
-    activeReceivedItems.length > 0 ? "Responder agora" : "Voltar para minha área";
+    activeReceivedItems.length > 0 ? "Responder agora" : "Descobrir profissionais";
 
   const nextUrgentItem = activeReceivedItems[0] ?? null;
 
@@ -907,7 +987,7 @@ export default async function DashboardNetworkPage() {
         </h1>
 
         <p style={{ margin: 0, opacity: 0.82, maxWidth: 880, lineHeight: 1.6 }}>
-          Pessoas interessadas em se conectar com você. Responder rápido aumenta suas oportunidades.
+          Pessoas interessadas em se conectar com você. Responder rápido aumenta suas oportunidades e mantém sua rede organizada.
         </p>
 
         <div style={{ marginTop: 8 }}>
@@ -916,6 +996,44 @@ export default async function DashboardNetworkPage() {
           </Link>
         </div>
       </header>
+
+      <section style={{ ...heroPanelStyle(), marginTop: 24 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={quickBadgeStyle()}>Central da sua rede</span>
+          {activeReceivedItems.length > 0 ? (
+            <span style={quickBadgeStyle()}>
+              Prioridade alta: responder contatos
+            </span>
+          ) : null}
+          {blockedItems.length > 0 || suspendedItems.length > 0 ? (
+            <span style={quickBadgeStyle()}>
+              Controles ativos: {suspendedItems.length} suspenso(s) • {blockedItems.length} bloqueado(s)
+            </span>
+          ) : null}
+        </div>
+
+        <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>
+          {priorityTitle}
+        </div>
+
+        <p style={{ margin: 0, opacity: 0.88, lineHeight: 1.6, maxWidth: 760 }}>
+          {priorityText}
+        </p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <Link href={priorityButtonHref} style={primaryButtonStyle()}>
+            {priorityButtonLabel}
+          </Link>
+
+          <Link href="/network" style={buttonStyle()}>
+            Abrir busca principal
+          </Link>
+
+          <Link href="/network/connections" style={buttonStyle()}>
+            Ver minhas conexões
+          </Link>
+        </div>
+      </section>
 
       <section style={{ ...priorityPanelStyle(), marginTop: 24 }}>
         <div style={{ fontSize: 12, letterSpacing: 0.4, opacity: 0.8 }}>
@@ -940,7 +1058,7 @@ export default async function DashboardNetworkPage() {
           marginTop: 24,
           display: "grid",
           gap: 16,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         }}
       >
         <div style={statCardStyle()}>
@@ -984,7 +1102,19 @@ export default async function DashboardNetworkPage() {
               {nextUrgentItem.title}
             </div>
             <div style={{ opacity: 0.82, lineHeight: 1.6, marginBottom: 16 }}>
-              {nextUrgentItem.summary}
+              {limitText(nextUrgentItem.summary, 220)}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              {nextUrgentItem.city ? (
+                <span style={quickBadgeStyle()}>{nextUrgentItem.city}</span>
+              ) : null}
+              {nextUrgentItem.whatsapp_business ? (
+                <span style={quickBadgeStyle()}>WhatsApp disponível</span>
+              ) : null}
+              {nextUrgentItem.is_fallback ? (
+                <span style={quickBadgeStyle()}>Perfil em configuração</span>
+              ) : null}
             </div>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -1031,11 +1161,38 @@ export default async function DashboardNetworkPage() {
         </div>
       </section>
 
+      <section style={{ ...sectionHeaderCardStyle(), marginTop: 24 }}>
+        <strong style={{ fontSize: 16 }}>Navegação rápida</strong>
+        <div style={{ opacity: 0.82, lineHeight: 1.6 }}>
+          Vá direto para a área que precisa da sua atenção agora.
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <a href="#novos-contatos" style={anchorLinkStyle()}>
+            Novos contatos
+          </a>
+          <a href="#convites-enviados" style={anchorLinkStyle()}>
+            Convites enviados
+          </a>
+          <a href="#meus-contatos" style={anchorLinkStyle()}>
+            Meus contatos
+          </a>
+          <a href="#perfis-suspensos" style={anchorLinkStyle()}>
+            Suspensos
+          </a>
+          <a href="#perfis-bloqueados" style={anchorLinkStyle()}>
+            Bloqueados
+          </a>
+        </div>
+      </section>
+
       <section id="novos-contatos" style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Novos contatos</h2>
-        <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Pessoas interessadas em falar com você. Priorize respostas rápidas para não perder oportunidade.
-        </p>
+        <div style={sectionHeaderCardStyle()}>
+          <h2 style={{ margin: 0 }}>Novos contatos</h2>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
+            Pessoas interessadas em falar com você. Priorize respostas rápidas para não perder oportunidade.
+          </p>
+        </div>
 
         {activeReceivedItems.length === 0 ? (
           <div style={panelStyle()}>
@@ -1070,11 +1227,13 @@ export default async function DashboardNetworkPage() {
         )}
       </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Convites enviados</h2>
-        <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Pessoas que você convidou para se conectar.
-        </p>
+      <section id="convites-enviados" style={{ marginTop: 32 }}>
+        <div style={sectionHeaderCardStyle()}>
+          <h2 style={{ margin: 0 }}>Convites enviados</h2>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
+            Pessoas que você convidou para se conectar e ainda não responderam.
+          </p>
+        </div>
 
         {activeSentItems.length === 0 ? (
           <div style={panelStyle()}>
@@ -1105,11 +1264,13 @@ export default async function DashboardNetworkPage() {
         )}
       </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Meus contatos</h2>
-        <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Pessoas com quem você já está conectado.
-        </p>
+      <section id="meus-contatos" style={{ marginTop: 32 }}>
+        <div style={sectionHeaderCardStyle()}>
+          <h2 style={{ margin: 0 }}>Meus contatos</h2>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
+            Pessoas com quem você já está conectado e pode continuar conversando.
+          </p>
+        </div>
 
         {activeAcceptedItems.length === 0 ? (
           <div style={panelStyle()}>
@@ -1140,11 +1301,13 @@ export default async function DashboardNetworkPage() {
         )}
       </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Perfis suspensos</h2>
-        <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Perfis pausados por você. Eles saem da sua área ativa até você reativar.
-        </p>
+      <section id="perfis-suspensos" style={{ marginTop: 32 }}>
+        <div style={sectionHeaderCardStyle()}>
+          <h2 style={{ margin: 0 }}>Perfis suspensos</h2>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
+            Perfis pausados por você. Eles saem da sua área ativa até você reativar.
+          </p>
+        </div>
 
         {suspendedItems.length === 0 ? (
           <div style={panelStyle()}>
@@ -1172,11 +1335,13 @@ export default async function DashboardNetworkPage() {
         )}
       </section>
 
-      <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 8 }}>Perfis bloqueados</h2>
-        <p style={{ marginTop: 0, marginBottom: 16, opacity: 0.78 }}>
-          Perfis bloqueados por você. Eles ficam fora da sua área ativa até o desbloqueio.
-        </p>
+      <section id="perfis-bloqueados" style={{ marginTop: 32 }}>
+        <div style={sectionHeaderCardStyle()}>
+          <h2 style={{ margin: 0 }}>Perfis bloqueados</h2>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
+            Perfis bloqueados por você. Eles ficam fora da sua área ativa até o desbloqueio.
+          </p>
+        </div>
 
         {blockedItems.length === 0 ? (
           <div style={panelStyle()}>

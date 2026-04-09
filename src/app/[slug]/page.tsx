@@ -332,6 +332,25 @@ function quickPanelStyle(): CSSProperties {
   };
 }
 
+function authorityStripStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    marginTop: 16,
+  };
+}
+
+function authorityCardStyle(): CSSProperties {
+  return {
+    padding: 14,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    minHeight: 90,
+  };
+}
+
 function channelButtonStyle(): CSSProperties {
   return {
     display: "inline-block",
@@ -468,17 +487,22 @@ function buildProHeadline(
   const profession = normalizeText(professionalProfile?.profession);
   const company = normalizeText(professionalProfile?.company_name);
   const industry = normalizeText(professionalProfile?.industry);
+  const services = normalizeText(professionalProfile?.services);
 
   if (canConnect && profession && company) {
-    return `${profession} na ${company}, disponível para novas conexões`;
+    return `${profession} na ${company}, pronto para novas conversas profissionais`;
+  }
+
+  if (canConnect && profession && industry) {
+    return `${profession} com atuação em ${industry}`;
   }
 
   if (canConnect && profession) {
     return `${profession} disponível para novas conexões`;
   }
 
-  if (canConnect && industry) {
-    return `Conexão profissional disponível em ${industry}`;
+  if (canConnect && services) {
+    return "Este perfil está aberto para negócios, parcerias e novas conexões";
   }
 
   if (canConnect) {
@@ -512,17 +536,22 @@ function buildProDescription(
   const aiSummary = normalizeText(professionalProfile?.ai_summary);
   const bioText = normalizeText(professionalProfile?.bio_text);
   const services = normalizeText(professionalProfile?.services);
+  const lookingFor = normalizeText(professionalProfile?.looking_for);
 
   if (aiSummary && canConnect) {
-    return `${aiSummary} Inicie a conversa pela conexão profissional ou siga por um contato rápido.`;
+    return `${aiSummary} Inicie pela conexão profissional ou avance direto pelo canal mais rápido.`;
   }
 
   if (bioText && canConnect) {
-    return `${bioText} Inicie a conversa pela conexão profissional ou siga por um contato rápido.`;
+    return `${bioText} Inicie pela conexão profissional ou avance direto pelo canal mais rápido.`;
+  }
+
+  if (services && lookingFor && canConnect) {
+    return `${services} Atualmente busca ${lookingFor.toLowerCase()}.`;
   }
 
   if (services && canConnect) {
-    return `${services} Inicie a conversa pela conexão profissional ou siga por um contato rápido.`;
+    return `${services} Este perfil está pronto para novas conversas profissionais.`;
   }
 
   if (aiSummary) return aiSummary;
@@ -627,6 +656,52 @@ function getHeroHighlights(
   return items.slice(0, 4);
 }
 
+function getAuthorityBlocks(
+  professionalProfile: ProfessionalProfile | null,
+  canConnect: boolean
+): Array<{ title: string; value: string }> {
+  if (!professionalProfile) return [];
+
+  const blocks: Array<{ title: string; value: string }> = [];
+
+  if (professionalProfile.services) {
+    blocks.push({
+      title: "Entrega principal",
+      value: limitText(professionalProfile.services, 110),
+    });
+  }
+
+  if (professionalProfile.looking_for) {
+    blocks.push({
+      title: "Busca atual",
+      value: limitText(professionalProfile.looking_for, 110),
+    });
+  }
+
+  if (canConnect) {
+    if (professionalProfile.whatsapp_business) {
+      blocks.push({
+        title: "Canal mais rápido",
+        value: "WhatsApp profissional disponível para contato direto.",
+      });
+    } else if (professionalProfile.professional_email) {
+      blocks.push({
+        title: "Canal direto",
+        value: "E-mail profissional disponível para continuidade da conversa.",
+      });
+    }
+  }
+
+  if (professionalProfile.company_name) {
+    blocks.push({
+      title: "Marca ou empresa",
+      value: professionalProfile.company_name,
+    });
+  }
+
+  return blocks.slice(0, 4);
+}
+
 export default async function PremiumProfilePage({
   params,
   searchParams,
@@ -723,7 +798,7 @@ export default async function PremiumProfilePage({
   const showLinksSection = mode === "club" || links.length > 0;
   const aboutHeading =
     mode === "pro" && canConnect
-      ? "Por que vale a pena se conectar"
+      ? "Por que este perfil vale a conversa"
       : "Sobre este perfil";
 
   const heroHighlights = getHeroHighlights(
@@ -732,6 +807,8 @@ export default async function PremiumProfilePage({
     visibleProfessionalProfile,
     canConnect
   );
+
+  const authorityBlocks = getAuthorityBlocks(visibleProfessionalProfile, canConnect);
 
   const hasProfessionalChannels = !!(
     visibleProfessionalProfile?.website ||
@@ -866,9 +943,9 @@ export default async function PremiumProfilePage({
             </strong>
             <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
               {mode === "pro" && canConnect
-                ? "Comece pela conexão profissional e siga para contato direto quando fizer sentido."
+                ? "Comece pela conexão profissional e avance para o canal direto quando quiser acelerar a conversa."
                 : mode === "pro" && professionalQuickAction
-                ? "Este perfil prioriza contato rápido para acelerar a próxima conversa."
+                ? "Este perfil prioriza contato rápido para levar você ao próximo passo com mais agilidade."
                 : links.length > 0
                 ? "O objetivo deste perfil é levar você direto ao acesso mais relevante."
                 : "Este perfil está ativo e pronto para receber novos acessos em breve."}
@@ -881,7 +958,7 @@ export default async function PremiumProfilePage({
             </strong>
             <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
               {mode === "pro" && canConnect
-                ? "Conexão profissional e contato rápido disponíveis."
+                ? "Conexão profissional e canal direto disponíveis."
                 : links.length === 0
                 ? "Nenhum link ativo neste momento."
                 : links.length === 1
@@ -901,6 +978,19 @@ export default async function PremiumProfilePage({
             </div>
           ) : null}
         </div>
+
+        {mode === "pro" && authorityBlocks.length > 0 ? (
+          <div style={authorityStripStyle()}>
+            {authorityBlocks.map((block) => (
+              <div key={`${block.title}-${block.value}`} style={authorityCardStyle()}>
+                <strong style={{ display: "block", marginBottom: 6 }}>
+                  {block.title}
+                </strong>
+                <div style={{ opacity: 0.88, lineHeight: 1.55 }}>{block.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {showProfessionalBlock ? (
