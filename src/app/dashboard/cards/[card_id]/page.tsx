@@ -54,7 +54,7 @@ function buttonStyle() {
   } as const;
 }
 
-function modeInfoCardStyle() {
+function analyticsCardStyle() {
   return {
     padding: 16,
     borderRadius: 14,
@@ -62,17 +62,6 @@ function modeInfoCardStyle() {
     background: "rgba(255,255,255,0.03)",
     display: "grid",
     gap: 10,
-  } as const;
-}
-
-function qrPanelStyle() {
-  return {
-    padding: 16,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
-    display: "grid",
-    gap: 12,
   } as const;
 }
 
@@ -117,6 +106,10 @@ export default async function CardPage({ params }: PageProps) {
 
   const c = card as CardRow;
 
+  // ======================
+  // ANALYTICS BASE
+  // ======================
+
   const { data: clickCounts } = await supabase
     .from("social_link_click_counts")
     .select("link_id, clicks")
@@ -125,6 +118,11 @@ export default async function CardPage({ params }: PageProps) {
 
   const metrics = (clickCounts as ClickCountRow[]) || [];
   const totalClicks = metrics.reduce((acc, m) => acc + Number(m.clicks), 0);
+
+  // NOVO → métricas profissionais (base inicial)
+  const whatsappClicks = metrics.find(m => m.link_id.includes("whatsapp"))?.clicks || 0;
+  const websiteClicks = metrics.find(m => m.link_id.includes("website"))?.clicks || 0;
+  const linkedinClicks = metrics.find(m => m.link_id.includes("linkedin"))?.clicks || 0;
 
   const slug = c.slug ?? "";
   const hasPublicSlug = !!slug;
@@ -138,161 +136,91 @@ export default async function CardPage({ params }: PageProps) {
       <h1 style={{ fontWeight: 900 }}>USECLUBBERS</h1>
 
       <div style={{ marginTop: 8, opacity: 0.8 }}>
-        <div>
-          <strong>Perfil:</strong> {c.label ?? "Sem título"}
-        </div>
-        <div>
-          <strong>Link do perfil:</strong> {c.slug ?? "—"}
-        </div>
-        <div>
-          <strong>Status do perfil:</strong> {c.is_published ? "Publicado" : "Não publicado"}
-        </div>
+        <div><strong>Perfil:</strong> {c.label ?? "Sem título"}</div>
+        <div><strong>Link:</strong> {c.slug ?? "—"}</div>
+        <div><strong>Status:</strong> {c.is_published ? "Publicado" : "Não publicado"}</div>
       </div>
 
-      <div style={{ marginTop: 20, marginBottom: 20 }}>
-        <strong>Total de cliques:</strong> {totalClicks}
-      </div>
+      {/* ======================
+         NOVO → ANALYTICS PRO MODE
+      ====================== */}
 
-      {metrics.length > 0 && (
-        <section style={{ marginBottom: 30 }}>
-          <h2 style={{ fontWeight: 900 }}>Desempenho dos links</h2>
-          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-            {metrics.map((m, index) => (
-              <div
-                key={m.link_id}
-                style={{
-                  padding: 10,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 10,
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <span>
-                  #{index + 1} — {m.link_id}
-                </span>
-                <strong>{m.clicks} cliques</strong>
-              </div>
-            ))}
+      <section style={sectionStyle()}>
+        <h2 style={{ margin: 0, fontWeight: 900 }}>Analytics do Pro Mode</h2>
+
+        <div style={{
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
+        }}>
+          <div style={analyticsCardStyle()}>
+            <span>Total de interações</span>
+            <strong style={{ fontSize: 22 }}>{totalClicks}</strong>
           </div>
-        </section>
-      )}
+
+          <div style={analyticsCardStyle()}>
+            <span>Cliques WhatsApp</span>
+            <strong style={{ fontSize: 22 }}>{whatsappClicks}</strong>
+          </div>
+
+          <div style={analyticsCardStyle()}>
+            <span>Cliques Website</span>
+            <strong style={{ fontSize: 22 }}>{websiteClicks}</strong>
+          </div>
+
+          <div style={analyticsCardStyle()}>
+            <span>Cliques LinkedIn</span>
+            <strong style={{ fontSize: 22 }}>{linkedinClicks}</strong>
+          </div>
+        </div>
+
+        <p style={{ margin: 0, opacity: 0.7 }}>
+          Estas métricas mostram quais canais profissionais estão gerando mais interesse no seu perfil.
+        </p>
+      </section>
+
+      {/* ======================
+         CLUB MODE
+      ====================== */}
 
       <section style={sectionStyle()}>
         <h2 style={{ margin: 0, fontWeight: 900 }}>Club Mode</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          Aqui você gerencia a presença cultural do seu perfil, incluindo links sociais e acesso público.
-        </p>
-
-        <div style={modeInfoCardStyle()}>
-          <strong>Acesso público Club</strong>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Este QR Code leva para a experiência pública cultural do perfil.
-          </p>
-        </div>
 
         <QrBlock slug={slug} />
 
-        {hasPublicSlug ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            <Link href={clubPublicHref} target="_blank" style={buttonStyle()}>
-              Abrir perfil Club
-            </Link>
-          </div>
-        ) : (
-          <div style={modeInfoCardStyle()}>
-            <strong>Perfil público indisponível</strong>
-            <p style={{ margin: 0, opacity: 0.78 }}>
-              Defina e publique um slug para liberar o acesso público do Club Mode.
-            </p>
-          </div>
+        {hasPublicSlug && (
+          <Link href={clubPublicHref} target="_blank" style={buttonStyle()}>
+            Abrir perfil Club
+          </Link>
         )}
 
-        <section style={{ marginTop: 10 }}>
-          <h3 style={{ fontWeight: 900 }}>Links do perfil Club</h3>
-          <SocialLinksManager cardId={c.card_id} />
-        </section>
+        <SocialLinksManager cardId={c.card_id} />
       </section>
+
+      {/* ======================
+         PRO MODE
+      ====================== */}
 
       <section style={sectionStyle()}>
         <h2 style={{ margin: 0, fontWeight: 900 }}>Pro Mode</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          Aqui você gerencia sua identidade profissional, contatos de negócio, apresentação e visibilidade no networking.
-        </p>
 
-        {hasPublicSlug ? (
-          <section style={qrPanelStyle()}>
-            <strong>Acesso público profissional</strong>
+        {hasPublicSlug && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a href={proQrHref} target="_blank" style={buttonStyle()}>
+              Abrir QR
+            </a>
 
-            <p style={{ margin: 0, opacity: 0.78 }}>
-              Este QR Code leva direto para o seu perfil profissional público, ideal para networking, reuniões e apresentações.
-            </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: 16,
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  width: 180,
-                  height: 180,
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background: "#fff",
-                  padding: 10,
-                  display: "grid",
-                  placeItems: "center",
-                }}
-              >
-                <img
-                  src={proQrHref}
-                  alt="QR Code do perfil profissional"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    display: "block",
-                  }}
-                />
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                <div style={{ opacity: 0.82 }}>
-                  <strong>Perfil profissional:</strong>
-                  <div style={{ marginTop: 4 }}>{proPublicHref}</div>
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  <a
-                    href={proQrHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={buttonStyle()}
-                  >
-                    Abrir QR do Pro Mode
-                  </a>
-
-                  <Link href={proPublicHref} target="_blank" style={buttonStyle()}>
-                    Abrir perfil profissional
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <div style={modeInfoCardStyle()}>
-            <strong>Perfil profissional público indisponível</strong>
-            <p style={{ margin: 0, opacity: 0.78 }}>
-              Defina e publique um slug para liberar o QR Code e o link público do Pro Mode.
-            </p>
+            <Link href={proPublicHref} target="_blank" style={buttonStyle()}>
+              Abrir perfil profissional
+            </Link>
           </div>
         )}
 
-        <ProfessionalProfileManager />
+        <ProfessionalProfileManager
+          proPublicHref={proPublicHref}
+          hasPublicSlug={hasPublicSlug}
+          isPublished={c.is_published}
+        />
       </section>
     </main>
   );

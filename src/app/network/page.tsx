@@ -75,6 +75,9 @@ type NetworkProfileItem = {
   pro_photo_url: string | null;
   accepts_professional_contact: boolean;
   relevanceScore: number;
+  completenessScore: number;
+  hasQuickContact: boolean;
+  isFeaturedProfile: boolean;
 };
 
 type SortOption =
@@ -275,6 +278,42 @@ function actionGroupStyle(): CSSProperties {
   };
 }
 
+function statusSealStyle(kind: "complete" | "quick_contact" | "featured"): CSSProperties {
+  if (kind === "featured") {
+    return {
+      display: "inline-block",
+      padding: "7px 10px",
+      borderRadius: 999,
+      border: "1px solid rgba(255,184,0,0.28)",
+      background: "rgba(255,184,0,0.10)",
+      fontSize: 12,
+      fontWeight: 800,
+    };
+  }
+
+  if (kind === "quick_contact") {
+    return {
+      display: "inline-block",
+      padding: "7px 10px",
+      borderRadius: 999,
+      border: "1px solid rgba(0,200,120,0.28)",
+      background: "rgba(0,200,120,0.10)",
+      fontSize: 12,
+      fontWeight: 800,
+    };
+  }
+
+  return {
+    display: "inline-block",
+    padding: "7px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(255,255,255,0.06)",
+    fontSize: 12,
+    fontWeight: 800,
+  };
+}
+
 function normalizeText(value: string | null | undefined): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
@@ -319,20 +358,56 @@ function includesSearch(haystack: string | null | undefined, query: string): boo
   return normalizedLower(haystack).includes(query);
 }
 
+function computeCompletenessScore(
+  item: Omit<
+    NetworkProfileItem,
+    "relevanceScore" | "completenessScore" | "hasQuickContact" | "isFeaturedProfile"
+  >
+): number {
+  let score = 0;
+
+  if (normalizeText(item.profession)) score += 1;
+  if (normalizeText(item.company_name)) score += 1;
+  if (normalizeText(item.industry)) score += 1;
+  if (normalizeText(item.city)) score += 1;
+  if (normalizeText(item.services)) score += 1;
+  if (normalizeText(item.looking_for)) score += 1;
+  if (normalizeText(item.ai_summary)) score += 1;
+  if (normalizeText(item.pro_photo_url)) score += 1;
+  if (item.accepts_professional_contact) score += 1;
+  if (normalizeText(item.whatsapp_business)) score += 1;
+
+  return score;
+}
+
 function computeRelevanceScore(
-  item: Omit<NetworkProfileItem, "relevanceScore">,
+  item: Omit<
+    NetworkProfileItem,
+    "relevanceScore" | "completenessScore" | "hasQuickContact" | "isFeaturedProfile"
+  >,
   query: string,
   cityFilter: string,
   industryFilter: string
 ): number {
   let score = 0;
 
-  if (!query) {
-    score += item.accepts_professional_contact ? 12 : 0;
-    score += normalizeText(item.whatsapp_business) ? 10 : 0;
-    score += normalizeText(item.profession) ? 6 : 0;
-    score += normalizeText(item.company_name) ? 4 : 0;
-  } else {
+  if (normalizeText(item.profession)) score += 10;
+  if (normalizeText(item.company_name)) score += 8;
+  if (normalizeText(item.industry)) score += 8;
+  if (normalizeText(item.city)) score += 6;
+  if (normalizeText(item.services)) score += 12;
+  if (normalizeText(item.looking_for)) score += 10;
+  if (normalizeText(item.ai_summary)) score += 14;
+  if (normalizeText(item.pro_photo_url)) score += 15;
+
+  if (item.accepts_professional_contact) score += 10;
+  if (normalizeText(item.whatsapp_business)) score += 20;
+  if (normalizeText(item.professional_email)) score += 6;
+  if (normalizeText(item.linkedin)) score += 5;
+  if (normalizeText(item.website)) score += 5;
+  if (normalizeText(item.portfolio)) score += 4;
+
+  if (query) {
     const profileName = normalizedLower(item.profile_name);
     const profession = normalizedLower(item.profession);
     const companyName = normalizedLower(item.company_name);
@@ -341,41 +416,19 @@ function computeRelevanceScore(
     const services = normalizedLower(item.services);
     const lookingFor = normalizedLower(item.looking_for);
     const aiSummary = normalizedLower(item.ai_summary);
-    const bioText = normalizedLower(item.bio_text);
 
-    if (profileName === query) score += 120;
-    else if (profileName.startsWith(query)) score += 70;
-    else if (profileName.includes(query)) score += 45;
-
-    if (profession === query) score += 100;
-    else if (profession.startsWith(query)) score += 55;
-    else if (profession.includes(query)) score += 35;
-
-    if (companyName === query) score += 80;
-    else if (companyName.startsWith(query)) score += 40;
-    else if (companyName.includes(query)) score += 25;
-
-    if (industry === query) score += 45;
-    else if (industry.includes(query)) score += 18;
-
-    if (city === query) score += 35;
-    else if (city.includes(query)) score += 12;
-
+    if (profileName.includes(query)) score += 40;
+    if (profession.includes(query)) score += 35;
+    if (companyName.includes(query)) score += 25;
+    if (industry.includes(query)) score += 18;
+    if (city.includes(query)) score += 12;
     if (services.includes(query)) score += 16;
     if (lookingFor.includes(query)) score += 12;
     if (aiSummary.includes(query)) score += 14;
-    if (bioText.includes(query)) score += 10;
   }
 
-  if (cityFilter && includesSearch(item.city, cityFilter)) score += 18;
-  if (industryFilter && includesSearch(item.industry, industryFilter)) score += 18;
-
-  if (item.accepts_professional_contact) score += 8;
-  if (normalizeText(item.whatsapp_business)) score += 10;
-  if (normalizeText(item.professional_email)) score += 4;
-  if (normalizeText(item.linkedin)) score += 3;
-  if (normalizeText(item.website)) score += 3;
-  if (normalizeText(item.portfolio)) score += 3;
+  if (cityFilter && includesSearch(item.city, cityFilter)) score += 20;
+  if (industryFilter && includesSearch(item.industry, industryFilter)) score += 20;
 
   return score;
 }
@@ -436,6 +489,10 @@ function sortItems(items: NetworkProfileItem[], sort: SortOption): NetworkProfil
   sorted.sort((a, b) => {
     if (b.relevanceScore !== a.relevanceScore) {
       return b.relevanceScore - a.relevanceScore;
+    }
+
+    if (b.completenessScore !== a.completenessScore) {
+      return b.completenessScore - a.completenessScore;
     }
 
     if (normalizeText(b.whatsapp_business) !== normalizeText(a.whatsapp_business)) {
@@ -650,12 +707,24 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         accepts_professional_contact: profile.accepts_professional_contact,
       };
     })
-    .filter(Boolean) as Omit<NetworkProfileItem, "relevanceScore">[];
+    .filter(Boolean) as Omit<
+    NetworkProfileItem,
+    "relevanceScore" | "completenessScore" | "hasQuickContact" | "isFeaturedProfile"
+  >[];
 
-  const items: NetworkProfileItem[] = baseItems.map((item) => ({
-    ...item,
-    relevanceScore: computeRelevanceScore(item, q, cityFilter, industryFilter),
-  }));
+  const items: NetworkProfileItem[] = baseItems.map((item) => {
+    const completenessScore = computeCompletenessScore(item);
+    const hasQuickContact = !!normalizeText(item.whatsapp_business);
+    const relevanceScore = computeRelevanceScore(item, q, cityFilter, industryFilter);
+
+    return {
+      ...item,
+      relevanceScore,
+      completenessScore,
+      hasQuickContact,
+      isFeaturedProfile: false,
+    };
+  });
 
   const filteredItems = items.filter((item) => {
     const matchesQ =
@@ -677,7 +746,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
     return matchesQ && matchesCity && matchesIndustry;
   });
 
-  const sortedItems = sortItems(filteredItems, sort);
+  const sortedItems = sortItems(filteredItems, sort).map((item, index) => ({
+    ...item,
+    isFeaturedProfile: index === 0 && sort === "relevance",
+  }));
 
   const uniqueCities = Array.from(
     new Set(items.map((item) => normalizeText(item.city)).filter(Boolean))
@@ -863,13 +935,13 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
             }}
           >
-            {sortedItems.map((item, index) => {
-              const isFeatured = index === 0 && sort === "relevance";
+            {sortedItems.map((item) => {
               const quickBadges = getQuickBadges(item);
               const secondaryChannels = getSecondaryChannels(item);
+              const isCompleteProfile = item.completenessScore >= 8;
 
               return (
-                <article key={item.user_id} style={cardStyle(isFeatured)}>
+                <article key={item.user_id} style={cardStyle(item.isFeaturedProfile)}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     {item.pro_photo_url ? (
                       <img
@@ -905,11 +977,16 @@ export default async function NetworkPage({ searchParams }: PageProps) {
 
                     <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {isFeatured ? (
-                          <span style={quickBadgeStyle()}>Perfil em destaque</span>
+                        {item.isFeaturedProfile ? (
+                          <span style={statusSealStyle("featured")}>Destaque da rede</span>
                         ) : null}
-                        {item.whatsapp_business ? (
-                          <span style={quickBadgeStyle()}>Canal rápido ativo</span>
+
+                        {item.hasQuickContact ? (
+                          <span style={statusSealStyle("quick_contact")}>Contato rápido</span>
+                        ) : null}
+
+                        {isCompleteProfile ? (
+                          <span style={statusSealStyle("complete")}>Perfil completo</span>
                         ) : null}
                       </div>
 
