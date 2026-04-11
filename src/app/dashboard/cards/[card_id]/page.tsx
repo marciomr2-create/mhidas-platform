@@ -1,15 +1,10 @@
 // src/app/dashboard/cards/[card_id]/page.tsx
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
-
-import QrBlock from "./QrBlock";
-import SocialLinksManager from "./SocialLinksManager";
-import ProfessionalProfileManager from "./ProfessionalProfileManager";
 
 type CardRow = {
   card_id: string;
@@ -41,17 +36,20 @@ function sectionStyle() {
   } as const;
 }
 
-function buttonStyle() {
+function buttonStyle(primary = false) {
   return {
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.2)",
-    background: "rgba(255,255,255,0.1)",
+    padding: "12px 16px",
+    borderRadius: 12,
+    border: primary
+      ? "1px solid rgba(255,255,255,0.28)"
+      : "1px solid rgba(255,255,255,0.16)",
+    background: primary ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
     color: "#fff",
     textDecoration: "none",
-    fontWeight: 700,
+    fontWeight: 800,
     display: "inline-block",
-  } as const;
+    textAlign: "center" as const,
+  };
 }
 
 function analyticsCardStyle() {
@@ -63,18 +61,6 @@ function analyticsCardStyle() {
     display: "grid",
     gap: 10,
   } as const;
-}
-
-function getClubPublicHref(slug: string) {
-  return `/${slug}?mode=club`;
-}
-
-function getProPublicHref(slug: string) {
-  return `/${slug}?mode=pro`;
-}
-
-function getProQrHref(slug: string) {
-  return `/api/qr/${slug}?mode=pro`;
 }
 
 export default async function CardPage({ params }: PageProps) {
@@ -106,10 +92,6 @@ export default async function CardPage({ params }: PageProps) {
 
   const c = card as CardRow;
 
-  // ======================
-  // ANALYTICS BASE
-  // ======================
-
   const { data: clickCounts } = await supabase
     .from("social_link_click_counts")
     .select("link_id, clicks")
@@ -119,17 +101,15 @@ export default async function CardPage({ params }: PageProps) {
   const metrics = (clickCounts as ClickCountRow[]) || [];
   const totalClicks = metrics.reduce((acc, m) => acc + Number(m.clicks), 0);
 
-  // NOVO → métricas profissionais (base inicial)
-  const whatsappClicks = metrics.find(m => m.link_id.includes("whatsapp"))?.clicks || 0;
-  const websiteClicks = metrics.find(m => m.link_id.includes("website"))?.clicks || 0;
-  const linkedinClicks = metrics.find(m => m.link_id.includes("linkedin"))?.clicks || 0;
+  const whatsappClicks =
+    metrics.find((m) => m.link_id.toLowerCase().includes("whatsapp"))?.clicks || 0;
+  const websiteClicks =
+    metrics.find((m) => m.link_id.toLowerCase().includes("website"))?.clicks || 0;
+  const linkedinClicks =
+    metrics.find((m) => m.link_id.toLowerCase().includes("linkedin"))?.clicks || 0;
 
   const slug = c.slug ?? "";
   const hasPublicSlug = !!slug;
-
-  const clubPublicHref = hasPublicSlug ? getClubPublicHref(slug) : "";
-  const proPublicHref = hasPublicSlug ? getProPublicHref(slug) : "";
-  const proQrHref = hasPublicSlug ? getProQrHref(slug) : "";
 
   return (
     <main style={{ padding: 24, maxWidth: 920 }}>
@@ -141,18 +121,16 @@ export default async function CardPage({ params }: PageProps) {
         <div><strong>Status:</strong> {c.is_published ? "Publicado" : "Não publicado"}</div>
       </div>
 
-      {/* ======================
-         NOVO → ANALYTICS PRO MODE
-      ====================== */}
-
       <section style={sectionStyle()}>
-        <h2 style={{ margin: 0, fontWeight: 900 }}>Analytics do Pro Mode</h2>
+        <h2 style={{ margin: 0, fontWeight: 900 }}>Visão geral</h2>
 
-        <div style={{
-          display: "grid",
-          gap: 12,
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          }}
+        >
           <div style={analyticsCardStyle()}>
             <span>Total de interações</span>
             <strong style={{ fontSize: 22 }}>{totalClicks}</strong>
@@ -173,54 +151,92 @@ export default async function CardPage({ params }: PageProps) {
             <strong style={{ fontSize: 22 }}>{linkedinClicks}</strong>
           </div>
         </div>
-
-        <p style={{ margin: 0, opacity: 0.7 }}>
-          Estas métricas mostram quais canais profissionais estão gerando mais interesse no seu perfil.
-        </p>
       </section>
 
-      {/* ======================
-         CLUB MODE
-      ====================== */}
-
       <section style={sectionStyle()}>
-        <h2 style={{ margin: 0, fontWeight: 900 }}>Club Mode</h2>
+        <h2 style={{ margin: 0, fontWeight: 900 }}>Escolha o módulo</h2>
 
-        <QrBlock slug={slug} />
+        <div
+          style={{
+            display: "grid",
+            gap: 14,
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          }}
+        >
+          <div
+            style={{
+              padding: 18,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: 18 }}>Club Mode</strong>
+              <p style={{ margin: "8px 0 0 0", opacity: 0.82, lineHeight: 1.55 }}>
+                Identidade cultural, artistas, eventos, playlists, streaming e presença na cena.
+              </p>
+            </div>
 
-        {hasPublicSlug && (
-          <Link href={clubPublicHref} target="_blank" style={buttonStyle()}>
-            Abrir perfil Club
-          </Link>
-        )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link
+                href={`/dashboard/cards/${c.card_id}/club`}
+                style={buttonStyle(true)}
+              >
+                Acessar Club Mode
+              </Link>
 
-        <SocialLinksManager cardId={c.card_id} />
-      </section>
-
-      {/* ======================
-         PRO MODE
-      ====================== */}
-
-      <section style={sectionStyle()}>
-        <h2 style={{ margin: 0, fontWeight: 900 }}>Pro Mode</h2>
-
-        {hasPublicSlug && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a href={proQrHref} target="_blank" style={buttonStyle()}>
-              Abrir QR
-            </a>
-
-            <Link href={proPublicHref} target="_blank" style={buttonStyle()}>
-              Abrir perfil profissional
-            </Link>
+              {hasPublicSlug ? (
+                <Link
+                  href={`/${slug}`}
+                  target="_blank"
+                  style={buttonStyle()}
+                >
+                  Abrir Club público
+                </Link>
+              ) : null}
+            </div>
           </div>
-        )}
 
-        <ProfessionalProfileManager
-          proPublicHref={proPublicHref}
-          hasPublicSlug={hasPublicSlug}
-          isPublished={c.is_published}
-        />
+          <div
+            style={{
+              padding: 18,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: 18 }}>Pro Mode</strong>
+              <p style={{ margin: "8px 0 0 0", opacity: 0.82, lineHeight: 1.55 }}>
+                Networking, autoridade, contatos profissionais, QR Pro e perfil para negócios.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link
+                href={`/dashboard/cards/${c.card_id}/pro`}
+                style={buttonStyle(true)}
+              >
+                Acessar Pro Mode
+              </Link>
+
+              {hasPublicSlug ? (
+                <Link
+                  href={`/pro/${slug}`}
+                  target="_blank"
+                  style={buttonStyle()}
+                >
+                  Abrir Pro público
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );

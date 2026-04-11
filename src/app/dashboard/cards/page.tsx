@@ -1,3 +1,4 @@
+// src/app/dashboard/cards/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
@@ -75,7 +76,7 @@ export default async function DashboardCardsPage() {
       padding: 18,
       background: "rgba(255,255,255,0.03)",
       display: "grid",
-      gap: 12,
+      gap: 14,
     } as const;
   }
 
@@ -88,6 +89,18 @@ export default async function DashboardCardsPage() {
       border: "1px solid rgba(255,255,255,0.12)",
       background: active ? "rgba(0,200,120,0.14)" : "rgba(255,255,255,0.06)",
       fontSize: 12,
+      width: "fit-content",
+    } as const;
+  }
+
+  function modeBadge(color: string) {
+    return {
+      padding: "6px 10px",
+      borderRadius: 999,
+      fontSize: 11,
+      fontWeight: 700,
+      background: color,
+      color: "#fff",
       width: "fit-content",
     } as const;
   }
@@ -116,8 +129,7 @@ export default async function DashboardCardsPage() {
         </h1>
 
         <p style={{ margin: 0, opacity: 0.82, lineHeight: 1.6, maxWidth: 760 }}>
-          Aqui você visualiza todos os seus perfis públicos e acessa cada perfil
-          individualmente para gerenciar links, dados e configurações.
+          Cada perfil possui duas identidades: Club (cultural) e Pro (profissional).
         </p>
       </header>
 
@@ -133,34 +145,35 @@ export default async function DashboardCardsPage() {
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>
-              Lista de perfis
+              Seus perfis
             </h2>
             <p style={{ margin: "8px 0 0 0", opacity: 0.78 }}>
-              Total encontrado: {items.length}
+              Total: {items.length}
             </p>
           </div>
 
           <Link href="/dashboard" style={buttonStyle()}>
-            Voltar ao início
+            Voltar
           </Link>
         </div>
 
         {items.length === 0 ? (
-          <div style={{ marginTop: 18, opacity: 0.82, lineHeight: 1.6 }}>
-            Nenhum perfil foi encontrado para sua conta.
+          <div style={{ marginTop: 18 }}>
+            Nenhum perfil encontrado.
           </div>
         ) : (
           <div style={cardGridStyle()}>
             {items.map((card) => (
               <article key={card.card_id} style={cardItemStyle()}>
-                <div style={{ display: "grid", gap: 8 }}>
+                
+                <div style={{ display: "grid", gap: 6 }}>
                   <div style={{ fontSize: 20, fontWeight: 900 }}>
                     {card.label ?? "Perfil sem nome"}
                   </div>
 
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <span style={badgeStyle()}>
-                      Status: {card.status ?? "—"}
+                      {card.status ?? "—"}
                     </span>
 
                     <span style={badgeStyle(Boolean(card.is_published))}>
@@ -169,27 +182,49 @@ export default async function DashboardCardsPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gap: 6, opacity: 0.84 }}>
-                  <div>ID: {card.card_id}</div>
-                  <div>URL: {card.slug ?? "—"}</div>
-                  <div>Criado em: {formatDate(card.issued_at)}</div>
-                  <div>Publicado em: {formatDate(card.published_at)}</div>
+                {/* IDENTIDADE DUAL */}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <span style={modeBadge("rgba(0,200,120,0.5)")}>
+                    CLUB MODE
+                  </span>
+
+                  <span style={modeBadge("rgba(0,120,255,0.5)")}>
+                    PRO MODE
+                  </span>
                 </div>
 
+                <div style={{ fontSize: 13, opacity: 0.8 }}>
+                  Criado em: {formatDate(card.issued_at)}
+                </div>
+
+                {/* AÇÃO PRINCIPAL */}
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <Link
                     href={`/dashboard/cards/${card.card_id}`}
                     style={buttonStyle(true)}
                   >
-                    Gerenciar perfil
+                    Abrir central do perfil
                   </Link>
-
-                  {card.slug ? (
-                    <Link href={`/${card.slug}?mode=club`} style={buttonStyle()}>
-                      Ver perfil público
-                    </Link>
-                  ) : null}
                 </div>
+
+                {/* LINKS PÚBLICOS */}
+                {card.slug && (
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <Link
+                      href={`/${card.slug}`}
+                      style={buttonStyle()}
+                    >
+                      Club público
+                    </Link>
+
+                    <Link
+                      href={`/pro/${card.slug}`}
+                      style={buttonStyle()}
+                    >
+                      Pro público
+                    </Link>
+                  </div>
+                )}
               </article>
             ))}
           </div>
