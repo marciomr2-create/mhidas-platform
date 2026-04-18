@@ -1,16 +1,16 @@
-// src/app/[slug]/page.tsx
+// src/app/pro/[slug]/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
+import ProfessionalConnectButton from "@/components/network/ProfessionalConnectButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ mode?: string }>;
 };
 
 const RESERVED = new Set([
@@ -23,7 +23,6 @@ const RESERVED = new Set([
   "u",
   "_next",
   "favicon.ico",
-  "pro",
 ]);
 
 type PublicSocialLink = {
@@ -36,31 +35,30 @@ type PublicSocialLink = {
   mode: "club" | "pro" | "both" | null;
 };
 
-type ClubProfile = {
+type ProfessionalProfile = {
   user_id: string;
-  club_tagline: string | null;
-  city_base: string | null;
-  favorite_genres: string | null;
-  favorite_artists: string | null;
-  favorite_events: string | null;
-  last_events: string | null;
-  next_events: string | null;
-  favorite_clubs: string | null;
-  playlist_title: string | null;
-  playlist_description: string | null;
-  club_photo_url: string | null;
-  club_photo_prompt: string | null;
-  club_photo_style: string | null;
-  spotify_url: string | null;
-  soundcloud_url: string | null;
-  youtube_url: string | null;
-  beatport_url: string | null;
-  mixcloud_url: string | null;
+  profession: string | null;
+  company_name: string | null;
+  industry: string | null;
+  city: string | null;
+  services: string | null;
+  looking_for: string | null;
+  business_instagram: string | null;
+  website: string | null;
+  portfolio: string | null;
+  linkedin: string | null;
+  whatsapp_business: string | null;
+  professional_email: string | null;
+  bio_text: string | null;
+  ai_summary: string | null;
+  pro_photo_url: string | null;
+  visible_in_network: boolean;
+  accepts_professional_contact: boolean;
 };
 
-type StreamingChannel = {
-  label: string;
+type QuickAction = {
   href: string;
+  label: string;
 };
 
 const COMMON_PLATFORM_NAMES: Record<string, string> = {
@@ -94,7 +92,7 @@ async function incrementClicks(
   }
 }
 
-async function getClubLinks(
+async function getProLinks(
   supabase: ReturnType<typeof createPublicClient>,
   userId: string
 ): Promise<PublicSocialLink[]> {
@@ -103,50 +101,49 @@ async function getClubLinks(
     .select("id, platform, url, label, sort_order, position, mode")
     .eq("user_id", userId)
     .eq("is_active", true)
-    .in("mode", ["club", "both"])
+    .in("mode", ["pro", "both"])
     .order("sort_order")
     .order("position");
 
   return (data ?? []) as PublicSocialLink[];
 }
 
-async function getClubProfile(
+async function getProfessionalProfile(
   supabase: ReturnType<typeof createPublicClient>,
   userId: string
-): Promise<ClubProfile | null> {
+): Promise<ProfessionalProfile | null> {
   const { data } = await supabase
-    .from("club_profiles")
+    .from("professional_profiles")
     .select(`
       user_id,
-      club_tagline,
-      city_base,
-      favorite_genres,
-      favorite_artists,
-      favorite_events,
-      last_events,
-      next_events,
-      favorite_clubs,
-      playlist_title,
-      playlist_description,
-      club_photo_url,
-      club_photo_prompt,
-      club_photo_style,
-      spotify_url,
-      soundcloud_url,
-      youtube_url,
-      beatport_url,
-      mixcloud_url
+      profession,
+      company_name,
+      industry,
+      city,
+      services,
+      looking_for,
+      business_instagram,
+      website,
+      portfolio,
+      linkedin,
+      whatsapp_business,
+      professional_email,
+      bio_text,
+      ai_summary,
+      pro_photo_url,
+      visible_in_network,
+      accepts_professional_contact
     `)
     .eq("user_id", userId)
     .maybeSingle();
 
-  return (data as ClubProfile | null) ?? null;
+  return (data as ProfessionalProfile | null) ?? null;
 }
 
 function pageStyle(): CSSProperties {
   return {
     padding: 24,
-    maxWidth: 1040,
+    maxWidth: 980,
     margin: "0 auto",
   };
 }
@@ -164,29 +161,29 @@ function topBarStyle(): CSSProperties {
 function heroStyle(): CSSProperties {
   return {
     marginTop: 20,
-    padding: 22,
-    borderRadius: 30,
+    padding: 24,
+    borderRadius: 28,
     border: "1px solid rgba(255,255,255,0.12)",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)",
+      "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
     display: "grid",
-    gap: 20,
-    boxShadow: "0 12px 34px rgba(0,0,0,0.22)",
+    gap: 18,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
   };
 }
 
 function heroKickerStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "7px 11px",
+    padding: "6px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.06)",
     fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.4,
+    fontWeight: 800,
+    letterSpacing: 0.3,
     textTransform: "uppercase",
-    opacity: 1,
+    opacity: 0.95,
   };
 }
 
@@ -210,24 +207,24 @@ function modeButtonStyle(active: boolean): CSSProperties {
 function primaryButtonStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "15px 20px",
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.20)",
-    background: "rgba(255,255,255,0.18)",
+    padding: "14px 18px",
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.16)",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 900,
     lineHeight: 1.2,
-    boxShadow: "0 10px 24px rgba(0,0,0,0.20)",
+    boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
   };
 }
 
-function secondaryHeroButtonStyle(): CSSProperties {
+function secondaryButtonStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "15px 20px",
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.14)",
+    padding: "14px 18px",
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.06)",
     color: "#fff",
     textDecoration: "none",
@@ -242,16 +239,15 @@ function linkCardStyle(isFirst: boolean): CSSProperties {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 14,
-    padding: isFirst ? "18px 18px" : "15px 16px",
-    borderRadius: 18,
+    padding: "14px 16px",
+    borderRadius: 16,
     border: isFirst
-      ? "1px solid rgba(255,255,255,0.20)"
+      ? "1px solid rgba(255,255,255,0.18)"
       : "1px solid rgba(255,255,255,0.12)",
-    background: isFirst ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.05)",
+    background: isFirst ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 800,
-    boxShadow: isFirst ? "0 10px 24px rgba(0,0,0,0.16)" : "none",
   };
 }
 
@@ -259,7 +255,7 @@ function sectionCardStyle(): CSSProperties {
   return {
     marginTop: 24,
     padding: 20,
-    borderRadius: 24,
+    borderRadius: 22,
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.03)",
   };
@@ -327,6 +323,25 @@ function quickPanelStyle(): CSSProperties {
   };
 }
 
+function authorityStripStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    marginTop: 16,
+  };
+}
+
+function authorityCardStyle(): CSSProperties {
+  return {
+    padding: 14,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    minHeight: 90,
+  };
+}
+
 function channelButtonStyle(): CSSProperties {
   return {
     display: "inline-block",
@@ -340,79 +355,15 @@ function channelButtonStyle(): CSSProperties {
   };
 }
 
-function clubHighlightsGridStyle(): CSSProperties {
+function emptyCalloutStyle(): CSSProperties {
   return {
-    display: "grid",
-    gap: 12,
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    marginTop: 16,
-  };
-}
-
-function clubHighlightCardStyle(): CSSProperties {
-  return {
-    padding: 15,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.05)",
-  };
-}
-
-function clubCultureGridStyle(): CSSProperties {
-  return {
-    display: "grid",
-    gap: 14,
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    marginTop: 16,
-  };
-}
-
-function clubCultureCardStyle(): CSSProperties {
-  return {
+    marginTop: 20,
     padding: 16,
     borderRadius: 18,
     border: "1px solid rgba(255,255,255,0.10)",
     background: "rgba(255,255,255,0.04)",
-  };
-}
-
-function heroMainGridStyle(hasPhoto: boolean): CSSProperties {
-  return {
-    display: "grid",
-    gap: 20,
-    gridTemplateColumns: hasPhoto ? "minmax(260px, 340px) 1fr" : "1fr",
-    alignItems: "stretch",
-  };
-}
-
-function heroPhotoWrapStyle(): CSSProperties {
-  return {
-    position: "relative",
-    minHeight: 360,
-    borderRadius: 28,
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.12)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-  };
-}
-
-function heroPhotoOverlayStyle(): CSSProperties {
-  return {
-    position: "absolute",
-    inset: 0,
-    background:
-      "linear-gradient(180deg, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.16) 60%, rgba(0,0,0,0.38) 100%)",
-  };
-}
-
-function heroPhotoCaptionStyle(): CSSProperties {
-  return {
-    position: "absolute",
-    left: 16,
-    bottom: 16,
-    display: "grid",
-    gap: 8,
+    lineHeight: 1.6,
+    opacity: 0.9,
   };
 }
 
@@ -459,7 +410,7 @@ function getDisplayName(label: string | null, fallback: string): string {
     const common = resolveCommonName(rawLabel);
     if (common) return common;
 
-    const hasUppercase = /[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇ]/.test(rawLabel);
+    const hasUppercase = /[A-ZÀ-Ý]/.test(rawLabel);
     return hasUppercase ? rawLabel : titleCaseWords(rawLabel);
   }
 
@@ -475,193 +426,219 @@ function formatClicks(count: number): string {
   return `${count} interações registradas`;
 }
 
-function buildClubHeadline(linksCount: number, clubProfile: ClubProfile | null): string {
-  const tagline = normalizeText(clubProfile?.club_tagline);
-  if (tagline) return tagline;
-  if (linksCount > 1) return "Viva a identidade deste perfil na cena";
-  if (linksCount === 1) return "O acesso principal deste perfil está pronto";
-  return "Este perfil está preparando novos acessos";
+function buildProHeadline(
+  professionalProfile: ProfessionalProfile | null,
+  canConnect: boolean,
+  quickAction: QuickAction | null
+): string {
+  const profession = normalizeText(professionalProfile?.profession);
+  const company = normalizeText(professionalProfile?.company_name);
+  const industry = normalizeText(professionalProfile?.industry);
+  const services = normalizeText(professionalProfile?.services);
+
+  if (canConnect && profession && company) {
+    return `${profession} na ${company}, pronto para novas conversas profissionais`;
+  }
+
+  if (canConnect && profession && industry) {
+    return `${profession} com atuação em ${industry}`;
+  }
+
+  if (canConnect && profession) {
+    return `${profession} disponível para novas conexões`;
+  }
+
+  if (canConnect && services) {
+    return "Este perfil está aberto para negócios, parcerias e novas conexões";
+  }
+
+  if (canConnect) {
+    return "Este perfil está aberto para novas conexões profissionais";
+  }
+
+  if (quickAction) {
+    return "Fale diretamente com este perfil profissional";
+  }
+
+  return "Conheça este perfil profissional";
 }
 
-function buildClubDescription(profileName: string, linksCount: number, clubProfile: ClubProfile | null): string {
-  const genres = normalizeText(clubProfile?.favorite_genres);
-  const cityBase = normalizeText(clubProfile?.city_base);
-  const artists = normalizeText(clubProfile?.favorite_artists);
+function buildProDescription(
+  professionalProfile: ProfessionalProfile | null,
+  canConnect: boolean,
+  quickAction: QuickAction | null
+): string {
+  const aiSummary = normalizeText(professionalProfile?.ai_summary);
+  const bioText = normalizeText(professionalProfile?.bio_text);
+  const services = normalizeText(professionalProfile?.services);
+  const lookingFor = normalizeText(professionalProfile?.looking_for);
 
-  if (genres || cityBase || artists) {
-    const parts = [genres, cityBase].filter(Boolean);
-    const intro = parts.length > 0 ? `${parts.join(" • ")}.` : "";
-    const artistText = artists ? ` Artistas em destaque: ${limitText(artists, 110)}.` : "";
-    return `${intro} Este espaço representa ${profileName} dentro da cena eletrônica.${artistText}`.trim();
+  if (aiSummary && canConnect) {
+    return `${aiSummary} Inicie pela conexão profissional ou avance direto pelo canal mais rápido.`;
   }
 
-  if (linksCount > 1) {
-    return `Este espaço reúne presença cultural, plataformas de música e acessos que representam ${profileName} dentro da cena.`;
+  if (bioText && canConnect) {
+    return `${bioText} Inicie pela conexão profissional ou avance direto pelo canal mais rápido.`;
   }
 
-  if (linksCount === 1) {
-    return `Abra agora o principal acesso público de ${profileName} com uma experiência mais direta e conectada à cena.`;
+  if (services && lookingFor && canConnect) {
+    return `${services} Atualmente busca ${lookingFor.toLowerCase()}.`;
   }
 
-  return `Este perfil está ativo e em atualização. Em breve, novos acessos culturais estarão disponíveis aqui.`;
+  if (services && canConnect) {
+    return `${services} Este perfil está pronto para novas conversas profissionais.`;
+  }
+
+  if (aiSummary) return aiSummary;
+  if (bioText) return bioText;
+  if (services) return services;
+
+  if (quickAction) {
+    return "Este perfil disponibiliza canais diretos para acelerar o próximo passo.";
+  }
+
+  return "Veja a atuação, os canais e as informações profissionais disponíveis neste perfil.";
+}
+
+function getProfessionalQuickAction(
+  professionalProfile: ProfessionalProfile | null,
+  fallbackLink: string | null,
+  fallbackLabel: string | null
+): QuickAction | null {
+  if (!professionalProfile) {
+    if (fallbackLink && fallbackLabel) {
+      return {
+        href: fallbackLink,
+        label: `Abrir ${fallbackLabel}`,
+      };
+    }
+    return null;
+  }
+
+  if (professionalProfile.whatsapp_business) {
+    return {
+      href: professionalProfile.whatsapp_business,
+      label: "Falar no WhatsApp",
+    };
+  }
+
+  if (professionalProfile.professional_email) {
+    return {
+      href: `mailto:${professionalProfile.professional_email}`,
+      label: "Enviar e-mail",
+    };
+  }
+
+  if (professionalProfile.website) {
+    return {
+      href: professionalProfile.website,
+      label: "Abrir website",
+    };
+  }
+
+  if (professionalProfile.portfolio) {
+    return {
+      href: professionalProfile.portfolio,
+      label: "Ver portfólio",
+    };
+  }
+
+  if (professionalProfile.linkedin) {
+    return {
+      href: professionalProfile.linkedin,
+      label: "Abrir LinkedIn",
+    };
+  }
+
+  if (professionalProfile.business_instagram) {
+    return {
+      href: professionalProfile.business_instagram,
+      label: "Abrir Instagram do negócio",
+    };
+  }
+
+  if (fallbackLink && fallbackLabel) {
+    return {
+      href: fallbackLink,
+      label: `Abrir ${fallbackLabel}`,
+    };
+  }
+
+  return null;
 }
 
 function getHeroHighlights(
-  linksCount: number,
-  clubProfile: ClubProfile | null
+  professionalProfile: ProfessionalProfile | null,
+  canConnect: boolean
 ): string[] {
   const items: string[] = [];
-  if (normalizeText(clubProfile?.city_base)) items.push(normalizeText(clubProfile?.city_base));
-  if (normalizeText(clubProfile?.favorite_genres)) items.push(limitText(clubProfile?.favorite_genres, 36));
-  if (normalizeText(clubProfile?.favorite_clubs)) items.push(limitText(clubProfile?.favorite_clubs, 36));
-  if (linksCount > 0) items.push(linksCount === 1 ? "1 acesso disponível" : `${linksCount} acessos disponíveis`);
-  if (items.length === 0) items.push("Perfil ativo");
+  if (canConnect) items.push("Conexão profissional disponível");
+  if (professionalProfile?.profession) items.push(professionalProfile.profession);
+  if (professionalProfile?.industry) items.push(professionalProfile.industry);
+  if (professionalProfile?.city) items.push(professionalProfile.city);
   return items.slice(0, 4);
 }
 
-function getClubQuickBadges(links: PublicSocialLink[], clubProfile: ClubProfile | null): string[] {
-  const badges: string[] = [];
-
-  if (normalizeText(clubProfile?.favorite_genres)) badges.push(limitText(clubProfile?.favorite_genres, 28));
-  if (normalizeText(clubProfile?.city_base)) badges.push(normalizeText(clubProfile?.city_base));
-  if (normalizeText(clubProfile?.playlist_title)) badges.push(limitText(clubProfile?.playlist_title, 28));
-
-  const labels = links.map((link) => getDisplayName(link.label, link.platform));
-  for (const label of labels) {
-    if (!badges.includes(label)) badges.push(label);
-  }
-
-  return badges.slice(0, 4);
-}
-
-function buildClubSpotlightText(links: PublicSocialLink[], clubProfile: ClubProfile | null): string {
-  const nextEvents = normalizeText(clubProfile?.next_events);
-  const lastEvents = normalizeText(clubProfile?.last_events);
-
-  if (nextEvents) {
-    return `Próximos encontros na cena: ${limitText(nextEvents, 120)}.`;
-  }
-
-  if (lastEvents) {
-    return `Últimos eventos vividos: ${limitText(lastEvents, 120)}.`;
-  }
-
-  if (links.length === 0) {
-    return "Este perfil está ativo e em atualização para receber novos acessos.";
-  }
-
-  const first = getDisplayName(links[0].label, links[0].platform);
-  if (links.length === 1) {
-    return `${first} é o acesso principal deste perfil agora.`;
-  }
-
-  return `${first} está em destaque, junto com outros acessos selecionados para continuar a experiência.`;
-}
-
-function getStreamingChannels(clubProfile: ClubProfile | null): StreamingChannel[] {
-  if (!clubProfile) return [];
-
-  const channels: StreamingChannel[] = [];
-  if (normalizeText(clubProfile.spotify_url)) channels.push({ label: "Spotify", href: clubProfile.spotify_url! });
-  if (normalizeText(clubProfile.soundcloud_url)) channels.push({ label: "SoundCloud", href: clubProfile.soundcloud_url! });
-  if (normalizeText(clubProfile.youtube_url)) channels.push({ label: "YouTube", href: clubProfile.youtube_url! });
-  if (normalizeText(clubProfile.beatport_url)) channels.push({ label: "Beatport", href: clubProfile.beatport_url! });
-  if (normalizeText(clubProfile.mixcloud_url)) channels.push({ label: "Mixcloud", href: clubProfile.mixcloud_url! });
-
-  return channels;
-}
-
-function getClubCultureBlocks(clubProfile: ClubProfile | null): Array<{ title: string; value: string }> {
-  if (!clubProfile) {
-    return [
-      {
-        title: "Comunidades da cena",
-        value: "Espaço preparado para clubs, artistas, festivais e conexões culturais.",
-      },
-      {
-        title: "Próxima evolução",
-        value: "Eventos, artistas favoritos, playlists e pertencimento entrarão nesta experiência.",
-      },
-    ];
-  }
+function getAuthorityBlocks(
+  professionalProfile: ProfessionalProfile | null,
+  canConnect: boolean
+): Array<{ title: string; value: string }> {
+  if (!professionalProfile) return [];
 
   const blocks: Array<{ title: string; value: string }> = [];
 
-  if (normalizeText(clubProfile.favorite_artists)) {
+  if (professionalProfile.services) {
     blocks.push({
-      title: "Artistas prediletos",
-      value: limitText(clubProfile.favorite_artists, 120),
+      title: "Entrega principal",
+      value: limitText(professionalProfile.services, 110),
     });
   }
 
-  if (normalizeText(clubProfile.favorite_clubs)) {
+  if (professionalProfile.looking_for) {
     blocks.push({
-      title: "Clubs e experiências",
-      value: limitText(clubProfile.favorite_clubs, 120),
+      title: "Busca atual",
+      value: limitText(professionalProfile.looking_for, 110),
     });
   }
 
-  if (normalizeText(clubProfile.favorite_events)) {
-    blocks.push({
-      title: "Eventos prediletos",
-      value: limitText(clubProfile.favorite_events, 120),
-    });
+  if (canConnect) {
+    if (professionalProfile.whatsapp_business) {
+      blocks.push({
+        title: "Canal mais rápido",
+        value: "WhatsApp profissional disponível para contato direto.",
+      });
+    } else if (professionalProfile.professional_email) {
+      blocks.push({
+        title: "Canal direto",
+        value: "E-mail profissional disponível para continuidade da conversa.",
+      });
+    }
   }
 
-  if (normalizeText(clubProfile.next_events)) {
+  if (professionalProfile.company_name) {
     blocks.push({
-      title: "Próximos eventos",
-      value: limitText(clubProfile.next_events, 120),
-    });
-  }
-
-  if (blocks.length === 0) {
-    blocks.push({
-      title: "Comunidades da cena",
-      value: "Espaço preparado para clubs, artistas, festivais e conexões culturais.",
+      title: "Marca ou empresa",
+      value: professionalProfile.company_name,
     });
   }
 
   return blocks.slice(0, 4);
 }
 
-function getClubSocialButtons(links: PublicSocialLink[]): Array<{ label: string; href: string }> {
-  const filtered = links.filter((link) => {
-    const key = normalizeText(link.platform).toLowerCase();
-    return key.includes("instagram") || key.includes("tiktok") || key.includes("telegram") || key.includes("whatsapp");
-  });
-
-  return filtered.slice(0, 4).map((link) => ({
-    label: getDisplayName(link.label, link.platform),
-    href: `/r/${link.id}`,
-  }));
-}
-
 function getLinkHint(link: PublicSocialLink, index: number): string {
   const key = normalizeText(link.label || link.platform).toLowerCase();
 
-  if (index === 0) return "Acesso principal do momento";
-  if (key.includes("instagram")) return "Entrar no perfil";
-  if (key.includes("youtube")) return "Assistir agora";
-  if (key.includes("spotify") || key.includes("soundcloud") || key.includes("beatport") || key.includes("mixcloud")) {
-    return "Ouvir agora";
-  }
-  if (key.includes("whatsapp")) return "Falar agora";
-  return "Abrir acesso";
+  if (index === 0) return "Canal prioritário";
+  if (key.includes("linkedin")) return "Ver perfil";
+  if (key.includes("portfolio")) return "Ver portfólio";
+  if (key.includes("website")) return "Visitar website";
+  if (key.includes("instagram")) return "Ver Instagram";
+  return "Abrir canal";
 }
 
-export default async function ClubPublicPage({
-  params,
-  searchParams,
-}: PageProps) {
+export default async function ProPublicPage({ params }: PageProps) {
   const { slug } = await params;
-  const qp = searchParams ? await searchParams : undefined;
-
   const s = String(slug || "").trim().toLowerCase();
-
-  if (qp?.mode === "pro") {
-    redirect(`/pro/${s}`);
-  }
 
   if (!s || RESERVED.has(s)) notFound();
 
@@ -690,7 +667,7 @@ export default async function ClubPublicPage({
 
     if (!current?.slug || !current.is_published) notFound();
 
-    permanentRedirect(`/${current.slug}`);
+    permanentRedirect(`/pro/${current.slug}`);
   }
 
   if (!card.is_published) notFound();
@@ -698,8 +675,14 @@ export default async function ClubPublicPage({
   const clicks = await incrementClicks(supabase, card.slug);
   const userId = String(card.user_id);
 
-  const links = await getClubLinks(supabase, userId);
-  const clubProfile = await getClubProfile(supabase, userId);
+  const links = await getProLinks(supabase, userId);
+  const professionalProfile = await getProfessionalProfile(supabase, userId);
+
+  if (!professionalProfile || !professionalProfile.visible_in_network) {
+    notFound();
+  }
+
+  const canConnect = !!professionalProfile.accepts_professional_contact;
 
   const profileName = normalizeText(card.label) || "Este perfil";
   const firstLink = links.length > 0 ? links[0] : null;
@@ -708,15 +691,34 @@ export default async function ClubPublicPage({
     ? getDisplayName(firstLink.label, firstLink.platform)
     : null;
 
-  const heroTitle = buildClubHeadline(links.length, clubProfile);
-  const heroDescription = buildClubDescription(profileName, links.length, clubProfile);
-  const heroHighlights = getHeroHighlights(links.length, clubProfile);
-  const clubBadges = getClubQuickBadges(links, clubProfile);
-  const clubSpotlightText = buildClubSpotlightText(links, clubProfile);
-  const clubCultureBlocks = getClubCultureBlocks(clubProfile);
-  const streamingChannels = getStreamingChannels(clubProfile);
-  const clubSocialButtons = getClubSocialButtons(links);
-  const clubPhotoUrl = normalizeText(clubProfile?.club_photo_url);
+  const professionalQuickAction = getProfessionalQuickAction(
+    professionalProfile,
+    firstActionLink,
+    firstActionLabel
+  );
+
+  const heroTitle = buildProHeadline(professionalProfile, canConnect, professionalQuickAction);
+  const heroDescription = buildProDescription(professionalProfile, canConnect, professionalQuickAction);
+  const heroHighlights = getHeroHighlights(professionalProfile, canConnect);
+  const authorityBlocks = getAuthorityBlocks(professionalProfile, canConnect);
+
+  const hasProfessionalChannels = !!(
+    professionalProfile.website ||
+    professionalProfile.portfolio ||
+    professionalProfile.linkedin ||
+    professionalProfile.business_instagram
+  );
+
+  const contactSummary =
+    professionalProfile.whatsapp_business || professionalProfile.professional_email
+      ? "Escolha o canal que preferir para continuar a conversa."
+      : "A conexão profissional é o principal caminho deste perfil no momento.";
+
+  const showQuickSummary = !!(
+    professionalProfile.services ||
+    professionalProfile.looking_for ||
+    professionalProfile.industry
+  );
 
   return (
     <main style={pageStyle()}>
@@ -730,16 +732,16 @@ export default async function ClubPublicPage({
             </h1>
 
             <p style={{ opacity: 0.72, margin: 0 }}>
-              Perfil Club: {card.slug}
+              Perfil profissional: {card.slug}
             </p>
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            <Link href={`/${card.slug}`} style={modeButtonStyle(true)}>
+            <Link href={`/${card.slug}`} style={modeButtonStyle(false)}>
               Experiência Club
             </Link>
 
-            <Link href={`/pro/${card.slug}`} style={modeButtonStyle(false)}>
+            <Link href={`/pro/${card.slug}`} style={modeButtonStyle(true)}>
               Perfil profissional
             </Link>
           </div>
@@ -747,47 +749,47 @@ export default async function ClubPublicPage({
       </header>
 
       <section style={heroStyle()}>
-        <div style={heroMainGridStyle(Boolean(clubPhotoUrl))}>
-          {clubPhotoUrl ? (
-            <div style={heroPhotoWrapStyle()}>
+        <div
+          style={{
+            display: "grid",
+            gap: 16,
+            gridTemplateColumns: professionalProfile.pro_photo_url ? "120px 1fr" : "1fr",
+            alignItems: "start",
+          }}
+        >
+          {professionalProfile.pro_photo_url ? (
+            <div>
               <img
-                src={clubPhotoUrl}
-                alt="Foto do Club"
+                src={professionalProfile.pro_photo_url}
+                alt="Foto profissional"
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  minHeight: 360,
+                  width: 110,
+                  height: 110,
                   objectFit: "cover",
+                  borderRadius: 20,
+                  border: "1px solid rgba(255,255,255,0.12)",
                   display: "block",
                 }}
               />
-
-              <div style={heroPhotoOverlayStyle()} />
-
-              <div style={heroPhotoCaptionStyle()}>
-                <span style={compactBadgeStyle()}>
-                  Presença visual da cena
-                </span>
-              </div>
             </div>
           ) : null}
 
-          <div style={{ display: "grid", gap: 14, alignContent: "center" }}>
+          <div style={{ display: "grid", gap: 12 }}>
             <span style={heroKickerStyle()}>
-              Modo Club
+              Modo Profissional
             </span>
 
-            <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1.02 }}>
+            <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.08 }}>
               {heroTitle}
             </div>
 
             <p
               style={{
                 margin: 0,
-                opacity: 0.92,
+                opacity: 0.9,
                 maxWidth: 760,
-                lineHeight: 1.7,
-                fontSize: 17,
+                lineHeight: 1.65,
+                fontSize: 16,
               }}
             >
               {heroDescription}
@@ -802,80 +804,79 @@ export default async function ClubPublicPage({
                 ))}
               </div>
             ) : null}
-
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {firstActionLink ? (
-                <a
-                  href={firstActionLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={primaryButtonStyle()}
-                >
-                  {firstActionLabel
-                    ? `Entrar em ${firstActionLabel}`
-                    : "Entrar no destaque"}
-                </a>
-              ) : null}
-
-              {streamingChannels.length > 0 ? (
-                <a
-                  href={streamingChannels[0].href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={secondaryHeroButtonStyle()}
-                >
-                  Ouvir agora
-                </a>
-              ) : null}
-            </div>
-
-            <div style={infoGridStyle()}>
-              <div style={infoCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  Em destaque agora
-                </strong>
-                <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
-                  {links.length > 0
-                    ? clubSpotlightText
-                    : "Este perfil está ativo e pronto para receber novos acessos em breve."}
-                </div>
-              </div>
-
-              <div style={infoCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  Disponível agora
-                </strong>
-                <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
-                  {links.length === 0
-                    ? "Nenhum link ativo neste momento."
-                    : links.length === 1
-                      ? "1 acesso ativo disponível."
-                      : `${links.length} acessos ativos disponíveis.`}
-                </div>
-              </div>
-
-              {normalizeText(clubProfile?.city_base) ? (
-                <div style={infoCardStyle()}>
-                  <strong style={{ display: "block", marginBottom: 6 }}>
-                    Base cultural
-                  </strong>
-                  <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
-                    {clubProfile?.city_base}
-                  </div>
-                </div>
-              ) : null}
-            </div>
           </div>
         </div>
 
-        {clubBadges.length > 0 ? (
-          <div style={clubHighlightsGridStyle()}>
-            {clubBadges.map((badge, index) => (
-              <div key={`${badge}-${index}`} style={clubHighlightCardStyle()}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {canConnect ? (
+            <ProfessionalConnectButton targetUserId={String(professionalProfile.user_id)} />
+          ) : null}
+
+          {professionalQuickAction ? (
+            <a
+              href={professionalQuickAction.href}
+              target={
+                professionalQuickAction.href.startsWith("mailto:")
+                  ? undefined
+                  : "_blank"
+              }
+              rel={
+                professionalQuickAction.href.startsWith("mailto:")
+                  ? undefined
+                  : "noopener noreferrer"
+              }
+              style={canConnect ? secondaryButtonStyle() : primaryButtonStyle()}
+            >
+              {professionalQuickAction.label}
+            </a>
+          ) : null}
+        </div>
+
+        <div style={infoGridStyle()}>
+          <div style={infoCardStyle()}>
+            <strong style={{ display: "block", marginBottom: 6 }}>
+              Melhor caminho agora
+            </strong>
+            <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
+              {canConnect
+                ? "Comece pela conexão profissional e avance para o canal direto quando quiser acelerar a conversa."
+                : professionalQuickAction
+                  ? "Este perfil prioriza contato rápido para levar você ao próximo passo com mais agilidade."
+                  : "Este perfil profissional está disponível para avaliação."}
+            </div>
+          </div>
+
+          <div style={infoCardStyle()}>
+            <strong style={{ display: "block", marginBottom: 6 }}>
+              Disponível agora
+            </strong>
+            <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
+              {canConnect
+                ? "Conexão profissional e canal direto disponíveis."
+                : "Canais profissionais disponíveis para avaliação."}
+            </div>
+          </div>
+
+          {professionalProfile.city ? (
+            <div style={infoCardStyle()}>
+              <strong style={{ display: "block", marginBottom: 6 }}>
+                Cidade e estado
+              </strong>
+              <div style={{ opacity: 0.88, lineHeight: 1.55 }}>
+                {professionalProfile.city}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {authorityBlocks.length > 0 ? (
+          <div style={authorityStripStyle()}>
+            {authorityBlocks.map((block) => (
+              <div key={`${block.title}-${block.value}`} style={authorityCardStyle()}>
                 <strong style={{ display: "block", marginBottom: 6 }}>
-                  {index === 0 ? "Destaque do perfil" : "Elemento da cena"}
+                  {block.title}
                 </strong>
-                <div style={{ opacity: 0.9, lineHeight: 1.55 }}>{badge}</div>
+                <div style={{ opacity: 0.88, lineHeight: 1.55 }}>{block.value}</div>
               </div>
             ))}
           </div>
@@ -883,152 +884,254 @@ export default async function ClubPublicPage({
       </section>
 
       <section style={sectionCardStyle()}>
-        <h2 style={{ marginTop: 0, marginBottom: 6 }}>Identidade na cena</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          O Club Mode mostra quem é este perfil dentro dos eventos, artistas, clubs e experiências da cena.
-        </p>
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Por que este perfil vale a conversa</h2>
 
-        <div style={clubCultureGridStyle()}>
-          {clubCultureBlocks.map((block) => (
-            <div key={`${block.title}-${block.value}`} style={clubCultureCardStyle()}>
-              <strong style={{ display: "block", marginBottom: 8 }}>{block.title}</strong>
-              <div style={{ opacity: 0.88, lineHeight: 1.6 }}>{block.value}</div>
+        {(professionalProfile.accepts_professional_contact || hasProfessionalChannels) ? (
+          <div style={quickPanelsGridStyle()}>
+            {professionalProfile.accepts_professional_contact ? (
+              <div style={quickPanelStyle()}>
+                <strong style={{ display: "block", marginBottom: 8 }}>
+                  Contato rápido
+                </strong>
+                <p
+                  style={{ margin: "0 0 12px 0", opacity: 0.84, lineHeight: 1.55 }}
+                >
+                  {contactSummary}
+                </p>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {professionalProfile.whatsapp_business ? (
+                    <a
+                      href={professionalProfile.whatsapp_business}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={channelButtonStyle()}
+                    >
+                      WhatsApp profissional
+                    </a>
+                  ) : null}
+
+                  {professionalProfile.professional_email ? (
+                    <a
+                      href={`mailto:${professionalProfile.professional_email}`}
+                      style={channelButtonStyle()}
+                    >
+                      E-mail profissional
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {hasProfessionalChannels ? (
+              <div style={quickPanelStyle()}>
+                <strong style={{ display: "block", marginBottom: 8 }}>
+                  Canais profissionais
+                </strong>
+                <p
+                  style={{ margin: "0 0 12px 0", opacity: 0.84, lineHeight: 1.55 }}
+                >
+                  Veja os principais canais disponíveis para continuar conhecendo este perfil.
+                </p>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {professionalProfile.website ? (
+                    <a
+                      href={professionalProfile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={channelButtonStyle()}
+                    >
+                      Website
+                    </a>
+                  ) : null}
+
+                  {professionalProfile.portfolio ? (
+                    <a
+                      href={professionalProfile.portfolio}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={channelButtonStyle()}
+                    >
+                      Portfólio
+                    </a>
+                  ) : null}
+
+                  {professionalProfile.linkedin ? (
+                    <a
+                      href={professionalProfile.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={channelButtonStyle()}
+                    >
+                      LinkedIn
+                    </a>
+                  ) : null}
+
+                  {professionalProfile.business_instagram ? (
+                    <a
+                      href={professionalProfile.business_instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={channelButtonStyle()}
+                    >
+                      Instagram do negócio
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            marginTop:
+              professionalProfile.accepts_professional_contact || hasProfessionalChannels
+                ? 20
+                : 16,
+            display: "grid",
+            gridTemplateColumns: professionalProfile.pro_photo_url
+              ? "120px 1fr"
+              : "1fr",
+            gap: 18,
+            alignItems: "start",
+          }}
+        >
+          {professionalProfile.pro_photo_url ? (
+            <div>
+              <img
+                src={professionalProfile.pro_photo_url}
+                alt="Foto profissional"
+                style={{
+                  width: 110,
+                  height: 110,
+                  objectFit: "cover",
+                  borderRadius: 20,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  display: "block",
+                }}
+              />
             </div>
-          ))}
+          ) : null}
+
+          <div style={{ display: "grid", gap: 12 }}>
+            {(professionalProfile.ai_summary || professionalProfile.bio_text) ? (
+              <div>
+                <strong>Apresentação</strong>
+                <p style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
+                  {normalizeText(professionalProfile.ai_summary)
+                    ? professionalProfile.ai_summary
+                    : professionalProfile.bio_text}
+                </p>
+              </div>
+            ) : null}
+
+            <div style={infoGridStyle()}>
+              {professionalProfile.profession ? (
+                <div style={infoCardStyle()}>
+                  <strong style={{ display: "block", marginBottom: 6 }}>
+                    Atuação
+                  </strong>
+                  <div>{professionalProfile.profession}</div>
+                </div>
+              ) : null}
+
+              {professionalProfile.company_name ? (
+                <div style={infoCardStyle()}>
+                  <strong style={{ display: "block", marginBottom: 6 }}>
+                    Empresa ou marca
+                  </strong>
+                  <div>{professionalProfile.company_name}</div>
+                </div>
+              ) : null}
+
+              {professionalProfile.industry ? (
+                <div style={infoCardStyle()}>
+                  <strong style={{ display: "block", marginBottom: 6 }}>
+                    Área de atuação
+                  </strong>
+                  <div>{professionalProfile.industry}</div>
+                </div>
+              ) : null}
+
+              {professionalProfile.city ? (
+                <div style={infoCardStyle()}>
+                  <strong style={{ display: "block", marginBottom: 6 }}>
+                    Cidade e estado
+                  </strong>
+                  <div>{professionalProfile.city}</div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
-      </section>
 
-      <section style={sectionCardStyle()}>
-        <h2 style={{ marginTop: 0, marginBottom: 6 }}>Eventos e presença</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          Aqui entram os eventos que este perfil viveu, quer viver e usa para se conectar com outras pessoas da cena.
-        </p>
-
-        <div style={clubCultureGridStyle()}>
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Últimos eventos</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.last_events) || "Ainda não informado."}
-            </div>
-          </div>
-
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Próximos eventos</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.next_events) || "Ainda não informado."}
-            </div>
-          </div>
-
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Eventos prediletos</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.favorite_events) || "Ainda não informado."}
-            </div>
-          </div>
-
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Vertentes da cena</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.favorite_genres) || "Ainda não informado."}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionCardStyle()}>
-        <h2 style={{ marginTop: 0, marginBottom: 6 }}>Playlist e streaming</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          O lado musical do perfil fica vivo aqui, com playlist principal e até cinco plataformas.
-        </p>
-
-        <div style={quickPanelsGridStyle()}>
-          <div style={quickPanelStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Playlist principal</strong>
-            <p style={{ margin: "0 0 10px 0", opacity: 0.84, lineHeight: 1.55 }}>
-              {normalizeText(clubProfile?.playlist_title) || "Ainda não informado."}
+        {professionalProfile.services ? (
+          <div style={{ marginTop: 18 }}>
+            <strong>O que oferece</strong>
+            <p style={{ marginTop: 8, lineHeight: 1.65 }}>
+              {professionalProfile.services}
             </p>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              {normalizeText(clubProfile?.playlist_description) || "Sem descrição no momento."}
-            </div>
           </div>
+        ) : null}
 
-          <div style={quickPanelStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Canais de streaming</strong>
-            <p style={{ margin: "0 0 12px 0", opacity: 0.84, lineHeight: 1.55 }}>
-              Use estes acessos para ouvir, acompanhar sets e entender melhor a identidade sonora deste perfil.
+        {professionalProfile.looking_for ? (
+          <div style={{ marginTop: 18 }}>
+            <strong>O que busca</strong>
+            <p style={{ marginTop: 8, lineHeight: 1.65 }}>
+              {professionalProfile.looking_for}
             </p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {streamingChannels.length > 0 ? (
-                streamingChannels.map((channel) => (
-                  <a
-                    key={`${channel.label}-${channel.href}`}
-                    href={channel.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={channelButtonStyle()}
-                  >
-                    {channel.label}
-                  </a>
-                ))
-              ) : (
-                <span style={compactBadgeStyle()}>Nenhum streaming configurado</span>
-              )}
-            </div>
           </div>
-        </div>
+        ) : null}
+
+        {!links.length ? (
+          <div style={emptyCalloutStyle()}>
+            Este perfil está priorizando conexão e contato direto. Quando houver canais adicionais ativos, eles aparecerão aqui com destaque.
+          </div>
+        ) : null}
       </section>
 
-      <section style={sectionCardStyle()}>
-        <h2 style={{ marginTop: 0, marginBottom: 6 }}>Comunidades e pertencimento</h2>
-        <p style={{ margin: 0, opacity: 0.78 }}>
-          O objetivo do Club é aproximar pessoas que compartilham artistas, clubs, festivais e a mesma energia da cena.
-        </p>
+      {showQuickSummary ? (
+        <section style={sectionCardStyle()}>
+          <h2 style={{ marginTop: 0, marginBottom: 10 }}>Resumo rápido</h2>
 
-        <div style={clubCultureGridStyle()}>
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Artistas prediletos</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.favorite_artists) || "Ainda não informado."}
-            </div>
-          </div>
+          <div style={infoGridStyle()}>
+            {professionalProfile.services ? (
+              <div style={infoCardStyle()}>
+                <strong style={{ display: "block", marginBottom: 6 }}>
+                  Entrega principal
+                </strong>
+                <div style={{ lineHeight: 1.55 }}>
+                  {limitText(professionalProfile.services, 120)}
+                </div>
+              </div>
+            ) : null}
 
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Clubs e experiências</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              {normalizeText(clubProfile?.favorite_clubs) || "Ainda não informado."}
-            </div>
-          </div>
+            {professionalProfile.looking_for ? (
+              <div style={infoCardStyle()}>
+                <strong style={{ display: "block", marginBottom: 6 }}>
+                  Busca atual
+                </strong>
+                <div style={{ lineHeight: 1.55 }}>
+                  {limitText(professionalProfile.looking_for, 120)}
+                </div>
+              </div>
+            ) : null}
 
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Presença social</strong>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {clubSocialButtons.length > 0 ? (
-                clubSocialButtons.map((button) => (
-                  <a
-                    key={`${button.label}-${button.href}`}
-                    href={button.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={channelButtonStyle()}
-                  >
-                    {button.label}
-                  </a>
-                ))
-              ) : (
-                <span style={compactBadgeStyle()}>Nenhuma rede social ativa</span>
-              )}
-            </div>
+            {professionalProfile.industry ? (
+              <div style={infoCardStyle()}>
+                <strong style={{ display: "block", marginBottom: 6 }}>
+                  Segmento
+                </strong>
+                <div style={{ lineHeight: 1.55 }}>
+                  {professionalProfile.industry}
+                </div>
+              </div>
+            ) : null}
           </div>
-
-          <div style={clubCultureCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Conexão por afinidade</strong>
-            <div style={{ opacity: 0.88, lineHeight: 1.6 }}>
-              Esta área prepara a evolução para encontros, matching por cena e conexões entre usuários nos mesmos eventos.
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section style={sectionCardStyle()}>
         <div
@@ -1042,9 +1145,11 @@ export default async function ClubPublicPage({
           }}
         >
           <div>
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Entrar agora</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 6 }}>
+              Canais adicionais
+            </h2>
             <p style={{ margin: 0, opacity: 0.78 }}>
-              Escolha abaixo o acesso que faz mais sentido neste momento.
+              Escolha abaixo o melhor caminho para continuar.
             </p>
           </div>
 
@@ -1057,7 +1162,7 @@ export default async function ClubPublicPage({
 
         {links.length === 0 ? (
           <p style={{ marginBottom: 0 }}>
-            Nenhum link ativo disponível para este perfil neste momento.
+            Ainda não há links ativos disponíveis neste perfil.
           </p>
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
@@ -1075,7 +1180,7 @@ export default async function ClubPublicPage({
                   style={linkCardStyle(isFirst)}
                 >
                   <div style={{ display: "grid", gap: 4 }}>
-                    <span style={{ fontSize: isFirst ? 17 : 16 }}>
+                    <span style={{ fontSize: 16 }}>
                       {label}
                     </span>
                     <span style={{ fontSize: 12, opacity: 0.72 }}>{hint}</span>

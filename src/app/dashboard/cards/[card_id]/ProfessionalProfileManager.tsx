@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
 
 type ProfessionalProfileRow = {
@@ -70,6 +71,14 @@ type PromptPreset = {
   subtitle: string;
   style: string;
   prompt: string;
+};
+
+type BrazilCityItem = {
+  id: string;
+  city_name: string;
+  state_code: string;
+  display_name: string;
+  sort_rank: number | null;
 };
 
 const STORAGE_BUCKET = "professional-photos";
@@ -237,8 +246,60 @@ function summaryStyle() {
   };
 }
 
+function searchBlockStyle() {
+  return {
+    display: "grid",
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.03)",
+    marginTop: 10,
+  } as const;
+}
+
+function suggestionButtonStyle(active = false) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "9px 10px",
+    borderRadius: 12,
+    border: active
+      ? "1px solid rgba(0,200,120,0.28)"
+      : "1px solid rgba(255,255,255,0.10)",
+    background: active
+      ? "rgba(0,200,120,0.10)"
+      : "rgba(255,255,255,0.04)",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 700,
+    textAlign: "left" as const,
+  };
+}
+
+function previewCardStyle() {
+  return {
+    padding: 14,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    display: "grid",
+    gap: 6,
+  } as const;
+}
+
 function normalizeText(value: string | null | undefined): string {
   return String(value || "").trim();
+}
+
+function normalizeSearchText(value: string | null | undefined) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function hasContent(value: string | null | undefined): boolean {
@@ -311,24 +372,106 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+function mapRowToForm(row: ProfessionalProfileRow | null | undefined): FormState {
+  return {
+    profession: row?.profession ?? "",
+    company_name: row?.company_name ?? "",
+    industry: row?.industry ?? "",
+    city: row?.city ?? "",
+    services: row?.services ?? "",
+    looking_for: row?.looking_for ?? "",
+    business_instagram: row?.business_instagram ?? "",
+    website: row?.website ?? "",
+    portfolio: row?.portfolio ?? "",
+    linkedin: row?.linkedin ?? "",
+    whatsapp_business: extractBrazilPhoneDigits(row?.whatsapp_business ?? ""),
+    professional_email: row?.professional_email ?? "",
+    bio_text: row?.bio_text ?? "",
+    ai_summary: row?.ai_summary ?? "",
+    pro_photo_url: row?.pro_photo_url ?? "",
+    pro_photo_prompt: row?.pro_photo_prompt ?? "",
+    pro_photo_style: row?.pro_photo_style ?? "",
+    visible_in_network: row?.visible_in_network ?? true,
+    accepts_professional_contact: row?.accepts_professional_contact ?? true,
+  };
+}
+
+function useDebouncedValue<T>(value: T, delay = 220) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+function useBrazilCitySearch(
+  supabase: ReturnType<typeof createBrowserClient>,
+  query: string
+) {
+  const normalizedQuery = useDebouncedValue(normalizeSearchText(query), 220);
+  const [items, setItems] = useState<BrazilCityItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function run() {
+      if (!normalizedQuery) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("br_cities")
+        .select("id, city_name, state_code, display_name, sort_rank")
+        .eq("is_active", true)
+        .ilike("search_name", `%${normalizedQuery}%`)
+        .order("sort_rank", { ascending: false })
+        .order("display_name", { ascending: true })
+        .limit(12);
+
+      if (!active) return;
+
+      setItems(error ? [] : ((data as BrazilCityItem[]) || []));
+      setLoading(false);
+    }
+
+    void run();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase, normalizedQuery]);
+
+  return { items, loading };
+}
+
 export default function ProfessionalProfileManager({
   proPublicHref = "",
   hasPublicSlug = false,
   isPublished = false,
 }: ProfessionalProfileManagerProps) {
+  const router = useRouter();
   const supabase = useMemo(() => createBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [message, setMessage] = useState("");
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [localPhotoPreview, setLocalPhotoPreview] = useState("");
   const [photoTouched, setPhotoTouched] = useState(false);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+
+  const citySearch = useBrazilCitySearch(supabase, form.city);
 
   useEffect(() => {
     void loadProfile();
@@ -347,8 +490,6 @@ export default function ProfessionalProfileManager({
       return;
     }
 
-    setCurrentUserId(user.id);
-
     const { data, error } = await supabase
       .from("professional_profiles")
       .select("*")
@@ -364,27 +505,10 @@ export default function ProfessionalProfileManager({
     if (data) {
       const row = data as ProfessionalProfileRow;
       setProfileId(row.id);
-      setForm({
-        profession: row.profession ?? "",
-        company_name: row.company_name ?? "",
-        industry: row.industry ?? "",
-        city: row.city ?? "",
-        services: row.services ?? "",
-        looking_for: row.looking_for ?? "",
-        business_instagram: row.business_instagram ?? "",
-        website: row.website ?? "",
-        portfolio: row.portfolio ?? "",
-        linkedin: row.linkedin ?? "",
-        whatsapp_business: extractBrazilPhoneDigits(row.whatsapp_business ?? ""),
-        professional_email: row.professional_email ?? "",
-        bio_text: row.bio_text ?? "",
-        ai_summary: row.ai_summary ?? "",
-        pro_photo_url: row.pro_photo_url ?? "",
-        pro_photo_prompt: row.pro_photo_prompt ?? "",
-        pro_photo_style: row.pro_photo_style ?? "",
-        visible_in_network: row.visible_in_network ?? true,
-        accepts_professional_contact: row.accepts_professional_contact ?? true,
-      });
+      setForm(mapRowToForm(row));
+    } else {
+      setProfileId(null);
+      setForm(EMPTY_FORM);
     }
 
     setLoading(false);
@@ -440,8 +564,7 @@ export default function ProfessionalProfileManager({
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
-    const isImage = selectedFile.type.startsWith("image/");
-    if (!isImage) {
+    if (!selectedFile.type.startsWith("image/")) {
       setMessage("Selecione apenas arquivos de imagem.");
       event.target.value = "";
       return;
@@ -536,8 +659,7 @@ export default function ProfessionalProfileManager({
       const whatsappUrl = buildWhatsAppUrl(form.whatsapp_business);
       const finalPhotoUrl = await uploadPendingPhotoIfNeeded(user.id);
 
-      const payload = {
-        user_id: user.id,
+      const basePayload = {
         profession: normalizeText(form.profession) || null,
         company_name: normalizeText(form.company_name) || null,
         industry: normalizeText(form.industry) || null,
@@ -557,40 +679,68 @@ export default function ProfessionalProfileManager({
         pro_photo_style: normalizeText(form.pro_photo_style) || null,
         visible_in_network: form.visible_in_network,
         accepts_professional_contact: form.accepts_professional_contact,
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from("professional_profiles")
-        .upsert(payload, {
-          onConflict: "user_id",
-        });
+        .update(basePayload)
+        .eq("user_id", user.id)
+        .select("*");
 
-      if (error) {
+      if (updateError) {
         setSaving(false);
-        setMessage(`Não foi possível salvar agora. ${error.message}`);
+        setMessage(`Não foi possível atualizar agora. ${updateError.message}`);
         return;
       }
 
-      const { data: refreshed, error: refreshError } = await supabase
-        .from("professional_profiles")
-        .select("id, pro_photo_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      let persistedRow: ProfessionalProfileRow | null =
+        Array.isArray(updatedRows) && updatedRows.length > 0
+          ? (updatedRows[0] as ProfessionalProfileRow)
+          : null;
 
-      if (!refreshError && refreshed?.id) {
-        setProfileId(String(refreshed.id));
+      if (!persistedRow) {
+        const { data: insertedRow, error: insertError } = await supabase
+          .from("professional_profiles")
+          .insert({
+            user_id: user.id,
+            ...basePayload,
+          })
+          .select("*")
+          .single();
+
+        if (insertError) {
+          setSaving(false);
+          setMessage(`Não foi possível inserir agora. ${insertError.message}`);
+          return;
+        }
+
+        persistedRow = insertedRow as ProfessionalProfileRow;
       }
 
-      setForm((prev) => ({
-        ...prev,
-        pro_photo_url: finalPhotoUrl,
-      }));
+      const { data: confirmedRow, error: confirmError } = await supabase
+        .from("professional_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (confirmError || !confirmedRow) {
+        setSaving(false);
+        setMessage("O salvamento foi iniciado, mas não foi possível confirmar a persistência no banco.");
+        return;
+      }
+
+      const finalRow = confirmedRow as ProfessionalProfileRow;
+
+      setProfileId(finalRow.id);
+      setForm(mapRowToForm(finalRow));
       setSelectedPhotoFile(null);
       setLocalPhotoPreview("");
       setPhotoTouched(false);
-
       setSaving(false);
-      setMessage("Perfil profissional salvo com sucesso.");
+      setMessage("Perfil profissional salvo com sucesso e confirmado no banco.");
+
+      router.refresh();
     } catch (error) {
       setSaving(false);
       setMessage(
@@ -608,7 +758,7 @@ export default function ProfessionalProfileManager({
       { key: "profession", label: "Atuação", done: hasContent(form.profession) },
       { key: "company_name", label: "Empresa ou marca", done: hasContent(form.company_name) },
       { key: "industry", label: "Área", done: hasContent(form.industry) },
-      { key: "city", label: "Cidade", done: hasContent(form.city) },
+      { key: "city", label: "Cidade e estado", done: hasContent(form.city) },
       { key: "services", label: "O que oferece", done: hasContent(form.services) },
       { key: "looking_for", label: "O que busca", done: hasContent(form.looking_for) },
       { key: "whatsapp_business", label: "WhatsApp", done: hasContent(form.whatsapp_business) },
@@ -726,8 +876,8 @@ export default function ProfessionalProfileManager({
                   background: optimized
                     ? "linear-gradient(90deg, #00c878, #67f0aa)"
                     : readyForNetworking
-                    ? "linear-gradient(90deg, #ffb800, #ffd86b)"
-                    : "linear-gradient(90deg, #ffffff, #bdbdbd)",
+                      ? "linear-gradient(90deg, #ffb800, #ffd86b)"
+                      : "linear-gradient(90deg, #ffffff, #bdbdbd)",
                 }}
               />
             </div>
@@ -936,13 +1086,50 @@ export default function ProfessionalProfileManager({
             </label>
 
             <label>
-              <span style={labelTitleStyle()}>Cidade</span>
+              <span style={labelTitleStyle()}>Cidade e estado</span>
               <input
                 value={form.city}
                 onChange={(e) => updateField("city", e.target.value)}
-                placeholder="Ex: São Caetano do Sul"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && citySearch.items.length > 0) {
+                    e.preventDefault();
+                    updateField("city", citySearch.items[0].display_name);
+                  }
+                }}
+                placeholder="Digite a cidade e escolha a opção no formato Cidade - UF"
                 style={inputStyle()}
               />
+
+              <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.55, opacity: 0.72 }}>
+                Busca nacional focada no Brasil. O resultado final fica sempre no padrão Cidade - UF. Se preferir, você também pode escrever manualmente.
+              </div>
+
+              <div style={searchBlockStyle()}>
+                <strong>Buscador nacional de cidade e estado</strong>
+
+                {citySearch.loading ? (
+                  <div style={{ fontSize: 12, opacity: 0.74 }}>Buscando cidades do Brasil...</div>
+                ) : citySearch.items.length > 0 ? (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {citySearch.items.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => updateField("city", item.display_name)}
+                        style={suggestionButtonStyle(
+                          normalizeSearchText(form.city) === normalizeSearchText(item.display_name)
+                        )}
+                      >
+                        {item.display_name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, opacity: 0.74 }}>
+                    Nenhuma cidade encontrada para este termo. Pode escrever manualmente.
+                  </div>
+                )}
+              </div>
             </label>
           </div>
 
@@ -1361,6 +1548,59 @@ export default function ProfessionalProfileManager({
             />
             <span>Aceitar contatos profissionais</span>
           </label>
+        </section>
+
+        <section style={sectionStyle()}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <h3 style={{ margin: 0, fontWeight: 900 }}>Leitura atual do Pro Mode</h3>
+            <p style={{ margin: 0, opacity: 0.78 }}>
+              Este bloco mostra como o sistema está entendendo a identidade pública profissional.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
+            <div style={previewCardStyle()}>
+              <strong>Atuação</strong>
+              <div style={{ opacity: 0.84 }}>{form.profession || "Ainda não definido."}</div>
+            </div>
+
+            <div style={previewCardStyle()}>
+              <strong>Empresa ou marca</strong>
+              <div style={{ opacity: 0.84 }}>{form.company_name || "Ainda não definido."}</div>
+            </div>
+
+            <div style={previewCardStyle()}>
+              <strong>Área de atuação</strong>
+              <div style={{ opacity: 0.84 }}>{form.industry || "Ainda não definido."}</div>
+            </div>
+
+            <div style={previewCardStyle()}>
+              <strong>Cidade e estado</strong>
+              <div style={{ opacity: 0.84 }}>{form.city || "Ainda não definido."}</div>
+            </div>
+
+            <div style={previewCardStyle()}>
+              <strong>Canal principal</strong>
+              <div style={{ opacity: 0.84 }}>
+                {form.whatsapp_business
+                  ? formatBrazilPhoneDisplay(form.whatsapp_business)
+                  : form.professional_email || "Ainda não definido."}
+              </div>
+            </div>
+
+            <div style={previewCardStyle()}>
+              <strong>Resumo principal</strong>
+              <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
+                {form.ai_summary || "Ainda não definido."}
+              </div>
+            </div>
+          </div>
         </section>
 
         <div style={{ display: "grid", gap: 10 }}>

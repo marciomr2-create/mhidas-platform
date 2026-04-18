@@ -1,3 +1,4 @@
+// src/app/r/[id]/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -6,50 +7,111 @@ import { createPublicClient } from "@/utils/supabase/public";
 
 type SocialLinkRow = {
   id: string;
-  card_id: string;
-  url: string;
+  card_id: string | null;
+  url: string | null;
   is_active: boolean;
-  clicks_count?: number;
+  clicks_count?: number | null;
+  label?: string | null;
+  platform?: string | null;
 };
 
-function normalizeTargetUrl(raw: string): string {
-  const t = String(raw || "").trim();
-  if (!t) return "";
-  if (/^https?:\/\//i.test(t)) return t;
-  return `https://${t}`;
+function cleanRawUrl(raw: string | null | undefined): string {
+  return String(raw || "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
 }
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+function buildTargetUrl(req: NextRequest, raw: string | null | undefined): string {
+  const value = cleanRawUrl(raw);
+
+  if (!value) return "";
+
+  if (/^(mailto:|tel:)/i.test(value)) {
+    return value;
+  }
+
+  if (/^\/\//.test(value)) {
+    return `https:${value}`;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith("/")) {
+    return new URL(value, req.nextUrl.origin).toString();
+  }
+
+  return `https://${value}`;
+}
+
+function isAllowedTarget(target: string): boolean {
+  if (!target) return false;
+
+  if (/^(mailto:|tel:)/i.test(target)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(target);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function invalidRedirect(req: NextRequest) {
+  return NextResponse.redirect(new URL("/invalid", req.url), { status: 302 });
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
+  const linkId = String(id || "").trim();
+
+  if (!linkId) {
+    return invalidRedirect(req);
+  }
 
   const supabase = createPublicClient();
 
-  // 1) Buscar o link (mínimo) para decidir fluxo com segurança
   const { data: link, error: linkErr } = await supabase
     .from("social_links")
-    .select("id,card_id,url,is_active")
-    .eq("id", id)
-    .single();
+    .select("id, card_id, url, is_active, clicks_count, label, platform")
+    .eq("id", linkId)
+    .maybeSingle();
 
   if (linkErr || !link) {
-    return NextResponse.redirect(new URL("/", req.url), { status: 302 });
+    return invalidRedirect(req);
   }
 
   const row = link as SocialLinkRow;
 
-  // Se estiver desativado, não registra e não incrementa
   if (!row.is_active) {
-    return NextResponse.redirect(new URL("/", req.url), { status: 302 });
+    return invalidRedirect(req);
   }
 
-  // 2) Incremento atômico do contador agregado (não pode quebrar redirect)
+  const target = buildTargetUrl(req, row.url);
+
+  if (!isAllowedTarget(target)) {
+    return invalidRedirect(req);
+  }
+
   try {
     await supabase.rpc("increment_social_link_click", { p_id: row.id });
   } catch {
-    // resiliente: segue fluxo mesmo se RPC falhar
+    try {
+      await supabase
+        .from("social_links")
+        .update({ clicks_count: Number(row.clicks_count || 0) + 1 })
+        .eq("id", row.id);
+    } catch {
+      // resiliente: não impede o redirect
+    }
   }
 
-  // 3) Registrar evento de clique (anon) — mantém seu log existente
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
@@ -68,13 +130,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     });
   } catch {
     // resiliente: não impede o redirect
-  }
-
-  // 4) Redirecionar para URL final
-  const target = normalizeTargetUrl(row.url);
-
-  if (!target) {
-    return NextResponse.redirect(new URL("/", req.url), { status: 302 });
   }
 
   return NextResponse.redirect(target, { status: 302 });
