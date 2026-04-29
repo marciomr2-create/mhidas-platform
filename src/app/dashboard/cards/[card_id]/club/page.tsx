@@ -134,7 +134,9 @@ export default async function CardClubPage({ params }: PageProps) {
   const c = card as CardRow;
   const slug = c.slug ?? "";
   const hasPublicSlug = !!slug;
-  const clubPublicHref = hasPublicSlug ? `/${slug}` : "";
+
+  // 🔥 CORREÇÃO AQUI
+  const clubPublicHref = hasPublicSlug ? `/${slug}?mode=club` : "";
 
   return (
     <main style={pageStyle()}>

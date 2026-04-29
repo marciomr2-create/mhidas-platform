@@ -1,16 +1,24 @@
+// src/app/dashboard/cards/[card_id]/QrBlock.tsx
 'use client';
 
 import { useMemo } from 'react';
 
 export default function QrBlock({ slug }: { slug: string }) {
-  const qrSrc = useMemo(() => `/api/qr/${encodeURIComponent(slug)}`, [slug]);
-  const publicPath = useMemo(() => `/u/${slug}`, [slug]);
+  const qrSrc = useMemo(() => `/api/qr/${encodeURIComponent(slug)}?mode=club`, [slug]);
+  const publicPath = useMemo(() => `/${slug}?mode=club`, [slug]);
 
   return (
     <section style={{ marginTop: 24 }}>
       <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 12 }}>QR Code</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16, alignItems: 'start' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '220px 1fr',
+          gap: 16,
+          alignItems: 'start',
+        }}
+      >
         <div
           style={{
             width: 220,
@@ -23,12 +31,12 @@ export default function QrBlock({ slug }: { slug: string }) {
             overflow: 'hidden',
           }}
         >
-          <img src={qrSrc} alt="QR Code" width={200} height={200} style={{ display: 'block' }} />
+          <img src={qrSrc} alt="QR Code Club" width={200} height={200} style={{ display: 'block' }} />
         </div>
 
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ opacity: 0.9 }}>
-            <div style={{ fontSize: 13, opacity: 0.75 }}>Perfil público:</div>
+            <div style={{ fontSize: 13, opacity: 0.75 }}>Perfil público Club:</div>
             <div style={{ fontWeight: 900 }}>{publicPath}</div>
           </div>
 

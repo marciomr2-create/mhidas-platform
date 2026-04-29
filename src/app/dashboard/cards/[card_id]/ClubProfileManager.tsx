@@ -1,9 +1,12 @@
 // src/app/dashboard/cards/[card_id]/ClubProfileManager.tsx
 "use client";
 
+// ===== PARTE 1/4 =====
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
+import SpotifyArtistPicker from "@/components/SpotifyArtistPicker";
 
 type ClubProfileRow = {
   user_id: string;
@@ -14,12 +17,16 @@ type ClubProfileRow = {
   favorite_events: string | null;
   last_events: string | null;
   next_events: string | null;
+  next_events_dates: string | null;
+  next_events_links: string | null;
   favorite_clubs: string | null;
   playlist_title: string | null;
   playlist_description: string | null;
   club_photo_url: string | null;
   club_photo_prompt: string | null;
   club_photo_style: string | null;
+
+  // STREAMING (CRÍTICO)
   spotify_url: string | null;
   soundcloud_url: string | null;
   youtube_url: string | null;
@@ -27,24 +34,25 @@ type ClubProfileRow = {
   mixcloud_url: string | null;
   apple_music_url: string | null;
   deezer_url: string | null;
+
   primary_streaming_platform: string | null;
+
   ride_status: string | null;
   ride_event_name: string | null;
+  ride_event_date: string | null;
+  ride_event_url: string | null;
   ride_origin: string | null;
   ride_destination: string | null;
   ride_seats: string | null;
   ride_notes: string | null;
+
   meet_status: string | null;
   meet_event_name: string | null;
+  meet_event_date: string | null;
+  meet_event_url: string | null;
   meet_meeting_point: string | null;
   meet_time: string | null;
   meet_notes: string | null;
-};
-
-type ClubProfileManagerProps = {
-  clubPublicHref?: string;
-  hasPublicSlug?: boolean;
-  isPublished?: boolean;
 };
 
 type FormState = {
@@ -55,12 +63,20 @@ type FormState = {
   favorite_events: string;
   last_events: string;
   next_events: string;
+  next_events_dates: string;
+  next_events_links: string;
   favorite_clubs: string;
   playlist_title: string;
   playlist_description: string;
+
+  // STREAMING (AGORA CORRETO)
+  streaming_url: string;
+  primary_streaming_platform: string;
+
   club_photo_url: string;
   club_photo_prompt: string;
   club_photo_style: string;
+
   spotify_url: string;
   soundcloud_url: string;
   youtube_url: string;
@@ -68,18 +84,199 @@ type FormState = {
   mixcloud_url: string;
   apple_music_url: string;
   deezer_url: string;
-  primary_streaming_platform: string;
+
   ride_status: string;
   ride_event_name: string;
+  ride_event_date: string;
+  ride_event_url: string;
   ride_origin: string;
   ride_destination: string;
   ride_seats: string;
   ride_notes: string;
+
   meet_status: string;
   meet_event_name: string;
+  meet_event_date: string;
+  meet_event_url: string;
   meet_meeting_point: string;
   meet_time: string;
   meet_notes: string;
+};
+
+const EMPTY_FORM: FormState = {
+  club_tagline: "",
+  city_base: "",
+  favorite_genres: "",
+  favorite_artists: "",
+  favorite_events: "",
+  last_events: "",
+  next_events: "",
+  next_events_dates: "",
+  next_events_links: "",
+  favorite_clubs: "",
+  playlist_title: "",
+  playlist_description: "",
+
+  streaming_url: "",
+  primary_streaming_platform: "",
+
+  club_photo_url: "",
+  club_photo_prompt: "",
+  club_photo_style: "",
+
+  spotify_url: "",
+  soundcloud_url: "",
+  youtube_url: "",
+  beatport_url: "",
+  mixcloud_url: "",
+  apple_music_url: "",
+  deezer_url: "",
+
+  ride_status: "",
+  ride_event_name: "",
+  ride_event_date: "",
+  ride_event_url: "",
+  ride_origin: "",
+  ride_destination: "",
+  ride_seats: "",
+  ride_notes: "",
+
+  meet_status: "",
+  meet_event_name: "",
+  meet_event_date: "",
+  meet_event_url: "",
+  meet_meeting_point: "",
+  meet_time: "",
+  meet_notes: "",
+};
+// src/app/dashboard/cards/[card_id]/ClubProfileManager.tsx
+
+// ===== PARTE 2/4 =====
+
+function mapRowToForm(row: ClubProfileRow | null): FormState {
+  if (!row) return { ...EMPTY_FORM };
+
+  // Detecta qual URL já existe para preencher o campo único
+  const detectedUrl =
+    row.youtube_url ||
+    row.spotify_url ||
+    row.soundcloud_url ||
+    row.apple_music_url ||
+    row.deezer_url ||
+    "";
+
+  return {
+    club_tagline: row.club_tagline ?? "",
+    city_base: row.city_base ?? "",
+    favorite_genres: row.favorite_genres ?? "",
+    favorite_artists: row.favorite_artists ?? "",
+    favorite_events: row.favorite_events ?? "",
+    last_events: row.last_events ?? "",
+    next_events: row.next_events ?? "",
+    next_events_dates: row.next_events_dates ?? "",
+    next_events_links: row.next_events_links ?? "",
+    favorite_clubs: row.favorite_clubs ?? "",
+    playlist_title: row.playlist_title ?? "",
+    playlist_description: row.playlist_description ?? "",
+
+    streaming_url: detectedUrl,
+    primary_streaming_platform: row.primary_streaming_platform ?? "",
+
+    club_photo_url: row.club_photo_url ?? "",
+    club_photo_prompt: row.club_photo_prompt ?? "",
+    club_photo_style: row.club_photo_style ?? "",
+
+    spotify_url: row.spotify_url ?? "",
+    soundcloud_url: row.soundcloud_url ?? "",
+    youtube_url: row.youtube_url ?? "",
+    beatport_url: row.beatport_url ?? "",
+    mixcloud_url: row.mixcloud_url ?? "",
+    apple_music_url: row.apple_music_url ?? "",
+    deezer_url: row.deezer_url ?? "",
+
+    ride_status: row.ride_status ?? "",
+    ride_event_name: row.ride_event_name ?? "",
+    ride_event_date: row.ride_event_date ?? "",
+    ride_event_url: row.ride_event_url ?? "",
+    ride_origin: row.ride_origin ?? "",
+    ride_destination: row.ride_destination ?? "",
+    ride_seats: row.ride_seats ?? "",
+    ride_notes: row.ride_notes ?? "",
+
+    meet_status: row.meet_status ?? "",
+    meet_event_name: row.meet_event_name ?? "",
+    meet_event_date: row.meet_event_date ?? "",
+    meet_event_url: row.meet_event_url ?? "",
+    meet_meeting_point: row.meet_meeting_point ?? "",
+    meet_time: row.meet_time ?? "",
+    meet_notes: row.meet_notes ?? "",
+  };
+}
+
+/**
+ * 🔥 FUNÇÃO DEFINITIVA
+ * Salva o link no campo correto baseado na plataforma
+ */
+function mapFormToPayload(form: FormState) {
+  const platform = (form.primary_streaming_platform || "").toLowerCase();
+  const url = form.streaming_url?.trim() || "";
+
+  return {
+    club_tagline: form.club_tagline || null,
+    city_base: form.city_base || null,
+    favorite_genres: form.favorite_genres || null,
+    favorite_artists: form.favorite_artists || null,
+    favorite_events: form.favorite_events || null,
+    last_events: form.last_events || null,
+    next_events: form.next_events || null,
+    next_events_dates: form.next_events_dates || null,
+    next_events_links: form.next_events_links || null,
+    favorite_clubs: form.favorite_clubs || null,
+    playlist_title: form.playlist_title || null,
+    playlist_description: form.playlist_description || null,
+    club_photo_url: form.club_photo_url || null,
+    club_photo_prompt: form.club_photo_prompt || null,
+    club_photo_style: form.club_photo_style || null,
+    primary_streaming_platform: form.primary_streaming_platform || null,
+
+    // 🔥 RESETA TODOS (evita lixo antigo)
+    youtube_url: null,
+    spotify_url: null,
+    soundcloud_url: null,
+    apple_music_url: null,
+    deezer_url: null,
+
+    // 🔥 DEFINE O CORRETO
+    ...(platform.includes("youtube") && { youtube_url: url }),
+    ...(platform.includes("spotify") && { spotify_url: url }),
+    ...(platform.includes("soundcloud") && { soundcloud_url: url }),
+    ...(platform.includes("apple") && { apple_music_url: url }),
+    ...(platform.includes("deezer") && { deezer_url: url }),
+
+    ride_status: form.ride_status || null,
+    ride_event_name: form.ride_event_name || null,
+    ride_event_date: form.ride_event_date || null,
+    ride_event_url: form.ride_event_url || null,
+    ride_origin: form.ride_origin || null,
+    ride_destination: form.ride_destination || null,
+    ride_seats: form.ride_seats || null,
+    ride_notes: form.ride_notes || null,
+
+    meet_status: form.meet_status || null,
+    meet_event_name: form.meet_event_name || null,
+    meet_event_date: form.meet_event_date || null,
+    meet_event_url: form.meet_event_url || null,
+    meet_meeting_point: form.meet_meeting_point || null,
+    meet_time: form.meet_time || null,
+    meet_notes: form.meet_notes || null,
+  };
+}
+// ===== PARTE 3/4 =====
+
+type ClubProfileManagerProps = {
+  clubPublicHref?: string;
+  hasPublicSlug?: boolean;
+  isPublished?: boolean;
 };
 
 type TokenFieldKey =
@@ -120,41 +317,6 @@ type PromptPreset = {
 
 const CLUB_BUCKET = "club-photos";
 
-const EMPTY_FORM: FormState = {
-  club_tagline: "",
-  city_base: "",
-  favorite_genres: "",
-  favorite_artists: "",
-  favorite_events: "",
-  last_events: "",
-  next_events: "",
-  favorite_clubs: "",
-  playlist_title: "",
-  playlist_description: "",
-  club_photo_url: "",
-  club_photo_prompt: "",
-  club_photo_style: "",
-  spotify_url: "",
-  soundcloud_url: "",
-  youtube_url: "",
-  beatport_url: "",
-  mixcloud_url: "",
-  apple_music_url: "",
-  deezer_url: "",
-  primary_streaming_platform: "",
-  ride_status: "",
-  ride_event_name: "",
-  ride_origin: "",
-  ride_destination: "",
-  ride_seats: "",
-  ride_notes: "",
-  meet_status: "",
-  meet_event_name: "",
-  meet_meeting_point: "",
-  meet_time: "",
-  meet_notes: "",
-};
-
 const PROMPT_PRESETS: PromptPreset[] = [
   {
     id: "artist-monochrome",
@@ -168,7 +330,7 @@ const PROMPT_PRESETS: PromptPreset[] = [
     id: "festival-neon",
     title: "Festival neon",
     subtitle: "Energia de palco, festival e lifestyle eletrônico",
-    style: "festival neon eletronic scene",
+    style: "festival neon electronic scene",
     prompt:
       "Use esta foto como imagem base, mantendo identidade real da pessoa. Gere uma foto de perfil inspirada na cena eletrônica e festivais, com atmosfera premium, luzes neon discretas, sensação noturna, estética moderna, roupa alinhada ao lifestyle clubber, presença forte e visual marcante, mantendo o rosto reconhecível e realista.",
   },
@@ -231,6 +393,7 @@ function firstPreference(value: string | null | undefined) {
 
 function containsPreference(currentValue: string, valueToCheck: string) {
   const target = normalizeSearchText(valueToCheck);
+
   return splitPreferences(currentValue)
     .map((part) => normalizeSearchText(part))
     .includes(target);
@@ -321,43 +484,6 @@ async function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("Falha ao ler imagem."));
     reader.readAsDataURL(file);
   });
-}
-
-function mapRowToForm(row: ClubProfileRow | null | undefined): FormState {
-  return {
-    club_tagline: row?.club_tagline ?? "",
-    city_base: row?.city_base ?? "",
-    favorite_genres: row?.favorite_genres ?? "",
-    favorite_artists: row?.favorite_artists ?? "",
-    favorite_events: row?.favorite_events ?? "",
-    last_events: row?.last_events ?? "",
-    next_events: row?.next_events ?? "",
-    favorite_clubs: row?.favorite_clubs ?? "",
-    playlist_title: row?.playlist_title ?? "",
-    playlist_description: row?.playlist_description ?? "",
-    club_photo_url: row?.club_photo_url ?? "",
-    club_photo_prompt: row?.club_photo_prompt ?? "",
-    club_photo_style: row?.club_photo_style ?? "",
-    spotify_url: row?.spotify_url ?? "",
-    soundcloud_url: row?.soundcloud_url ?? "",
-    youtube_url: row?.youtube_url ?? "",
-    beatport_url: row?.beatport_url ?? "",
-    mixcloud_url: row?.mixcloud_url ?? "",
-    apple_music_url: row?.apple_music_url ?? "",
-    deezer_url: row?.deezer_url ?? "",
-    primary_streaming_platform: row?.primary_streaming_platform ?? "",
-    ride_status: row?.ride_status ?? "",
-    ride_event_name: row?.ride_event_name ?? "",
-    ride_origin: row?.ride_origin ?? "",
-    ride_destination: row?.ride_destination ?? "",
-    ride_seats: row?.ride_seats ?? "",
-    ride_notes: row?.ride_notes ?? "",
-    meet_status: row?.meet_status ?? "",
-    meet_event_name: row?.meet_event_name ?? "",
-    meet_meeting_point: row?.meet_meeting_point ?? "",
-    meet_time: row?.meet_time ?? "",
-    meet_notes: row?.meet_notes ?? "",
-  };
 }
 
 function sectionStyle() {
@@ -453,52 +579,9 @@ function presetCardStyle(active: boolean) {
     border: active
       ? "1px solid rgba(0,200,120,0.28)"
       : "1px solid rgba(255,255,255,0.12)",
-    background: active
-      ? "rgba(0,200,120,0.08)"
-      : "rgba(255,255,255,0.03)",
+    background: active ? "rgba(0,200,120,0.08)" : "rgba(255,255,255,0.03)",
     display: "grid",
     gap: 10,
-  } as const;
-}
-
-function collapsibleStyle() {
-  return {
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.03)",
-    overflow: "hidden",
-  } as const;
-}
-
-function summaryStyle() {
-  return {
-    cursor: "pointer",
-    listStyle: "none",
-    padding: "14px 16px",
-    fontWeight: 900,
-    userSelect: "none" as const,
-  };
-}
-
-function previewCardStyle() {
-  return {
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    display: "grid",
-    gap: 6,
-  } as const;
-}
-
-function tipCardStyle() {
-  return {
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.02)",
-    display: "grid",
-    gap: 6,
   } as const;
 }
 
@@ -566,14 +649,23 @@ function suggestionButtonStyle(active = false) {
     border: active
       ? "1px solid rgba(0,200,120,0.28)"
       : "1px solid rgba(255,255,255,0.10)",
-    background: active
-      ? "rgba(0,200,120,0.10)"
-      : "rgba(255,255,255,0.04)",
+    background: active ? "rgba(0,200,120,0.10)" : "rgba(255,255,255,0.04)",
     color: "#fff",
     cursor: "pointer",
     fontWeight: 700,
     textAlign: "left" as const,
   };
+}
+
+function previewCardStyle() {
+  return {
+    padding: 14,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.04)",
+    display: "grid",
+    gap: 6,
+  } as const;
 }
 
 function useDebouncedValue<T>(value: T, delay = 220) {
@@ -752,7 +844,9 @@ function CatalogTokenField({
         <strong>Sugestões globais</strong>
 
         {loading ? (
-          <div style={{ fontSize: 12, opacity: 0.74 }}>Buscando no catálogo global...</div>
+          <div style={{ fontSize: 12, opacity: 0.74 }}>
+            Buscando no catálogo global...
+          </div>
         ) : suggestions.length > 0 ? (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {suggestions.map((item) => (
@@ -764,7 +858,9 @@ function CatalogTokenField({
               >
                 <span>{item.name}</span>
                 {formatCatalogMeta(item) ? (
-                  <span style={{ fontSize: 11, opacity: 0.72 }}>{formatCatalogMeta(item)}</span>
+                  <span style={{ fontSize: 11, opacity: 0.72 }}>
+                    {formatCatalogMeta(item)}
+                  </span>
                 ) : null}
               </button>
             ))}
@@ -808,8 +904,6 @@ export default function ClubProfileManager({
   const favoriteEventSearch = useCatalogSearch(supabase, "event", favoriteEventDraft);
   const lastEventSearch = useCatalogSearch(supabase, "event", lastEventDraft);
   const nextEventSearch = useCatalogSearch(supabase, "event", nextEventDraft);
-  const rideEventSearch = useCatalogSearch(supabase, "event", form.ride_event_name);
-  const meetEventSearch = useCatalogSearch(supabase, "event", form.meet_event_name);
 
   useEffect(() => {
     void loadProfile();
@@ -840,12 +934,7 @@ export default function ClubProfileManager({
       return;
     }
 
-    if (data) {
-      setForm(mapRowToForm(data as ClubProfileRow));
-    } else {
-      setForm(EMPTY_FORM);
-    }
-
+    setForm(mapRowToForm((data as ClubProfileRow) || null));
     setLoading(false);
   }
 
@@ -1040,38 +1129,8 @@ export default function ClubProfileManager({
       const finalPhotoUrl = await uploadPendingPhotoIfNeeded(user.id);
 
       const basePayload = {
-        club_tagline: normalizeText(form.club_tagline) || null,
-        city_base: normalizeText(form.city_base) || null,
-        favorite_genres: normalizeText(form.favorite_genres) || null,
-        favorite_artists: normalizeText(form.favorite_artists) || null,
-        favorite_events: normalizeText(form.favorite_events) || null,
-        last_events: normalizeText(form.last_events) || null,
-        next_events: normalizeText(form.next_events) || null,
-        favorite_clubs: normalizeText(form.favorite_clubs) || null,
-        playlist_title: normalizeText(form.playlist_title) || null,
-        playlist_description: normalizeText(form.playlist_description) || null,
+        ...mapFormToPayload(form),
         club_photo_url: finalPhotoUrl || null,
-        club_photo_prompt: normalizeText(form.club_photo_prompt) || null,
-        club_photo_style: normalizeText(form.club_photo_style) || null,
-        spotify_url: normalizeText(form.spotify_url) || null,
-        soundcloud_url: normalizeText(form.soundcloud_url) || null,
-        youtube_url: normalizeText(form.youtube_url) || null,
-        beatport_url: normalizeText(form.beatport_url) || null,
-        mixcloud_url: normalizeText(form.mixcloud_url) || null,
-        apple_music_url: normalizeText(form.apple_music_url) || null,
-        deezer_url: normalizeText(form.deezer_url) || null,
-        primary_streaming_platform: normalizeText(form.primary_streaming_platform) || null,
-        ride_status: normalizeText(form.ride_status) || null,
-        ride_event_name: normalizeText(form.ride_event_name) || null,
-        ride_origin: normalizeText(form.ride_origin) || null,
-        ride_destination: normalizeText(form.ride_destination) || null,
-        ride_seats: normalizeText(form.ride_seats) || null,
-        ride_notes: normalizeText(form.ride_notes) || null,
-        meet_status: normalizeText(form.meet_status) || null,
-        meet_event_name: normalizeText(form.meet_event_name) || null,
-        meet_meeting_point: normalizeText(form.meet_meeting_point) || null,
-        meet_time: normalizeText(form.meet_time) || null,
-        meet_notes: normalizeText(form.meet_notes) || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -1111,6 +1170,19 @@ export default function ClubProfileManager({
         persistedRow = insertedRow as ClubProfileRow;
       }
 
+      const { error: syncError } = await supabase.rpc(
+        "sync_event_groups_from_club_profile",
+        { p_user_id: user.id }
+      );
+
+      if (syncError) {
+        setSaving(false);
+        setMessage(
+          `Perfil salvo, mas não foi possível sincronizar os grupos vivos. ${syncError.message}`
+        );
+        return;
+      }
+
       const { data: confirmedRow, error: confirmError } = await supabase
         .from("club_profiles")
         .select("*")
@@ -1119,7 +1191,9 @@ export default function ClubProfileManager({
 
       if (confirmError || !confirmedRow) {
         setSaving(false);
-        setMessage("O salvamento foi iniciado, mas não foi possível confirmar a persistência no banco.");
+        setMessage(
+          "O salvamento foi iniciado, mas não foi possível confirmar a persistência no banco."
+        );
         return;
       }
 
@@ -1128,7 +1202,7 @@ export default function ClubProfileManager({
       setLocalPhotoPreview("");
       setPhotoTouched(false);
       setSaving(false);
-      setMessage("Club Mode salvo com sucesso e confirmado no banco.");
+      setMessage("Club Mode salvo com sucesso e playlist sincronizada corretamente.");
 
       router.refresh();
     } catch (error) {
@@ -1150,16 +1224,12 @@ export default function ClubProfileManager({
     hasContent(form.favorite_clubs),
     hasContent(form.last_events),
     hasContent(form.next_events),
+    hasContent(form.next_events_dates),
+    hasContent(form.next_events_links),
     hasContent(effectivePhotoPreview),
     hasContent(form.playlist_title),
     hasContent(form.primary_streaming_platform),
-    hasContent(form.spotify_url) ||
-      hasContent(form.soundcloud_url) ||
-      hasContent(form.youtube_url) ||
-      hasContent(form.beatport_url) ||
-      hasContent(form.mixcloud_url) ||
-      hasContent(form.apple_music_url) ||
-      hasContent(form.deezer_url),
+    hasContent(form.streaming_url),
   ];
 
   const completenessCount = completenessItems.filter(Boolean).length;
@@ -1167,13 +1237,7 @@ export default function ClubProfileManager({
     (completenessCount / completenessItems.length) * 100
   );
 
-  const previewCity = normalizeText(form.city_base);
-  const previewGenre = firstPreference(form.favorite_genres);
-  const previewArtist = firstPreference(form.favorite_artists);
-  const previewClub = firstPreference(form.favorite_clubs);
-  const previewEvent = firstPreference(form.favorite_events);
   const previewBelonging = buildGeneratedBelonging(form) || "Ainda não definido.";
-
   const missingPriorityFields = [
     !hasContent(form.city_base) ? "cidade e estado" : "",
     !hasContent(form.favorite_genres) ? "vertente principal" : "",
@@ -1182,30 +1246,10 @@ export default function ClubProfileManager({
     !hasContent(form.favorite_events) ? "festival ou festa de referência" : "",
   ].filter(Boolean);
 
-  const ridePreviewStatus = getRideStatusLabel(form.ride_status);
-  const rideReadyCount = [
-    hasContent(form.ride_status),
-    hasContent(form.ride_event_name),
-    hasContent(form.ride_origin),
-    hasContent(form.ride_destination),
-    hasContent(form.ride_seats),
-    hasContent(form.ride_notes),
-  ].filter(Boolean).length;
-  const rideReadyPercent = Math.round((rideReadyCount / 6) * 100);
-
-  const meetPreviewStatus = getMeetStatusLabel(form.meet_status);
-  const meetReadyCount = [
-    hasContent(form.meet_status),
-    hasContent(form.meet_event_name),
-    hasContent(form.meet_meeting_point),
-    hasContent(form.meet_time),
-    hasContent(form.meet_notes),
-  ].filter(Boolean).length;
-  const meetReadyPercent = Math.round((meetReadyCount / 5) * 100);
-
   if (loading) {
     return <p>Carregando Club Mode...</p>;
   }
+// ===== PARTE 4/4 =====
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -1307,14 +1351,16 @@ export default function ClubProfileManager({
           />
 
           <div style={helperTextStyle()}>
-            Busca nacional focada no Brasil. O resultado final fica sempre no padrão Cidade - UF. Se preferir, o usuário também pode escrever manualmente.
+            Busca nacional focada no Brasil. O resultado final fica sempre no padrão Cidade - UF.
           </div>
 
           <div style={searchBlockStyle()}>
             <strong>Buscador nacional de cidade e estado</strong>
 
             {citySearch.loading ? (
-              <div style={{ fontSize: 12, opacity: 0.74 }}>Buscando cidades do Brasil...</div>
+              <div style={{ fontSize: 12, opacity: 0.74 }}>
+                Buscando cidades do Brasil...
+              </div>
             ) : citySearch.items.length > 0 ? (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {citySearch.items.map((item) => (
@@ -1405,6 +1451,8 @@ export default function ClubProfileManager({
           onToggleSuggestion={toggleTokenItem}
         />
 
+        <SpotifyArtistPicker />
+
         <CatalogTokenField
           label="Club de referência, labels e experiências favoritas"
           helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode clicar nas sugestões globais."
@@ -1434,286 +1482,10 @@ export default function ClubProfileManager({
           onRemove={removeTokenItem}
           onToggleSuggestion={toggleTokenItem}
         />
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Leitura atual do topo do Club</h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Este bloco mostra como o sistema está entendendo a identidade pública do usuário.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <div style={previewCardStyle()}>
-            <strong>Cidade e estado</strong>
-            <div style={{ opacity: 0.84 }}>{previewCity || "Ainda não definido."}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Vertente principal</strong>
-            <div style={{ opacity: 0.84 }}>{previewGenre || "Ainda não definido."}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Artista de referência</strong>
-            <div style={{ opacity: 0.84 }}>{previewArtist || "Ainda não definido."}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Club de referência</strong>
-            <div style={{ opacity: 0.84 }}>{previewClub || "Ainda não definido."}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Festival ou festa de referência</strong>
-            <div style={{ opacity: 0.84 }}>{previewEvent || "Ainda não definido."}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Pertencimento que será comunicado</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>{previewBelonging}</div>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>
-            Como preencher para gerar pertencimento
-          </h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Cidade e estado agora têm buscador nacional próprio. Artistas, clubs, gêneros e eventos continuam com catálogo global e escrita manual livre.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <div style={tipCardStyle()}>
-            <strong>1. Cidade no padrão correto</strong>
-            <div style={{ fontSize: 13, opacity: 0.82, lineHeight: 1.55 }}>
-              Ao escolher a cidade na busca nacional, o campo é preenchido no formato Cidade - UF.
-            </div>
-          </div>
-
-          <div style={tipCardStyle()}>
-            <strong>2. Facilidade no mobile</strong>
-            <div style={{ fontSize: 13, opacity: 0.82, lineHeight: 1.55 }}>
-              O usuário digita poucas letras, toca na opção sugerida e finaliza rapidamente o cadastro.
-            </div>
-          </div>
-
-          <div style={tipCardStyle()}>
-            <strong>3. Entrada manual mantida</strong>
-            <div style={{ fontSize: 13, opacity: 0.82, lineHeight: 1.55 }}>
-              Se não quiser usar a sugestão, o usuário pode escrever manualmente e corrigir quando quiser.
-            </div>
-          </div>
-
-          <div style={tipCardStyle()}>
-            <strong>4. Base escalável</strong>
-            <div style={{ fontSize: 13, opacity: 0.82, lineHeight: 1.55 }}>
-              A arquitetura da cidade agora está separada da base global de artistas, eventos e clubs.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Foto do Club</h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Foto cultural do perfil, com linguagem visual da cena eletrônica.
-          </p>
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handlePhotoSelected}
-          style={{ display: "none" }}
-        />
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "120px 1fr",
-            alignItems: "start",
-          }}
-        >
-          <div
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: 18,
-              overflow: "hidden",
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(255,255,255,0.04)",
-              display: "grid",
-              placeItems: "center",
-              textAlign: "center",
-              padding: 8,
-              fontSize: 12,
-            }}
-          >
-            {hasContent(effectivePhotoPreview) ? (
-              <img
-                src={effectivePhotoPreview}
-                alt="Foto do Club"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-            ) : (
-              <span>Sem foto Club</span>
-            )}
-          </div>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button type="button" onClick={openPhotoPicker} style={buttonStyle()}>
-                Selecionar foto Club
-              </button>
-
-              <button
-                type="button"
-                onClick={removePhoto}
-                disabled={!hasContent(effectivePhotoPreview)}
-                style={buttonStyle(!hasContent(effectivePhotoPreview))}
-              >
-                Remover foto
-              </button>
-
-              {hasContent(effectivePhotoPreview) ? (
-                <a
-                  href={effectivePhotoPreview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={buttonStyle()}
-                >
-                  Abrir foto
-                </a>
-              ) : null}
-            </div>
-
-            <label>
-              <span style={labelTitleStyle()}>Foto Club URL</span>
-              <input
-                value={form.club_photo_url}
-                onChange={(e) => {
-                  setSelectedPhotoFile(null);
-                  setLocalPhotoPreview("");
-                  setPhotoTouched(false);
-                  updateField("club_photo_url", e.target.value);
-                }}
-                placeholder="Ex: https://seusite.com/foto-club.jpg"
-                style={inputStyle()}
-              />
-            </label>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Prompts de foto Club com IA</h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Estilos pensados para artista, clubber, festival e estética monocromática.
-          </p>
-        </div>
-
-        <div style={collapsibleStyle()}>
-          <details>
-            <summary style={summaryStyle()}>Abrir presets de foto Club</summary>
-
-            <div style={{ padding: "0 16px 16px 16px", display: "grid", gap: 14 }}>
-              {PROMPT_PRESETS.map((preset) => {
-                const active =
-                  normalizeText(form.club_photo_prompt) === normalizeText(preset.prompt) &&
-                  normalizeText(form.club_photo_style) === normalizeText(preset.style);
-
-                return (
-                  <div key={preset.id} style={presetCardStyle(active)}>
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <strong>{preset.title}</strong>
-                      <div style={{ fontSize: 13, opacity: 0.78 }}>{preset.subtitle}</div>
-                    </div>
-
-                    <div style={{ fontSize: 12, opacity: 0.72 }}>
-                      <strong>Estilo:</strong> {preset.style}
-                    </div>
-
-                    <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.86 }}>
-                      {preset.prompt}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => applyPreset(preset)}
-                        style={buttonStyle()}
-                      >
-                        Usar este prompt
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => copyPromptText(preset.prompt)}
-                        style={buttonStyle()}
-                      >
-                        Copiar prompt
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        </div>
-
-        <label>
-          <span style={labelTitleStyle()}>Prompt da foto Club</span>
-          <textarea
-            value={form.club_photo_prompt}
-            onChange={(e) => updateField("club_photo_prompt", e.target.value)}
-            placeholder="Cole aqui ou edite o prompt do Club."
-            style={textareaStyle()}
-          />
-        </label>
-
-        <label>
-          <span style={labelTitleStyle()}>Estilo visual da foto Club</span>
-          <input
-            value={form.club_photo_style}
-            onChange={(e) => updateField("club_photo_style", e.target.value)}
-            placeholder="Ex: monocromático artístico premium"
-            style={inputStyle()}
-          />
-        </label>
-      </section>
-
-      <section style={sectionStyle()}>
-        <h3 style={{ margin: 0, fontWeight: 900 }}>Eventos e presença</h3>
 
         <CatalogTokenField
-          label="Últimos eventos em que foi"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode usar as sugestões globais."
+          label="Últimos eventos frequentados"
+          helperText="Registre os eventos recentes para dar contexto de vivência."
           placeholder="Digite o evento e pressione Enter"
           fieldKey="last_events"
           formValue={form.last_events}
@@ -1728,8 +1500,8 @@ export default function ClubProfileManager({
 
         <CatalogTokenField
           label="Próximos eventos"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode usar as sugestões globais."
-          placeholder="Digite o próximo evento e pressione Enter"
+          helperText="Eventos futuros ajudam a conectar com outras pessoas."
+          placeholder="Digite o evento e pressione Enter"
           fieldKey="next_events"
           formValue={form.next_events}
           draftValue={nextEventDraft}
@@ -1740,429 +1512,45 @@ export default function ClubProfileManager({
           onRemove={removeTokenItem}
           onToggleSuggestion={toggleTokenItem}
         />
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Carona compartilhada para eventos</h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Primeira camada prática da comunidade para organizar ida ao evento, grupo e conexão entre membros.
-          </p>
-        </div>
-
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <span>Completude da carona</span>
-            <strong>
-              {rideReadyCount}/6
-            </strong>
-          </div>
-
-          <div
-            style={{
-              height: 10,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.08)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${rideReadyPercent}%`,
-                height: "100%",
-                borderRadius: 999,
-                background: "linear-gradient(90deg, rgba(0,200,120,0.90), rgba(255,255,255,0.90))",
-              }}
-            />
-          </div>
-
-          <div style={{ fontSize: 13, opacity: 0.76 }}>
-            {rideReadyPercent}% concluído.
-          </div>
-        </div>
 
         <label>
-          <span style={labelTitleStyle()}>Situação da carona</span>
-          <select
-            value={form.ride_status}
-            onChange={(e) => updateField("ride_status", e.target.value)}
-            style={selectStyle()}
-          >
-            <option value="" style={selectOptionStyle()}>
-              Selecione
-            </option>
-            <option value="offer" style={selectOptionStyle()}>
-              Estou oferecendo carona
-            </option>
-            <option value="need" style={selectOptionStyle()}>
-              Estou procurando carona
-            </option>
-            <option value="both" style={selectOptionStyle()}>
-              Posso oferecer e também procurar
-            </option>
-          </select>
-          <div style={helperTextStyle()}>
-            Este campo define como o usuário entra no fluxo de carona compartilhada.
-          </div>
-        </label>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <label>
-            <span style={labelTitleStyle()}>Evento da carona</span>
-            <input
-              value={form.ride_event_name}
-              onChange={(e) => updateField("ride_event_name", e.target.value)}
-              placeholder="Ex: Time Warp Brasil"
-              style={inputStyle()}
-            />
-
-            <div style={searchBlockStyle()}>
-              <strong>Sugestões globais de evento</strong>
-              {rideEventSearch.loading ? (
-                <div style={{ fontSize: 12, opacity: 0.74 }}>Buscando eventos...</div>
-              ) : rideEventSearch.items.length > 0 ? (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {rideEventSearch.items.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => updateField("ride_event_name", item.name)}
-                      style={suggestionButtonStyle(
-                        normalizeSearchText(form.ride_event_name) === normalizeSearchText(item.name)
-                      )}
-                    >
-                      <span>{item.name}</span>
-                      {formatCatalogMeta(item) ? (
-                        <span style={{ fontSize: 11, opacity: 0.72 }}>{formatCatalogMeta(item)}</span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, opacity: 0.74 }}>
-                  Nada encontrado. Pode escrever manualmente.
-                </div>
-              )}
-            </div>
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Origem</span>
-            <input
-              value={form.ride_origin}
-              onChange={(e) => updateField("ride_origin", e.target.value)}
-              placeholder="Ex: Santo André - SP"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Destino ou ponto final</span>
-            <input
-              value={form.ride_destination}
-              onChange={(e) => updateField("ride_destination", e.target.value)}
-              placeholder="Ex: Autódromo de Interlagos"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Vagas</span>
-            <input
-              value={form.ride_seats}
-              onChange={(e) => updateField("ride_seats", e.target.value)}
-              placeholder="Ex: 3"
-              style={inputStyle()}
-            />
-          </label>
-        </div>
-
-        <label>
-          <span style={labelTitleStyle()}>Observações rápidas</span>
-          <textarea
-            value={form.ride_notes}
-            onChange={(e) => updateField("ride_notes", e.target.value)}
-            placeholder="Ex: Saída às 19h, aceito dividir combustível, retorno após o fechamento."
-            style={textareaStyle()}
-          />
-          <div style={helperTextStyle()}>
-            Use este campo para horário, ponto de encontro, divisão de custo, retorno ou observações do grupo.
-          </div>
-        </label>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <div style={previewCardStyle()}>
-            <strong>Status da carona</strong>
-            <div style={{ opacity: 0.84 }}>{ridePreviewStatus}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Evento</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.ride_event_name) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Origem</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.ride_origin) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Destino</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.ride_destination) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Vagas</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.ride_seats) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Observações</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              {normalizeText(form.ride_notes) || "Ainda não definido."}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Encontros combinados no evento</h3>
-          <p style={{ margin: 0, opacity: 0.78 }}>
-            Segunda camada prática da comunidade para marcar ponto, horário e encontro entre membros dentro do evento.
-          </p>
-        </div>
-
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <span>Completude do encontro</span>
-            <strong>
-              {meetReadyCount}/5
-            </strong>
-          </div>
-
-          <div
-            style={{
-              height: 10,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.08)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${meetReadyPercent}%`,
-                height: "100%",
-                borderRadius: 999,
-                background: "linear-gradient(90deg, rgba(120,120,255,0.90), rgba(255,255,255,0.90))",
-              }}
-            />
-          </div>
-
-          <div style={{ fontSize: 13, opacity: 0.76 }}>
-            {meetReadyPercent}% concluído.
-          </div>
-        </div>
-
-        <label>
-          <span style={labelTitleStyle()}>Situação do encontro</span>
-          <select
-            value={form.meet_status}
-            onChange={(e) => updateField("meet_status", e.target.value)}
-            style={selectStyle()}
-          >
-            <option value="" style={selectOptionStyle()}>
-              Selecione
-            </option>
-            <option value="host" style={selectOptionStyle()}>
-              Estou abrindo um ponto de encontro
-            </option>
-            <option value="join" style={selectOptionStyle()}>
-              Quero entrar em um encontro
-            </option>
-            <option value="both" style={selectOptionStyle()}>
-              Posso abrir ou entrar em um encontro
-            </option>
-          </select>
-          <div style={helperTextStyle()}>
-            Este campo define como o usuário entra no fluxo de encontro combinado dentro do evento.
-          </div>
-        </label>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <label>
-            <span style={labelTitleStyle()}>Evento do encontro</span>
-            <input
-              value={form.meet_event_name}
-              onChange={(e) => updateField("meet_event_name", e.target.value)}
-              placeholder="Ex: Time Warp Brasil"
-              style={inputStyle()}
-            />
-
-            <div style={searchBlockStyle()}>
-              <strong>Sugestões globais de evento</strong>
-              {meetEventSearch.loading ? (
-                <div style={{ fontSize: 12, opacity: 0.74 }}>Buscando eventos...</div>
-              ) : meetEventSearch.items.length > 0 ? (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {meetEventSearch.items.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => updateField("meet_event_name", item.name)}
-                      style={suggestionButtonStyle(
-                        normalizeSearchText(form.meet_event_name) === normalizeSearchText(item.name)
-                      )}
-                    >
-                      <span>{item.name}</span>
-                      {formatCatalogMeta(item) ? (
-                        <span style={{ fontSize: 11, opacity: 0.72 }}>{formatCatalogMeta(item)}</span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, opacity: 0.74 }}>
-                  Nada encontrado. Pode escrever manualmente.
-                </div>
-              )}
-            </div>
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Ponto de encontro</span>
-            <input
-              value={form.meet_meeting_point}
-              onChange={(e) => updateField("meet_meeting_point", e.target.value)}
-              placeholder="Ex: Entrada principal, bar central, palco 2"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Horário</span>
-            <input
-              value={form.meet_time}
-              onChange={(e) => updateField("meet_time", e.target.value)}
-              placeholder="Ex: 22:30"
-              style={inputStyle()}
-            />
-          </label>
-        </div>
-
-        <label>
-          <span style={labelTitleStyle()}>Observações rápidas</span>
-          <textarea
-            value={form.meet_notes}
-            onChange={(e) => updateField("meet_notes", e.target.value)}
-            placeholder="Ex: Vamos encontrar perto do palco principal antes do set principal. Entrarei com mais dois amigos."
-            style={textareaStyle()}
-          />
-          <div style={helperTextStyle()}>
-            Use este campo para instruções curtas, referência visual, grupo, dress code ou observação do encontro.
-          </div>
-        </label>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <div style={previewCardStyle()}>
-            <strong>Status do encontro</strong>
-            <div style={{ opacity: 0.84 }}>{meetPreviewStatus}</div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Evento</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.meet_event_name) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Ponto de encontro</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.meet_meeting_point) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Horário</strong>
-            <div style={{ opacity: 0.84 }}>
-              {normalizeText(form.meet_time) || "Ainda não definido."}
-            </div>
-          </div>
-
-          <div style={previewCardStyle()}>
-            <strong>Observações</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              {normalizeText(form.meet_notes) || "Ainda não definido."}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle()}>
-        <h3 style={{ margin: 0, fontWeight: 900 }}>Playlist e streaming</h3>
-
-        <label>
-          <span style={labelTitleStyle()}>Nome da playlist principal</span>
+          <span style={labelTitleStyle()}>Datas dos próximos eventos</span>
           <input
-            value={form.playlist_title}
-            onChange={(e) => updateField("playlist_title", e.target.value)}
-            placeholder="Ex: Warm Up para Warung"
+            value={form.next_events_dates}
+            onChange={(e) => updateField("next_events_dates", e.target.value)}
+            placeholder="Ex: 12/07/2026, 20/08/2026"
             style={inputStyle()}
           />
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Descrição da playlist</span>
-          <textarea
-            value={form.playlist_description}
-            onChange={(e) => updateField("playlist_description", e.target.value)}
-            placeholder="Ex: seleção que representa meu som, minha energia e o tipo de pista em que me encontro."
-            style={textareaStyle()}
+          <span style={labelTitleStyle()}>Links oficiais dos eventos</span>
+          <input
+            value={form.next_events_links}
+            onChange={(e) => updateField("next_events_links", e.target.value)}
+            placeholder="Cole o link oficial do evento"
+            style={inputStyle()}
           />
         </label>
+      </section>
+
+      <section style={sectionStyle()}>
+        <div style={{ display: "grid", gap: 4 }}>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Streaming e playlist principal</h3>
+          <p style={{ margin: 0, opacity: 0.78 }}>
+            Escolha a plataforma principal e cole o link específico da playlist, vídeo, faixa ou perfil.
+          </p>
+        </div>
 
         <label>
-          <span style={labelTitleStyle()}>Streaming principal do usuário</span>
+          <span style={labelTitleStyle()}>Plataforma principal</span>
           <select
             value={form.primary_streaming_platform}
             onChange={(e) => updateField("primary_streaming_platform", e.target.value)}
             style={selectStyle()}
           >
             <option value="" style={selectOptionStyle()}>
-              Selecione o principal
+              Selecione a plataforma
             </option>
             <option value="spotify" style={selectOptionStyle()}>
               Spotify
@@ -2179,95 +1567,342 @@ export default function ClubProfileManager({
             <option value="deezer" style={selectOptionStyle()}>
               Deezer
             </option>
-            <option value="beatport" style={selectOptionStyle()}>
-              Beatport
-            </option>
             <option value="mixcloud" style={selectOptionStyle()}>
               Mixcloud
+            </option>
+            <option value="beatport" style={selectOptionStyle()}>
+              Beatport
             </option>
           </select>
         </label>
 
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          <label>
-            <span style={labelTitleStyle()}>Spotify</span>
-            <input
-              value={form.spotify_url}
-              onChange={(e) => updateField("spotify_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
+        <label>
+          <span style={labelTitleStyle()}>Link da playlist principal</span>
+          <input
+            value={form.streaming_url}
+            onChange={(e) => updateField("streaming_url", e.target.value)}
+            placeholder="Cole aqui o link específico da playlist, vídeo ou faixa"
+            style={inputStyle()}
+          />
+          <div style={helperTextStyle()}>
+            Este campo agora salva automaticamente no lugar correto: YouTube em youtube_url, Spotify em spotify_url, SoundCloud em soundcloud_url, Apple Music em apple_music_url e Deezer em deezer_url.
+          </div>
+        </label>
 
-          <label>
-            <span style={labelTitleStyle()}>SoundCloud</span>
-            <input
-              value={form.soundcloud_url}
-              onChange={(e) => updateField("soundcloud_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
+        <label>
+          <span style={labelTitleStyle()}>Título da playlist</span>
+          <input
+            value={form.playlist_title}
+            onChange={(e) => updateField("playlist_title", e.target.value)}
+            placeholder="Ex: Minha seleção principal"
+            style={inputStyle()}
+          />
+          <div style={helperTextStyle()}>
+            Use apenas texto. Não cole link neste campo.
+          </div>
+        </label>
 
-          <label>
-            <span style={labelTitleStyle()}>YouTube</span>
-            <input
-              value={form.youtube_url}
-              onChange={(e) => updateField("youtube_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Apple Music</span>
-            <input
-              value={form.apple_music_url}
-              onChange={(e) => updateField("apple_music_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Deezer</span>
-            <input
-              value={form.deezer_url}
-              onChange={(e) => updateField("deezer_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Beatport</span>
-            <input
-              value={form.beatport_url}
-              onChange={(e) => updateField("beatport_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
-
-          <label>
-            <span style={labelTitleStyle()}>Mixcloud</span>
-            <input
-              value={form.mixcloud_url}
-              onChange={(e) => updateField("mixcloud_url", e.target.value)}
-              placeholder="Cole o link"
-              style={inputStyle()}
-            />
-          </label>
-        </div>
+        <label>
+          <span style={labelTitleStyle()}>Descrição da playlist</span>
+          <textarea
+            value={form.playlist_description}
+            onChange={(e) => updateField("playlist_description", e.target.value)}
+            placeholder="Descreva a energia da sua seleção musical"
+            style={textareaStyle()}
+          />
+        </label>
       </section>
 
-      <div style={{ display: "grid", gap: 10 }}>
+      <section style={sectionStyle()}>
+        <div style={{ display: "grid", gap: 4 }}>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Foto Club e identidade visual</h3>
+          <p style={{ margin: 0, opacity: 0.78 }}>
+            Adicione uma imagem forte para o topo do perfil público Club.
+          </p>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoSelected}
+          style={{ display: "none" }}
+        />
+
+        <div style={previewCardStyle()}>
+          {effectivePhotoPreview ? (
+            <img
+              src={effectivePhotoPreview}
+              alt="Prévia da foto Club"
+              style={{
+                width: "100%",
+                maxHeight: 360,
+                objectFit: "cover",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.10)",
+              }}
+            />
+          ) : (
+            <div style={{ opacity: 0.74, fontSize: 13 }}>
+              Nenhuma foto Club selecionada.
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" onClick={openPhotoPicker} style={buttonStyle()}>
+              Selecionar foto Club
+            </button>
+
+            {effectivePhotoPreview ? (
+              <button type="button" onClick={removePhoto} style={buttonStyle()}>
+                Remover foto
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          <strong>Prompts de imagem sugeridos</strong>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {PROMPT_PRESETS.map((preset) => (
+              <div
+                key={preset.id}
+                style={presetCardStyle(form.club_photo_style === preset.style)}
+              >
+                <div>
+                  <strong>{preset.title}</strong>
+                  <div style={{ fontSize: 12, opacity: 0.72, marginTop: 4 }}>
+                    {preset.subtitle}
+                  </div>
+                </div>
+
+                <button type="button" onClick={() => applyPreset(preset)} style={buttonStyle()}>
+                  Usar preset
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => copyPromptText(preset.prompt)}
+                  style={buttonStyle()}
+                >
+                  Copiar prompt
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <label>
+          <span style={labelTitleStyle()}>Prompt da foto Club</span>
+          <textarea
+            value={form.club_photo_prompt}
+            onChange={(e) => updateField("club_photo_prompt", e.target.value)}
+            placeholder="Prompt usado para criar a imagem Club"
+            style={textareaStyle()}
+          />
+        </label>
+      </section>
+
+      <section style={sectionStyle()}>
+        <div style={{ display: "grid", gap: 4 }}>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Carona compartilhada</h3>
+          <p style={{ margin: 0, opacity: 0.78 }}>
+            Crie ou participe de uma carona para eventos.
+          </p>
+        </div>
+
+        <label>
+          <span style={labelTitleStyle()}>Status</span>
+          <select
+            value={form.ride_status}
+            onChange={(e) => updateField("ride_status", e.target.value)}
+            style={selectStyle()}
+          >
+            <option value="" style={selectOptionStyle()}>
+              Selecione
+            </option>
+            <option value="offer" style={selectOptionStyle()}>
+              Oferecer carona
+            </option>
+            <option value="need" style={selectOptionStyle()}>
+              Procurar carona
+            </option>
+            <option value="both" style={selectOptionStyle()}>
+              Ambos
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Evento</span>
+          <input
+            value={form.ride_event_name}
+            onChange={(e) => updateField("ride_event_name", e.target.value)}
+            placeholder="Nome do evento"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Data</span>
+          <input
+            value={form.ride_event_date}
+            onChange={(e) => updateField("ride_event_date", e.target.value)}
+            placeholder="DD/MM/AAAA"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Link oficial do evento</span>
+          <input
+            value={form.ride_event_url}
+            onChange={(e) => updateField("ride_event_url", e.target.value)}
+            placeholder="Instagram ou site oficial"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Origem</span>
+          <input
+            value={form.ride_origin}
+            onChange={(e) => updateField("ride_origin", e.target.value)}
+            placeholder="Cidade ou ponto de saída"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Destino</span>
+          <input
+            value={form.ride_destination}
+            onChange={(e) => updateField("ride_destination", e.target.value)}
+            placeholder="Cidade ou local do evento"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Vagas</span>
+          <input
+            value={form.ride_seats}
+            onChange={(e) => updateField("ride_seats", e.target.value)}
+            placeholder="Ex: 2 vagas"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Observações</span>
+          <textarea
+            value={form.ride_notes}
+            onChange={(e) => updateField("ride_notes", e.target.value)}
+            placeholder="Detalhes importantes da carona"
+            style={textareaStyle()}
+          />
+        </label>
+      </section>
+
+      <section style={sectionStyle()}>
+        <div style={{ display: "grid", gap: 4 }}>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Encontro combinado</h3>
+          <p style={{ margin: 0, opacity: 0.78 }}>
+            Combine pontos de encontro dentro do evento.
+          </p>
+        </div>
+
+        <label>
+          <span style={labelTitleStyle()}>Status</span>
+          <select
+            value={form.meet_status}
+            onChange={(e) => updateField("meet_status", e.target.value)}
+            style={selectStyle()}
+          >
+            <option value="" style={selectOptionStyle()}>
+              Selecione
+            </option>
+            <option value="host" style={selectOptionStyle()}>
+              Criar encontro
+            </option>
+            <option value="join" style={selectOptionStyle()}>
+              Participar
+            </option>
+            <option value="both" style={selectOptionStyle()}>
+              Ambos
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Evento</span>
+          <input
+            value={form.meet_event_name}
+            onChange={(e) => updateField("meet_event_name", e.target.value)}
+            placeholder="Nome do evento"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Data</span>
+          <input
+            value={form.meet_event_date}
+            onChange={(e) => updateField("meet_event_date", e.target.value)}
+            placeholder="DD/MM/AAAA"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Link oficial do evento</span>
+          <input
+            value={form.meet_event_url}
+            onChange={(e) => updateField("meet_event_url", e.target.value)}
+            placeholder="Instagram ou site oficial"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Ponto de encontro</span>
+          <input
+            value={form.meet_meeting_point}
+            onChange={(e) => updateField("meet_meeting_point", e.target.value)}
+            placeholder="Ex: entrada principal, bar central, setor X"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Horário</span>
+          <input
+            value={form.meet_time}
+            onChange={(e) => updateField("meet_time", e.target.value)}
+            placeholder="Ex: 23:30"
+            style={inputStyle()}
+          />
+        </label>
+
+        <label>
+          <span style={labelTitleStyle()}>Observações</span>
+          <textarea
+            value={form.meet_notes}
+            onChange={(e) => updateField("meet_notes", e.target.value)}
+            placeholder="Detalhes do encontro combinado"
+            style={textareaStyle()}
+          />
+        </label>
+      </section>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
           type="button"
           onClick={saveProfile}
@@ -2277,8 +1912,23 @@ export default function ClubProfileManager({
           {saving ? "Salvando..." : "Salvar Club Mode"}
         </button>
 
-        {message ? <p style={{ margin: 0, opacity: 0.88 }}>{message}</p> : null}
+        {clubPublicHref ? (
+          <a
+            href={clubPublicHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={buttonStyle()}
+          >
+            Ver Club público
+          </a>
+        ) : null}
       </div>
+
+      {message ? (
+        <div style={{ fontSize: 13, opacity: 0.85, lineHeight: 1.55 }}>
+          {message}
+        </div>
+      ) : null}
     </div>
   );
 }
