@@ -1,4 +1,4 @@
-// src/app/[slug]/page.tsx
+﻿// src/app/[slug]/page.tsx
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,6 +8,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
+import OwnerClubToolbar from "./OwnerClubToolbar";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -1210,6 +1211,13 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       `}</style>
 
       <div style={page}>
+        <OwnerClubToolbar
+          cardId={card.card_id}
+          ownerUserId={card.user_id}
+          slug={card.slug}
+        />
+
+
         <header style={topBar}>
           <div>
             <div style={{ ...pillStyle(), marginBottom: 10 }}>Modo Club</div>
@@ -2150,3 +2158,4 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
