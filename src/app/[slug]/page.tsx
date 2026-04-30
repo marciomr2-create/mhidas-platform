@@ -9,6 +9,8 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
 import OwnerClubToolbar from "./OwnerClubToolbar";
+import RemoveClubTokenButton from "./RemoveClubTokenButton";
+import RemoveClubArtistButton from "./RemoveClubArtistButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -606,6 +608,7 @@ function CatalogRailCard({
   description,
   width = 245,
   accent = "purple",
+  removeAction,
 }: {
   label: string;
   catalog?: ClubCatalogItem | null;
@@ -613,6 +616,12 @@ function CatalogRailCard({
   description: string;
   width?: number;
   accent?: "purple" | "cyan" | "neutral";
+  removeAction?: {
+    cardId: string;
+    ownerUserId: string;
+    field: "favorite_clubs" | "favorite_events" | "last_events" | "next_events";
+    value: string;
+  };
 }) {
   const imageUrl = getCatalogImageUrl(catalog);
   const href = getCatalogHref(catalog);
@@ -713,21 +722,44 @@ function CatalogRailCard({
 
   if (href) {
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="uc-small-card"
-        style={catalogCardStyle(width, imageUrl, accent)}
-      >
-        {content}
-      </a>
+      <div className="uc-small-card" style={catalogCardStyle(width, imageUrl, accent)}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "block",
+            color: "#fff",
+            textDecoration: "none",
+          }}
+        >
+          {content}
+        </a>
+
+        {removeAction ? (
+          <RemoveClubTokenButton
+            cardId={removeAction.cardId}
+            ownerUserId={removeAction.ownerUserId}
+            field={removeAction.field}
+            value={removeAction.value}
+          />
+        ) : null}
+      </div>
     );
   }
 
   return (
     <div className="uc-small-card" style={catalogCardStyle(width, imageUrl, accent)}>
       {content}
+
+      {removeAction ? (
+        <RemoveClubTokenButton
+          cardId={removeAction.cardId}
+          ownerUserId={removeAction.ownerUserId}
+          field={removeAction.field}
+          value={removeAction.value}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1151,6 +1183,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   const artistCard: CSSProperties = {
     flex: "0 0 155px",
+    position: "relative",
     scrollSnapAlign: "start",
     background: "rgba(255,255,255,0.055)",
     borderRadius: 20,
@@ -1396,45 +1429,58 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
             <div className="uc-scroll" style={artistGrid}>
               {spotifyArtists.map((artist) => (
-                <a
-                  key={artist.spotify_id}
-                  href={artist.spotify_url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={artistCard}
-                >
-                  {artist.image_url ? (
-                    <img
-                      src={artist.image_url}
-                      alt={artist.name}
-                      style={{
-                        width: "100%",
-                        height: 160,
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        height: 160,
-                        display: "grid",
-                        placeItems: "center",
-                        background: "rgba(255,255,255,0.06)",
-                        fontWeight: 850,
-                      }}
-                    >
-                      Spotify
-                    </div>
-                  )}
+                <div key={artist.spotify_id} style={artistCard}>
+                  <a
+                    href={artist.spotify_url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "block",
+                      color: "#fff",
+                      textDecoration: "none",
+                    }}
+                  >
+                      {artist.image_url ? (
+                        <img
+                          src={artist.image_url}
+                          alt={artist.name}
+                          style={{
+                            width: "100%",
+                            height: 160,
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            height: 160,
+                            display: "grid",
+                            placeItems: "center",
+                            background: "rgba(255,255,255,0.06)",
+                            fontWeight: 850,
+                          }}
+                        >
+                          Spotify
+                        </div>
+                      )}
 
-                  <div style={{ padding: 12 }}>
-                    <strong>{artist.name}</strong>
-                    <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
-                      Spotify
-                    </div>
-                  </div>
-                </a>
+                      <div style={{ padding: 12 }}>
+                        <strong>{artist.name}</strong>
+                        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
+                          Spotify
+                        </div>
+                      </div>
+
+                  </a>
+
+                  <RemoveClubArtistButton
+                    cardId={card.card_id}
+                    ownerUserId={card.user_id}
+                    spotifyId={artist.spotify_id}
+                    artistName={artist.name}
+                  />
+                </div>
               ))}
             </div>
           </section>
@@ -1477,6 +1523,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       description="Presença na cena, pista e experiências ao vivo."
                       width={245}
                       accent="purple"
+                      removeAction={{
+                        cardId: card.card_id,
+                        ownerUserId: card.user_id,
+                        field: "favorite_clubs",
+                        value: item.name,
+                      }}
                     />
                   ))}
                 </div>
@@ -1510,6 +1562,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       description="Referência de evento dentro da identidade Club."
                       width={245}
                       accent="cyan"
+                      removeAction={{
+                        cardId: card.card_id,
+                        ownerUserId: card.user_id,
+                        field: "favorite_events",
+                        value: item.name,
+                      }}
                     />
                   ))}
                 </div>
@@ -1543,6 +1601,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       description="Memória de pista no perfil."
                       width={235}
                       accent="neutral"
+                      removeAction={{
+                        cardId: card.card_id,
+                        ownerUserId: card.user_id,
+                        field: "last_events",
+                        value: item.name,
+                      }}
                     />
                   ))}
                 </div>
@@ -1578,6 +1642,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         className="uc-medium-card"
                         style={eventCardStyle(285, catalogImage)}
                       >
+                        <RemoveClubTokenButton
+                          cardId={card.card_id}
+                          ownerUserId={card.user_id}
+                          field="next_events"
+                          value={event.name}
+                        />
                         {!catalogImage ? (
                           <div
                             style={{
@@ -1668,6 +1738,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         className="uc-medium-card"
                         style={eventCardStyle(285, catalogImage)}
                       >
+                        <RemoveClubTokenButton
+                          cardId={card.card_id}
+                          ownerUserId={card.user_id}
+                          field="next_events"
+                          value={item.name}
+                        />
                         <span style={microLabelStyle()}>Próximo rolê</span>
 
                         <strong
