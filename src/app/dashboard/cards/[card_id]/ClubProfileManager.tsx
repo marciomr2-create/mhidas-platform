@@ -1,7 +1,5 @@
-// src/app/dashboard/cards/[card_id]/ClubProfileManager.tsx
+﻿// src/app/dashboard/cards/[card_id]/ClubProfileManager.tsx
 "use client";
-
-// ===== PARTE 1/4 =====
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,7 +24,6 @@ type ClubProfileRow = {
   club_photo_prompt: string | null;
   club_photo_style: string | null;
 
-  // STREAMING (CRÍTICO)
   spotify_url: string | null;
   soundcloud_url: string | null;
   youtube_url: string | null;
@@ -69,7 +66,6 @@ type FormState = {
   playlist_title: string;
   playlist_description: string;
 
-  // STREAMING (AGORA CORRETO)
   streaming_url: string;
   primary_streaming_platform: string;
 
@@ -149,20 +145,18 @@ const EMPTY_FORM: FormState = {
   meet_time: "",
   meet_notes: "",
 };
-// src/app/dashboard/cards/[card_id]/ClubProfileManager.tsx
-
-// ===== PARTE 2/4 =====
 
 function mapRowToForm(row: ClubProfileRow | null): FormState {
   if (!row) return { ...EMPTY_FORM };
 
-  // Detecta qual URL já existe para preencher o campo único
   const detectedUrl =
     row.youtube_url ||
     row.spotify_url ||
     row.soundcloud_url ||
     row.apple_music_url ||
     row.deezer_url ||
+    row.mixcloud_url ||
+    row.beatport_url ||
     "";
 
   return {
@@ -213,10 +207,6 @@ function mapRowToForm(row: ClubProfileRow | null): FormState {
   };
 }
 
-/**
- * 🔥 FUNÇÃO DEFINITIVA
- * Salva o link no campo correto baseado na plataforma
- */
 function mapFormToPayload(form: FormState) {
   const platform = (form.primary_streaming_platform || "").toLowerCase();
   const url = form.streaming_url?.trim() || "";
@@ -239,19 +229,21 @@ function mapFormToPayload(form: FormState) {
     club_photo_style: form.club_photo_style || null,
     primary_streaming_platform: form.primary_streaming_platform || null,
 
-    // 🔥 RESETA TODOS (evita lixo antigo)
     youtube_url: null,
     spotify_url: null,
     soundcloud_url: null,
     apple_music_url: null,
     deezer_url: null,
+    mixcloud_url: null,
+    beatport_url: null,
 
-    // 🔥 DEFINE O CORRETO
     ...(platform.includes("youtube") && { youtube_url: url }),
     ...(platform.includes("spotify") && { spotify_url: url }),
     ...(platform.includes("soundcloud") && { soundcloud_url: url }),
     ...(platform.includes("apple") && { apple_music_url: url }),
     ...(platform.includes("deezer") && { deezer_url: url }),
+    ...(platform.includes("mixcloud") && { mixcloud_url: url }),
+    ...(platform.includes("beatport") && { beatport_url: url }),
 
     ride_status: form.ride_status || null,
     ride_event_name: form.ride_event_name || null,
@@ -271,7 +263,6 @@ function mapFormToPayload(form: FormState) {
     meet_notes: form.meet_notes || null,
   };
 }
-// ===== PARTE 3/4 =====
 
 type ClubProfileManagerProps = {
   clubPublicHref?: string;
@@ -299,6 +290,25 @@ type CatalogItem = {
   popularity: number | null;
 };
 
+type ClubCatalogItemType = "club" | "festival" | "party" | "event" | "venue";
+
+type ClubCatalogSuggestion = {
+  id?: string;
+  name: string;
+  type: ClubCatalogItemType;
+  city: string;
+  state: string;
+  country: string;
+  image_url: string;
+  official_url: string;
+  instagram_url: string;
+  source_url: string;
+  source_name: string;
+  source_provider: string;
+  is_verified: boolean;
+  is_from_catalog: boolean;
+};
+
 type BrazilCityItem = {
   id: string;
   city_name: string;
@@ -320,19 +330,19 @@ const CLUB_BUCKET = "club-photos";
 const PROMPT_PRESETS: PromptPreset[] = [
   {
     id: "artist-monochrome",
-    title: "Artista monocromático",
-    subtitle: "Estética forte, preto e branco, presença de artista",
-    style: "monocromático artístico premium",
+    title: "Artista monocromÃ¡tico",
+    subtitle: "EstÃ©tica forte, preto e branco, presenÃ§a de artista",
+    style: "monocromÃ¡tico artÃ­stico premium",
     prompt:
-      "Use esta foto como base e preserve fielmente rosto, cabelo, barba e identidade visual real. Gere uma foto de perfil artística voltada à cena eletrônica, em preto e branco premium, iluminação dramática, contraste alto, atmosfera elegante, expressão segura, enquadramento de retrato, aparência de artista ou clubber sofisticado, sem caricatura, sem perder autenticidade facial.",
+      "Use esta foto como base e preserve fielmente rosto, cabelo, barba e identidade visual real. Gere uma foto de perfil artÃ­stica voltada Ã  cena eletrÃ´nica, em preto e branco premium, iluminaÃ§Ã£o dramÃ¡tica, contraste alto, atmosfera elegante, expressÃ£o segura, enquadramento de retrato, aparÃªncia de artista ou clubber sofisticado, sem caricatura, sem perder autenticidade facial.",
   },
   {
     id: "festival-neon",
     title: "Festival neon",
-    subtitle: "Energia de palco, festival e lifestyle eletrônico",
+    subtitle: "Energia de palco, festival e lifestyle eletrÃ´nico",
     style: "festival neon electronic scene",
     prompt:
-      "Use esta foto como imagem base, mantendo identidade real da pessoa. Gere uma foto de perfil inspirada na cena eletrônica e festivais, com atmosfera premium, luzes neon discretas, sensação noturna, estética moderna, roupa alinhada ao lifestyle clubber, presença forte e visual marcante, mantendo o rosto reconhecível e realista.",
+      "Use esta foto como imagem base, mantendo identidade real da pessoa. Gere uma foto de perfil inspirada na cena eletrÃ´nica e festivais, com atmosfera premium, luzes neon discretas, sensaÃ§Ã£o noturna, estÃ©tica moderna, roupa alinhada ao lifestyle clubber, presenÃ§a forte e visual marcante, mantendo o rosto reconhecÃ­vel e realista.",
   },
   {
     id: "underground-shadow",
@@ -340,7 +350,7 @@ const PROMPT_PRESETS: PromptPreset[] = [
     subtitle: "Mais dark, sofisticado e club culture",
     style: "underground shadow club culture",
     prompt:
-      "Use esta foto como base, preservando completamente a identidade facial. Gere um retrato de perfil com linguagem visual underground, sombra elegante, fundo escuro, iluminação lateral refinada, estética de club culture, ar misterioso e sofisticado, sem exagero artificial, com realismo elevado e presença forte.",
+      "Use esta foto como base, preservando completamente a identidade facial. Gere um retrato de perfil com linguagem visual underground, sombra elegante, fundo escuro, iluminaÃ§Ã£o lateral refinada, estÃ©tica de club culture, ar misterioso e sofisticado, sem exagero artificial, com realismo elevado e presenÃ§a forte.",
   },
   {
     id: "dj-premium",
@@ -348,7 +358,7 @@ const PROMPT_PRESETS: PromptPreset[] = [
     subtitle: "Foto com autoridade visual de artista da cena",
     style: "dj premium portrait",
     prompt:
-      "Use esta foto como base e mantenha traços reais do rosto. Gere uma foto de perfil premium no estilo retrato de DJ ou artista da cena eletrônica, com visual contemporâneo, iluminação bem trabalhada, postura segura, fundo limpo ou noturno sofisticado, percepção de alto valor e identidade visual forte.",
+      "Use esta foto como base e mantenha traÃ§os reais do rosto. Gere uma foto de perfil premium no estilo retrato de DJ ou artista da cena eletrÃ´nica, com visual contemporÃ¢neo, iluminaÃ§Ã£o bem trabalhada, postura segura, fundo limpo ou noturno sofisticado, percepÃ§Ã£o de alto valor e identidade visual forte.",
   },
   {
     id: "cinematic-clubber",
@@ -356,7 +366,7 @@ const PROMPT_PRESETS: PromptPreset[] = [
     subtitle: "Mais lifestyle e pertencimento",
     style: "cinematic clubber lifestyle",
     prompt:
-      "Use esta foto como imagem base e preserve fielmente a identidade visual real. Gere uma foto de perfil cinematográfica voltada ao universo clubber e à cena eletrônica, com profundidade, iluminação refinada, visual moderno, atmosfera premium, tom emocional e sensação de pertencimento à cultura eletrônica.",
+      "Use esta foto como imagem base e preserve fielmente a identidade visual real. Gere uma foto de perfil cinematogrÃ¡fica voltada ao universo clubber e Ã  cena eletrÃ´nica, com profundidade, iluminaÃ§Ã£o refinada, visual moderno, atmosfera premium, tom emocional e sensaÃ§Ã£o de pertencimento Ã  cultura eletrÃ´nica.",
   },
 ];
 
@@ -382,7 +392,7 @@ function splitPreferences(value: string | null | undefined) {
   if (!text) return [];
 
   return text
-    .split(/,|•|;|\|/)
+    .split(/,|â€¢|;|\|/)
     .map((part) => normalizeText(part))
     .filter(Boolean);
 }
@@ -410,6 +420,25 @@ function uniqueItems(items: string[]) {
   );
 }
 
+function parseCityBase(value: string) {
+  const text = normalizeText(value);
+
+  if (!text) {
+    return { city: "", state: "" };
+  }
+
+  const match = text.match(/^(.*?)(?:\s*-\s*|\s*,\s*)([A-Z]{2})$/i);
+
+  if (!match) {
+    return { city: text, state: "" };
+  }
+
+  return {
+    city: normalizeText(match[1]),
+    state: normalizeText(match[2]).toUpperCase(),
+  };
+}
+
 function buildGeneratedBelonging(form: FormState) {
   const city = normalizeText(form.city_base);
   const genre = firstPreference(form.favorite_genres);
@@ -418,11 +447,11 @@ function buildGeneratedBelonging(form: FormState) {
   const event = firstPreference(form.favorite_events);
 
   if (artist && club && event && city) {
-    return `Faço parte do universo ${artist}, me reconheço em ${club}, vivo experiências como ${event} e levo essa identidade comigo em ${city}.`;
+    return `FaÃ§o parte do universo ${artist}, me reconheÃ§o em ${club}, vivo experiÃªncias como ${event} e levo essa identidade comigo em ${city}.`;
   }
 
   if (artist && club && event) {
-    return `Faço parte do universo ${artist}, me reconheço em ${club} e busco viver experiências como ${event}.`;
+    return `FaÃ§o parte do universo ${artist}, me reconheÃ§o em ${club} e busco viver experiÃªncias como ${event}.`;
   }
 
   if (artist && club) {
@@ -430,15 +459,15 @@ function buildGeneratedBelonging(form: FormState) {
   }
 
   if (club && event) {
-    return `Me sinto parte de ${club} e busco viver experiências como ${event}.`;
+    return `Me sinto parte de ${club} e busco viver experiÃªncias como ${event}.`;
   }
 
   if (genre && club) {
-    return `Minha identidade passa por ${genre} e por referências como ${club}.`;
+    return `Minha identidade passa por ${genre} e por referÃªncias como ${club}.`;
   }
 
   if (artist) {
-    return `Minha identidade na cena passa por referências como ${artist}.`;
+    return `Minha identidade na cena passa por referÃªncias como ${artist}.`;
   }
 
   return "";
@@ -447,15 +476,15 @@ function buildGeneratedBelonging(form: FormState) {
 function getRideStatusLabel(value: string) {
   if (value === "offer") return "Oferecendo carona";
   if (value === "need") return "Procurando carona";
-  if (value === "both") return "Oferece e também procura";
-  return "Ainda não definido.";
+  if (value === "both") return "Oferece e tambÃ©m procura";
+  return "Ainda nÃ£o definido.";
 }
 
 function getMeetStatusLabel(value: string) {
   if (value === "host") return "Abrindo ponto de encontro";
   if (value === "join") return "Quer entrar em um encontro";
   if (value === "both") return "Pode abrir ou entrar";
-  return "Ainda não definido.";
+  return "Ainda nÃ£o definido.";
 }
 
 function formatCatalogMeta(item: CatalogItem) {
@@ -465,7 +494,33 @@ function formatCatalogMeta(item: CatalogItem) {
     normalizeText(item.country_code),
   ].filter(Boolean);
 
-  return parts.join(" • ");
+  return parts.join(" â€¢ ");
+}
+
+function formatClubCatalogLocation(item: ClubCatalogSuggestion) {
+  const parts = [
+    normalizeText(item.city),
+    normalizeText(item.state),
+    normalizeText(item.country),
+  ].filter(Boolean);
+
+  return parts.join(" - ");
+}
+
+function getClubCatalogMainUrl(item: ClubCatalogSuggestion) {
+  return (
+    normalizeText(item.official_url) ||
+    normalizeText(item.instagram_url) ||
+    normalizeText(item.source_url)
+  );
+}
+
+function getClubCatalogTypeLabel(value: ClubCatalogItemType) {
+  if (value === "festival") return "Festival";
+  if (value === "party") return "Festa";
+  if (value === "event") return "Evento";
+  if (value === "venue") return "Local";
+  return "Club";
 }
 
 function sanitizeFileName(fileName: string) {
@@ -569,6 +624,16 @@ function buttonStyle(disabled = false) {
     fontWeight: 800,
     textDecoration: "none",
     opacity: disabled ? 0.55 : 1,
+  } as const;
+}
+
+function primaryButtonStyle(disabled = false) {
+  return {
+    ...buttonStyle(disabled),
+    border: disabled
+      ? "1px solid rgba(255,255,255,0.12)"
+      : "1px solid rgba(0,200,120,0.30)",
+    background: disabled ? "rgba(255,255,255,0.03)" : "rgba(0,200,120,0.12)",
   } as const;
 }
 
@@ -800,7 +865,7 @@ function CatalogTokenField({
   onRemove,
   onToggleSuggestion,
 }: CatalogTokenFieldProps) {
-  const selectedItems = splitPreferences(formValue);
+  const selectedItems = uniqueItems(splitPreferences(formValue));
 
   return (
     <label>
@@ -824,8 +889,8 @@ function CatalogTokenField({
 
       {selectedItems.length > 0 ? (
         <div style={selectedTokensWrapStyle()}>
-          {selectedItems.map((item) => (
-            <span key={`${fieldKey}-${item}`} style={selectedTokenStyle()}>
+          {selectedItems.map((item, index) => (
+            <span key={`${fieldKey}-${normalizeSearchText(item)}-${index}`} style={selectedTokenStyle()}>
               {item}
               <button
                 type="button"
@@ -833,7 +898,7 @@ function CatalogTokenField({
                 style={tokenRemoveButtonStyle()}
                 aria-label={`Remover ${item}`}
               >
-                ×
+                Ã—
               </button>
             </span>
           ))}
@@ -841,11 +906,11 @@ function CatalogTokenField({
       ) : null}
 
       <div style={searchBlockStyle()}>
-        <strong>Sugestões globais</strong>
+        <strong>SugestÃµes globais</strong>
 
         {loading ? (
           <div style={{ fontSize: 12, opacity: 0.74 }}>
-            Buscando no catálogo global...
+            Buscando no catÃ¡logo global...
           </div>
         ) : suggestions.length > 0 ? (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -867,11 +932,334 @@ function CatalogTokenField({
           </div>
         ) : (
           <div style={{ fontSize: 12, opacity: 0.74 }}>
-            Nada encontrado no catálogo global para este termo. Pode escrever manualmente e pressionar Enter.
+            Nada encontrado no catÃ¡logo global para este termo. Pode escrever manualmente e pressionar Enter.
           </div>
         )}
       </div>
     </label>
+  );
+}
+
+type AssistedClubCatalogSearchProps = {
+  cityBase: string;
+  onUseSuggestion: (
+    suggestion: ClubCatalogSuggestion,
+    tokenName: string,
+    forcedTargetKey?: TokenFieldKey
+  ) => Promise<void> | void;
+  onMessage: (message: string) => void;
+  initialType?: ClubCatalogItemType;
+  fixedTargetKey?: TokenFieldKey;
+  title?: string;
+  description?: string;
+  placeholder?: string;
+};
+
+function AssistedClubCatalogSearch({
+  cityBase,
+  onUseSuggestion,
+  onMessage,
+  initialType = "club",
+  fixedTargetKey,
+  title = "Busca assistida de club, festa ou local com imagem",
+  description = "Use quando quiser trazer imagem e fonte oficial para o catálogo interno. Depois usaremos estes dados para mostrar os itens com imagem na página pública.",
+  placeholder = "Ex: Surreal Park, Green Valley, Laroc Club",
+}: AssistedClubCatalogSearchProps) {
+  const [query, setQuery] = useState("");
+  const [itemType, setItemType] = useState<ClubCatalogItemType>(initialType);
+  const [suggestions, setSuggestions] = useState<ClubCatalogSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [savingKey, setSavingKey] = useState("");
+  const [localMessage, setLocalMessage] = useState("");
+
+  const parsedCity = parseCityBase(cityBase);
+
+  async function searchOfficialClubCatalog() {
+    const cleanQuery = normalizeText(query);
+
+    if (cleanQuery.length < 2) {
+      setLocalMessage("Digite pelo menos 2 caracteres para buscar.");
+      return;
+    }
+
+    setLoading(true);
+    setLocalMessage("");
+    setSuggestions([]);
+
+    try {
+      const response = await fetch("/api/club-catalog/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: cleanQuery,
+          type: itemType,
+          city: parsedCity.city,
+          state: parsedCity.state,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "NÃ£o foi possÃ­vel buscar agora.");
+      }
+
+      const nextSuggestions = Array.isArray(data.suggestions)
+        ? (data.suggestions as ClubCatalogSuggestion[])
+        : [];
+
+      setSuggestions(nextSuggestions);
+
+      if (nextSuggestions.length === 0) {
+        setLocalMessage("Nenhuma sugestÃ£o encontrada. Tente o nome oficial ou o Instagram do local.");
+      } else if (data.source === "catalog") {
+        setLocalMessage("Resultado encontrado no catÃ¡logo interno.");
+      } else {
+        setLocalMessage("Resultado encontrado por busca assistida. Confirme o item correto para salvar no catÃ¡logo.");
+      }
+    } catch (error) {
+      setLocalMessage(
+        error instanceof Error ? error.message : "NÃ£o foi possÃ­vel buscar agora."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveSuggestion(item: ClubCatalogSuggestion, index: number) {
+    const key = `${item.source_url || item.instagram_url || item.official_url || item.name}-${index}`;
+
+    setSavingKey(key);
+    setLocalMessage("");
+
+    try {
+      const payload = {
+        name: item.name,
+        type: item.type || itemType,
+        city: item.city || parsedCity.city,
+        state: item.state || parsedCity.state,
+        country: item.country || "Brasil",
+        image_url: item.image_url,
+        official_url: item.official_url,
+        instagram_url: item.instagram_url,
+        source_url: item.source_url || item.official_url || item.instagram_url,
+        source_name: item.source_name,
+        source_provider: item.source_provider || "dashboard",
+      };
+
+      const response = await fetch("/api/club-catalog/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "NÃ£o foi possÃ­vel salvar este item no catÃ¡logo.");
+      }
+
+      const confirmedItem = (data.item || item) as ClubCatalogSuggestion;
+      const tokenName = normalizeText(confirmedItem.name || item.name) || normalizeText(query);
+
+      await onUseSuggestion(confirmedItem, tokenName, fixedTargetKey);
+
+      const successMessage = `${tokenName || confirmedItem.name || item.name} foi salvo no catálogo e no Club Mode.`;
+      setLocalMessage(successMessage);
+      onMessage(successMessage);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "NÃ£o foi possÃ­vel salvar este item.";
+      setLocalMessage(errorMessage);
+      onMessage(errorMessage);
+    } finally {
+      setSavingKey("");
+    }
+  }
+
+  return (
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 16,
+        border: "1px solid rgba(0,200,120,0.18)",
+        background: "rgba(0,200,120,0.055)",
+        display: "grid",
+        gap: 12,
+      }}
+    >
+      <div style={{ display: "grid", gap: 4 }}>
+        <strong>{title}</strong>
+        <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.76 }}>
+          {description}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 160px",
+          gap: 10,
+        }}
+      >
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void searchOfficialClubCatalog();
+            }
+          }}
+          placeholder={placeholder}
+          style={inputStyle()}
+        />
+
+        <select
+          value={itemType}
+          onChange={(e) => setItemType(e.target.value as ClubCatalogItemType)}
+          style={selectStyle()}
+        >
+          <option value="club" style={selectOptionStyle()}>
+            Club
+          </option>
+          <option value="festival" style={selectOptionStyle()}>
+            Festival
+          </option>
+          <option value="party" style={selectOptionStyle()}>
+            Festa
+          </option>
+          <option value="event" style={selectOptionStyle()}>
+            Evento
+          </option>
+          <option value="venue" style={selectOptionStyle()}>
+            Local
+          </option>
+        </select>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={searchOfficialClubCatalog}
+          disabled={loading}
+          style={primaryButtonStyle(loading)}
+        >
+          {loading ? "Buscando..." : "Buscar imagem e fonte oficial"}
+        </button>
+      </div>
+
+      {localMessage ? (
+        <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.82 }}>
+          {localMessage}
+        </div>
+      ) : null}
+
+      {suggestions.length > 0 ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          {suggestions.map((item, index) => {
+            const mainUrl = getClubCatalogMainUrl(item);
+            const key = `${item.source_url || item.instagram_url || item.official_url || item.name}-${index}`;
+            const isSaving = savingKey === key;
+
+            return (
+              <div
+                key={key}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "96px minmax(0, 1fr)",
+                  gap: 12,
+                  padding: 12,
+                  borderRadius: 14,
+                  border: item.is_from_catalog
+                    ? "1px solid rgba(0,200,120,0.24)"
+                    : "1px solid rgba(255,255,255,0.12)",
+                  background: item.is_from_catalog
+                    ? "rgba(0,200,120,0.08)"
+                    : "rgba(255,255,255,0.04)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.06)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 11, opacity: 0.68, textAlign: "center" }}>
+                      Sem imagem
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 900 }}>{item.name}</div>
+                    <div style={{ fontSize: 12, opacity: 0.72, marginTop: 3 }}>
+                      {getClubCatalogTypeLabel(item.type)}
+                      {formatClubCatalogLocation(item)
+                        ? ` â€¢ ${formatClubCatalogLocation(item)}`
+                        : ""}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.62, marginTop: 3 }}>
+                      Fonte: {item.source_name || item.source_provider || "busca assistida"}
+                      {item.is_from_catalog ? " â€¢ jÃ¡ estava no catÃ¡logo" : ""}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => saveSuggestion(item, index)}
+                      disabled={isSaving}
+                      style={primaryButtonStyle(isSaving)}
+                    >
+                      {isSaving ? "Salvando..." : "Usar este"}
+                    </button>
+
+                    {mainUrl ? (
+                      <a
+                        href={mainUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={buttonStyle()}
+                      >
+                        Abrir fonte
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -929,7 +1317,7 @@ export default function ClubProfileManager({
       .maybeSingle();
 
     if (error) {
-      setMessage("Não foi possível carregar o Club Mode.");
+      setMessage("NÃ£o foi possÃ­vel carregar o Club Mode.");
       setLoading(false);
       return;
     }
@@ -990,11 +1378,94 @@ export default function ClubProfileManager({
     clearDraft();
   }
 
+  async function saveTokenFieldImmediately(key: TokenFieldKey, items: string[]) {
+    const nextValue = uniqueItems(items).join(", ");
+
+    setForm((prev) => ({
+      ...prev,
+      [key]: nextValue,
+    }));
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("Faça login novamente para salvar no Club Mode.");
+    }
+
+    const { data: updatedRows, error: updateError } = await supabase
+      .from("club_profiles")
+      .update({
+        [key]: nextValue || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id)
+      .select("user_id");
+
+    if (updateError) {
+      throw new Error(`Não foi possível salvar no Club Mode. ${updateError.message}`);
+    }
+
+    if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
+      const { error: insertError } = await supabase
+        .from("club_profiles")
+        .insert({
+          user_id: user.id,
+          ...mapFormToPayload({
+            ...form,
+            [key]: nextValue,
+          }),
+          [key]: nextValue || null,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (insertError) {
+        throw new Error(`Não foi possível criar o Club Mode. ${insertError.message}`);
+      }
+    }
+
+    const { error: syncError } = await supabase.rpc(
+      "sync_event_groups_from_club_profile",
+      { p_user_id: user.id }
+    );
+
+    if (syncError) {
+      throw new Error(
+        `Item salvo, mas não foi possível sincronizar os grupos vivos. ${syncError.message}`
+      );
+    }
+
+    router.refresh();
+  }
+
+  async function handleUseClubCatalogSuggestion(
+    item: ClubCatalogSuggestion,
+    tokenName: string,
+    forcedTargetKey?: TokenFieldKey
+  ) {
+    const cleanName = normalizeText(tokenName || item.name);
+
+    if (!cleanName) return;
+
+    const targetKey: TokenFieldKey =
+      forcedTargetKey ||
+      (item.type === "club" || item.type === "venue"
+        ? "favorite_clubs"
+        : "favorite_events");
+
+    const nextItems = uniqueItems([...splitPreferences(form[targetKey]), cleanName]);
+
+    await saveTokenFieldImmediately(targetKey, nextItems);
+
+    setMessage(`${cleanName} foi salvo automaticamente no Club Mode.`);
+  }
+
   function applyGeneratedBelonging() {
     const generated = buildGeneratedBelonging(form);
 
     if (!generated) {
-      setMessage("Preencha artista, club ou festival de referência para gerar a frase.");
+      setMessage("Preencha artista, club ou festival de referÃªncia para gerar a frase.");
       return;
     }
 
@@ -1002,7 +1473,7 @@ export default function ClubProfileManager({
       ...prev,
       club_tagline: generated,
     }));
-    setMessage("Frase automática de pertencimento aplicada.");
+    setMessage("Frase automÃ¡tica de pertencimento aplicada.");
   }
 
   async function copyClubLink() {
@@ -1015,7 +1486,7 @@ export default function ClubProfileManager({
       await navigator.clipboard.writeText(`${window.location.origin}${clubPublicHref}`);
       setMessage("Link do Club copiado com sucesso.");
     } catch {
-      setMessage("Não foi possível copiar o link agora.");
+      setMessage("NÃ£o foi possÃ­vel copiar o link agora.");
     }
   }
 
@@ -1033,7 +1504,7 @@ export default function ClubProfileManager({
       await navigator.clipboard.writeText(value);
       setMessage("Prompt copiado com sucesso.");
     } catch {
-      setMessage("Não foi possível copiar o prompt agora.");
+      setMessage("NÃ£o foi possÃ­vel copiar o prompt agora.");
     }
   }
 
@@ -1052,7 +1523,7 @@ export default function ClubProfileManager({
     }
 
     if (selectedFile.size > 5 * 1024 * 1024) {
-      setMessage("A imagem deve ter no máximo 5 MB.");
+      setMessage("A imagem deve ter no mÃ¡ximo 5 MB.");
       event.target.value = "";
       return;
     }
@@ -1064,7 +1535,7 @@ export default function ClubProfileManager({
       setPhotoTouched(true);
       setMessage("Foto Club selecionada. Agora clique em Salvar.");
     } catch {
-      setMessage("Não foi possível preparar a imagem.");
+      setMessage("NÃ£o foi possÃ­vel preparar a imagem.");
     }
 
     event.target.value = "";
@@ -1075,7 +1546,7 @@ export default function ClubProfileManager({
     setLocalPhotoPreview("");
     setPhotoTouched(true);
     setForm((prev) => ({ ...prev, club_photo_url: "" }));
-    setMessage("Foto removida do formulário. Agora clique em Salvar.");
+    setMessage("Foto removida do formulÃ¡rio. Agora clique em Salvar.");
   }
 
   async function uploadPendingPhotoIfNeeded(userId: string): Promise<string> {
@@ -1100,7 +1571,7 @@ export default function ClubProfileManager({
 
     if (uploadError) {
       throw new Error(
-        `Não foi possível enviar a foto do Club. Verifique se o bucket '${CLUB_BUCKET}' existe e se as permissões estão corretas.`
+        `NÃ£o foi possÃ­vel enviar a foto do Club. Verifique se o bucket '${CLUB_BUCKET}' existe e se as permissÃµes estÃ£o corretas.`
       );
     }
 
@@ -1121,7 +1592,7 @@ export default function ClubProfileManager({
 
     if (!user) {
       setSaving(false);
-      setMessage("Faça login novamente para salvar.");
+      setMessage("FaÃ§a login novamente para salvar.");
       return;
     }
 
@@ -1142,7 +1613,7 @@ export default function ClubProfileManager({
 
       if (updateError) {
         setSaving(false);
-        setMessage(`Não foi possível atualizar agora. ${updateError.message}`);
+        setMessage(`NÃ£o foi possÃ­vel atualizar agora. ${updateError.message}`);
         return;
       }
 
@@ -1163,7 +1634,7 @@ export default function ClubProfileManager({
 
         if (insertError) {
           setSaving(false);
-          setMessage(`Não foi possível inserir agora. ${insertError.message}`);
+          setMessage(`NÃ£o foi possÃ­vel inserir agora. ${insertError.message}`);
           return;
         }
 
@@ -1178,7 +1649,7 @@ export default function ClubProfileManager({
       if (syncError) {
         setSaving(false);
         setMessage(
-          `Perfil salvo, mas não foi possível sincronizar os grupos vivos. ${syncError.message}`
+          `Perfil salvo, mas nÃ£o foi possÃ­vel sincronizar os grupos vivos. ${syncError.message}`
         );
         return;
       }
@@ -1192,7 +1663,7 @@ export default function ClubProfileManager({
       if (confirmError || !confirmedRow) {
         setSaving(false);
         setMessage(
-          "O salvamento foi iniciado, mas não foi possível confirmar a persistência no banco."
+          "O salvamento foi iniciado, mas nÃ£o foi possÃ­vel confirmar a persistÃªncia no banco."
         );
         return;
       }
@@ -1208,7 +1679,7 @@ export default function ClubProfileManager({
     } catch (error) {
       setSaving(false);
       setMessage(
-        error instanceof Error ? error.message : "Não foi possível salvar o Club Mode."
+        error instanceof Error ? error.message : "NÃ£o foi possÃ­vel salvar o Club Mode."
       );
     }
   }
@@ -1237,19 +1708,18 @@ export default function ClubProfileManager({
     (completenessCount / completenessItems.length) * 100
   );
 
-  const previewBelonging = buildGeneratedBelonging(form) || "Ainda não definido.";
+  const previewBelonging = buildGeneratedBelonging(form) || "Ainda nÃ£o definido.";
   const missingPriorityFields = [
     !hasContent(form.city_base) ? "cidade e estado" : "",
     !hasContent(form.favorite_genres) ? "vertente principal" : "",
-    !hasContent(form.favorite_artists) ? "artista de referência" : "",
-    !hasContent(form.favorite_clubs) ? "club de referência" : "",
-    !hasContent(form.favorite_events) ? "festival ou festa de referência" : "",
+    !hasContent(form.favorite_artists) ? "artista de referÃªncia" : "",
+    !hasContent(form.favorite_clubs) ? "club de referÃªncia" : "",
+    !hasContent(form.favorite_events) ? "festival ou festa de referÃªncia" : "",
   ].filter(Boolean);
 
   if (loading) {
     return <p>Carregando Club Mode...</p>;
   }
-// ===== PARTE 4/4 =====
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -1257,7 +1727,7 @@ export default function ClubProfileManager({
         <div style={{ display: "grid", gap: 6 }}>
           <h3 style={{ margin: 0, fontWeight: 900 }}>Estrutura cultural do Club</h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Aqui nasce a identidade do usuário na cena eletrônica.
+            Aqui nasce a identidade do usuÃ¡rio na cena eletrÃ´nica.
           </p>
         </div>
 
@@ -1288,7 +1758,7 @@ export default function ClubProfileManager({
           </div>
 
           <div style={{ fontSize: 13, opacity: 0.76 }}>
-            {completenessPercent}% concluído.
+            {completenessPercent}% concluÃ­do.
           </div>
         </div>
 
@@ -1303,7 +1773,7 @@ export default function ClubProfileManager({
           }}
         >
           {missingPriorityFields.length === 0
-            ? "Os campos prioritários do topo do Club estão preenchidos."
+            ? "Os campos prioritÃ¡rios do topo do Club estÃ£o preenchidos."
             : `Faltam ${missingPriorityFields.length} campos-chave para o topo do Club ficar forte: ${missingPriorityFields.join(", ")}.`}
         </div>
 
@@ -1328,10 +1798,10 @@ export default function ClubProfileManager({
       <section style={sectionStyle()}>
         <div style={{ display: "grid", gap: 4 }}>
           <h3 style={{ margin: 0, fontWeight: 900 }}>
-            Preenchimento prioritário do topo público
+            Preenchimento prioritÃ¡rio do topo pÃºblico
           </h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Estes são os campos que formam a identidade principal do Club público.
+            Estes sÃ£o os campos que formam a identidade principal do Club pÃºblico.
           </p>
         </div>
 
@@ -1346,12 +1816,12 @@ export default function ClubProfileManager({
                 updateField("city_base", citySearch.items[0].display_name);
               }
             }}
-            placeholder="Digite a cidade e escolha a opção no formato Cidade - UF"
+            placeholder="Digite a cidade e escolha a opÃ§Ã£o no formato Cidade - UF"
             style={inputStyle()}
           />
 
           <div style={helperTextStyle()}>
-            Busca nacional focada no Brasil. O resultado final fica sempre no padrão Cidade - UF.
+            Busca nacional focada no Brasil. O resultado final fica sempre no padrÃ£o Cidade - UF.
           </div>
 
           <div style={searchBlockStyle()}>
@@ -1390,7 +1860,7 @@ export default function ClubProfileManager({
           <input
             value={form.club_tagline}
             onChange={(e) => updateField("club_tagline", e.target.value)}
-            placeholder="Ex: Faço parte da energia do tech house, dos clubs intensos e das pistas que viram a madrugada."
+            placeholder="Ex: FaÃ§o parte da energia do tech house, dos clubs intensos e das pistas que viram a madrugada."
             style={inputStyle()}
           />
           <div style={helperTextStyle()}>
@@ -1409,21 +1879,21 @@ export default function ClubProfileManager({
             gap: 10,
           }}
         >
-          <strong>Frase automática sugerida</strong>
+          <strong>Frase automÃ¡tica sugerida</strong>
           <div style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.84 }}>
             {previewBelonging}
           </div>
 
           <div>
             <button type="button" onClick={applyGeneratedBelonging} style={buttonStyle()}>
-              Usar frase automática
+              Usar frase automÃ¡tica
             </button>
           </div>
         </div>
 
         <CatalogTokenField
-          label="Vertente principal e secundárias"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode clicar nas sugestões globais."
+          label="Vertente principal e secundÃ¡rias"
+          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. TambÃ©m pode clicar nas sugestÃµes globais."
           placeholder="Digite a vertente e pressione Enter"
           fieldKey="favorite_genres"
           formValue={form.favorite_genres}
@@ -1437,8 +1907,8 @@ export default function ClubProfileManager({
         />
 
         <CatalogTokenField
-          label="Artista de referência e outros artistas"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode clicar nas sugestões globais."
+          label="Artista de referÃªncia e outros artistas"
+          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. TambÃ©m pode clicar nas sugestÃµes globais."
           placeholder="Digite o artista e pressione Enter"
           fieldKey="favorite_artists"
           formValue={form.favorite_artists}
@@ -1454,8 +1924,8 @@ export default function ClubProfileManager({
         <SpotifyArtistPicker />
 
         <CatalogTokenField
-          label="Club de referência, labels e experiências favoritas"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode clicar nas sugestões globais."
+          label="Club de referÃªncia, labels e experiÃªncias favoritas"
+          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. TambÃ©m pode clicar nas sugestÃµes globais."
           placeholder="Digite o club e pressione Enter"
           fieldKey="favorite_clubs"
           formValue={form.favorite_clubs}
@@ -1468,9 +1938,15 @@ export default function ClubProfileManager({
           onToggleSuggestion={toggleTokenItem}
         />
 
+        <AssistedClubCatalogSearch
+          cityBase={form.city_base}
+          onUseSuggestion={handleUseClubCatalogSuggestion}
+          onMessage={setMessage}
+        />
+
         <CatalogTokenField
-          label="Festival ou festa de referência"
-          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. Também pode clicar nas sugestões globais."
+          label="Festival ou festa de referÃªncia"
+          helperText="Digite e pressione Enter para adicionar. Clique no x para remover. TambÃ©m pode clicar nas sugestÃµes globais."
           placeholder="Digite a festa ou festival e pressione Enter"
           fieldKey="favorite_events"
           formValue={form.favorite_events}
@@ -1482,10 +1958,20 @@ export default function ClubProfileManager({
           onRemove={removeTokenItem}
           onToggleSuggestion={toggleTokenItem}
         />
+        <AssistedClubCatalogSearch
+          cityBase={form.city_base}
+          initialType="festival"
+          fixedTargetKey="favorite_events"
+          title="Busca assistida de festival, festa ou evento com imagem"
+          description="Use para buscar festival, festa ou evento oficial e salvar diretamente em Festivais e festas, com imagem e fonte na página pública."
+          placeholder="Ex: X-Future, Warung Day Festival, Ame Laroc Festival"
+          onUseSuggestion={handleUseClubCatalogSuggestion}
+          onMessage={setMessage}
+        />
 
         <CatalogTokenField
-          label="Últimos eventos frequentados"
-          helperText="Registre os eventos recentes para dar contexto de vivência."
+          label="Ãšltimos eventos frequentados"
+          helperText="Registre os eventos recentes para dar contexto de vivÃªncia."
           placeholder="Digite o evento e pressione Enter"
           fieldKey="last_events"
           formValue={form.last_events}
@@ -1499,7 +1985,7 @@ export default function ClubProfileManager({
         />
 
         <CatalogTokenField
-          label="Próximos eventos"
+          label="PrÃ³ximos eventos"
           helperText="Eventos futuros ajudam a conectar com outras pessoas."
           placeholder="Digite o evento e pressione Enter"
           fieldKey="next_events"
@@ -1514,7 +2000,7 @@ export default function ClubProfileManager({
         />
 
         <label>
-          <span style={labelTitleStyle()}>Datas dos próximos eventos</span>
+          <span style={labelTitleStyle()}>Datas dos prÃ³ximos eventos</span>
           <input
             value={form.next_events_dates}
             onChange={(e) => updateField("next_events_dates", e.target.value)}
@@ -1538,7 +2024,7 @@ export default function ClubProfileManager({
         <div style={{ display: "grid", gap: 4 }}>
           <h3 style={{ margin: 0, fontWeight: 900 }}>Streaming e playlist principal</h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Escolha a plataforma principal e cole o link específico da playlist, vídeo, faixa ou perfil.
+            Escolha a plataforma principal e cole o link especÃ­fico da playlist, vÃ­deo, faixa ou perfil.
           </p>
         </div>
 
@@ -1581,33 +2067,33 @@ export default function ClubProfileManager({
           <input
             value={form.streaming_url}
             onChange={(e) => updateField("streaming_url", e.target.value)}
-            placeholder="Cole aqui o link específico da playlist, vídeo ou faixa"
+            placeholder="Cole aqui o link especÃ­fico da playlist, vÃ­deo ou faixa"
             style={inputStyle()}
           />
           <div style={helperTextStyle()}>
-            Este campo agora salva automaticamente no lugar correto: YouTube em youtube_url, Spotify em spotify_url, SoundCloud em soundcloud_url, Apple Music em apple_music_url e Deezer em deezer_url.
+            Este campo salva automaticamente no lugar correto: YouTube, Spotify, SoundCloud, Apple Music, Deezer, Mixcloud ou Beatport.
           </div>
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Título da playlist</span>
+          <span style={labelTitleStyle()}>TÃ­tulo da playlist</span>
           <input
             value={form.playlist_title}
             onChange={(e) => updateField("playlist_title", e.target.value)}
-            placeholder="Ex: Minha seleção principal"
+            placeholder="Ex: Minha seleÃ§Ã£o principal"
             style={inputStyle()}
           />
           <div style={helperTextStyle()}>
-            Use apenas texto. Não cole link neste campo.
+            Use apenas texto. NÃ£o cole link neste campo.
           </div>
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Descrição da playlist</span>
+          <span style={labelTitleStyle()}>DescriÃ§Ã£o da playlist</span>
           <textarea
             value={form.playlist_description}
             onChange={(e) => updateField("playlist_description", e.target.value)}
-            placeholder="Descreva a energia da sua seleção musical"
+            placeholder="Descreva a energia da sua seleÃ§Ã£o musical"
             style={textareaStyle()}
           />
         </label>
@@ -1617,7 +2103,7 @@ export default function ClubProfileManager({
         <div style={{ display: "grid", gap: 4 }}>
           <h3 style={{ margin: 0, fontWeight: 900 }}>Foto Club e identidade visual</h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Adicione uma imagem forte para o topo do perfil público Club.
+            Adicione uma imagem forte para o topo do perfil pÃºblico Club.
           </p>
         </div>
 
@@ -1633,7 +2119,7 @@ export default function ClubProfileManager({
           {effectivePhotoPreview ? (
             <img
               src={effectivePhotoPreview}
-              alt="Prévia da foto Club"
+              alt="PrÃ©via da foto Club"
               style={{
                 width: "100%",
                 maxHeight: 360,
@@ -1775,7 +2261,7 @@ export default function ClubProfileManager({
           <input
             value={form.ride_origin}
             onChange={(e) => updateField("ride_origin", e.target.value)}
-            placeholder="Cidade ou ponto de saída"
+            placeholder="Cidade ou ponto de saÃ­da"
             style={inputStyle()}
           />
         </label>
@@ -1801,7 +2287,7 @@ export default function ClubProfileManager({
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Observações</span>
+          <span style={labelTitleStyle()}>ObservaÃ§Ãµes</span>
           <textarea
             value={form.ride_notes}
             onChange={(e) => updateField("ride_notes", e.target.value)}
@@ -1882,7 +2368,7 @@ export default function ClubProfileManager({
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Horário</span>
+          <span style={labelTitleStyle()}>HorÃ¡rio</span>
           <input
             value={form.meet_time}
             onChange={(e) => updateField("meet_time", e.target.value)}
@@ -1892,7 +2378,7 @@ export default function ClubProfileManager({
         </label>
 
         <label>
-          <span style={labelTitleStyle()}>Observações</span>
+          <span style={labelTitleStyle()}>ObservaÃ§Ãµes</span>
           <textarea
             value={form.meet_notes}
             onChange={(e) => updateField("meet_notes", e.target.value)}
@@ -1919,7 +2405,7 @@ export default function ClubProfileManager({
             rel="noopener noreferrer"
             style={buttonStyle()}
           >
-            Ver Club público
+            Ver Club pÃºblico
           </a>
         ) : null}
       </div>
@@ -1932,3 +2418,10 @@ export default function ClubProfileManager({
     </div>
   );
 }
+
+
+
+
+
+
+

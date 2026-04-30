@@ -1,7 +1,5 @@
 // src/app/[slug]/page.tsx
 
-// PARTE 1/4
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
@@ -25,6 +23,24 @@ type SpotifyArtist = {
   spotify_url: string | null;
 };
 
+type ClubCatalogItem = {
+  id: string;
+  name: string | null;
+  type: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  image_url: string | null;
+  official_url: string | null;
+  instagram_url: string | null;
+  source_url: string | null;
+  source_name: string | null;
+  source_provider: string | null;
+  is_verified: boolean | null;
+  usage_count?: number | null;
+  normalized_name: string | null;
+};
+
 const RESERVED = new Set([
   "api",
   "login",
@@ -39,6 +55,31 @@ const RESERVED = new Set([
 
 function normalizeText(value: any): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeUrl(value: any): string {
+  const text = normalizeText(value);
+
+  if (!text) return "";
+  if (text.startsWith("http://")) return text;
+  if (text.startsWith("https://")) return text;
+  if (text.startsWith("/")) return text;
+
+  return `https://${text}`;
+}
+
+function normalizeForCatalogSearch(value: any): string {
+  return normalizeText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function compactCatalogText(value: any): string {
+  return normalizeForCatalogSearch(value).replace(/\s+/g, "");
 }
 
 function splitList(value: any): string[] {
@@ -147,7 +188,6 @@ function getPlatformLabel(value: any): string {
 
   return map[key] || normalizeText(value);
 }
-// PARTE 2/4
 
 function getDisplayLinkLabel(link: any): string {
   const raw = normalizeText(link?.label || link?.platform || "Abrir link");
@@ -172,6 +212,183 @@ function getDisplayLinkLabel(link: any): string {
   return names[key] || raw;
 }
 
+function isUsableCatalogImageUrl(value: any): boolean {
+  const url = normalizeUrl(value);
+  if (!url) return false;
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    const full = url.toLowerCase();
+
+    if (host.includes("lookaside.instagram.com")) return false;
+    if (full.includes("google_widget/crawler")) return false;
+    if (path.includes("/seo/")) return false;
+    if (host.includes("facebook.com")) return false;
+    if (host.includes("fbcdn.net")) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getCatalogImageUrl(item?: ClubCatalogItem | null): string {
+  const imageUrl = normalizeUrl(item?.image_url);
+
+  if (!isUsableCatalogImageUrl(imageUrl)) {
+    return "";
+  }
+
+  return imageUrl;
+}
+
+function getCatalogHref(item?: ClubCatalogItem | null): string {
+  return (
+    normalizeUrl(item?.official_url) ||
+    normalizeUrl(item?.instagram_url) ||
+    normalizeUrl(item?.source_url) ||
+    ""
+  );
+}
+
+function getCatalogLocation(item?: ClubCatalogItem | null): string {
+  const city = normalizeText(item?.city);
+  const state = normalizeText(item?.state);
+
+  if (city && state) return `${city} - ${state}`;
+  if (city) return city;
+  if (state) return state;
+
+  return "";
+}
+
+function getCatalogSourceLabel(item?: ClubCatalogItem | null): string {
+  return normalizeText(item?.source_name || item?.source_provider || "Fonte oficial");
+}
+
+function getCatalogTokens(values: string[]): string[] {
+  const tokens = new Set<string>();
+
+  for (const value of values) {
+    const normalized = normalizeForCatalogSearch(value);
+    const compact = compactCatalogText(value);
+
+    normalized
+      .split(" ")
+      .map((item) => item.trim())
+      .filter((item) => item.length >= 3)
+      .forEach((item) => tokens.add(item));
+
+    if (compact.length >= 5) {
+      tokens.add(compact);
+    }
+  }
+
+  return Array.from(tokens).slice(0, 24);
+}
+
+function scoreCatalogMatch(
+  label: string,
+  item: ClubCatalogItem,
+  preferredTypes: string[]
+): number {
+  const labelNorm = normalizeForCatalogSearch(label);
+  const labelCompact = compactCatalogText(label);
+
+  if (!labelCompact || labelCompact.length < 4) {
+    return 0;
+  }
+
+  const itemNameNorm = normalizeForCatalogSearch(item.name);
+  const itemNameCompact = compactCatalogText(item.name);
+  const itemNormalizedName = normalizeForCatalogSearch(item.normalized_name);
+  const itemNormalizedCompact = compactCatalogText(item.normalized_name);
+
+  const itemAllText = normalizeForCatalogSearch(
+    `${item.name || ""} ${item.normalized_name || ""}`
+  );
+
+  let textScore = 0;
+
+  if (itemNameNorm === labelNorm) textScore += 160;
+  if (itemNormalizedName === labelNorm) textScore += 150;
+
+  if (labelCompact.length >= 6 && itemNameCompact.includes(labelCompact)) {
+    textScore += 120;
+  }
+
+  if (labelCompact.length >= 6 && itemNormalizedCompact.includes(labelCompact)) {
+    textScore += 120;
+  }
+
+  if (labelNorm.length >= 6 && itemNameNorm.includes(labelNorm)) {
+    textScore += 95;
+  }
+
+  if (labelNorm.length >= 6 && itemNormalizedName.includes(labelNorm)) {
+    textScore += 95;
+  }
+
+  const labelTokens = labelNorm
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 4);
+
+  let matchedTokens = 0;
+
+  for (const token of labelTokens) {
+    if (itemAllText.includes(token)) {
+      matchedTokens += 1;
+      textScore += token.length >= 6 ? 34 : 18;
+    }
+  }
+
+  if (labelTokens.length >= 2 && matchedTokens < 2) {
+    return 0;
+  }
+
+  if (labelTokens.length === 1 && textScore < 90) {
+    return 0;
+  }
+
+  if (textScore <= 0) {
+    return 0;
+  }
+
+  let bonusScore = 0;
+
+  if (preferredTypes.includes(normalizeText(item.type).toLowerCase())) {
+    bonusScore += 18;
+  }
+
+  if (getCatalogImageUrl(item)) bonusScore += 10;
+  if (normalizeUrl(item.official_url)) bonusScore += 8;
+  if (normalizeUrl(item.instagram_url)) bonusScore += 5;
+  if (item.is_verified) bonusScore += 15;
+
+  bonusScore += Math.min(Number(item.usage_count || 0), 8);
+
+  return textScore + bonusScore;
+}
+
+function findBestCatalogItem(
+  label: string,
+  catalogItems: ClubCatalogItem[],
+  preferredTypes: string[]
+): ClubCatalogItem | null {
+  const ranked = catalogItems
+    .map((item) => ({
+      item,
+      score: scoreCatalogMatch(label, item, preferredTypes),
+    }))
+    .filter((entry) => entry.score >= 90)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked[0]?.item || null;
+}
+
 function pillStyle(): CSSProperties {
   return {
     display: "inline-flex",
@@ -190,8 +407,8 @@ function pillStyle(): CSSProperties {
 function sectionBoxStyle(): CSSProperties {
   return {
     background: "rgba(255,255,255,0.045)",
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 28,
+    padding: 22,
     marginTop: 20,
     border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
@@ -201,18 +418,27 @@ function sectionBoxStyle(): CSSProperties {
 function innerCardStyle(): CSSProperties {
   return {
     padding: 16,
-    borderRadius: 18,
+    borderRadius: 20,
     border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    background: "rgba(255,255,255,0.045)",
   };
 }
 
 function sectionTitleStyle(): CSSProperties {
   return {
-    margin: "0 0 14px 0",
-    fontSize: 20,
-    fontWeight: 850,
-    letterSpacing: -0.3,
+    margin: "0 0 8px 0",
+    fontSize: 21,
+    fontWeight: 900,
+    letterSpacing: -0.35,
+  };
+}
+
+function sectionDescriptionStyle(): CSSProperties {
+  return {
+    margin: "0 0 16px 0",
+    opacity: 0.72,
+    lineHeight: 1.55,
+    fontSize: 14,
   };
 }
 
@@ -223,7 +449,7 @@ function actionCardStyle(): CSSProperties {
     alignItems: "center",
     gap: 14,
     padding: "15px 16px",
-    borderRadius: 16,
+    borderRadius: 18,
     background: "rgba(255,255,255,0.06)",
     border: "1px solid rgba(255,255,255,0.11)",
     color: "#fff",
@@ -234,14 +460,133 @@ function actionCardStyle(): CSSProperties {
 
 function primaryButtonStyle(): CSSProperties {
   return {
-    display: "inline-block",
-    padding: "13px 17px",
-    borderRadius: 16,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 42,
+    padding: "12px 16px",
+    borderRadius: 15,
     background: "rgba(255,255,255,0.18)",
     border: "1px solid rgba(255,255,255,0.18)",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 850,
+    lineHeight: 1.1,
+  };
+}
+
+function secondaryButtonStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 42,
+    padding: "12px 16px",
+    borderRadius: 15,
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.11)",
+    color: "#fff",
+    textDecoration: "none",
+    fontWeight: 820,
+    lineHeight: 1.1,
+  };
+}
+
+function horizontalRailStyle(): CSSProperties {
+  return {
+    display: "flex",
+    gap: 14,
+    overflowX: "auto",
+    padding: "2px 2px 12px 2px",
+    scrollSnapType: "x mandatory",
+    WebkitOverflowScrolling: "touch",
+  };
+}
+
+function editorialCardStyle(width = 235): CSSProperties {
+  return {
+    flex: `0 0 ${width}px`,
+    scrollSnapAlign: "start",
+    minHeight: 132,
+    padding: 16,
+    borderRadius: 22,
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.095), rgba(255,255,255,0.035))",
+    border: "1px solid rgba(255,255,255,0.12)",
+    boxShadow: "0 14px 35px rgba(0,0,0,0.18)",
+    color: "#fff",
+    textDecoration: "none",
+    position: "relative",
+    overflow: "hidden",
+  };
+}
+
+function catalogCardStyle(
+  width = 245,
+  imageUrl = "",
+  accent: "purple" | "cyan" | "neutral" = "purple"
+): CSSProperties {
+  const glow =
+    accent === "cyan"
+      ? "rgba(0,220,255,0.18)"
+      : accent === "neutral"
+        ? "rgba(255,255,255,0.10)"
+        : "rgba(125,92,255,0.22)";
+
+  return {
+    ...editorialCardStyle(width),
+    minHeight: imageUrl ? 246 : 150,
+    padding: imageUrl ? 12 : 16,
+    background: imageUrl
+      ? "linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.040))"
+      : `linear-gradient(145deg, ${glow}, rgba(255,255,255,0.045))`,
+  };
+}
+
+function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
+  return {
+    flex: `0 0 ${width}px`,
+    scrollSnapAlign: "start",
+    minHeight: 190,
+    padding: 18,
+    borderRadius: 24,
+    background: imageUrl
+      ? `linear-gradient(145deg, rgba(5,5,5,0.20), rgba(5,5,5,0.82)), url(${imageUrl})`
+      : "linear-gradient(145deg, rgba(132,92,255,0.18), rgba(255,255,255,0.045))",
+    backgroundSize: imageUrl ? "cover" : undefined,
+    backgroundPosition: imageUrl ? "center" : undefined,
+    border: "1px solid rgba(255,255,255,0.13)",
+    boxShadow: "0 18px 44px rgba(0,0,0,0.24)",
+    color: "#fff",
+    textDecoration: "none",
+    position: "relative",
+    overflow: "hidden",
+  };
+}
+
+function microLabelStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    width: "fit-content",
+    padding: "6px 9px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    fontSize: 11,
+    fontWeight: 850,
+    opacity: 0.88,
+    textTransform: "uppercase",
+    letterSpacing: 0.35,
+  };
+}
+
+function detailRowStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gap: 3,
+    padding: "10px 0",
+    borderBottom: "1px solid rgba(255,255,255,0.07)",
   };
 }
 
@@ -249,8 +594,141 @@ function buildEventRows(names: string[], dates: string[], links: string[]) {
   return names.map((name, index) => ({
     name,
     date: dates[index] || "",
-    link: links[index] || "",
+    link: normalizeUrl(links[index] || ""),
   }));
+}
+
+function CatalogRailCard({
+  label,
+  catalog,
+  badge,
+  description,
+  width = 245,
+  accent = "purple",
+}: {
+  label: string;
+  catalog?: ClubCatalogItem | null;
+  badge: string;
+  description: string;
+  width?: number;
+  accent?: "purple" | "cyan" | "neutral";
+}) {
+  const imageUrl = getCatalogImageUrl(catalog);
+  const href = getCatalogHref(catalog);
+  const location = getCatalogLocation(catalog);
+  const source = getCatalogSourceLabel(catalog);
+
+  const content = (
+    <>
+      {imageUrl ? (
+        <div
+          style={{
+            height: 118,
+            borderRadius: 17,
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.38)), url(${imageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            border: "1px solid rgba(255,255,255,0.10)",
+            marginBottom: 13,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            position: "absolute",
+            right: -30,
+            top: -30,
+            width: 100,
+            height: 100,
+            borderRadius: 999,
+            background:
+              accent === "cyan"
+                ? "rgba(0,220,255,0.16)"
+                : accent === "neutral"
+                  ? "rgba(255,255,255,0.10)"
+                  : "rgba(125,92,255,0.22)",
+            filter: "blur(4px)",
+          }}
+        />
+      )}
+
+      <div style={{ position: "relative", zIndex: 2, display: "grid", gap: 10 }}>
+        <span style={microLabelStyle()}>{badge}</span>
+
+        <div>
+          <strong
+            style={{
+              display: "block",
+              fontSize: 18,
+              lineHeight: 1.18,
+              letterSpacing: -0.2,
+            }}
+          >
+            {label}
+          </strong>
+
+          {location ? (
+            <span
+              style={{
+                display: "block",
+                marginTop: 7,
+                fontSize: 12,
+                opacity: 0.70,
+                lineHeight: 1.35,
+              }}
+            >
+              {location}
+            </span>
+          ) : null}
+
+          <span
+            style={{
+              display: "block",
+              marginTop: 7,
+              fontSize: 13,
+              opacity: 0.68,
+              lineHeight: 1.4,
+            }}
+          >
+            {description}
+          </span>
+        </div>
+
+        {href ? (
+          <span
+            style={{
+              marginTop: 2,
+              fontSize: 12,
+              fontWeight: 850,
+              opacity: 0.82,
+            }}
+          >
+            Abrir fonte • {source}
+          </span>
+        ) : null}
+      </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="uc-small-card"
+        style={catalogCardStyle(width, imageUrl, accent)}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className="uc-small-card" style={catalogCardStyle(width, imageUrl, accent)}>
+      {content}
+    </div>
+  );
 }
 
 export default async function PublicPage({ params, searchParams }: PageProps) {
@@ -389,7 +867,6 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       clubProfile?.festivals ||
       clubProfile?.eventos_favoritos
   );
-// PARTE 3/4
 
   const lastEvents = splitList(
     clubProfile?.last_events || clubProfile?.events_attended
@@ -403,10 +880,98 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const nextEventLinks = splitList(clubProfile?.next_events_links);
   const nextEventRows = buildEventRows(nextEvents, nextEventDates, nextEventLinks);
 
+  const catalogLabels = Array.from(
+    new Set(
+      [
+        ...clubs,
+        ...festivals,
+        ...lastEvents,
+        ...nextEvents,
+        ...nextEventRows.map((event) => event.name),
+      ]
+        .map((item) => normalizeText(item))
+        .filter(Boolean)
+    )
+  );
+
+  let catalogItems: ClubCatalogItem[] = [];
+
+  try {
+    const tokens = getCatalogTokens(catalogLabels);
+
+    if (tokens.length > 0) {
+      const orParts = tokens.flatMap((token) => [
+        `name.ilike.%${token}%`,
+        `normalized_name.ilike.%${token}%`,
+      ]);
+
+      const { data } = await supabase
+        .from("club_event_catalog")
+        .select(
+          "id,name,type,city,state,country,image_url,official_url,instagram_url,source_url,source_name,source_provider,is_verified,usage_count,normalized_name"
+        )
+        .or(orParts.join(","))
+        .limit(80);
+
+      catalogItems = (data || []) as ClubCatalogItem[];
+    }
+  } catch {
+    catalogItems = [];
+  }
+
+  const clubsWithCatalog = clubs.map((name) => ({
+    name,
+    catalog: findBestCatalogItem(name, catalogItems, ["club", "venue"]),
+  }));
+
+  const festivalsWithCatalog = festivals.map((name) => ({
+    name,
+    catalog: findBestCatalogItem(name, catalogItems, [
+      "festival",
+      "party",
+      "event",
+      "venue",
+      "club",
+    ]),
+  }));
+
+  const lastEventsWithCatalog = lastEvents.map((name) => ({
+    name,
+    catalog: findBestCatalogItem(name, catalogItems, [
+      "festival",
+      "party",
+      "event",
+      "venue",
+      "club",
+    ]),
+  }));
+
+  const nextEventRowsWithCatalog = nextEventRows.map((event) => ({
+    ...event,
+    catalog: findBestCatalogItem(event.name, catalogItems, [
+      "festival",
+      "party",
+      "event",
+      "venue",
+      "club",
+    ]),
+  }));
+
+  const nextEventsWithCatalog = nextEvents.map((name) => ({
+    name,
+    catalog: findBestCatalogItem(name, catalogItems, [
+      "festival",
+      "party",
+      "event",
+      "venue",
+      "club",
+    ]),
+  }));
+
   const rideStatus = normalizeText(clubProfile?.ride_status);
   const rideEventName = normalizeText(clubProfile?.ride_event_name);
   const rideEventDate = normalizeText(clubProfile?.ride_event_date);
-  const rideEventUrl = normalizeText(clubProfile?.ride_event_url);
+  const rideEventUrl = normalizeUrl(clubProfile?.ride_event_url);
   const rideOrigin = normalizeText(clubProfile?.ride_origin);
   const rideDestination = normalizeText(clubProfile?.ride_destination);
   const rideSeats = normalizeText(clubProfile?.ride_seats);
@@ -415,7 +980,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const meetStatus = normalizeText(clubProfile?.meet_status);
   const meetEventName = normalizeText(clubProfile?.meet_event_name);
   const meetEventDate = normalizeText(clubProfile?.meet_event_date);
-  const meetEventUrl = normalizeText(clubProfile?.meet_event_url);
+  const meetEventUrl = normalizeUrl(clubProfile?.meet_event_url);
   const meetMeetingPoint = normalizeText(clubProfile?.meet_meeting_point);
   const meetTime = normalizeText(clubProfile?.meet_time);
   const meetNotes = normalizeText(clubProfile?.meet_notes);
@@ -438,6 +1003,30 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     meetMeetingPoint ||
     meetTime ||
     meetNotes;
+
+  const primaryEventName =
+    rideEventName ||
+    meetEventName ||
+    nextEventRowsWithCatalog[0]?.name ||
+    nextEvents[0] ||
+    "";
+
+  const primaryEventDate =
+    rideEventDate || meetEventDate || nextEventRowsWithCatalog[0]?.date || "";
+
+  const primaryEventUrl =
+    rideEventUrl || meetEventUrl || nextEventRowsWithCatalog[0]?.link || "";
+
+  const primaryEventCatalog = findBestCatalogItem(
+    primaryEventName,
+    catalogItems,
+    ["festival", "party", "event", "venue", "club"]
+  );
+
+  const primaryEventImage = getCatalogImageUrl(primaryEventCatalog);
+
+  const primaryContactHref = links[0]?.id ? `/r/${links[0].id}` : "#canais-club";
+  const hasEventConnections = Boolean(hasRide || hasMeet || primaryEventName);
 
   const container: CSSProperties = {
     minHeight: "100vh",
@@ -563,7 +1152,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     flex: "0 0 155px",
     scrollSnapAlign: "start",
     background: "rgba(255,255,255,0.055)",
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: "hidden",
     border: "1px solid rgba(255,255,255,0.11)",
     textDecoration: "none",
@@ -572,12 +1161,61 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   return (
     <main style={container}>
+      <style>{`
+        .uc-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .uc-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        @media (max-width: 760px) {
+          .uc-page-title {
+            font-size: 28px !important;
+          }
+
+          .uc-hero {
+            grid-template-columns: 1fr !important;
+            padding: 16px !important;
+            border-radius: 26px !important;
+          }
+
+          .uc-photo {
+            height: 230px !important;
+          }
+
+          .uc-section {
+            padding: 16px !important;
+            border-radius: 24px !important;
+          }
+
+          .uc-wide-card {
+            flex-basis: 86% !important;
+          }
+
+          .uc-medium-card {
+            flex-basis: 78% !important;
+          }
+
+          .uc-small-card {
+            flex-basis: 68% !important;
+          }
+
+          .uc-player {
+            height: 260px !important;
+          }
+        }
+      `}</style>
+
       <div style={page}>
         <header style={topBar}>
           <div>
             <div style={{ ...pillStyle(), marginBottom: 10 }}>Modo Club</div>
 
             <h1
+              className="uc-page-title"
               style={{
                 margin: 0,
                 fontSize: 34,
@@ -605,11 +1243,11 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           </div>
         </header>
 
-        <section style={hero}>
+        <section className="uc-hero" style={hero}>
           {clubProfile?.club_photo_url ? <div style={heroBackgroundPhoto} /> : null}
           <div style={heroOverlay} />
 
-          <div style={photoWrap}>
+          <div className="uc-photo" style={photoWrap}>
             {clubProfile?.club_photo_url ? (
               <img
                 src={clubProfile.club_photo_url}
@@ -669,7 +1307,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             {streamingUrl ? (
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <a
-                  href={streamingUrl}
+                  href={normalizeUrl(streamingUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={primaryButtonStyle()}
@@ -680,10 +1318,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             ) : null}
           </div>
         </section>
-// PARTE 4/4
 
         {streamingUrl ? (
-          <section style={sectionBoxStyle()}>
+          <section className="uc-section" style={sectionBoxStyle()}>
             <div
               style={{
                 display: "flex",
@@ -707,7 +1344,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               </div>
 
               <a
-                href={streamingUrl}
+                href={normalizeUrl(streamingUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={primaryButtonStyle()}
@@ -718,6 +1355,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
             {finalEmbed ? (
               <iframe
+                className="uc-player"
                 src={finalEmbed}
                 width="100%"
                 height={youtubeEmbed || soundcloudEmbed ? 420 : 180}
@@ -726,7 +1364,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 style={{
                   width: "100%",
                   border: 0,
-                  borderRadius: 20,
+                  borderRadius: 22,
                   background: "#000",
                 }}
               />
@@ -734,7 +1372,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               <div style={innerCardStyle()}>
                 <strong>Player não disponível para este link.</strong>
                 <p style={{ margin: "8px 0 0 0", opacity: 0.78, lineHeight: 1.55 }}>
-                  Este tipo de URL nao permite incorporacão direta. Use o botao para abrir na plataforma oficial.
+                  Este tipo de URL não permite incorporação direta. Use o botão para abrir na plataforma oficial.
                 </p>
               </div>
             )}
@@ -742,10 +1380,13 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         ) : null}
 
         {spotifyArtists.length > 0 ? (
-          <section style={sectionBoxStyle()}>
-            <h2 style={sectionTitleStyle()}>Artistas de referencia</h2>
+          <section className="uc-section" style={sectionBoxStyle()}>
+            <h2 style={sectionTitleStyle()}>Artistas de referência</h2>
+            <p style={sectionDescriptionStyle()}>
+              Referências musicais que ajudam a entender a identidade deste perfil na cena.
+            </p>
 
-            <div style={artistGrid}>
+            <div className="uc-scroll" style={artistGrid}>
               {spotifyArtists.map((artist) => (
                 <a
                   key={artist.spotify_id}
@@ -795,255 +1436,699 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           festivals.length > 0 ||
           lastEvents.length > 0 ||
           nextEvents.length > 0) ? (
-          <section style={sectionBoxStyle()}>
+          <section className="uc-section" style={sectionBoxStyle()}>
             <h2 style={sectionTitleStyle()}>Cena, clubes e eventos</h2>
+            <p style={sectionDescriptionStyle()}>
+              Uma leitura rápida dos lugares, festas e experiências que fazem parte da trajetória deste perfil.
+            </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: 14,
-              }}
-            >
-              {clubs.length > 0 ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Clubes</h3>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {clubs.map((item) => (
-                      <span key={item} style={pillStyle()}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+            {clubsWithCatalog.length > 0 ? (
+              <div style={{ marginTop: 18 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "baseline",
+                    marginBottom: 10,
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                    Clubes favoritos
+                  </h3>
+                  <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
                 </div>
-              ) : null}
 
-              {festivals.length > 0 ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Festivais e festas</h3>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {festivals.map((item) => (
-                      <span key={item} style={pillStyle()}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+                <div className="uc-scroll" style={horizontalRailStyle()}>
+                  {clubsWithCatalog.map((item, index) => (
+                    <CatalogRailCard
+                      key={`${item.name}-${index}`}
+                      label={item.name}
+                      catalog={item.catalog}
+                      badge="Clube favorito"
+                      description="Presença na cena, pista e experiências ao vivo."
+                      width={245}
+                      accent="purple"
+                    />
+                  ))}
                 </div>
-              ) : null}
+              </div>
+            ) : null}
 
-              {lastEvents.length > 0 ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Últimos eventos</h3>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {lastEvents.map((item) => (
-                      <span key={item} style={pillStyle()}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+            {festivalsWithCatalog.length > 0 ? (
+              <div style={{ marginTop: 20 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "baseline",
+                    marginBottom: 10,
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                    Festivais e festas
+                  </h3>
+                  <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
                 </div>
-              ) : null}
 
-              {nextEventRows.length > 0 ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Próximos eventos</h3>
+                <div className="uc-scroll" style={horizontalRailStyle()}>
+                  {festivalsWithCatalog.map((item, index) => (
+                    <CatalogRailCard
+                      key={`${item.name}-${index}`}
+                      label={item.name}
+                      catalog={item.catalog}
+                      badge="Festival e festa"
+                      description="Referência de evento dentro da identidade Club."
+                      width={245}
+                      accent="cyan"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {nextEventRows.map((event, index) => (
+            {lastEventsWithCatalog.length > 0 ? (
+              <div style={{ marginTop: 20 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "baseline",
+                    marginBottom: 10,
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                    Últimos eventos
+                  </h3>
+                  <span style={{ fontSize: 12, opacity: 0.58 }}>Histórico recente</span>
+                </div>
+
+                <div className="uc-scroll" style={horizontalRailStyle()}>
+                  {lastEventsWithCatalog.map((item, index) => (
+                    <CatalogRailCard
+                      key={`${item.name}-${index}`}
+                      label={item.name}
+                      catalog={item.catalog}
+                      badge="Já viveu"
+                      description="Memória de pista no perfil."
+                      width={235}
+                      accent="neutral"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {nextEventRowsWithCatalog.length > 0 ? (
+              <div style={{ marginTop: 20 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "baseline",
+                    marginBottom: 10,
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                    Próximos eventos
+                  </h3>
+                  <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Club</span>
+                </div>
+
+                <div className="uc-scroll" style={horizontalRailStyle()}>
+                  {nextEventRowsWithCatalog.map((event, index) => {
+                    const catalogImage = getCatalogImageUrl(event.catalog);
+                    const catalogHref = getCatalogHref(event.catalog);
+                    const finalEventLink = event.link || catalogHref;
+
+                    return (
                       <div
                         key={`${event.name}-${index}`}
-                        style={{
-                          padding: 12,
-                          borderRadius: 14,
-                          background: "rgba(255,255,255,0.045)",
-                          border: "1px solid rgba(255,255,255,0.08)",
-                        }}
+                        className="uc-medium-card"
+                        style={eventCardStyle(285, catalogImage)}
                       >
-                        <strong>{event.name}</strong>
-
-                        {event.date ? (
-                          <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-                            {event.date}
-                          </div>
+                        {!catalogImage ? (
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: -42,
+                              top: -42,
+                              width: 135,
+                              height: 135,
+                              borderRadius: 999,
+                              background: "rgba(125,92,255,0.24)",
+                              filter: "blur(6px)",
+                            }}
+                          />
                         ) : null}
 
-                        {event.link ? (
+                        <div
+                          style={{
+                            position: "relative",
+                            zIndex: 2,
+                            minHeight: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                            gap: 16,
+                          }}
+                        >
+                          <div style={{ display: "grid", gap: 10 }}>
+                            <span style={microLabelStyle()}>Próximo rolê</span>
+
+                            <strong
+                              style={{
+                                display: "block",
+                                fontSize: 20,
+                                lineHeight: 1.16,
+                                letterSpacing: -0.35,
+                              }}
+                            >
+                              {event.name}
+                            </strong>
+
+                            {event.date ? (
+                              <span style={{ fontSize: 14, opacity: 0.78 }}>
+                                {event.date}
+                              </span>
+                            ) : null}
+
+                            {getCatalogLocation(event.catalog) ? (
+                              <span style={{ fontSize: 13, opacity: 0.72 }}>
+                                {getCatalogLocation(event.catalog)}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {finalEventLink ? (
+                            <a
+                              href={finalEventLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={primaryButtonStyle()}
+                            >
+                              Abrir evento oficial
+                            </a>
+                          ) : (
+                            <a href="#canais-club" style={secondaryButtonStyle()}>
+                              Combinar pelos canais
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : nextEventsWithCatalog.length > 0 ? (
+              <div style={{ marginTop: 20 }}>
+                <h3 style={{ margin: "0 0 10px 0", fontSize: 16, fontWeight: 900 }}>
+                  Próximos eventos
+                </h3>
+
+                <div className="uc-scroll" style={horizontalRailStyle()}>
+                  {nextEventsWithCatalog.map((item, index) => {
+                    const catalogImage = getCatalogImageUrl(item.catalog);
+                    const catalogHref = getCatalogHref(item.catalog);
+
+                    return (
+                      <div
+                        key={`${item.name}-${index}`}
+                        className="uc-medium-card"
+                        style={eventCardStyle(285, catalogImage)}
+                      >
+                        <span style={microLabelStyle()}>Próximo rolê</span>
+
+                        <strong
+                          style={{
+                            display: "block",
+                            marginTop: 12,
+                            fontSize: 20,
+                            lineHeight: 1.16,
+                            letterSpacing: -0.35,
+                            position: "relative",
+                            zIndex: 2,
+                          }}
+                        >
+                          {item.name}
+                        </strong>
+
+                        {getCatalogLocation(item.catalog) ? (
+                          <span
+                            style={{
+                              display: "block",
+                              marginTop: 8,
+                              fontSize: 13,
+                              opacity: 0.72,
+                              position: "relative",
+                              zIndex: 2,
+                            }}
+                          >
+                            {getCatalogLocation(item.catalog)}
+                          </span>
+                        ) : null}
+
+                        {catalogHref ? (
                           <a
-                            href={event.link}
+                            href={catalogHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              display: "inline-block",
-                              marginTop: 8,
-                              color: "#fff",
-                              fontSize: 12,
-                              fontWeight: 780,
-                              textDecoration: "underline",
+                              ...primaryButtonStyle(),
+                              marginTop: 18,
+                              position: "relative",
+                              zIndex: 2,
                             }}
                           >
                             Abrir evento oficial
                           </a>
-                        ) : null}
+                        ) : (
+                          <a
+                            href="#canais-club"
+                            style={{
+                              ...secondaryButtonStyle(),
+                              marginTop: 18,
+                              position: "relative",
+                              zIndex: 2,
+                            }}
+                          >
+                            Combinar pelos canais
+                          </a>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              ) : nextEvents.length > 0 ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Proximos eventos</h3>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {nextEvents.map((item) => (
-                      <span key={item} style={pillStyle()}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
-        {(hasRide || hasMeet) ? (
-          <section style={sectionBoxStyle()}>
-            <h2 style={sectionTitleStyle()}>Conexões para eventos</h2>
+        {hasEventConnections ? (
+          <section className="uc-section" style={sectionBoxStyle()}>
+            <h2 style={sectionTitleStyle()}>Conexões para o próximo evento</h2>
+            <p style={sectionDescriptionStyle()}>
+              Veja o próximo rolê, combine carona, marque ponto de encontro e use os canais Club para facilitar a conexão antes da pista começar.
+            </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: 14,
-              }}
-            >
-              {hasRide ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Carona compartilhada</h3>
+            <div className="uc-scroll" style={horizontalRailStyle()}>
+              {primaryEventName ? (
+                <div className="uc-wide-card" style={eventCardStyle(330, primaryEventImage)}>
+                  {!primaryEventImage ? (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: -50,
+                        top: -50,
+                        width: 150,
+                        height: 150,
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.12)",
+                        filter: "blur(7px)",
+                      }}
+                    />
+                  ) : null}
 
-                  <div style={{ display: "grid", gap: 8, lineHeight: 1.55 }}>
-                    {rideStatus ? (
-                      <div>
-                        <strong>Status: </strong>
-                        <span>{rideStatus}</span>
-                      </div>
-                    ) : null}
+                  <div
+                    style={{
+                      position: "relative",
+                      zIndex: 2,
+                      minHeight: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: 16,
+                    }}
+                  >
+                    <div style={{ display: "grid", gap: 10 }}>
+                      <span style={microLabelStyle()}>Seu próximo rolê</span>
 
-                    {rideEventName ? (
-                      <div>
-                        <strong>Evento: </strong>
-                        <span>{rideEventName}</span>
-                      </div>
-                    ) : null}
+                      <strong
+                        style={{
+                          display: "block",
+                          fontSize: 22,
+                          lineHeight: 1.12,
+                          letterSpacing: -0.4,
+                        }}
+                      >
+                        {primaryEventName}
+                      </strong>
 
-                    {rideEventDate ? (
-                      <div>
-                        <strong>Data: </strong>
-                        <span>{rideEventDate}</span>
-                      </div>
-                    ) : null}
+                      {primaryEventDate ? (
+                        <span style={{ opacity: 0.75, fontSize: 14 }}>
+                          {primaryEventDate}
+                        </span>
+                      ) : null}
 
-                    {rideOrigin ? (
-                      <div>
-                        <strong>Origem: </strong>
-                        <span>{rideOrigin}</span>
-                      </div>
-                    ) : null}
+                      {getCatalogLocation(primaryEventCatalog) ? (
+                        <span style={{ opacity: 0.74, fontSize: 13 }}>
+                          {getCatalogLocation(primaryEventCatalog)}
+                        </span>
+                      ) : null}
 
-                    {rideDestination ? (
-                      <div>
-                        <strong>Destino: </strong>
-                        <span>{rideDestination}</span>
-                      </div>
-                    ) : null}
+                      <p style={{ margin: 0, opacity: 0.72, lineHeight: 1.52 }}>
+                        Use este perfil para combinar chegada, carona, ponto de encontro e contato rápido.
+                      </p>
+                    </div>
 
-                    {rideSeats ? (
-                      <div>
-                        <strong>Vagas: </strong>
-                        <span>{rideSeats}</span>
-                      </div>
-                    ) : null}
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {primaryEventUrl || getCatalogHref(primaryEventCatalog) ? (
+                        <a
+                          href={primaryEventUrl || getCatalogHref(primaryEventCatalog)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={primaryButtonStyle()}
+                        >
+                          Abrir evento oficial
+                        </a>
+                      ) : null}
 
-                    {rideNotes ? (
-                      <p style={{ margin: 0, opacity: 0.82 }}>{rideNotes}</p>
-                    ) : null}
-
-                    {rideEventUrl ? (
                       <a
-                        href={rideEventUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={primaryContactHref}
+                        target={links[0]?.id ? "_blank" : undefined}
+                        rel={links[0]?.id ? "noopener noreferrer" : undefined}
+                        style={secondaryButtonStyle()}
+                      >
+                        Combinar contato
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {hasRide ? (
+                <div className="uc-wide-card" style={eventCardStyle(330)}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: -48,
+                      bottom: -48,
+                      width: 150,
+                      height: 150,
+                      borderRadius: 999,
+                      background: "rgba(0,220,255,0.16)",
+                      filter: "blur(7px)",
+                    }}
+                  />
+
+                  <div style={{ position: "relative", zIndex: 2 }}>
+                    <span style={microLabelStyle()}>Carona colaborativa</span>
+
+                    <h3
+                      style={{
+                        margin: "13px 0 10px 0",
+                        fontSize: 21,
+                        lineHeight: 1.15,
+                        letterSpacing: -0.35,
+                      }}
+                    >
+                      Combine a ida com mais segurança
+                    </h3>
+
+                    <div style={{ display: "grid", lineHeight: 1.45 }}>
+                      {rideStatus ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Status</span>
+                          <strong>{rideStatus}</strong>
+                        </div>
+                      ) : null}
+
+                      {rideEventName ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Evento</span>
+                          <strong>{rideEventName}</strong>
+                        </div>
+                      ) : null}
+
+                      {rideOrigin ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Origem</span>
+                          <strong>{rideOrigin}</strong>
+                        </div>
+                      ) : null}
+
+                      {rideDestination ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Destino</span>
+                          <strong>{rideDestination}</strong>
+                        </div>
+                      ) : null}
+
+                      {rideSeats ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Vagas</span>
+                          <strong>{rideSeats}</strong>
+                        </div>
+                      ) : null}
+
+                      {rideNotes ? (
+                        <p style={{ margin: "12px 0 0 0", opacity: 0.78, lineHeight: 1.55 }}>
+                          {rideNotes}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+                      <a
+                        href={primaryContactHref}
+                        target={links[0]?.id ? "_blank" : undefined}
+                        rel={links[0]?.id ? "noopener noreferrer" : undefined}
                         style={primaryButtonStyle()}
                       >
-                        Abrir evento da carona
+                        Pedir carona
                       </a>
-                    ) : null}
+
+                      {rideEventUrl ? (
+                        <a
+                          href={rideEventUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={secondaryButtonStyle()}
+                        >
+                          Ver evento
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ) : null}
 
               {hasMeet ? (
-                <div style={innerCardStyle()}>
-                  <h3 style={{ margin: "0 0 10px 0" }}>Encontro combinado</h3>
+                <div className="uc-wide-card" style={eventCardStyle(330)}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: -48,
+                      bottom: -48,
+                      width: 150,
+                      height: 150,
+                      borderRadius: 999,
+                      background: "rgba(125,92,255,0.22)",
+                      filter: "blur(7px)",
+                    }}
+                  />
 
-                  <div style={{ display: "grid", gap: 8, lineHeight: 1.55 }}>
-                    {meetStatus ? (
-                      <div>
-                        <strong>Status: </strong>
-                        <span>{meetStatus}</span>
-                      </div>
-                    ) : null}
+                  <div style={{ position: "relative", zIndex: 2 }}>
+                    <span style={microLabelStyle()}>Encontro na pista</span>
 
-                    {meetEventName ? (
-                      <div>
-                        <strong>Evento: </strong>
-                        <span>{meetEventName}</span>
-                      </div>
-                    ) : null}
+                    <h3
+                      style={{
+                        margin: "13px 0 10px 0",
+                        fontSize: 21,
+                        lineHeight: 1.15,
+                        letterSpacing: -0.35,
+                      }}
+                    >
+                      Ponto combinado para se encontrar
+                    </h3>
 
-                    {meetEventDate ? (
-                      <div>
-                        <strong>Data: </strong>
-                        <span>{meetEventDate}</span>
-                      </div>
-                    ) : null}
+                    <div style={{ display: "grid", lineHeight: 1.45 }}>
+                      {meetStatus ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Status</span>
+                          <strong>{meetStatus}</strong>
+                        </div>
+                      ) : null}
 
-                    {meetMeetingPoint ? (
-                      <div>
-                        <strong>Ponto: </strong>
-                        <span>{meetMeetingPoint}</span>
-                      </div>
-                    ) : null}
+                      {meetEventName ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Evento</span>
+                          <strong>{meetEventName}</strong>
+                        </div>
+                      ) : null}
 
-                    {meetTime ? (
-                      <div>
-                        <strong>Horário: </strong>
-                        <span>{meetTime}</span>
-                      </div>
-                    ) : null}
+                      {meetMeetingPoint ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Ponto</span>
+                          <strong>{meetMeetingPoint}</strong>
+                        </div>
+                      ) : null}
 
-                    {meetNotes ? (
-                      <p style={{ margin: 0, opacity: 0.82 }}>{meetNotes}</p>
-                    ) : null}
+                      {meetTime ? (
+                        <div style={detailRowStyle()}>
+                          <span style={{ fontSize: 12, opacity: 0.58 }}>Horário</span>
+                          <strong>{meetTime}</strong>
+                        </div>
+                      ) : null}
 
-                    {meetEventUrl ? (
+                      {meetNotes ? (
+                        <p style={{ margin: "12px 0 0 0", opacity: 0.78, lineHeight: 1.55 }}>
+                          {meetNotes}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
                       <a
-                        href={meetEventUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={primaryContactHref}
+                        target={links[0]?.id ? "_blank" : undefined}
+                        rel={links[0]?.id ? "noopener noreferrer" : undefined}
                         style={primaryButtonStyle()}
                       >
-                        Abrir evento do encontro
+                        Quero participar
                       </a>
-                    ) : null}
+
+                      {meetEventUrl ? (
+                        <a
+                          href={meetEventUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={secondaryButtonStyle()}
+                        >
+                          Ver evento
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ) : null}
+
+              <div className="uc-wide-card" style={eventCardStyle(330)}>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: -48,
+                    top: -48,
+                    width: 150,
+                    height: 150,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.10)",
+                    filter: "blur(7px)",
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                    minHeight: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 16,
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <span style={microLabelStyle()}>Modo sem sinal</span>
+
+                    <strong
+                      style={{
+                        display: "block",
+                        fontSize: 21,
+                        lineHeight: 1.15,
+                        letterSpacing: -0.35,
+                      }}
+                    >
+                      Tenha contato e ponto de encontro à mão
+                    </strong>
+
+                    <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55 }}>
+                      Ideal para festas e festivais com internet instável. Use os canais do perfil para salvar o contato antes do evento.
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <a href="#canais-club" style={primaryButtonStyle()}>
+                      Ver canais Club
+                    </a>
+
+                    <a
+                      href={`/${card.slug}?mode=club`}
+                      style={secondaryButtonStyle()}
+                    >
+                      Reabrir perfil
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="uc-wide-card" style={eventCardStyle(330)}>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: -48,
+                    bottom: -48,
+                    width: 150,
+                    height: 150,
+                    borderRadius: 999,
+                    background: "rgba(0,220,255,0.13)",
+                    filter: "blur(7px)",
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                    minHeight: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 16,
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <span style={microLabelStyle()}>Grupo do evento</span>
+
+                    <strong
+                      style={{
+                        display: "block",
+                        fontSize: 21,
+                        lineHeight: 1.15,
+                        letterSpacing: -0.35,
+                      }}
+                    >
+                      Conexões por cidade, evento e gosto musical
+                    </strong>
+
+                    <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55 }}>
+                      Combine com pessoas da cena, encontre quem vai para o mesmo evento e facilite novas amizades antes do rolê.
+                    </p>
+                  </div>
+
+                  <a
+                    href={primaryContactHref}
+                    target={links[0]?.id ? "_blank" : undefined}
+                    rel={links[0]?.id ? "noopener noreferrer" : undefined}
+                    style={primaryButtonStyle()}
+                  >
+                    Entrar em contato
+                  </a>
+                </div>
+              </div>
             </div>
           </section>
         ) : null}
 
         {links.length > 0 ? (
-          <section style={sectionBoxStyle()}>
+          <section id="canais-club" className="uc-section" style={sectionBoxStyle()}>
             <h2 style={sectionTitleStyle()}>Canais Club</h2>
+            <p style={sectionDescriptionStyle()}>
+              Canais principais para continuar a conexão fora do perfil.
+            </p>
 
             <div style={{ display: "grid", gap: 12 }}>
               {links.map((link: any) => (
