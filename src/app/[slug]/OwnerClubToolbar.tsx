@@ -123,13 +123,6 @@ export default function OwnerClubToolbar({
           Editar Club
         </Link>
 
-        <Link href={`/dashboard/cards/${cardId}/club`} style={buttonStyle}>
-          Adicionar club
-        </Link>
-
-        <Link href={`/dashboard/cards/${cardId}/club`} style={buttonStyle}>
-          Adicionar festival
-        </Link>
 
         <Link href={`/dashboard/cards/${cardId}`} style={primaryButtonStyle}>
           Perfil, QR e NFC
@@ -142,3 +135,4 @@ export default function OwnerClubToolbar({
     </div>
   );
 }
+

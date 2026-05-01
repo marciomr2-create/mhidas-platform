@@ -11,6 +11,11 @@ import { createPublicClient } from "@/utils/supabase/public";
 import OwnerClubToolbar from "./OwnerClubToolbar";
 import RemoveClubTokenButton from "./RemoveClubTokenButton";
 import RemoveClubArtistButton from "./RemoveClubArtistButton";
+import AddClubTokenButton from "./AddClubTokenButton";
+import AddClubArtistButton from "./AddClubArtistButton";
+import MoveClubTokenButton from "./MoveClubTokenButton";
+import MoveClubArtistButton from "./MoveClubArtistButton";
+import AddClubOwnerActionsPanel from "./AddClubOwnerActionsPanel";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -722,7 +727,7 @@ function CatalogRailCard({
 
   if (href) {
     return (
-      <div className="uc-small-card" style={catalogCardStyle(width, imageUrl, accent)}>
+      <div className="uc-small-card" style={{ ...catalogCardStyle(width, imageUrl, accent), paddingBottom: removeAction ? 48 : undefined }}>
         <a
           href={href}
           target="_blank"
@@ -737,19 +742,28 @@ function CatalogRailCard({
         </a>
 
         {removeAction ? (
-          <RemoveClubTokenButton
-            cardId={removeAction.cardId}
-            ownerUserId={removeAction.ownerUserId}
-            field={removeAction.field}
-            value={removeAction.value}
-          />
+          <>
+            <MoveClubTokenButton
+              cardId={removeAction.cardId}
+              ownerUserId={removeAction.ownerUserId}
+              field={removeAction.field}
+              value={removeAction.value}
+            />
+
+            <RemoveClubTokenButton
+              cardId={removeAction.cardId}
+              ownerUserId={removeAction.ownerUserId}
+              field={removeAction.field}
+              value={removeAction.value}
+            />
+          </>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className="uc-small-card" style={catalogCardStyle(width, imageUrl, accent)}>
+    <div className="uc-small-card" style={{ ...catalogCardStyle(width, imageUrl, accent), paddingBottom: removeAction ? 48 : undefined }}>
       {content}
 
       {removeAction ? (
@@ -1422,10 +1436,29 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
         {spotifyArtists.length > 0 ? (
           <section className="uc-section" style={sectionBoxStyle()}>
-            <h2 style={sectionTitleStyle()}>Artistas de referência</h2>
-            <p style={sectionDescriptionStyle()}>
-              Referências musicais que ajudam a entender a identidade deste perfil na cena.
-            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "flex-start",
+                flexWrap: "wrap",
+                marginBottom: 14,
+              }}
+            >
+              <div>
+                <h2 style={sectionTitleStyle()}>Artistas de referência</h2>
+                <p style={{ ...sectionDescriptionStyle(), marginBottom: 0 }}>
+                  Referências musicais que ajudam a entender a identidade deste perfil na cena.
+                </p>
+              </div>
+
+              <AddClubArtistButton
+                cardId={card.card_id}
+                ownerUserId={card.user_id}
+                compact
+              />
+            </div>
 
             <div className="uc-scroll" style={artistGrid}>
               {spotifyArtists.map((artist) => (
@@ -1465,7 +1498,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         </div>
                       )}
 
-                      <div style={{ padding: 12 }}>
+                      <div style={{ padding: "12px 42px 14px 12px" }}>
                         <strong>{artist.name}</strong>
                         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
                           Spotify
@@ -1473,6 +1506,13 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       </div>
 
                   </a>
+
+                  <MoveClubArtistButton
+                    cardId={card.card_id}
+                    ownerUserId={card.user_id}
+                    spotifyId={artist.spotify_id}
+                    artistName={artist.name}
+                  />
 
                   <RemoveClubArtistButton
                     cardId={card.card_id}
@@ -1510,7 +1550,20 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
                     Clubes favoritos
                   </h3>
-                  <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
+                    <AddClubTokenButton
+                      cardId={card.card_id}
+                      ownerUserId={card.user_id}
+                      field="favorite_clubs"
+                      type="club"
+                      label="Adicionar club"
+                      title="Adicionar club favorito"
+                      placeholder="Ex: Surreal Park, Warung, Green Valley"
+                      cityBase={cityBase}
+                      compact
+                    />
+                  </div>
                 </div>
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
@@ -1549,7 +1602,20 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
                     Festivais e festas
                   </h3>
-                  <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
+                    <AddClubTokenButton
+                      cardId={card.card_id}
+                      ownerUserId={card.user_id}
+                      field="favorite_events"
+                      type="festival"
+                      label="Adicionar festival"
+                      title="Adicionar festival ou festa"
+                      placeholder="Ex: Só Track Boa, X-Future, Warung Day Festival"
+                      cityBase={cityBase}
+                      compact
+                    />
+                  </div>
                 </div>
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
@@ -1588,7 +1654,20 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
                     Últimos eventos
                   </h3>
-                  <span style={{ fontSize: 12, opacity: 0.58 }}>Histórico recente</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <span style={{ fontSize: 12, opacity: 0.58 }}>Histórico recente</span>
+                    <AddClubTokenButton
+                      cardId={card.card_id}
+                      ownerUserId={card.user_id}
+                      field="last_events"
+                      type="event"
+                      label="Adicionar último"
+                      title="Adicionar último evento frequentado"
+                      placeholder="Ex: Time Warp, Ame Laroc Festival"
+                      cityBase={cityBase}
+                      compact
+                    />
+                  </div>
                 </div>
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
@@ -1627,7 +1706,21 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
                     Próximos eventos
                   </h3>
-                  <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Club</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Club</span>
+                    <AddClubTokenButton
+                      cardId={card.card_id}
+                      ownerUserId={card.user_id}
+                      field="next_events"
+                      type="event"
+                      label="Adicionar próximo"
+                      title="Adicionar próximo evento"
+                      placeholder="Ex: Time Warp, Tomorrowland Brasil"
+                      cityBase={cityBase}
+                      compact
+                      allowNextEventDetails
+                    />
+                  </div>
                 </div>
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
@@ -1640,8 +1733,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       <div
                         key={`${event.name}-${index}`}
                         className="uc-medium-card"
-                        style={eventCardStyle(285, catalogImage)}
+                        style={{ ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
                       >
+                        <MoveClubTokenButton
+                          cardId={card.card_id}
+                          ownerUserId={card.user_id}
+                          field="next_events"
+                          value={event.name}
+                        />
+
                         <RemoveClubTokenButton
                           cardId={card.card_id}
                           ownerUserId={card.user_id}
@@ -1736,8 +1836,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       <div
                         key={`${item.name}-${index}`}
                         className="uc-medium-card"
-                        style={eventCardStyle(285, catalogImage)}
+                        style={{ ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
                       >
+                        <MoveClubTokenButton
+                          cardId={card.card_id}
+                          ownerUserId={card.user_id}
+                          field="next_events"
+                          value={item.name}
+                        />
+
                         <RemoveClubTokenButton
                           cardId={card.card_id}
                           ownerUserId={card.user_id}
@@ -2234,4 +2341,11 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
+
+
 

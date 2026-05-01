@@ -1,6 +1,4 @@
-﻿// src/app/[slug]/RemoveClubArtistButton.tsx
-
-"use client";
+﻿"use client";
 
 import { useEffect, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -107,24 +105,24 @@ export default function RemoveClubArtistButton({
       disabled={loading}
       style={{
         position: "absolute",
-        top: 8,
-        right: 8,
+        right: 9,
+        bottom: 9,
         zIndex: 8,
-        width: 30,
-        height: 30,
+        width: 28,
+        height: 28,
         borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.22)",
-        background: loading ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.72)",
+        border: "1px solid rgba(255,255,255,0.18)",
+        background: loading ? "rgba(0,0,0,0.42)" : "rgba(0,0,0,0.58)",
         color: "#fff",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: loading ? "wait" : "pointer",
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: 900,
         lineHeight: 1,
-        boxShadow: "0 10px 26px rgba(0,0,0,0.38)",
-        opacity: loading ? 0.62 : 1,
+        boxShadow: "0 8px 18px rgba(0,0,0,0.30)",
+        opacity: loading ? 0.55 : 0.86,
       }}
     >
       ×
