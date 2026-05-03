@@ -12,10 +12,12 @@ import OwnerClubToolbar from "./OwnerClubToolbar";
 import RemoveClubTokenButton from "./RemoveClubTokenButton";
 import RemoveClubArtistButton from "./RemoveClubArtistButton";
 import AddClubTokenButton from "./AddClubTokenButton";
+import CheckInEventButton from "./CheckInEventButton";
 import AddClubArtistButton from "./AddClubArtistButton";
 import MoveClubTokenButton from "./MoveClubTokenButton";
 import MoveClubArtistButton from "./MoveClubArtistButton";
-import AddClubOwnerActionsPanel from "./AddClubOwnerActionsPanel";
+import ClubOwnerEmptyBlock from "./ClubOwnerEmptyBlock";
+import ClubOwnerEmptySceneSection from "./ClubOwnerEmptySceneSection";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -252,11 +254,75 @@ function getCatalogImageUrl(item?: ClubCatalogItem | null): string {
   return imageUrl;
 }
 
+function isSafeCatalogHref(value: any): boolean {
+  const href = normalizeUrl(value);
+
+  if (!href) return false;
+
+  try {
+    const parsed = new URL(href);
+    const host = parsed.hostname.toLowerCase();
+    const parts = parsed.pathname
+      .split("/")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (host.includes("instagram.com")) {
+      if (!parts.length) return false;
+
+      const firstPart = parts[0].toLowerCase();
+
+      const blockedInstagramPaths = new Set([
+        "p",
+        "reel",
+        "reels",
+        "stories",
+        "explore",
+        "tv",
+        "accounts",
+        "direct",
+        "popular",
+        "following",
+        "directory",
+        "about",
+        "developer",
+        "privacy",
+        "terms",
+      ]);
+
+      return !blockedInstagramPaths.has(firstPart);
+    }
+
+    if (
+      host.includes("google.") ||
+      host.includes("youtube.com") ||
+      host.includes("youtu.be") ||
+      host.includes("facebook.com") ||
+      host.includes("tiktok.com") ||
+      host.includes("x.com") ||
+      host.includes("twitter.com") ||
+      host.includes("linkedin.com")
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getSafeCatalogHrefFromValue(value: any): string {
+  const href = normalizeUrl(value);
+
+  return isSafeCatalogHref(href) ? href : "";
+}
+
 function getCatalogHref(item?: ClubCatalogItem | null): string {
   return (
-    normalizeUrl(item?.official_url) ||
-    normalizeUrl(item?.instagram_url) ||
-    normalizeUrl(item?.source_url) ||
+    getSafeCatalogHrefFromValue(item?.official_url) ||
+    getSafeCatalogHrefFromValue(item?.instagram_url) ||
+    getSafeCatalogHrefFromValue(item?.source_url) ||
     ""
   );
 }
@@ -559,7 +625,7 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
     padding: 18,
     borderRadius: 24,
     background: imageUrl
-      ? `linear-gradient(145deg, rgba(5,5,5,0.20), rgba(5,5,5,0.82)), url(${imageUrl})`
+      ? `linear-gradient(145deg, rgba(5,5,5,0.20), rgba(5,5,5,0.82)), url("${imageUrl}")`
       : "linear-gradient(145deg, rgba(132,92,255,0.18), rgba(255,255,255,0.045))",
     backgroundSize: imageUrl ? "cover" : undefined,
     backgroundPosition: imageUrl ? "center" : undefined,
@@ -606,6 +672,298 @@ function buildEventRows(names: string[], dates: string[], links: string[]) {
   }));
 }
 
+function escapeSvgText(value: string): string {
+  return normalizeText(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getGeneratedClubCoverImage(
+  label: any,
+  accent: "purple" | "cyan" | "neutral" = "purple"
+): string {
+  const rawTitle = normalizeText(label) || "USECLUBBERS";
+  const shortTitle = rawTitle.length > 28 ? `${rawTitle.slice(0, 25)}...` : rawTitle;
+
+  const palette =
+    accent === "cyan"
+      ? {
+          bg: "#04171c",
+          glow: "#00dcec",
+          glowSoft: "#08717b",
+          text: "#f3feff",
+          sub: "#b6f8ff",
+        }
+      : accent === "neutral"
+        ? {
+            bg: "#111111",
+            glow: "#ffffff",
+            glowSoft: "#565656",
+            text: "#ffffff",
+            sub: "#d8d8d8",
+          }
+        : {
+            bg: "#10091f",
+            glow: "#7d5cff",
+            glowSoft: "#3a227a",
+            text: "#ffffff",
+            sub: "#d8ccff",
+          };
+
+  const safeTitle = escapeSvgText(shortTitle);
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+  <defs>
+    <radialGradient id="g1" cx="22%" cy="18%" r="86%">
+      <stop offset="0%" stop-color="${palette.glow}" stop-opacity="0.78"/>
+      <stop offset="42%" stop-color="${palette.glowSoft}" stop-opacity="0.54"/>
+      <stop offset="100%" stop-color="${palette.bg}" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.62"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="520" fill="url(#g1)"/>
+  <rect width="900" height="520" fill="url(#g2)"/>
+  <circle cx="705" cy="105" r="145" fill="${palette.glow}" opacity="0.18"/>
+  <circle cx="790" cy="410" r="210" fill="#000000" opacity="0.34"/>
+  <path d="M0 408 C180 318 320 460 515 358 C670 278 790 312 900 230 L900 520 L0 520 Z" fill="#000000" opacity="0.34"/>
+  <text x="54" y="78" fill="${palette.sub}" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="900" letter-spacing="6">USECLUBBERS</text>
+  <text x="54" y="326" fill="${palette.text}" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="900" letter-spacing="-1">${safeTitle}</text>
+  <text x="58" y="374" fill="${palette.sub}" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">Cena • Clubes • Eventos</text>
+</svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function isUsableClubCoverUrl(value: any): boolean {
+  const url = normalizeText(value).toLowerCase();
+
+  if (!url) {
+    return false;
+  }
+
+  if (url.startsWith("data:image/")) {
+    return true;
+  }
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return false;
+  }
+
+  if (
+    url.includes("instagram.com/") ||
+    url.includes("cdninstagram") ||
+    url.includes("fbcdn.net") ||
+    url.includes("facebook.com/") ||
+    url.includes("lookaside.") ||
+    url.includes("scontent.") ||
+    url.includes("google_widget/crawler") ||
+    url.includes("tiktok.com/") ||
+    url.includes("x.com/") ||
+    url.includes("twitter.com/") ||
+    url.includes("youtube.com/") ||
+    url.includes("youtu.be/") ||
+    url.includes("soundcloud.com/")
+  ) {
+    return false;
+  }
+
+  if (
+    url.includes(".jpg") ||
+    url.includes(".jpeg") ||
+    url.includes(".png") ||
+    url.includes(".webp") ||
+    url.includes(".gif") ||
+    url.includes("images.unsplash.com") ||
+    url.includes("i.scdn.co") ||
+    url.includes("supabase.co/storage") ||
+    url.includes("googleusercontent.com")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getSafeClubCoverImage(
+  label: any,
+  catalog: any,
+  accent: "purple" | "cyan" | "neutral" = "purple"
+): string {
+  const candidate = getCatalogImageUrl(catalog);
+
+  if (isUsableClubCoverUrl(candidate)) {
+    return candidate;
+  }
+
+  return getGeneratedClubCoverImage(label, accent);
+}
+function getEventCheckInKey(value: any): string {
+  return normalizeText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+function getStoredCheckInStatus(
+  activeCheckInsByKey: Map<string, string>,
+  eventName: any
+): "none" | "pending" | "active" | "expired" {
+  const key = getEventCheckInKey(eventName);
+  const status = normalizeText(activeCheckInsByKey.get(key)).toLowerCase();
+
+  if (status === "active") return "active";
+  if (status === "pending") return "pending";
+  if (status === "expired") return "expired";
+
+  return "none";
+}
+function getEventCheckInStatus(event: any): "none" | "pending" | "active" | "expired" {
+  const status = normalizeText(
+    event?.checkin_status ||
+      event?.check_in_status ||
+      event?.club_checkin_status ||
+      event?.presence_status
+  ).toLowerCase();
+
+  if (status === "active" || status === "ativo" || status === "presente") {
+    return "active";
+  }
+
+  if (status === "pending" || status === "pendente" || status === "syncing") {
+    return "pending";
+  }
+
+  if (status === "expired" || status === "encerrado" || status === "finalizado") {
+    return "expired";
+  }
+
+  return "none";
+}
+
+function getCheckInCardGlowStyle(status: "none" | "pending" | "active" | "expired"): CSSProperties {
+  if (status === "active") {
+    return {
+      border: "1px solid rgba(0,255,190,0.72)",
+      boxShadow:
+        "0 0 0 1px rgba(0,255,190,0.22), 0 0 34px rgba(0,255,190,0.26), 0 22px 70px rgba(0,0,0,0.46)",
+    };
+  }
+
+  if (status === "pending") {
+    return {
+      border: "1px solid rgba(255,210,92,0.58)",
+      boxShadow:
+        "0 0 0 1px rgba(255,210,92,0.18), 0 0 30px rgba(255,210,92,0.18), 0 22px 70px rgba(0,0,0,0.42)",
+    };
+  }
+
+  return {};
+}
+
+function CheckInStatusBadge({
+  status,
+}: {
+  status: "none" | "pending" | "active" | "expired";
+}) {
+  if (status !== "active" && status !== "pending") {
+    return null;
+  }
+
+  const isActive = status === "active";
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 12,
+        left: 12,
+        zIndex: 8,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        padding: "8px 11px",
+        borderRadius: 999,
+        border: isActive
+          ? "1px solid rgba(0,255,190,0.62)"
+          : "1px solid rgba(255,210,92,0.56)",
+        background: isActive
+          ? "linear-gradient(135deg, rgba(0,255,190,0.30), rgba(0,110,95,0.34))"
+          : "linear-gradient(135deg, rgba(255,210,92,0.26), rgba(120,80,0,0.28))",
+        color: "#fff",
+        backdropFilter: "blur(10px)",
+        boxShadow: isActive
+          ? "0 0 24px rgba(0,255,190,0.28)"
+          : "0 0 22px rgba(255,210,92,0.20)",
+        fontSize: 11,
+        fontWeight: 950,
+        letterSpacing: 0.2,
+        textTransform: "uppercase",
+      }}
+    >
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: isActive ? "#00ffbe" : "#ffd25c",
+          boxShadow: isActive
+            ? "0 0 16px rgba(0,255,190,0.92)"
+            : "0 0 14px rgba(255,210,92,0.82)",
+        }}
+      />
+      {isActive ? "Check-in ativo" : "Check-in sincronizando"}
+    </div>
+  );
+}
+
+function CheckInPresenceText({
+  status,
+}: {
+  status: "none" | "pending" | "active" | "expired";
+}) {
+  if (status !== "active" && status !== "pending") {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        width: "fit-content",
+        padding: "7px 10px",
+        borderRadius: 999,
+        border:
+          status === "active"
+            ? "1px solid rgba(0,255,190,0.35)"
+            : "1px solid rgba(255,210,92,0.32)",
+        background:
+          status === "active"
+            ? "rgba(0,255,190,0.12)"
+            : "rgba(255,210,92,0.10)",
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: 850,
+      }}
+    >
+      <span style={{ opacity: 0.92 }}>
+        {status === "active" ? "Presente no evento" : "Presença aguardando sinal"}
+      </span>
+    </div>
+  );
+}
 function CatalogRailCard({
   label,
   catalog,
@@ -628,7 +986,7 @@ function CatalogRailCard({
     value: string;
   };
 }) {
-  const imageUrl = getCatalogImageUrl(catalog);
+  const imageUrl = getSafeClubCoverImage(label, catalog, accent);
   const href = getCatalogHref(catalog);
   const location = getCatalogLocation(catalog);
   const source = getCatalogSourceLabel(catalog);
@@ -640,7 +998,7 @@ function CatalogRailCard({
           style={{
             height: 118,
             borderRadius: 17,
-            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.38)), url(${imageUrl})`,
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.38)), url("${imageUrl}")`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             border: "1px solid rgba(255,255,255,0.10)",
@@ -743,7 +1101,7 @@ function CatalogRailCard({
 
         {removeAction ? (
           <>
-            <MoveClubTokenButton
+<MoveClubTokenButton
               cardId={removeAction.cardId}
               ownerUserId={removeAction.ownerUserId}
               field={removeAction.field}
@@ -767,12 +1125,21 @@ function CatalogRailCard({
       {content}
 
       {removeAction ? (
-        <RemoveClubTokenButton
-          cardId={removeAction.cardId}
-          ownerUserId={removeAction.ownerUserId}
-          field={removeAction.field}
-          value={removeAction.value}
-        />
+        <>
+<MoveClubTokenButton
+            cardId={removeAction.cardId}
+            ownerUserId={removeAction.ownerUserId}
+            field={removeAction.field}
+            value={removeAction.value}
+          />
+
+          <RemoveClubTokenButton
+            cardId={removeAction.cardId}
+            ownerUserId={removeAction.ownerUserId}
+            field={removeAction.field}
+            value={removeAction.value}
+          />
+        </>
       ) : null}
     </div>
   );
@@ -927,6 +1294,27 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const nextEventLinks = splitList(clubProfile?.next_events_links);
   const nextEventRows = buildEventRows(nextEvents, nextEventDates, nextEventLinks);
 
+  let activeCheckInsByKey = new Map<string, string>();
+
+  try {
+    const { data: activeCheckIns } = await supabase
+      .from("club_event_checkins")
+      .select("event_name,event_key,status")
+      .eq("card_id", card.card_id)
+      .eq("status", "active");
+
+    activeCheckInsByKey = new Map(
+      (activeCheckIns || [])
+        .map((item: any) => [
+          normalizeText(item.event_key) || getEventCheckInKey(item.event_name),
+          normalizeText(item.status).toLowerCase(),
+        ])
+        .filter(([key]) => Boolean(key)) as Array<[string, string]>
+    );
+  } catch {
+    activeCheckInsByKey = new Map<string, string>();
+  }
+
   const catalogLabels = Array.from(
     new Set(
       [
@@ -993,27 +1381,37 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     ]),
   }));
 
-  const nextEventRowsWithCatalog = nextEventRows.map((event) => ({
-    ...event,
-    catalog: findBestCatalogItem(event.name, catalogItems, [
+  const nextEventRowsWithCatalog = nextEventRows.map((event) => {
+    const catalog = findBestCatalogItem(event.name, catalogItems, [
       "festival",
       "party",
       "event",
       "venue",
       "club",
-    ]),
-  }));
+    ]);
 
-  const nextEventsWithCatalog = nextEvents.map((name) => ({
-    name,
-    catalog: findBestCatalogItem(name, catalogItems, [
+    return {
+      ...event,
+      catalog,
+      checkin_status: getStoredCheckInStatus(activeCheckInsByKey, event.name),
+    };
+  });
+
+  const nextEventsWithCatalog = nextEvents.map((name) => {
+    const catalog = findBestCatalogItem(name, catalogItems, [
       "festival",
       "party",
       "event",
       "venue",
       "club",
-    ]),
-  }));
+    ]);
+
+    return {
+      name,
+      catalog,
+      checkin_status: getStoredCheckInStatus(activeCheckInsByKey, name),
+    };
+  });
 
   const rideStatus = normalizeText(clubProfile?.ride_status);
   const rideEventName = normalizeText(clubProfile?.ride_event_name);
@@ -1070,7 +1468,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     ["festival", "party", "event", "venue", "club"]
   );
 
-  const primaryEventImage = getCatalogImageUrl(primaryEventCatalog);
+  const primaryEventImage = primaryEventName
+    ? getSafeClubCoverImage(primaryEventName, primaryEventCatalog, "purple")
+    : "";
 
   const primaryContactHref = links[0]?.id ? `/r/${links[0].id}` : "#canais-club";
   const hasEventConnections = Boolean(hasRide || hasMeet || primaryEventName);
@@ -1498,7 +1898,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         </div>
                       )}
 
-                      <div style={{ padding: "12px 42px 14px 12px" }}>
+                      <div style={{ padding: "12px 44px 56px 12px", minHeight: 112 }}>
                         <strong>{artist.name}</strong>
                         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
                           Spotify
@@ -1524,7 +1924,16 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               ))}
             </div>
           </section>
-        ) : null}
+        ) : (
+          <ClubOwnerEmptyBlock
+            cardId={card.card_id}
+            ownerUserId={card.user_id}
+            title="Artistas de referência"
+            description="Adicione artistas para mostrar suas referências musicais principais."
+            kind="artist"
+            standalone
+          />
+        )}
 
         {(clubs.length > 0 ||
           festivals.length > 0 ||
@@ -1586,7 +1995,21 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   ))}
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <ClubOwnerEmptyBlock
+                cardId={card.card_id}
+                ownerUserId={card.user_id}
+                title="Clubes favoritos"
+                description="Adicione os clubs que representam sua presença na cena."
+                kind="token"
+                field="favorite_clubs"
+                type="club"
+                label="Adicionar club"
+                modalTitle="Adicionar club favorito"
+                placeholder="Ex: Surreal Park, Warung, Green Valley"
+                cityBase={cityBase}
+              />
+            )}
 
             {festivalsWithCatalog.length > 0 ? (
               <div style={{ marginTop: 20 }}>
@@ -1638,7 +2061,21 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   ))}
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <ClubOwnerEmptyBlock
+                cardId={card.card_id}
+                ownerUserId={card.user_id}
+                title="Festivais e festas"
+                description="Adicione festivais, festas e experiências que fazem parte da sua identidade."
+                kind="token"
+                field="favorite_events"
+                type="festival"
+                label="Adicionar festival"
+                modalTitle="Adicionar festival ou festa"
+                placeholder="Ex: Só Track Boa, X-Future, Warung Day Festival"
+                cityBase={cityBase}
+              />
+            )}
 
             {lastEventsWithCatalog.length > 0 ? (
               <div style={{ marginTop: 20 }}>
@@ -1690,7 +2127,21 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   ))}
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <ClubOwnerEmptyBlock
+                cardId={card.card_id}
+                ownerUserId={card.user_id}
+                title="Últimos eventos"
+                description="Mostre eventos recentes que você viveu."
+                kind="token"
+                field="last_events"
+                type="event"
+                label="Adicionar último"
+                modalTitle="Adicionar último evento frequentado"
+                placeholder="Ex: Time Warp, Ame Laroc Festival"
+                cityBase={cityBase}
+              />
+            )}
 
             {nextEventRowsWithCatalog.length > 0 ? (
               <div style={{ marginTop: 20 }}>
@@ -1725,16 +2176,27 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
                   {nextEventRowsWithCatalog.map((event, index) => {
-                    const catalogImage = getCatalogImageUrl(event.catalog);
+                    const catalogImage = getSafeClubCoverImage(
+                      event.name,
+                      event.catalog,
+                      "purple"
+                    );
                     const catalogHref = getCatalogHref(event.catalog);
                     const finalEventLink = event.link || catalogHref;
+                    const checkInStatus = getEventCheckInStatus(event);
 
                     return (
                       <div
                         key={`${event.name}-${index}`}
                         className="uc-medium-card"
-                        style={{ ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
+                        style={{
+                          ...getCheckInCardGlowStyle(checkInStatus),
+                          ...eventCardStyle(285, catalogImage),
+                          ...getCheckInCardGlowStyle(checkInStatus),
+                          paddingBottom: 52,
+                        }}
                       >
+                        <CheckInStatusBadge status={checkInStatus} />
                         <MoveClubTokenButton
                           cardId={card.card_id}
                           ownerUserId={card.user_id}
@@ -1799,22 +2261,37 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                                 {getCatalogLocation(event.catalog)}
                               </span>
                             ) : null}
+
+                            <CheckInPresenceText status={checkInStatus} />
                           </div>
 
-                          {finalEventLink ? (
-                            <a
-                              href={finalEventLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={primaryButtonStyle()}
-                            >
-                              Abrir evento oficial
-                            </a>
-                          ) : (
-                            <a href="#canais-club" style={secondaryButtonStyle()}>
-                              Combinar pelos canais
-                            </a>
-                          )}
+                          <div style={{ display: "grid", gap: 9 }}>
+                            <CheckInEventButton
+                              cardId={card.card_id}
+                              ownerUserId={card.user_id}
+                              eventName={event.name}
+                              eventDate={event.date}
+                              eventLink={finalEventLink}
+                              catalogId={event.catalog?.id || null}
+                              initialStatus={checkInStatus}
+                              compact
+                            />
+
+                            {finalEventLink ? (
+                              <a
+                                href={finalEventLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={primaryButtonStyle()}
+                              >
+                                Abrir evento oficial
+                              </a>
+                            ) : (
+                              <a href="#canais-club" style={secondaryButtonStyle()}>
+                                Combinar pelos canais
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1829,15 +2306,23 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                 <div className="uc-scroll" style={horizontalRailStyle()}>
                   {nextEventsWithCatalog.map((item, index) => {
-                    const catalogImage = getCatalogImageUrl(item.catalog);
+                    const catalogImage = getSafeClubCoverImage(
+                      item.name,
+                      item.catalog,
+                      "purple"
+                    );
                     const catalogHref = getCatalogHref(item.catalog);
+                    const checkInStatus = getEventCheckInStatus(item);
 
                     return (
                       <div
                         key={`${item.name}-${index}`}
                         className="uc-medium-card"
-                        style={{ ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
+                        style={{
+                          ...getCheckInCardGlowStyle(checkInStatus), ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
                       >
+                        <CheckInStatusBadge status={checkInStatus} />
+
                         <MoveClubTokenButton
                           cardId={card.card_id}
                           ownerUserId={card.user_id}
@@ -1914,9 +2399,30 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   })}
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <ClubOwnerEmptyBlock
+                cardId={card.card_id}
+                ownerUserId={card.user_id}
+                title="Próximos eventos"
+                description="Adicione seu próximo rolê com data e link oficial, se tiver."
+                kind="token"
+                field="next_events"
+                type="event"
+                label="Adicionar próximo"
+                modalTitle="Adicionar próximo evento"
+                placeholder="Ex: Time Warp, Tomorrowland Brasil"
+                cityBase={cityBase}
+                allowNextEventDetails
+              />
+            )}
           </section>
-        ) : null}
+        ) : (
+          <ClubOwnerEmptySceneSection
+            cardId={card.card_id}
+            ownerUserId={card.user_id}
+            cityBase={cityBase}
+          />
+        )}
 
         {hasEventConnections ? (
           <section className="uc-section" style={sectionBoxStyle()}>
@@ -2341,6 +2847,18 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

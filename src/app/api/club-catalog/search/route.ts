@@ -1,4 +1,4 @@
-// src/app/api/club-catalog/search/route.ts
+﻿// src/app/api/club-catalog/search/route.ts
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -274,21 +274,21 @@ function inferKnownLocationFromQuery(query: string): KnownLocation | null {
 
   if (normalized.includes("green valley") || normalized.includes("greenvalley")) {
     return {
-      city: "Camboriú",
+      city: "CamboriÃº",
       state: "SC",
     };
   }
 
   if (normalized.includes("surreal")) {
     return {
-      city: "Camboriú",
+      city: "CamboriÃº",
       state: "SC",
     };
   }
 
   if (normalized.includes("warung")) {
     return {
-      city: "Itajaí",
+      city: "ItajaÃ­",
       state: "SC",
     };
   }
@@ -301,13 +301,13 @@ function inferCityFromText(text: string, fallbackCity = ""): string {
 
   if (normalized.includes("valinhos")) return "Valinhos";
   if (normalized.includes("campinas")) return "Campinas";
-  if (normalized.includes("balneario camboriu")) return "Balneário Camboriú";
-  if (normalized.includes("camboriu")) return "Camboriú";
-  if (normalized.includes("itajai")) return "Itajaí";
-  if (normalized.includes("sao paulo")) return "São Paulo";
+  if (normalized.includes("balneario camboriu")) return "BalneÃ¡rio CamboriÃº";
+  if (normalized.includes("camboriu")) return "CamboriÃº";
+  if (normalized.includes("itajai")) return "ItajaÃ­";
+  if (normalized.includes("sao paulo")) return "SÃ£o Paulo";
   if (normalized.includes("rio de janeiro")) return "Rio de Janeiro";
   if (normalized.includes("curitiba")) return "Curitiba";
-  if (normalized.includes("florianopolis")) return "Florianópolis";
+  if (normalized.includes("florianopolis")) return "FlorianÃ³polis";
   if (normalized.includes("belo horizonte")) return "Belo Horizonte";
 
   return fallbackCity;
@@ -366,7 +366,7 @@ function inferStateFromText(text: string, fallbackState = ""): string {
 
 function cleanResultTitle(title: string): string {
   return normalizeText(title)
-    .replace(/\s*•\s*Instagram photos and videos\s*$/i, "")
+    .replace(/\s*â€¢\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s*-\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s*\|\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s+/g, " ")
@@ -617,6 +617,97 @@ function dedupeSuggestions(items: SearchSuggestion[]): SearchSuggestion[] {
   return Array.from(map.values()).slice(0, 6);
 }
 
+function getResolvedSuggestionScore(item: SearchSuggestion, query: string): number {
+  const sourceText = normalizeForSearch(
+    `${item.name} ${item.official_url} ${item.instagram_url} ${item.source_url} ${item.source_name} ${item.source_provider}`
+  );
+
+  let score = scoreSuggestion(item, query);
+
+  if (item.image_url) score += 180;
+  if (item.official_url && !isInstagramUrl(item.official_url)) score += 80;
+  if (item.source_url && !isInstagramUrl(item.source_url)) score += 45;
+  if (item.instagram_url) score += 10;
+
+  if (item.is_from_catalog && item.image_url) score += 80;
+  if (item.is_from_catalog && !item.image_url) score -= 70;
+
+  if (
+    sourceText.includes("ingresse") ||
+    sourceText.includes("sympla") ||
+    sourceText.includes("shotgun") ||
+    sourceText.includes("ticket360") ||
+    sourceText.includes("eventim") ||
+    sourceText.includes("bilheteria digital") ||
+    sourceText.includes("bilheteriadigital")
+  ) {
+    score += 65;
+  }
+
+  return score;
+}
+
+function shouldEnrichCatalogSuggestions(items: SearchSuggestion[]): boolean {
+  if (!items.length) return true;
+
+  const hasImage = items.some((item) => Boolean(normalizeUrl(item.image_url)));
+  const hasOfficialNonInstagram = items.some((item) => {
+    const officialUrl = normalizeUrl(item.official_url);
+    const sourceUrl = normalizeUrl(item.source_url);
+
+    return (
+      (officialUrl && !isInstagramUrl(officialUrl)) ||
+      (sourceUrl && !isInstagramUrl(sourceUrl))
+    );
+  });
+
+  return !hasImage || !hasOfficialNonInstagram;
+}
+
+function getSuggestionMergeKey(item: SearchSuggestion): string {
+  return (
+    normalizeUrl(item.official_url) ||
+    normalizeUrl(item.instagram_url) ||
+    normalizeUrl(item.source_url) ||
+    compactSearch(item.name)
+  );
+}
+
+function mergeResolvedSuggestions(
+  catalogSuggestions: SearchSuggestion[],
+  externalSuggestions: SearchSuggestion[],
+  query: string
+): SearchSuggestion[] {
+  const map = new Map<string, SearchSuggestion>();
+
+  for (const item of [...catalogSuggestions, ...externalSuggestions]) {
+    const key = getSuggestionMergeKey(item);
+
+    if (!key) continue;
+
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, item);
+      continue;
+    }
+
+    if (
+      getResolvedSuggestionScore(item, query) >
+      getResolvedSuggestionScore(existing, query)
+    ) {
+      map.set(key, item);
+    }
+  }
+
+  return Array.from(map.values())
+    .sort(
+      (a, b) =>
+        getResolvedSuggestionScore(b, query) -
+        getResolvedSuggestionScore(a, query)
+    )
+    .slice(0, 6);
+}
 async function searchCatalog(params: {
   query: string;
   type: CatalogType;
@@ -693,6 +784,7 @@ async function searchTavily(params: {
     knownLocation?.state || "",
     params.type,
     "site oficial Instagram Brasil",
+    "ingresse sympla shotgun ticket360 eventim bilheteria digital ingressos oficial",
   ]
     .map((item) => normalizeText(item))
     .filter(Boolean)
@@ -821,7 +913,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Erro interno ao buscar item do catálogo.",
+        error: "Erro interno ao buscar item do catÃ¡logo.",
         source: "error",
         suggestions: [],
       },
@@ -829,3 +921,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

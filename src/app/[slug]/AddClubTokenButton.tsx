@@ -56,6 +56,43 @@ function getSourceLabel(item: CatalogSuggestion): string {
   );
 }
 
+function getSuggestionAutoScore(item: CatalogSuggestion): number {
+  const sourceText = normalizeText(
+    `${item.name} ${item.official_url} ${item.instagram_url} ${item.source_url} ${item.source_name} ${item.source_provider}`
+  ).toLowerCase();
+
+  let score = 0;
+
+  if (item.image_url) score += 160;
+  if (item.official_url && !item.official_url.includes("instagram.com")) score += 90;
+  if (item.source_url && !item.source_url.includes("instagram.com")) score += 55;
+  if (item.instagram_url) score += 15;
+
+  if (item.is_from_catalog && item.image_url) score += 70;
+  if (item.is_from_catalog && !item.image_url) score -= 45;
+
+  if (
+    sourceText.includes("ingresse") ||
+    sourceText.includes("sympla") ||
+    sourceText.includes("shotgun") ||
+    sourceText.includes("ticket360") ||
+    sourceText.includes("eventim") ||
+    sourceText.includes("bilheteria digital") ||
+    sourceText.includes("bilheteriadigital")
+  ) {
+    score += 70;
+  }
+
+  return score;
+}
+
+function hasUsefulSource(item: CatalogSuggestion): boolean {
+  return Boolean(
+    normalizeText(item.source_url) ||
+      normalizeText(item.official_url) ||
+      normalizeText(item.instagram_url)
+  );
+}
 export default function AddClubTokenButton({
   cardId,
   ownerUserId,
@@ -226,6 +263,35 @@ export default function AddClubTokenButton({
     return result.item || item;
   }
 
+  async function resolveAutomaticSuggestion(cleanQuery: string): Promise<CatalogSuggestion | null> {
+    try {
+      const response = await fetch("/api/club-catalog/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: cleanQuery,
+          type,
+          city: cityBase,
+          state: "",
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+      const items = Array.isArray(result?.suggestions)
+        ? (result.suggestions as CatalogSuggestion[])
+        : [];
+
+      const bestItem = items
+        .filter((item) => hasUsefulSource(item))
+        .sort((a, b) => getSuggestionAutoScore(b) - getSuggestionAutoScore(a))[0];
+
+      return bestItem || null;
+    } catch {
+      return null;
+    }
+  }
   async function handleUseSuggestion(item: CatalogSuggestion) {
     if (saving) return;
 
@@ -260,10 +326,22 @@ export default function AddClubTokenButton({
 
     try {
       const cleanQuery = normalizeText(query);
+      let itemName = cleanQuery;
 
-      await addToken(cleanQuery);
+      const automaticSuggestion = await resolveAutomaticSuggestion(cleanQuery);
 
-      setMessage(`${cleanQuery} foi adicionado ao seu Club.`);
+      if (automaticSuggestion) {
+        try {
+          const savedItem = await saveSuggestionToCatalog(automaticSuggestion);
+          itemName = normalizeText(savedItem?.name || automaticSuggestion.name || cleanQuery);
+        } catch {
+          itemName = cleanQuery;
+        }
+      }
+
+      await addToken(itemName);
+
+      setMessage(`${itemName} foi adicionado ao seu Club.`);
       setOpen(false);
       setQuery("");
       setNextEventDate("");
@@ -639,3 +717,4 @@ export default function AddClubTokenButton({
     </>
   );
 }
+
