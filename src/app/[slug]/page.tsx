@@ -52,6 +52,14 @@ type EventHeatScore = {
   outsideRadiusCount: number;
 };
 
+type EventMiniMember = {
+  userId: string;
+  label: string;
+  slug: string;
+  clubPhotoUrl: string;
+  cityBase: string;
+};
+
 type ClubCatalogItem = {
   id: string;
   name: string | null;
@@ -1095,6 +1103,67 @@ function EventHeatScoreBadge({
   );
 }
 
+function EventMiniAvatarStack({
+  members,
+}: {
+  members?: EventMiniMember[] | null;
+}) {
+  const visibleMembers = (members || []).slice(0, 5);
+
+  if (visibleMembers.length <= 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {visibleMembers.map((member, index) => (
+          <Link
+            key={`${member.userId}-${index}`}
+            href={`/${member.slug}?mode=club`}
+            title={member.cityBase ? `${member.label} · ${member.cityBase}` : member.label}
+            style={{
+              width: 31,
+              height: 31,
+              borderRadius: 999,
+              overflow: "hidden",
+              marginLeft: index === 0 ? 0 : -9,
+              border: "2px solid rgba(14,14,24,0.96)",
+              background:
+                "linear-gradient(135deg, rgba(0,255,190,0.22), rgba(125,92,255,0.22))",
+              display: "grid",
+              placeItems: "center",
+              boxShadow: "0 0 14px rgba(0,255,190,0.16)",
+              textDecoration: "none",
+            }}
+          >
+            {member.clubPhotoUrl ? (
+              <img
+                src={member.clubPhotoUrl}
+                alt={member.label}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <span style={{ color: "#fff", fontSize: 11, fontWeight: 900 }}>
+                {member.label.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 750 }}>
+        quem vai
+      </span>
+    </div>
+  );
+}
+
 function CatalogRailCard({
   label,
   catalog,
@@ -1427,6 +1496,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   let activeCheckInsByKey = new Map<string, PublicCheckInInfo>();
   let eventHeatByKey = new Map<string, EventHeatScore>();
+  let eventMembersByKey = new Map<string, EventMiniMember[]>();
 
   const nextEventKeysForHeat = Array.from(
     new Set(
@@ -1505,6 +1575,88 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     }
   } catch {
     eventHeatByKey = new Map<string, EventHeatScore>();
+  }
+
+  try {
+    if (nextEventKeysForHeat.length > 0) {
+      const { data: eventMemberCheckIns } = await supabase
+        .from("club_event_checkins")
+        .select("event_key,user_id,checked_in_at")
+        .in("event_key", nextEventKeysForHeat)
+        .eq("status", "active")
+        .order("checked_in_at", { ascending: false })
+        .limit(80);
+
+      const userIdsForMembers = Array.from(
+        new Set(
+          (eventMemberCheckIns || [])
+            .map((item: any) => normalizeText(item.user_id))
+            .filter(Boolean)
+        )
+      );
+
+      if (userIdsForMembers.length > 0) {
+        const [{ data: memberCards }, { data: memberProfiles }] = await Promise.all([
+          supabase
+            .from("cards")
+            .select("user_id,label,slug,status,is_published")
+            .in("user_id", userIdsForMembers)
+            .eq("status", "active")
+            .eq("is_published", true),
+          supabase
+            .from("club_profiles")
+            .select("user_id,club_photo_url,city_base")
+            .in("user_id", userIdsForMembers),
+        ]);
+
+        const cardByUserId = new Map<string, any>();
+        for (const item of memberCards || []) {
+          cardByUserId.set(normalizeText((item as any).user_id), item);
+        }
+
+        const profileByUserId = new Map<string, any>();
+        for (const item of memberProfiles || []) {
+          profileByUserId.set(normalizeText((item as any).user_id), item);
+        }
+
+        const nextMembersByKey = new Map<string, EventMiniMember[]>();
+
+        for (const checkIn of eventMemberCheckIns || []) {
+          const key = normalizeText((checkIn as any).event_key);
+          const userId = normalizeText((checkIn as any).user_id);
+          const memberCard = cardByUserId.get(userId);
+          const memberProfile = profileByUserId.get(userId);
+
+          if (!key || !userId || !memberCard?.slug) {
+            continue;
+          }
+
+          const currentMembers = nextMembersByKey.get(key) || [];
+
+          if (currentMembers.some((member) => member.userId === userId)) {
+            continue;
+          }
+
+          if (currentMembers.length >= 5) {
+            continue;
+          }
+
+          currentMembers.push({
+            userId,
+            label: normalizeText(memberCard.label) || "Clubber",
+            slug: normalizeText(memberCard.slug),
+            clubPhotoUrl: normalizeText(memberProfile?.club_photo_url),
+            cityBase: normalizeText(memberProfile?.city_base),
+          });
+
+          nextMembersByKey.set(key, currentMembers);
+        }
+
+        eventMembersByKey = nextMembersByKey;
+      }
+    }
+  } catch {
+    eventMembersByKey = new Map<string, EventMiniMember[]>();
   }
 
   const catalogLabels = Array.from(
@@ -1588,6 +1740,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, event.name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, event.name),
       event_heat_score: getEventHeatScore(eventHeatByKey, event.name),
+      event_members: eventMembersByKey.get(getEventCheckInKey(event.name)) || [],
     };
   });
 
@@ -1606,6 +1759,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, name),
       event_heat_score: getEventHeatScore(eventHeatByKey, name),
+      event_members: eventMembersByKey.get(getEventCheckInKey(name)) || [],
     };
   });
 
@@ -2467,6 +2621,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                             />
 
                             <EventHeatScoreBadge heatScore={event.event_heat_score} />
+
+                            <EventMiniAvatarStack members={event.event_members} />
                           </div>
 
                           <div style={{ display: "grid", gap: 9 }}>
@@ -3051,6 +3207,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
 
 
 
