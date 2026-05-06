@@ -33,6 +33,18 @@ type SpotifyArtist = {
   spotify_url: string | null;
 };
 
+type CheckInLocationStatus =
+  | "not_checked"
+  | "inside_radius"
+  | "outside_radius"
+  | "location_unavailable"
+  | "pending_sync";
+
+type PublicCheckInInfo = {
+  status: string;
+  locationStatus: CheckInLocationStatus;
+};
+
 type ClubCatalogItem = {
   id: string;
   name: string | null;
@@ -816,17 +828,34 @@ function getEventCheckInKey(value: any): string {
 }
 
 function getStoredCheckInStatus(
-  activeCheckInsByKey: Map<string, string>,
+  activeCheckInsByKey: Map<string, PublicCheckInInfo>,
   eventName: any
 ): "none" | "pending" | "active" | "expired" {
   const key = getEventCheckInKey(eventName);
-  const status = normalizeText(activeCheckInsByKey.get(key)).toLowerCase();
+  const status = normalizeText(activeCheckInsByKey.get(key)?.status).toLowerCase();
 
   if (status === "active") return "active";
   if (status === "pending") return "pending";
   if (status === "expired") return "expired";
 
   return "none";
+}
+
+function getStoredCheckInLocationStatus(
+  activeCheckInsByKey: Map<string, PublicCheckInInfo>,
+  eventName: any
+): CheckInLocationStatus {
+  const key = getEventCheckInKey(eventName);
+  const locationStatus = normalizeText(
+    activeCheckInsByKey.get(key)?.locationStatus
+  ).toLowerCase();
+
+  if (locationStatus === "inside_radius") return "inside_radius";
+  if (locationStatus === "outside_radius") return "outside_radius";
+  if (locationStatus === "location_unavailable") return "location_unavailable";
+  if (locationStatus === "pending_sync") return "pending_sync";
+
+  return "not_checked";
 }
 function getEventCheckInStatus(event: any): "none" | "pending" | "active" | "expired" {
   const status = normalizeText(
@@ -929,12 +958,48 @@ function CheckInStatusBadge({
 
 function CheckInPresenceText({
   status,
+  locationStatus = "not_checked",
 }: {
   status: "none" | "pending" | "active" | "expired";
+  locationStatus?: CheckInLocationStatus;
 }) {
   if (status !== "active" && status !== "pending") {
     return null;
   }
+
+  const isActive = status === "active";
+  const isValidated = isActive && locationStatus === "inside_radius";
+  const isOutsideRadius = isActive && locationStatus === "outside_radius";
+
+  const label = !isActive
+    ? "Presença aguardando sinal"
+    : isValidated
+      ? "Presença validada"
+      : isOutsideRadius
+        ? "Check-in fora do raio"
+        : "Check-in manual";
+
+  const border = isValidated
+    ? "1px solid rgba(0,255,190,0.48)"
+    : isOutsideRadius
+      ? "1px solid rgba(255,210,92,0.42)"
+      : isActive
+        ? "1px solid rgba(150,165,255,0.42)"
+        : "1px solid rgba(255,210,92,0.32)";
+
+  const background = isValidated
+    ? "rgba(0,255,190,0.14)"
+    : isOutsideRadius
+      ? "rgba(255,210,92,0.12)"
+      : isActive
+        ? "rgba(125,92,255,0.14)"
+        : "rgba(255,210,92,0.10)";
+
+  const shadow = isValidated
+    ? "0 0 18px rgba(0,255,190,0.22)"
+    : isOutsideRadius
+      ? "0 0 16px rgba(255,210,92,0.16)"
+      : "none";
 
   return (
     <div
@@ -945,22 +1010,15 @@ function CheckInPresenceText({
         width: "fit-content",
         padding: "7px 10px",
         borderRadius: 999,
-        border:
-          status === "active"
-            ? "1px solid rgba(0,255,190,0.35)"
-            : "1px solid rgba(255,210,92,0.32)",
-        background:
-          status === "active"
-            ? "rgba(0,255,190,0.12)"
-            : "rgba(255,210,92,0.10)",
+        border,
+        background,
+        boxShadow: shadow,
         color: "#fff",
         fontSize: 12,
         fontWeight: 850,
       }}
     >
-      <span style={{ opacity: 0.92 }}>
-        {status === "active" ? "Presente no evento" : "Presença aguardando sinal"}
-      </span>
+      <span style={{ opacity: 0.92 }}>{label}</span>
     </div>
   );
 }
@@ -1294,12 +1352,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const nextEventLinks = splitList(clubProfile?.next_events_links);
   const nextEventRows = buildEventRows(nextEvents, nextEventDates, nextEventLinks);
 
-  let activeCheckInsByKey = new Map<string, string>();
+  let activeCheckInsByKey = new Map<string, PublicCheckInInfo>();
 
   try {
     const { data: activeCheckIns } = await supabase
       .from("club_event_checkins")
-      .select("event_name,event_key,status")
+      .select("event_name,event_key,status,location_status")
       .eq("card_id", card.card_id)
       .eq("status", "active");
 
@@ -1307,12 +1365,17 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       (activeCheckIns || [])
         .map((item: any) => [
           normalizeText(item.event_key) || getEventCheckInKey(item.event_name),
-          normalizeText(item.status).toLowerCase(),
+          {
+            status: normalizeText(item.status).toLowerCase(),
+            locationStatus:
+              (normalizeText(item.location_status).toLowerCase() as CheckInLocationStatus) ||
+              "not_checked",
+          },
         ])
-        .filter(([key]) => Boolean(key)) as Array<[string, string]>
+        .filter(([key]) => Boolean(key)) as Array<[string, PublicCheckInInfo]>
     );
   } catch {
-    activeCheckInsByKey = new Map<string, string>();
+    activeCheckInsByKey = new Map<string, PublicCheckInInfo>();
   }
 
   const catalogLabels = Array.from(
@@ -1394,6 +1457,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       ...event,
       catalog,
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, event.name),
+      checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, event.name),
     };
   });
 
@@ -1410,6 +1474,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       name,
       catalog,
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, name),
+      checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, name),
     };
   });
 
@@ -2184,6 +2249,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     const catalogHref = getCatalogHref(event.catalog);
                     const finalEventLink = event.link || catalogHref;
                     const checkInStatus = getEventCheckInStatus(event);
+                    const checkInLocationStatus =
+                      (normalizeText(event?.checkin_location_status).toLowerCase() as CheckInLocationStatus) ||
+                      "not_checked";
 
                     return (
                       <div
@@ -2262,7 +2330,10 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                               </span>
                             ) : null}
 
-                            <CheckInPresenceText status={checkInStatus} />
+                            <CheckInPresenceText
+                              status={checkInStatus}
+                              locationStatus={checkInLocationStatus}
+                            />
                           </div>
 
                           <div style={{ display: "grid", gap: 9 }}>
@@ -2847,6 +2918,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
 
 
 
