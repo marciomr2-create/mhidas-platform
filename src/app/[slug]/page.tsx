@@ -45,6 +45,13 @@ type PublicCheckInInfo = {
   locationStatus: CheckInLocationStatus;
 };
 
+type EventHeatScore = {
+  confirmedCount: number;
+  validatedCount: number;
+  manualCount: number;
+  outsideRadiusCount: number;
+};
+
 type ClubCatalogItem = {
   id: string;
   name: string | null;
@@ -857,6 +864,22 @@ function getStoredCheckInLocationStatus(
 
   return "not_checked";
 }
+function getEventHeatScore(
+  eventHeatByKey: Map<string, EventHeatScore>,
+  eventName: any
+): EventHeatScore {
+  const key = getEventCheckInKey(eventName);
+
+  return (
+    eventHeatByKey.get(key) || {
+      confirmedCount: 0,
+      validatedCount: 0,
+      manualCount: 0,
+      outsideRadiusCount: 0,
+    }
+  );
+}
+
 function getEventCheckInStatus(event: any): "none" | "pending" | "active" | "expired" {
   const status = normalizeText(
     event?.checkin_status ||
@@ -1022,6 +1045,56 @@ function CheckInPresenceText({
     </div>
   );
 }
+function EventHeatScoreBadge({
+  heatScore,
+}: {
+  heatScore?: EventHeatScore | null;
+}) {
+  const confirmedCount = Number(heatScore?.confirmedCount || 0);
+  const validatedCount = Number(heatScore?.validatedCount || 0);
+
+  if (confirmedCount <= 0) {
+    return null;
+  }
+
+  const confirmedLabel =
+    confirmedCount === 1
+      ? "1 clubber confirmado"
+      : `${confirmedCount} clubbers confirmados`;
+
+  const validatedLabel =
+    validatedCount > 0
+      ? validatedCount === 1
+        ? "1 presença validada"
+        : `${validatedCount} presenças validadas`
+      : "movimento em formação";
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 3,
+        width: "fit-content",
+        padding: "8px 10px",
+        borderRadius: 14,
+        border: "1px solid rgba(0,255,190,0.24)",
+        background:
+          "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.10))",
+        boxShadow:
+          confirmedCount >= 3
+            ? "0 0 22px rgba(0,255,190,0.18)"
+            : "0 10px 22px rgba(0,0,0,0.16)",
+        color: "#fff",
+      }}
+    >
+      <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: -0.1 }}>
+        {confirmedLabel}
+      </span>
+      <span style={{ fontSize: 11, opacity: 0.7 }}>{validatedLabel}</span>
+    </div>
+  );
+}
+
 function CatalogRailCard({
   label,
   catalog,
@@ -1353,6 +1426,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const nextEventRows = buildEventRows(nextEvents, nextEventDates, nextEventLinks);
 
   let activeCheckInsByKey = new Map<string, PublicCheckInInfo>();
+  let eventHeatByKey = new Map<string, EventHeatScore>();
+
+  const nextEventKeysForHeat = Array.from(
+    new Set(
+      nextEventRows
+        .map((event) => getEventCheckInKey(event.name))
+        .filter(Boolean)
+    )
+  );
 
   try {
     const { data: activeCheckIns } = await supabase
@@ -1376,6 +1458,53 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     );
   } catch {
     activeCheckInsByKey = new Map<string, PublicCheckInInfo>();
+  }
+
+  try {
+    if (nextEventKeysForHeat.length > 0) {
+      const { data: eventHeatRows } = await supabase
+        .from("club_event_checkins")
+        .select("event_key,status,location_status")
+        .in("event_key", nextEventKeysForHeat)
+        .eq("status", "active");
+
+      const nextHeatByKey = new Map<string, EventHeatScore>();
+
+      for (const item of eventHeatRows || []) {
+        const key = normalizeText((item as any).event_key);
+        const locationStatus = normalizeText(
+          (item as any).location_status
+        ).toLowerCase();
+
+        if (!key) {
+          continue;
+        }
+
+        const current =
+          nextHeatByKey.get(key) || {
+            confirmedCount: 0,
+            validatedCount: 0,
+            manualCount: 0,
+            outsideRadiusCount: 0,
+          };
+
+        current.confirmedCount += 1;
+
+        if (locationStatus === "inside_radius") {
+          current.validatedCount += 1;
+        } else if (locationStatus === "outside_radius") {
+          current.outsideRadiusCount += 1;
+        } else {
+          current.manualCount += 1;
+        }
+
+        nextHeatByKey.set(key, current);
+      }
+
+      eventHeatByKey = nextHeatByKey;
+    }
+  } catch {
+    eventHeatByKey = new Map<string, EventHeatScore>();
   }
 
   const catalogLabels = Array.from(
@@ -1458,6 +1587,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       catalog,
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, event.name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, event.name),
+      event_heat_score: getEventHeatScore(eventHeatByKey, event.name),
     };
   });
 
@@ -1475,6 +1605,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       catalog,
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, name),
+      event_heat_score: getEventHeatScore(eventHeatByKey, name),
     };
   });
 
@@ -2334,6 +2465,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                               status={checkInStatus}
                               locationStatus={checkInLocationStatus}
                             />
+
+                            <EventHeatScoreBadge heatScore={event.event_heat_score} />
                           </div>
 
                           <div style={{ display: "grid", gap: 9 }}>
@@ -2918,6 +3051,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     </main>
   );
 }
+
 
 
 
