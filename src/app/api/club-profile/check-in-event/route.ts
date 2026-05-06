@@ -75,6 +75,64 @@ function normalizeUuidOrNull(value: any): string | null {
   return uuidPattern.test(clean) ? clean : null;
 }
 
+function normalizeNumberOrNull(value: any): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function clampRadiusMeters(value: any): number {
+  const parsed = Math.round(Number(value || 1000));
+
+  if (!Number.isFinite(parsed)) {
+    return 1000;
+  }
+
+  return Math.min(Math.max(parsed, 100), 5000);
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function calculateDistanceMeters(params: {
+  fromLatitude: number;
+  fromLongitude: number;
+  toLatitude: number;
+  toLongitude: number;
+}): number {
+  const earthRadiusMeters = 6371000;
+
+  const deltaLatitude = toRadians(params.toLatitude - params.fromLatitude);
+  const deltaLongitude = toRadians(params.toLongitude - params.fromLongitude);
+
+  const fromLatitudeRadians = toRadians(params.fromLatitude);
+  const toLatitudeRadians = toRadians(params.toLatitude);
+
+  const a =
+    Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
+    Math.cos(fromLatitudeRadians) *
+      Math.cos(toLatitudeRadians) *
+      Math.sin(deltaLongitude / 2) *
+      Math.sin(deltaLongitude / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(earthRadiusMeters * c);
+}
+
+function isValidLatitude(value: number | null): value is number {
+  return typeof value === "number" && value >= -90 && value <= 90;
+}
+
+function isValidLongitude(value: number | null): value is number {
+  return typeof value === "number" && value >= -180 && value <= 180;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
@@ -86,6 +144,9 @@ export async function POST(request: NextRequest) {
     const catalogId = normalizeUuidOrNull(body?.catalogId);
     const source = normalizeText(body?.source) || "manual_confirmed";
 
+    const userLatitude = normalizeNumberOrNull(body?.userLatitude);
+    const userLongitude = normalizeNumberOrNull(body?.userLongitude);
+
     if (!cardId) {
       return NextResponse.json(
         { ok: false, message: "Perfil inválido." },
@@ -96,6 +157,16 @@ export async function POST(request: NextRequest) {
     if (!eventName || eventName.length < 2) {
       return NextResponse.json(
         { ok: false, message: "Evento inválido para check-in." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      (userLatitude !== null && !isValidLatitude(userLatitude)) ||
+      (userLongitude !== null && !isValidLongitude(userLongitude))
+    ) {
+      return NextResponse.json(
+        { ok: false, message: "Localização inválida para check-in." },
         { status: 400 }
       );
     }
@@ -146,6 +217,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let eventLatitude: number | null = null;
+    let eventLongitude: number | null = null;
+    let radiusMeters: number | null = null;
+    let distanceMeters: number | null = null;
+    let locationStatus:
+      | "not_checked"
+      | "inside_radius"
+      | "outside_radius"
+      | "location_unavailable"
+      | "pending_sync" = "not_checked";
+
+    if (catalogId) {
+      try {
+        const { data: catalogItem } = await supabase
+          .from("club_event_catalog")
+          .select("id, latitude, longitude, checkin_radius_meters")
+          .eq("id", catalogId)
+          .maybeSingle();
+
+        eventLatitude = normalizeNumberOrNull(catalogItem?.latitude);
+        eventLongitude = normalizeNumberOrNull(catalogItem?.longitude);
+        radiusMeters = clampRadiusMeters(catalogItem?.checkin_radius_meters);
+      } catch {
+        eventLatitude = null;
+        eventLongitude = null;
+        radiusMeters = null;
+      }
+    }
+
+    const hasUserLocation =
+      isValidLatitude(userLatitude) && isValidLongitude(userLongitude);
+
+    const hasEventLocation =
+      isValidLatitude(eventLatitude) && isValidLongitude(eventLongitude);
+
+    if (hasUserLocation && hasEventLocation) {
+      const finalRadiusMeters = clampRadiusMeters(radiusMeters);
+
+      distanceMeters = calculateDistanceMeters({
+        fromLatitude: userLatitude!,
+        fromLongitude: userLongitude!,
+        toLatitude: eventLatitude!,
+        toLongitude: eventLongitude!,
+      });
+
+      radiusMeters = finalRadiusMeters;
+      locationStatus =
+        distanceMeters <= finalRadiusMeters ? "inside_radius" : "outside_radius";
+    } else if (!hasUserLocation && hasEventLocation) {
+      locationStatus = "location_unavailable";
+    } else if (hasUserLocation && !hasEventLocation) {
+      locationStatus = "not_checked";
+    }
+
     const nowIso = new Date().toISOString();
 
     const { data: checkIn, error: checkInError } = await supabase
@@ -161,13 +286,24 @@ export async function POST(request: NextRequest) {
           catalog_id: catalogId,
           status: "active",
           source,
+          user_latitude: hasUserLocation ? userLatitude : null,
+          user_longitude: hasUserLocation ? userLongitude : null,
+          event_latitude: hasEventLocation ? eventLatitude : null,
+          event_longitude: hasEventLocation ? eventLongitude : null,
+          distance_meters: distanceMeters,
+          radius_meters: radiusMeters,
+          location_status: locationStatus,
+          checked_in_at: nowIso,
+          synced_at: nowIso,
           updated_at: nowIso,
         },
         {
           onConflict: "user_id,card_id,event_key",
         }
       )
-      .select("id, event_name, event_key, status")
+      .select(
+        "id, event_name, event_key, status, location_status, distance_meters, radius_meters"
+      )
       .maybeSingle();
 
     if (checkInError) {
@@ -250,8 +386,18 @@ export async function POST(request: NextRequest) {
       ok: true,
       checkIn,
       status: "active",
+      locationStatus,
+      distanceMeters,
+      radiusMeters,
       eventName,
-      message: "Check-in ativo. Evento adicionado em Últimos eventos.",
+      message:
+        locationStatus === "inside_radius"
+          ? "Check-in ativo por proximidade. Evento adicionado em Últimos eventos."
+          : locationStatus === "outside_radius"
+            ? "Check-in ativo, mas você parece estar fora do raio configurado."
+            : locationStatus === "location_unavailable"
+              ? "Check-in ativo. Não foi possível validar sua localização."
+              : "Check-in ativo. Evento adicionado em Últimos eventos.",
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -263,3 +409,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

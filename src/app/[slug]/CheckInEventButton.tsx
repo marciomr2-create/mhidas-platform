@@ -16,8 +16,49 @@ type CheckInEventButtonProps = {
   initialStatus?: "none" | "pending" | "active" | "expired";
 };
 
+type BrowserLocationResult = {
+  latitude: number | null;
+  longitude: number | null;
+  locationSource: "browser_gps" | "manual_confirmed";
+};
+
 function normalizeText(value: any): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function getBrowserLocation(): Promise<BrowserLocationResult> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      resolve({
+        latitude: null,
+        longitude: null,
+        locationSource: "manual_confirmed",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          locationSource: "browser_gps",
+        });
+      },
+      () => {
+        resolve({
+          latitude: null,
+          longitude: null,
+          locationSource: "manual_confirmed",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 60000,
+      }
+    );
+  });
 }
 
 export default function CheckInEventButton({
@@ -80,9 +121,13 @@ export default function CheckInEventButton({
     }
 
     setLoading(true);
-    setMessage("");
+    setMessage("Solicitando localização...");
 
     try {
+      const location = await getBrowserLocation();
+
+      setMessage("Confirmando check-in...");
+
       const response = await fetch("/api/club-profile/check-in-event", {
         method: "POST",
         headers: {
@@ -95,7 +140,9 @@ export default function CheckInEventButton({
           eventDate: normalizeText(eventDate),
           eventLink: normalizeText(eventLink),
           catalogId: catalogId || null,
-          source: "manual_confirmed",
+          source: location.locationSource,
+          userLatitude: location.latitude,
+          userLongitude: location.longitude,
         }),
       });
 
@@ -106,7 +153,13 @@ export default function CheckInEventButton({
       }
 
       setDone(true);
-      setMessage("Check-in ativo.");
+
+      if (location.latitude !== null && location.longitude !== null) {
+        setMessage("Check-in ativo por proximidade.");
+      } else {
+        setMessage("Check-in ativo, localização não validada.");
+      }
+
       router.refresh();
     } catch (error: any) {
       setMessage(error?.message || "Erro ao fazer check-in.");
@@ -168,4 +221,3 @@ export default function CheckInEventButton({
     </div>
   );
 }
-
