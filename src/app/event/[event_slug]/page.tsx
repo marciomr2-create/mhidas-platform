@@ -91,7 +91,7 @@ function splitEventList(value: string | null | undefined): string[] {
   if (!text) return [];
 
   return text
-    .split(/,|â€¢|;|\|/)
+    .split(/,|•|;|\|/)
     .map((item) => normalizeText(item))
     .filter(Boolean);
 }
@@ -447,7 +447,7 @@ export default async function EventPage({ params }: PageProps) {
       <section style={heroStyle()}>
         <div style={{ display: "grid", gap: 12 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <span style={badgeStyle()}>PÃ¡gina pÃºblica de evento</span>
+            <span style={badgeStyle()}>Página pública de evento</span>
             <span style={badgeStyle()}>{matchedMembers.length} participantes mapeados</span>
           </div>
 
@@ -456,7 +456,7 @@ export default async function EventPage({ params }: PageProps) {
           </h1>
 
           <p style={{ margin: 0, opacity: 0.84, lineHeight: 1.7, maxWidth: 840 }}>
-            Este evento funciona como ponto de conexÃ£o entre perfis Club, caronas e encontros jÃ¡ cadastrados no ecossistema USECLUBBERS.
+            Este evento funciona como ponto de conexão entre perfis Club, caronas e encontros já cadastrados no ecossistema USECLUBBERS.
           </p>
         </div>
 
@@ -505,19 +505,19 @@ export default async function EventPage({ params }: PageProps) {
           <div style={emptyCardStyle()}>
             <strong style={{ display: "block", marginBottom: 10 }}>Nenhum perfil encontrado para este evento.</strong>
             <div style={{ marginBottom: 12 }}>
-              Isso normalmente acontece quando o slug digitado nÃ£o corresponde exatamente ao nome cadastrado em:
+              Isso normalmente acontece quando o slug digitado não corresponde exatamente ao nome cadastrado em:
             </div>
             <div style={{ lineHeight: 1.8 }}>
-              â€¢ PrÃ³ximos eventos
+              • Próximos eventos
               <br />
-              â€¢ Evento da carona
+              • Evento da carona
               <br />
-              â€¢ Evento do encontro
+              • Evento do encontro
             </div>
             <div style={{ marginTop: 14 }}>
-              Exemplo de conversÃ£o:
+              Exemplo de conversão:
               <br />
-              <strong>Time Warp Brasil</strong> â†’ <strong>/event/time-warp-brasil</strong>
+              <strong>Time Warp Brasil</strong> → <strong>/event/time-warp-brasil</strong>
             </div>
           </div>
         </section>
@@ -529,7 +529,7 @@ export default async function EventPage({ params }: PageProps) {
                 Quem vai para este evento
               </h2>
               <p style={{ margin: 0, opacity: 0.82 }}>
-                Perfis Club que jÃ¡ se conectaram a este evento.
+                Perfis Club que já se conectaram a este evento.
               </p>
             </div>
 
@@ -555,7 +555,7 @@ export default async function EventPage({ params }: PageProps) {
             </div>
 
             {rideOfferMembers.length === 0 && rideNeedMembers.length === 0 ? (
-              <div style={emptyCardStyle()}>Ainda nÃ£o hÃ¡ caronas mapeadas para este evento.</div>
+              <div style={emptyCardStyle()}>Ainda não há caronas mapeadas para este evento.</div>
             ) : (
               <div style={memberGridStyle()}>
                 {rideOfferMembers.map((member) => (
@@ -569,7 +569,7 @@ export default async function EventPage({ params }: PageProps) {
                         {hasContent(member.ride_origin) ? <div><strong>Origem:</strong> {member.ride_origin}</div> : null}
                         {hasContent(member.ride_destination) ? <div><strong>Destino:</strong> {member.ride_destination}</div> : null}
                         {hasContent(member.ride_seats) ? <div><strong>Vagas:</strong> {member.ride_seats}</div> : null}
-                        {hasContent(member.ride_notes) ? <div><strong>ObservaÃ§Ãµes:</strong> {member.ride_notes}</div> : null}
+                        {hasContent(member.ride_notes) ? <div><strong>Observações:</strong> {member.ride_notes}</div> : null}
                       </>
                     }
                     officialEventUrl={member.ride_event_url || officialEventUrl}
@@ -588,7 +588,7 @@ export default async function EventPage({ params }: PageProps) {
                           {hasContent(member.ride_event_name) ? <div><strong>Evento:</strong> {member.ride_event_name}</div> : null}
                           {hasContent(member.ride_origin) ? <div><strong>Origem:</strong> {member.ride_origin}</div> : null}
                           {hasContent(member.ride_destination) ? <div><strong>Destino:</strong> {member.ride_destination}</div> : null}
-                          {hasContent(member.ride_notes) ? <div><strong>ObservaÃ§Ãµes:</strong> {member.ride_notes}</div> : null}
+                          {hasContent(member.ride_notes) ? <div><strong>Observações:</strong> {member.ride_notes}</div> : null}
                         </>
                       }
                       officialEventUrl={member.ride_event_url || officialEventUrl}
@@ -604,12 +604,12 @@ export default async function EventPage({ params }: PageProps) {
                 Encontros combinados
               </h2>
               <p style={{ margin: 0, opacity: 0.82 }}>
-                Pontos de encontro e horÃ¡rios que jÃ¡ foram marcados para este evento.
+                Pontos de encontro e horários que jÃ¡ foram marcados para este evento.
               </p>
             </div>
 
             {meetMembers.length === 0 ? (
-              <div style={emptyCardStyle()}>Ainda nÃ£o hÃ¡ encontros ativos mapeados para este evento.</div>
+              <div style={emptyCardStyle()}>Ainda não há encontros ativos mapeados para este evento.</div>
             ) : (
               <div style={memberGridStyle()}>
                 {meetMembers.map((member) => (
@@ -622,7 +622,7 @@ export default async function EventPage({ params }: PageProps) {
                         {hasContent(member.meet_event_name) ? <div><strong>Evento:</strong> {member.meet_event_name}</div> : null}
                         {hasContent(member.meet_meeting_point) ? <div><strong>Ponto:</strong> {member.meet_meeting_point}</div> : null}
                         {hasContent(member.meet_time) ? <div><strong>HorÃ¡rio:</strong> {member.meet_time}</div> : null}
-                        {hasContent(member.meet_notes) ? <div><strong>ObservaÃ§Ãµes:</strong> {member.meet_notes}</div> : null}
+                        {hasContent(member.meet_notes) ? <div><strong>Observações:</strong> {member.meet_notes}</div> : null}
                       </>
                     }
                     officialEventUrl={member.meet_event_url || officialEventUrl}
@@ -636,4 +636,5 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
+
 
