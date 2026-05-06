@@ -305,7 +305,7 @@ function MemberCard({
         </div>
       ) : null}
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ position: "relative", zIndex: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
           Abrir perfil Club
         </Link>
@@ -348,7 +348,7 @@ export default async function EventPage({ params }: PageProps) {
           city_base,
           club_tagline,
           club_photo_url,
-          next_events: nextEvents,
+          next_events,
           next_events_links,
           ride_status,
           ride_event_name,
@@ -378,7 +378,11 @@ export default async function EventPage({ params }: PageProps) {
     const profile = profileMap.get(card.user_id);
     if (!profile) continue;
 
-    const nextEvents = splitEventList(profile.next_events);
+    const nextEvents = splitEventList(
+      profile.next_events ||
+      (profile as any).nextEvents ||
+      (profile as any).upcoming_events
+    );
     const nextEventsMatch = nextEvents.some((item) => toEventSlug(item) === eventSlug);
     const rideMatch = toEventSlug(profile.ride_event_name) === eventSlug;
     const meetMatch = toEventSlug(profile.meet_event_name) === eventSlug;
@@ -429,6 +433,15 @@ export default async function EventPage({ params }: PageProps) {
     "";
 
   const attendees = matchedMembers;
+  const heroMembers = attendees.slice(0, 6);
+  const eventHeatLabel =
+    attendees.length >= 10
+      ? "Alta movimentação Club"
+      : attendees.length >= 3
+        ? "Evento aquecendo"
+        : attendees.length > 0
+          ? "Movimento inicial"
+          : "Evento em formação";
   const rideOfferMembers = matchedMembers.filter(
     (member) => member.ride_status === "offer" || member.ride_status === "both"
   );
@@ -460,7 +473,7 @@ export default async function EventPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ position: "relative", zIndex: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
           {hasContent(officialEventUrl) ? (
             <a
               href={officialEventUrl}
@@ -477,7 +490,7 @@ export default async function EventPage({ params }: PageProps) {
           </Link>
         </div>
 
-        <div style={statsGridStyle()}>
+        <div style={{ position: "relative", zIndex: 2, ...statsGridStyle() }}>
           <div style={statCardStyle()}>
             <strong>Perfis no evento</strong>
             <div style={{ fontSize: 28, fontWeight: 900 }}>{attendees.length}</div>
@@ -636,5 +649,12 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
