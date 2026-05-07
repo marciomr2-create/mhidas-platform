@@ -25,6 +25,9 @@ type ClubProfileRow = {
   city_base: string | null;
   club_tagline: string | null;
   club_photo_url: string | null;
+  favorite_genres: string | null;
+  favorite_clubs: string | null;
+  favorite_events: string | null;
   next_events: string | null;
   next_events_links: string | null;
   ride_status: string | null;
@@ -222,13 +225,13 @@ function emptyCardStyle() {
 function getRideStatusLabel(value: string) {
   if (value === "offer") return "Oferecendo carona";
   if (value === "need") return "Procurando carona";
-  if (value === "both") return "Oferece e tambÃ©m procura";
+  if (value === "both") return "Disponível para carona compartilhada";
   return "";
 }
 
 function getMeetStatusLabel(value: string) {
   if (value === "host") return "Abrindo ponto de encontro";
-  if (value === "join") return "Quer entrar em um encontro";
+  if (value === "join") return "Ponto de encontro ativo";
   if (value === "both") return "Pode abrir ou entrar";
   return "";
 }
@@ -377,6 +380,10 @@ export default async function EventPage({ params }: PageProps) {
   for (const card of cards) {
     const profile = profileMap.get(card.user_id);
     if (!profile) continue;
+
+    const favoriteGenres = splitEventList(profile.favorite_genres);
+    const favoriteClubs = splitEventList(profile.favorite_clubs);
+    const favoriteEvents = splitEventList(profile.favorite_events);
 
     const nextEvents = splitEventList(
       profile.next_events ||
@@ -549,7 +556,7 @@ export default async function EventPage({ params }: PageProps) {
             <div style={memberGridStyle()}>
               {attendees.map((member) => (
                 <MemberCard
-                  key={`attendee-${member.user_id}`}
+                  key={`attendee-${member.user_id}-${member.slug}`}
                   member={member}
                   officialEventUrl={officialEventUrl}
                 />
@@ -573,7 +580,7 @@ export default async function EventPage({ params }: PageProps) {
               <div style={memberGridStyle()}>
                 {rideOfferMembers.map((member) => (
                   <MemberCard
-                    key={`ride-offer-${member.user_id}`}
+                    key={`ride-offer-${member.user_id}-${member.slug}`}
                     member={member}
                     extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
                     extraBody={
@@ -593,7 +600,7 @@ export default async function EventPage({ params }: PageProps) {
                   .filter((member) => member.ride_status === "need")
                   .map((member) => (
                     <MemberCard
-                      key={`ride-need-${member.user_id}`}
+                      key={`ride-need-${member.user_id}-${member.slug}`}
                       member={member}
                       extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
                       extraBody={
@@ -617,7 +624,7 @@ export default async function EventPage({ params }: PageProps) {
                 Encontros combinados
               </h2>
               <p style={{ margin: 0, opacity: 0.82 }}>
-                Pontos de encontro e horários que jÃ¡ foram marcados para este evento.
+                Pontos de encontro e horários que já foram marcados para este evento.
               </p>
             </div>
 
@@ -627,14 +634,14 @@ export default async function EventPage({ params }: PageProps) {
               <div style={memberGridStyle()}>
                 {meetMembers.map((member) => (
                   <MemberCard
-                    key={`meet-${member.user_id}`}
+                    key={`meet-${member.user_id}-${member.slug}`}
                     member={member}
                     extraTitle={getMeetStatusLabel(member.meet_status) || "Encontro"}
                     extraBody={
                       <>
                         {hasContent(member.meet_event_name) ? <div><strong>Evento:</strong> {member.meet_event_name}</div> : null}
                         {hasContent(member.meet_meeting_point) ? <div><strong>Ponto:</strong> {member.meet_meeting_point}</div> : null}
-                        {hasContent(member.meet_time) ? <div><strong>HorÃ¡rio:</strong> {member.meet_time}</div> : null}
+                        {hasContent(member.meet_time) ? <div><strong>Horário:</strong> {member.meet_time}</div> : null}
                         {hasContent(member.meet_notes) ? <div><strong>Observações:</strong> {member.meet_notes}</div> : null}
                       </>
                     }
@@ -649,6 +656,13 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
 
