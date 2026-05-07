@@ -52,6 +52,9 @@ type EventMember = {
   city_base: string;
   club_tagline: string;
   club_photo_url: string;
+  favorite_genres: string[];
+  favorite_clubs: string[];
+  favorite_events: string[];
   next_events: string[];
   next_events_links: string;
   ride_status: string;
@@ -247,6 +250,13 @@ function MemberCard({
   extraBody?: ReactNode;
   officialEventUrl?: string;
 }) {
+  const affinityBadges = [
+    hasContent(member.city_base) ? "Mesma cena regional" : "",
+    (member.favorite_genres || []).length > 0 ? "Afinidade musical" : "",
+    (member.favorite_clubs || []).length > 0 ? "Circuito de clubs" : "",
+    (member.favorite_events || []).length > 0 ? "Eventos em comum" : "",
+  ].filter(Boolean);
+
   return (
     <article style={memberCardStyle()}>
       <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 12, alignItems: "start" }}>
@@ -288,6 +298,29 @@ function MemberCard({
 
           {hasContent(member.club_tagline) ? (
             <div style={{ opacity: 0.86, lineHeight: 1.6 }}>{member.club_tagline}</div>
+          ) : null}
+        
+          {affinityBadges.length > 0 ? (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+              {affinityBadges.slice(0, 4).map((badge) => (
+                <span
+                  key={`${member.user_id}-${member.slug}-${badge}`}
+                  style={{
+                    width: "fit-content",
+                    padding: "5px 8px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(0,255,190,0.18)",
+                    background: "rgba(0,255,190,0.075)",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: 850,
+                    opacity: 0.92,
+                  }}
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
           ) : null}
         </div>
       </div>
@@ -403,6 +436,9 @@ export default async function EventPage({ params }: PageProps) {
       city_base: normalizeText(profile.city_base),
       club_tagline: normalizeText(profile.club_tagline),
       club_photo_url: normalizeText(profile.club_photo_url),
+      favorite_genres: favoriteGenres,
+      favorite_clubs: favoriteClubs,
+      favorite_events: favoriteEvents,
       next_events: nextEvents,
       next_events_links: normalizeText(profile.next_events_links),
       ride_status: normalizeText(profile.ride_status),
@@ -656,6 +692,13 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
+
+
 
 
 
