@@ -256,8 +256,7 @@ function MemberCard({
     (member.favorite_clubs || []).length > 0 ? "Circuito de clubs" : "",
     (member.favorite_events || []).length > 0 ? "Eventos em comum" : "",
   ].filter(Boolean);
-
-  return (
+return (
     <article style={memberCardStyle()}>
       <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 12, alignItems: "start" }}>
         <div
@@ -476,6 +475,27 @@ export default async function EventPage({ params }: PageProps) {
     "";
 
   const attendees = matchedMembers;
+
+  const tribeMap = new Map<string, number>();
+
+  for (const member of attendees) {
+    const tribeSources = [
+      ...((member.favorite_genres || []).map((item) => `Vertente: ${item}`)),
+      ...((member.favorite_clubs || []).map((item) => `Club: ${item}`)),
+      ...((member.favorite_events || []).map((item) => `Evento: ${item}`)),
+      hasContent(member.city_base) ? `Cidade: ${member.city_base}` : "",
+    ];
+
+    for (const source of tribeSources) {
+      const tribe = normalizeText(source);
+      if (!tribe) continue;
+      tribeMap.set(tribe, (tribeMap.get(tribe) || 0) + 1);
+    }
+  }
+
+  const topTribes = Array.from(tribeMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
   const heroMembers = attendees.slice(0, 6);
   const eventHeatLabel =
     attendees.length >= 10
@@ -579,6 +599,41 @@ export default async function EventPage({ params }: PageProps) {
         </section>
       ) : (
         <>
+          {topTribes.length > 0 ? (
+            <section style={sectionStyle()}>
+              <div style={{ display: "grid", gap: 6 }}>
+                <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
+                  Tribos dominantes do evento
+                </h2>
+                <p style={{ margin: 0, opacity: 0.82 }}>
+                  Vertentes mais presentes entre os Clubbers conectados a este evento.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {topTribes.map(([tribe, count]) => (
+                  <div
+                    key={tribe}
+                    style={{
+                      padding: "12px 16px",
+                      borderRadius: 18,
+                      border: "1px solid rgba(0,255,190,0.18)",
+                      background: "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.14))",
+                      boxShadow: "0 10px 30px rgba(0,255,190,0.08)",
+                      display: "grid",
+                      gap: 4,
+                    }}
+                  >
+                    <strong style={{ fontSize: 15 }}>{tribe}</strong>
+                    <span style={{ fontSize: 12, opacity: 0.82 }}>
+                      {count === 1 ? "1 clubber" : `${count} clubbers`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <section style={sectionStyle()}>
             <div style={{ display: "grid", gap: 6 }}>
               <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
@@ -692,6 +747,11 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
+
+
+
+
+
 
 
 
