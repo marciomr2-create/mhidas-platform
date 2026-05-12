@@ -1,4 +1,4 @@
-﻿// src/app/event/[event_slug]/page.tsx
+// src/app/event/[event_slug]/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
@@ -43,6 +43,9 @@ type ClubProfileRow = {
   meet_meeting_point: string | null;
   meet_time: string | null;
   meet_notes: string | null;
+  event_social_mode: string | null;
+  open_to_meet: boolean | null;
+  open_to_networking: boolean | null;
 };
 
 type EventMember = {
@@ -70,6 +73,9 @@ type EventMember = {
   meet_meeting_point: string;
   meet_time: string;
   meet_notes: string;
+  event_social_mode: string;
+  open_to_meet: boolean;
+  open_to_networking: boolean;
 };
 
 function normalizeText(value: string | null | undefined): string {
@@ -239,6 +245,55 @@ function getMeetStatusLabel(value: string) {
   return "";
 }
 
+function getSocialModeLabel(value: string) {
+  if (value === "solo") return "Indo solo";
+  if (value === "tribe") return "Procurando galera";
+  if (value === "couple") return "Rolê em casal";
+  if (value === "after") return "Buscando after";
+  if (value === "networking") return "Networking no evento";
+  if (value === "open") return "Aberto ao rolê";
+  return "";
+}
+
+function socialBadgeStyle(kind: "vibe" | "meet" | "networking") {
+  if (kind === "vibe") {
+    return {
+      width: "fit-content",
+      padding: "5px 8px",
+      borderRadius: 999,
+      border: "1px solid rgba(255,0,140,0.22)",
+      background: "rgba(255,0,140,0.10)",
+      color: "#fff",
+      fontSize: 10,
+      fontWeight: 850,
+    } as const;
+  }
+
+  if (kind === "meet") {
+    return {
+      width: "fit-content",
+      padding: "5px 8px",
+      borderRadius: 999,
+      border: "1px solid rgba(0,255,190,0.22)",
+      background: "rgba(0,255,190,0.10)",
+      color: "#fff",
+      fontSize: 10,
+      fontWeight: 850,
+    } as const;
+  }
+
+  return {
+    width: "fit-content",
+    padding: "5px 8px",
+    borderRadius: 999,
+    border: "1px solid rgba(125,92,255,0.22)",
+    background: "rgba(125,92,255,0.10)",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 850,
+  } as const;
+}
+
 function MemberCard({
   member,
   extraTitle,
@@ -256,7 +311,10 @@ function MemberCard({
     (member.favorite_clubs || []).length > 0 ? "Circuito de clubs" : "",
     (member.favorite_events || []).length > 0 ? "Eventos em comum" : "",
   ].filter(Boolean);
-return (
+
+  const socialModeLabel = getSocialModeLabel(member.event_social_mode);
+
+  return (
     <article style={memberCardStyle()}>
       <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 12, alignItems: "start" }}>
         <div
@@ -298,7 +356,7 @@ return (
           {hasContent(member.club_tagline) ? (
             <div style={{ opacity: 0.86, lineHeight: 1.6 }}>{member.club_tagline}</div>
           ) : null}
-        
+
           {affinityBadges.length > 0 ? (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
               {affinityBadges.slice(0, 4).map((badge) => (
@@ -319,6 +377,22 @@ return (
                   {badge}
                 </span>
               ))}
+            </div>
+          ) : null}
+
+          {socialModeLabel || member.open_to_meet || member.open_to_networking ? (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {socialModeLabel ? (
+                <span style={socialBadgeStyle("vibe")}>{socialModeLabel}</span>
+              ) : null}
+
+              {member.open_to_meet ? (
+                <span style={socialBadgeStyle("meet")}>Aberto para conhecer pessoas</span>
+              ) : null}
+
+              {member.open_to_networking ? (
+                <span style={socialBadgeStyle("networking")}>Networking ativo</span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -383,6 +457,9 @@ export default async function EventPage({ params }: PageProps) {
           city_base,
           club_tagline,
           club_photo_url,
+          favorite_genres,
+          favorite_clubs,
+          favorite_events,
           next_events,
           next_events_links,
           ride_status,
@@ -397,7 +474,10 @@ export default async function EventPage({ params }: PageProps) {
           meet_event_url,
           meet_meeting_point,
           meet_time,
-          meet_notes
+          meet_notes,
+          event_social_mode,
+          open_to_meet,
+          open_to_networking
         `)
         .in("user_id", userIds)
     : { data: [] as ClubProfileRow[] };
@@ -419,9 +499,10 @@ export default async function EventPage({ params }: PageProps) {
 
     const nextEvents = splitEventList(
       profile.next_events ||
-      (profile as any).nextEvents ||
-      (profile as any).upcoming_events
+        (profile as any).nextEvents ||
+        (profile as any).upcoming_events
     );
+
     const nextEventsMatch = nextEvents.some((item) => toEventSlug(item) === eventSlug);
     const rideMatch = toEventSlug(profile.ride_event_name) === eventSlug;
     const meetMatch = toEventSlug(profile.meet_event_name) === eventSlug;
@@ -453,6 +534,9 @@ export default async function EventPage({ params }: PageProps) {
       meet_meeting_point: normalizeText(profile.meet_meeting_point),
       meet_time: normalizeText(profile.meet_time),
       meet_notes: normalizeText(profile.meet_notes),
+      event_social_mode: normalizeText(profile.event_social_mode),
+      open_to_meet: Boolean(profile.open_to_meet),
+      open_to_networking: Boolean(profile.open_to_networking),
     });
   }
 
@@ -496,21 +580,15 @@ export default async function EventPage({ params }: PageProps) {
   const topTribes = Array.from(tribeMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
-  const heroMembers = attendees.slice(0, 6);
-  const eventHeatLabel =
-    attendees.length >= 10
-      ? "Alta movimentação Club"
-      : attendees.length >= 3
-        ? "Evento aquecendo"
-        : attendees.length > 0
-          ? "Movimento inicial"
-          : "Evento em formação";
+
   const rideOfferMembers = matchedMembers.filter(
     (member) => member.ride_status === "offer" || member.ride_status === "both"
   );
+
   const rideNeedMembers = matchedMembers.filter(
     (member) => member.ride_status === "need" || member.ride_status === "both"
   );
+
   const meetMembers = matchedMembers.filter(
     (member) =>
       member.meet_status === "host" ||
@@ -579,7 +657,9 @@ export default async function EventPage({ params }: PageProps) {
       {matchedMembers.length === 0 ? (
         <section style={sectionStyle()}>
           <div style={emptyCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 10 }}>Nenhum perfil encontrado para este evento.</strong>
+            <strong style={{ display: "block", marginBottom: 10 }}>
+              Nenhum perfil encontrado para este evento.
+            </strong>
             <div style={{ marginBottom: 12 }}>
               Isso normalmente acontece quando o slug digitado não corresponde exatamente ao nome cadastrado em:
             </div>
@@ -676,11 +756,31 @@ export default async function EventPage({ params }: PageProps) {
                     extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
                     extraBody={
                       <>
-                        {hasContent(member.ride_event_name) ? <div><strong>Evento:</strong> {member.ride_event_name}</div> : null}
-                        {hasContent(member.ride_origin) ? <div><strong>Origem:</strong> {member.ride_origin}</div> : null}
-                        {hasContent(member.ride_destination) ? <div><strong>Destino:</strong> {member.ride_destination}</div> : null}
-                        {hasContent(member.ride_seats) ? <div><strong>Vagas:</strong> {member.ride_seats}</div> : null}
-                        {hasContent(member.ride_notes) ? <div><strong>Observações:</strong> {member.ride_notes}</div> : null}
+                        {hasContent(member.ride_event_name) ? (
+                          <div>
+                            <strong>Evento:</strong> {member.ride_event_name}
+                          </div>
+                        ) : null}
+                        {hasContent(member.ride_origin) ? (
+                          <div>
+                            <strong>Origem:</strong> {member.ride_origin}
+                          </div>
+                        ) : null}
+                        {hasContent(member.ride_destination) ? (
+                          <div>
+                            <strong>Destino:</strong> {member.ride_destination}
+                          </div>
+                        ) : null}
+                        {hasContent(member.ride_seats) ? (
+                          <div>
+                            <strong>Vagas:</strong> {member.ride_seats}
+                          </div>
+                        ) : null}
+                        {hasContent(member.ride_notes) ? (
+                          <div>
+                            <strong>Observações:</strong> {member.ride_notes}
+                          </div>
+                        ) : null}
                       </>
                     }
                     officialEventUrl={member.ride_event_url || officialEventUrl}
@@ -696,10 +796,26 @@ export default async function EventPage({ params }: PageProps) {
                       extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
                       extraBody={
                         <>
-                          {hasContent(member.ride_event_name) ? <div><strong>Evento:</strong> {member.ride_event_name}</div> : null}
-                          {hasContent(member.ride_origin) ? <div><strong>Origem:</strong> {member.ride_origin}</div> : null}
-                          {hasContent(member.ride_destination) ? <div><strong>Destino:</strong> {member.ride_destination}</div> : null}
-                          {hasContent(member.ride_notes) ? <div><strong>Observações:</strong> {member.ride_notes}</div> : null}
+                          {hasContent(member.ride_event_name) ? (
+                            <div>
+                              <strong>Evento:</strong> {member.ride_event_name}
+                            </div>
+                          ) : null}
+                          {hasContent(member.ride_origin) ? (
+                            <div>
+                              <strong>Origem:</strong> {member.ride_origin}
+                            </div>
+                          ) : null}
+                          {hasContent(member.ride_destination) ? (
+                            <div>
+                              <strong>Destino:</strong> {member.ride_destination}
+                            </div>
+                          ) : null}
+                          {hasContent(member.ride_notes) ? (
+                            <div>
+                              <strong>Observações:</strong> {member.ride_notes}
+                            </div>
+                          ) : null}
                         </>
                       }
                       officialEventUrl={member.ride_event_url || officialEventUrl}
@@ -720,7 +836,9 @@ export default async function EventPage({ params }: PageProps) {
             </div>
 
             {meetMembers.length === 0 ? (
-              <div style={emptyCardStyle()}>Ainda não há encontros ativos mapeados para este evento.</div>
+              <div style={emptyCardStyle()}>
+                Ainda não há encontros ativos mapeados para este evento.
+              </div>
             ) : (
               <div style={memberGridStyle()}>
                 {meetMembers.map((member) => (
@@ -730,10 +848,26 @@ export default async function EventPage({ params }: PageProps) {
                     extraTitle={getMeetStatusLabel(member.meet_status) || "Encontro"}
                     extraBody={
                       <>
-                        {hasContent(member.meet_event_name) ? <div><strong>Evento:</strong> {member.meet_event_name}</div> : null}
-                        {hasContent(member.meet_meeting_point) ? <div><strong>Ponto:</strong> {member.meet_meeting_point}</div> : null}
-                        {hasContent(member.meet_time) ? <div><strong>Horário:</strong> {member.meet_time}</div> : null}
-                        {hasContent(member.meet_notes) ? <div><strong>Observações:</strong> {member.meet_notes}</div> : null}
+                        {hasContent(member.meet_event_name) ? (
+                          <div>
+                            <strong>Evento:</strong> {member.meet_event_name}
+                          </div>
+                        ) : null}
+                        {hasContent(member.meet_meeting_point) ? (
+                          <div>
+                            <strong>Ponto:</strong> {member.meet_meeting_point}
+                          </div>
+                        ) : null}
+                        {hasContent(member.meet_time) ? (
+                          <div>
+                            <strong>Horário:</strong> {member.meet_time}
+                          </div>
+                        ) : null}
+                        {hasContent(member.meet_notes) ? (
+                          <div>
+                            <strong>Observações:</strong> {member.meet_notes}
+                          </div>
+                        ) : null}
                       </>
                     }
                     officialEventUrl={member.meet_event_url || officialEventUrl}
@@ -747,31 +881,3 @@ export default async function EventPage({ params }: PageProps) {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
