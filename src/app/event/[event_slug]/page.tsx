@@ -48,6 +48,17 @@ type ClubProfileRow = {
   open_to_networking: boolean | null;
 };
 
+type EventGroupRow = {
+  event_name: string | null;
+  event_slug: string | null;
+  event_url: string | null;
+  event_date: string | null;
+  event_image_url: string | null;
+  city_base: string | null;
+  title: string | null;
+  description: string | null;
+};
+
 type EventMember = {
   user_id: string;
   label: string;
@@ -117,115 +128,190 @@ function isHttpUrl(value: string | null | undefined): boolean {
 }
 
 function dedupeStrings(values: string[]): string[] {
-  return Array.from(new Map(values.map((item) => [normalizeForMatch(item), item])).values());
+  return Array.from(
+    new Map(values.map((item) => [normalizeForMatch(item), item])).values()
+  );
 }
 
 function pageStyle() {
   return {
-    padding: 24,
-    maxWidth: 1120,
+    minHeight: "100vh",
+    width: "100%",
+    maxWidth: 430,
     margin: "0 auto",
+    padding: "12px 14px 42px",
+    boxSizing: "border-box",
   } as const;
 }
 
-function heroStyle() {
+function shellStyle() {
   return {
-    marginTop: 18,
-    padding: 26,
-    borderRadius: 30,
+    borderRadius: 34,
     border: "1px solid rgba(255,255,255,0.12)",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.02) 100%)",
+      "radial-gradient(circle at top left, rgba(125,92,255,0.18), rgba(255,255,255,0.03) 34%, rgba(255,255,255,0.02) 100%)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.34)",
+    overflow: "hidden",
+  } as const;
+}
+
+function heroStyle(heroImage: string) {
+  return {
+    marginTop: 8,
+    padding: 14,
+    borderRadius: 24,
+    border: "1px solid rgba(255,255,255,0.14)",
+    backgroundImage: heroImage
+      ? `linear-gradient(180deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.88) 100%), url(${heroImage})`
+      : "linear-gradient(135deg, rgba(125,92,255,0.20), rgba(0,255,190,0.05))",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
     display: "grid",
-    gap: 18,
-    boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
+    gap: 10,
+    minHeight: 260,
+    alignContent: "end",
+    boxShadow: "0 22px 54px rgba(0,0,0,0.30)",
   } as const;
 }
 
 function badgeStyle() {
   return {
-    display: "inline-block",
-    padding: "8px 12px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "7px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.05)",
-    fontSize: 12,
-    fontWeight: 800,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.075)",
+    fontSize: 11,
+    fontWeight: 900,
+    color: "#fff",
   } as const;
 }
 
-function sectionStyle() {
+function sectionStyle(accent: "purple" | "green" | "yellow" = "green") {
+  const border =
+    accent === "purple"
+      ? "rgba(125,92,255,0.26)"
+      : accent === "yellow"
+        ? "rgba(255,196,0,0.22)"
+        : "rgba(0,255,190,0.18)";
+
   return {
-    marginTop: 22,
-    padding: 22,
+    marginTop: 14,
+    padding: 14,
     borderRadius: 24,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    boxShadow: "0 10px 28px rgba(0,0,0,0.14)",
+    border: `1px solid ${border}`,
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))",
+    boxShadow: "0 18px 46px rgba(0,0,0,0.22)",
     display: "grid",
-    gap: 16,
+    gap: 12,
+    overflow: "hidden",
   } as const;
 }
 
 function statsGridStyle() {
   return {
     display: "grid",
+    gap: 8,
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  } as const;
+}
+
+function statCardStyle(color: "purple" | "green" | "blue" | "yellow") {
+  const colors = {
+    purple: "rgba(125,92,255,0.38)",
+    green: "rgba(0,255,190,0.30)",
+    blue: "rgba(0,145,255,0.32)",
+    yellow: "rgba(255,196,0,0.28)",
+  };
+
+  return {
+    padding: 10,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.13)",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025))",
+    display: "grid",
+    gap: 3,
+    boxShadow: `inset 0 0 18px ${colors[color]}`,
+  } as const;
+}
+
+function carouselStyle() {
+  return {
+    display: "flex",
     gap: 12,
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    overflowX: "auto",
+    overflowY: "hidden",
+    paddingBottom: 2,
+    scrollSnapType: "x mandatory",
+    WebkitOverflowScrolling: "touch",
+    scrollbarWidth: "none",
   } as const;
 }
 
-function statCardStyle() {
+function profileCardStyle() {
   return {
-    padding: 16,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    display: "grid",
-    gap: 6,
+    minWidth: 292,
+    maxWidth: 292,
+    flex: "0 0 292px",
+    borderRadius: 22,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025))",
+    boxShadow: "0 18px 44px rgba(0,0,0,0.34)",
+    overflow: "hidden",
+    scrollSnapAlign: "start",
   } as const;
 }
 
-function memberGridStyle() {
+function wideCardStyle() {
   return {
+    minWidth: 292,
+    maxWidth: 292,
+    flex: "0 0 292px",
+    borderRadius: 22,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.025))",
+    boxShadow: "0 18px 44px rgba(0,0,0,0.32)",
+    overflow: "hidden",
+    scrollSnapAlign: "start",
     display: "grid",
-    gap: 14,
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-  } as const;
-}
-
-function memberCardStyle() {
-  return {
-    padding: 16,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    display: "grid",
-    gap: 12,
+    gridTemplateColumns: "1fr",
   } as const;
 }
 
 function actionButtonStyle(primary = false) {
   return {
-    display: "inline-block",
-    padding: "11px 14px",
-    borderRadius: 12,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "11px 12px",
+    borderRadius: 13,
     border: primary
-      ? "1px solid rgba(255,255,255,0.22)"
+      ? "1px solid rgba(255,255,255,0.20)"
       : "1px solid rgba(255,255,255,0.14)",
-    background: primary ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.06)",
+    background: primary
+      ? "linear-gradient(135deg, rgba(125,34,255,1), rgba(125,92,255,0.72))"
+      : "rgba(255,255,255,0.075)",
     color: "#fff",
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: 900,
+    fontSize: 12,
+    width: "100%",
+    minHeight: 42,
   } as const;
 }
 
 function emptyCardStyle() {
   return {
-    padding: 18,
-    borderRadius: 18,
+    padding: 22,
+    borderRadius: 22,
     border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
+    background: "rgba(255,255,255,0.035)",
     opacity: 0.88,
     lineHeight: 1.7,
   } as const;
@@ -259,176 +345,367 @@ function socialBadgeStyle(kind: "vibe" | "meet" | "networking") {
   if (kind === "vibe") {
     return {
       width: "fit-content",
-      padding: "5px 8px",
+      padding: "6px 10px",
       borderRadius: 999,
-      border: "1px solid rgba(255,0,140,0.22)",
-      background: "rgba(255,0,140,0.10)",
+      border: "1px solid rgba(255,0,140,0.24)",
+      background: "rgba(255,0,140,0.12)",
       color: "#fff",
-      fontSize: 10,
-      fontWeight: 850,
+      fontSize: 11,
+      fontWeight: 900,
     } as const;
   }
 
   if (kind === "meet") {
     return {
       width: "fit-content",
-      padding: "5px 8px",
+      padding: "6px 10px",
       borderRadius: 999,
-      border: "1px solid rgba(0,255,190,0.22)",
-      background: "rgba(0,255,190,0.10)",
+      border: "1px solid rgba(0,255,190,0.26)",
+      background: "rgba(0,255,190,0.11)",
       color: "#fff",
-      fontSize: 10,
-      fontWeight: 850,
+      fontSize: 11,
+      fontWeight: 900,
     } as const;
   }
 
   return {
     width: "fit-content",
-    padding: "5px 8px",
+    padding: "6px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(125,92,255,0.22)",
-    background: "rgba(125,92,255,0.10)",
+    border: "1px solid rgba(125,92,255,0.30)",
+    background: "rgba(125,92,255,0.16)",
     color: "#fff",
-    fontSize: 10,
-    fontWeight: 850,
+    fontSize: 11,
+    fontWeight: 900,
   } as const;
 }
 
-function MemberCard({
+function SectionTitle({
+  icon,
+  title,
+  subtitle,
+  actionLabel,
+}: {
+  icon: string;
+  title: string;
+  subtitle: string;
+  actionLabel?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: actionLabel ? "1fr auto" : "1fr",
+        alignItems: "start",
+        gap: 10,
+      }}
+    >
+      <div style={{ display: "grid", gap: 5 }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 20,
+            lineHeight: 1.05,
+            fontWeight: 950,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>{icon}</span>
+          {title}
+        </h2>
+        <p
+          style={{
+            margin: 0,
+            opacity: 0.82,
+            fontSize: 14,
+            lineHeight: 1.45,
+          }}
+        >
+          {subtitle}
+        </p>
+      </div>
+
+      {actionLabel ? (
+        <button
+          type="button"
+          style={{
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(255,255,255,0.055)",
+            color: "#fff",
+            borderRadius: 14,
+            padding: "10px 12px",
+            fontWeight: 850,
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {actionLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function ProfileCard({
   member,
-  extraTitle,
-  extraBody,
   officialEventUrl,
 }: {
   member: EventMember;
-  extraTitle?: string;
-  extraBody?: ReactNode;
   officialEventUrl?: string;
 }) {
-  const affinityBadges = [
-    hasContent(member.city_base) ? "Mesma cena regional" : "",
-    (member.favorite_genres || []).length > 0 ? "Afinidade musical" : "",
-    (member.favorite_clubs || []).length > 0 ? "Circuito de clubs" : "",
-    (member.favorite_events || []).length > 0 ? "Eventos em comum" : "",
-  ].filter(Boolean);
-
   const socialModeLabel = getSocialModeLabel(member.event_social_mode);
+  const genres = member.favorite_genres.slice(0, 2);
+  const photo = member.club_photo_url;
 
   return (
-    <article style={memberCardStyle()}>
-      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 12, alignItems: "start" }}>
-        <div
+    <article style={profileCardStyle()}>
+      <div
+        style={{
+          height: 205,
+          position: "relative",
+          background: photo
+            ? `linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.78)), url(${photo})`
+            : "linear-gradient(135deg, rgba(125,92,255,0.32), rgba(0,255,190,0.12))",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <span
           style={{
-            width: 72,
-            height: 72,
-            borderRadius: 18,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.04)",
-            display: "grid",
-            placeItems: "center",
+            position: "absolute",
+            top: 14,
+            left: 14,
+            padding: "7px 10px",
+            borderRadius: 999,
+            border: "1px solid rgba(0,255,190,0.30)",
+            background: "rgba(0,0,0,0.48)",
+            color: "#fff",
+            fontWeight: 900,
+            fontSize: 12,
           }}
         >
-          {hasContent(member.club_photo_url) ? (
-            <img
-              src={member.club_photo_url}
-              alt={member.label}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-              }}
-            />
-          ) : (
-            <span style={{ fontSize: 12, opacity: 0.7 }}>Sem foto</span>
-          )}
-        </div>
+          Online
+        </span>
 
-        <div style={{ display: "grid", gap: 8 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>{member.label}</div>
-            {hasContent(member.city_base) ? (
-              <div style={{ opacity: 0.78, marginTop: 2 }}>{member.city_base}</div>
-            ) : null}
-          </div>
-
-          {hasContent(member.club_tagline) ? (
-            <div style={{ opacity: 0.86, lineHeight: 1.6 }}>{member.club_tagline}</div>
-          ) : null}
-
-          {affinityBadges.length > 0 ? (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-              {affinityBadges.slice(0, 4).map((badge) => (
-                <span
-                  key={`${member.user_id}-${member.slug}-${badge}`}
-                  style={{
-                    width: "fit-content",
-                    padding: "5px 8px",
-                    borderRadius: 999,
-                    border: "1px solid rgba(0,255,190,0.18)",
-                    background: "rgba(0,255,190,0.075)",
-                    color: "#fff",
-                    fontSize: 10,
-                    fontWeight: 850,
-                    opacity: 0.92,
-                  }}
-                >
-                  {badge}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {socialModeLabel || member.open_to_meet || member.open_to_networking ? (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {socialModeLabel ? (
-                <span style={socialBadgeStyle("vibe")}>{socialModeLabel}</span>
-              ) : null}
-
-              {member.open_to_meet ? (
-                <span style={socialBadgeStyle("meet")}>Aberto para conhecer pessoas</span>
-              ) : null}
-
-              {member.open_to_networking ? (
-                <span style={socialBadgeStyle("networking")}>Networking ativo</span>
-              ) : null}
-            </div>
+        <div
+          style={{
+            position: "absolute",
+            left: 16,
+            right: 16,
+            bottom: 16,
+            display: "grid",
+            gap: 5,
+          }}
+        >
+          <strong style={{ fontSize: 12, lineHeight: 1.05 }}>{member.label}</strong>
+          {hasContent(member.city_base) ? (
+            <span style={{ opacity: 0.86 }}>{member.city_base}</span>
           ) : null}
         </div>
       </div>
 
-      {extraTitle ? (
-        <div
-          style={{
-            padding: 12,
-            borderRadius: 14,
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.03)",
-            display: "grid",
-            gap: 6,
-          }}
-        >
-          <strong>{extraTitle}</strong>
-          <div style={{ lineHeight: 1.6, opacity: 0.88 }}>{extraBody}</div>
+      <div style={{ padding: 16, display: "grid", gap: 13 }}>
+        {hasContent(member.club_tagline) ? (
+          <p style={{ margin: 0, lineHeight: 1.55, opacity: 0.88 }}>
+            {member.club_tagline}
+          </p>
+        ) : null}
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {genres.map((genre) => (
+            <span key={`${member.user_id}-${genre}`} style={socialBadgeStyle("meet")}>
+              {genre}
+            </span>
+          ))}
+          {member.favorite_events.length > 0 ? (
+            <span style={socialBadgeStyle("meet")}>Eventos em comum</span>
+          ) : null}
+          {socialModeLabel ? (
+            <span style={socialBadgeStyle("vibe")}>{socialModeLabel}</span>
+          ) : null}
+          {member.open_to_meet ? (
+            <span style={socialBadgeStyle("meet")}>Aberto para conhecer pessoas</span>
+          ) : null}
+          {member.open_to_networking ? (
+            <span style={socialBadgeStyle("networking")}>Networking ativo</span>
+          ) : null}
         </div>
-      ) : null}
 
-      <div style={{ position: "relative", zIndex: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
-          Abrir perfil Club
-        </Link>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
+            Ver perfil Club
+          </Link>
 
-        {hasContent(officialEventUrl) ? (
+          {hasContent(officialEventUrl) ? (
+            <a
+              href={officialEventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={actionButtonStyle()}
+            >
+              Evento oficial
+            </a>
+          ) : (
+            <span style={actionButtonStyle()}>Evento oficial</span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function RideCard({
+  member,
+  officialEventUrl,
+}: {
+  member: EventMember;
+  officialEventUrl?: string;
+}) {
+  const photo = member.club_photo_url;
+
+  return (
+    <article style={wideCardStyle()}>
+      <div
+        style={{
+          minHeight: 176,
+          background: photo
+            ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.32)), url(${photo})`
+            : "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.18))",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+
+      <div style={{ padding: 15, display: "grid", gap: 9 }}>
+        <div>
+          <strong style={{ fontSize: 22 }}>{member.label}</strong>
+          {hasContent(member.city_base) ? (
+            <div style={{ opacity: 0.82, marginTop: 4 }}>{member.city_base}</div>
+          ) : null}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          <span style={socialBadgeStyle("meet")}>
+            {getRideStatusLabel(member.ride_status) || "Carona"}
+          </span>
+          {hasContent(member.ride_seats) ? (
+            <span style={socialBadgeStyle("networking")}>{member.ride_seats} vagas</span>
+          ) : null}
+        </div>
+
+        <div style={{ lineHeight: 1.5, opacity: 0.92 }}>
+          {hasContent(member.ride_event_name) ? (
+            <div>
+              <strong>Evento:</strong> {member.ride_event_name}
+            </div>
+          ) : null}
+          {hasContent(member.ride_origin) ? (
+            <div>
+              <strong>Origem:</strong> {member.ride_origin}
+            </div>
+          ) : null}
+          {hasContent(member.ride_destination) ? (
+            <div>
+              <strong>Destino:</strong> {member.ride_destination}
+            </div>
+          ) : null}
+          {hasContent(member.ride_notes) ? (
+            <div>
+              <strong>Observações:</strong> {member.ride_notes}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
+            Ver perfil Club
+          </Link>
           <a
-            href={officialEventUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={member.ride_event_url || officialEventUrl || `/${member.slug}?mode=club`}
+            target={member.ride_event_url || officialEventUrl ? "_blank" : undefined}
+            rel={member.ride_event_url || officialEventUrl ? "noopener noreferrer" : undefined}
             style={actionButtonStyle()}
           >
             Evento oficial
           </a>
-        ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function MeetCard({
+  member,
+  officialEventUrl,
+}: {
+  member: EventMember;
+  officialEventUrl?: string;
+}) {
+  const photo = member.club_photo_url;
+
+  return (
+    <article style={wideCardStyle()}>
+      <div
+        style={{
+          minHeight: 176,
+          background: photo
+            ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.36)), url(${photo})`
+            : "linear-gradient(135deg, rgba(255,196,0,0.20), rgba(125,92,255,0.18))",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+
+      <div style={{ padding: 15, display: "grid", gap: 9 }}>
+        <div>
+          <strong style={{ fontSize: 22 }}>{member.label}</strong>
+          {hasContent(member.city_base) ? (
+            <div style={{ opacity: 0.82, marginTop: 4 }}>{member.city_base}</div>
+          ) : null}
+        </div>
+
+        <span style={socialBadgeStyle("vibe")}>
+          {getMeetStatusLabel(member.meet_status) || "Encontro ativo"}
+        </span>
+
+        <div style={{ lineHeight: 1.5, opacity: 0.92 }}>
+          {hasContent(member.meet_event_name) ? (
+            <div>
+              <strong>Evento:</strong> {member.meet_event_name}
+            </div>
+          ) : null}
+          {hasContent(member.meet_meeting_point) ? (
+            <div>
+              <strong>Ponto:</strong> {member.meet_meeting_point}
+            </div>
+          ) : null}
+          {hasContent(member.meet_time) ? (
+            <div>
+              <strong>Horário:</strong> {member.meet_time}
+            </div>
+          ) : null}
+          {hasContent(member.meet_notes) ? (
+            <div>
+              <strong>Observações:</strong> {member.meet_notes}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
+            Ver perfil Club
+          </Link>
+          <a
+            href={member.meet_event_url || officialEventUrl || `/${member.slug}?mode=club`}
+            target={member.meet_event_url || officialEventUrl ? "_blank" : undefined}
+            rel={member.meet_event_url || officialEventUrl ? "noopener noreferrer" : undefined}
+            style={actionButtonStyle()}
+          >
+            Evento oficial
+          </a>
+        </div>
       </div>
     </article>
   );
@@ -558,6 +835,28 @@ export default async function EventPage({ params }: PageProps) {
     matchedMembers.find((member) => isHttpUrl(member.meet_event_url))?.meet_event_url ||
     "";
 
+  const { data: eventGroupsData } = await supabase
+    .from("event_groups")
+    .select("event_name,event_slug,event_url,event_date,event_image_url,city_base,title,description")
+    .eq("event_slug", eventSlug)
+    .limit(1);
+
+  const eventGroup =
+    ((eventGroupsData ?? [])[0] as EventGroupRow | undefined) || null;
+
+  const heroTitle =
+    normalizeText(eventGroup?.event_name) ||
+    normalizeText(eventGroup?.title) ||
+    eventTitle;
+
+  const heroImage =
+    normalizeText(eventGroup?.event_image_url) ||
+    "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1800&auto=format&fit=crop";
+
+  const heroOfficialUrl =
+    normalizeText(eventGroup?.event_url) ||
+    officialEventUrl;
+
   const attendees = matchedMembers;
 
   const tribeMap = new Map<string, number>();
@@ -589,6 +888,13 @@ export default async function EventPage({ params }: PageProps) {
     (member) => member.ride_status === "need" || member.ride_status === "both"
   );
 
+  const rideMembers = dedupeStrings([
+    ...rideOfferMembers.map((member) => member.user_id),
+    ...rideNeedMembers.map((member) => member.user_id),
+  ])
+    .map((userId) => matchedMembers.find((member) => member.user_id === userId))
+    .filter(Boolean) as EventMember[];
+
   const meetMembers = matchedMembers.filter(
     (member) =>
       member.meet_status === "host" ||
@@ -598,64 +904,89 @@ export default async function EventPage({ params }: PageProps) {
 
   return (
     <main style={pageStyle()}>
-      <section style={heroStyle()}>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <span style={badgeStyle()}>Página pública de evento</span>
+      <style>{`
+        *::-webkit-scrollbar {
+          display: none;
+        }
+
+        * {
+          scrollbar-width: none;
+        }
+
+        body {
+          background: #050505;
+        }
+      `}</style>
+      <section style={heroStyle(heroImage)}>
+        <div style={{ display: "grid", gap: 18, maxWidth: 720 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <span style={badgeStyle()}>PLATAFORMA MHIDAS do evento</span>
             <span style={badgeStyle()}>{matchedMembers.length} participantes mapeados</span>
           </div>
 
-          <h1 style={{ margin: 0, fontSize: 40, lineHeight: 1.02, fontWeight: 900 }}>
-            {eventTitle}
+          <h1 style={{ margin: 0, fontSize: 30, lineHeight: 0.96, fontWeight: 950 }}>
+            {heroTitle}
           </h1>
 
-          <p style={{ margin: 0, opacity: 0.84, lineHeight: 1.7, maxWidth: 840 }}>
-            Este evento funciona como ponto de conexão entre perfis Club, caronas e encontros já cadastrados no ecossistema USECLUBBERS.
+          <p style={{ margin: 0, opacity: 0.92, lineHeight: 1.7, maxWidth: 680, fontSize: 18 }}>
+            Este evento funciona como ponto de conexão entre perfis Club,
+            caronas e encontros já cadastrados no ecossistema USECLUBBERS.
           </p>
-        </div>
 
-        <div style={{ position: "relative", zIndex: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {hasContent(officialEventUrl) ? (
-            <a
-              href={officialEventUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={actionButtonStyle(true)}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+            {hasContent(heroOfficialUrl) ? (
+              <a
+                href={heroOfficialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...actionButtonStyle(true),
+                  width: "fit-content",
+                  padding: "15px 20px",
+                }}
+              >
+                Abrir evento oficial
+              </a>
+            ) : null}
+
+            <Link
+              href="/network"
+              style={{
+                ...actionButtonStyle(),
+                width: "fit-content",
+                padding: "15px 20px",
+              }}
             >
-              Abrir evento oficial
-            </a>
-          ) : null}
-
-          <Link href="/network" style={actionButtonStyle()}>
-            Voltar ao ecossistema
-          </Link>
+              Voltar ao ecossistema
+            </Link>
+          </div>
         </div>
 
-        <div style={{ position: "relative", zIndex: 2, ...statsGridStyle() }}>
-          <div style={statCardStyle()}>
-            <strong>Perfis no evento</strong>
-            <div style={{ fontSize: 28, fontWeight: 900 }}>{attendees.length}</div>
+        <div style={statsGridStyle()}>
+          <div style={statCardStyle("purple")}>
+            <span style={{ opacity: 0.84 }}>Perfis no evento</span>
+            <strong style={{ fontSize: 34 }}>{attendees.length}</strong>
           </div>
 
-          <div style={statCardStyle()}>
-            <strong>Oferta de carona</strong>
-            <div style={{ fontSize: 28, fontWeight: 900 }}>{rideOfferMembers.length}</div>
+          <div style={statCardStyle("green")}>
+            <span style={{ opacity: 0.84 }}>Oferta de carona</span>
+            <strong style={{ fontSize: 34 }}>{rideOfferMembers.length}</strong>
           </div>
 
-          <div style={statCardStyle()}>
-            <strong>Busca por carona</strong>
-            <div style={{ fontSize: 28, fontWeight: 900 }}>{rideNeedMembers.length}</div>
+          <div style={statCardStyle("blue")}>
+            <span style={{ opacity: 0.84 }}>Busca por carona</span>
+            <strong style={{ fontSize: 34 }}>{rideNeedMembers.length}</strong>
           </div>
 
-          <div style={statCardStyle()}>
-            <strong>Encontros ativos</strong>
-            <div style={{ fontSize: 28, fontWeight: 900 }}>{meetMembers.length}</div>
+          <div style={statCardStyle("yellow")}>
+            <span style={{ opacity: 0.84 }}>Encontros ativos</span>
+            <strong style={{ fontSize: 34 }}>{meetMembers.length}</strong>
           </div>
         </div>
       </section>
 
       {matchedMembers.length === 0 ? (
-        <section style={sectionStyle()}>
+        <section style={sectionStyle("purple")}>
           <div style={emptyCardStyle()}>
             <strong style={{ display: "block", marginBottom: 10 }}>
               Nenhum perfil encontrado para este evento.
@@ -670,43 +1001,37 @@ export default async function EventPage({ params }: PageProps) {
               <br />
               • Evento do encontro
             </div>
-            <div style={{ marginTop: 14 }}>
-              Exemplo de conversão:
-              <br />
-              <strong>Time Warp Brasil</strong> → <strong>/event/time-warp-brasil</strong>
-            </div>
           </div>
         </section>
       ) : (
         <>
           {topTribes.length > 0 ? (
-            <section style={sectionStyle()}>
-              <div style={{ display: "grid", gap: 6 }}>
-                <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
-                  Tribos dominantes do evento
-                </h2>
-                <p style={{ margin: 0, opacity: 0.82 }}>
-                  Vertentes mais presentes entre os Clubbers conectados a este evento.
-                </p>
-              </div>
+            <section style={sectionStyle("purple")}>
+              <SectionTitle
+                icon="▣"
+                title="Tribos dominantes do evento"
+                subtitle="Vertentes mais presentes entre os Clubbers conectados a este evento."
+              />
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, overflowX: "auto", overflowY: "hidden", paddingBottom: 6, scrollSnapType: "x mandatory" }}>
                 {topTribes.map(([tribe, count]) => (
                   <div
                     key={tribe}
                     style={{
-                      padding: "12px 16px",
+                      minWidth: 176,
+                      padding: "13px 14px",
                       borderRadius: 18,
-                      border: "1px solid rgba(0,255,190,0.18)",
-                      background: "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.14))",
-                      boxShadow: "0 10px 30px rgba(0,255,190,0.08)",
+                      border: "1px solid rgba(0,255,190,0.20)",
+                      background:
+                        "linear-gradient(135deg, rgba(0,255,190,0.11), rgba(125,92,255,0.13))",
+                      boxShadow: "0 12px 34px rgba(0,255,190,0.08)",
                       display: "grid",
-                      gap: 4,
+                      gap: 6,
                     }}
                   >
-                    <strong style={{ fontSize: 15 }}>{tribe}</strong>
-                    <span style={{ fontSize: 12, opacity: 0.82 }}>
-                      {count === 1 ? "1 clubber" : `${count} clubbers`}
+                    <strong style={{ fontSize: 12 }}>{tribe}</strong>
+                    <span style={{ fontSize: 17, opacity: 0.82 }}>
+                      {count === 1 ? "1 Clubber" : `${count} Clubbers`}
                     </span>
                   </div>
                 ))}
@@ -714,163 +1039,67 @@ export default async function EventPage({ params }: PageProps) {
             </section>
           ) : null}
 
-          <section style={sectionStyle()}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
-                Quem vai para este evento
-              </h2>
-              <p style={{ margin: 0, opacity: 0.82 }}>
-                Perfis Club que já se conectaram a este evento.
-              </p>
-            </div>
+          <section style={sectionStyle("purple")}>
+            <SectionTitle
+              icon="●"
+              title="Quem vai para este evento"
+              subtitle="Perfis Club que já se conectaram a este evento."
+              actionLabel="Ver todos"
+            />
 
-            <div style={memberGridStyle()}>
+            <div style={carouselStyle()}>
               {attendees.map((member) => (
-                <MemberCard
+                <ProfileCard
                   key={`attendee-${member.user_id}-${member.slug}`}
                   member={member}
-                  officialEventUrl={officialEventUrl}
+                  officialEventUrl={heroOfficialUrl}
                 />
               ))}
             </div>
           </section>
 
-          <section style={sectionStyle()}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
-                Carona compartilhada
-              </h2>
-              <p style={{ margin: 0, opacity: 0.82 }}>
-                Quem oferece e quem procura carona para este evento.
-              </p>
-            </div>
+          <section style={sectionStyle("green")}>
+            <SectionTitle
+              icon="▰"
+              title="Carona compartilhada"
+              subtitle="Quem oferece e quem procura carona para este evento."
+              actionLabel="Ver todas"
+            />
 
-            {rideOfferMembers.length === 0 && rideNeedMembers.length === 0 ? (
+            {rideMembers.length === 0 ? (
               <div style={emptyCardStyle()}>Ainda não há caronas mapeadas para este evento.</div>
             ) : (
-              <div style={memberGridStyle()}>
-                {rideOfferMembers.map((member) => (
-                  <MemberCard
-                    key={`ride-offer-${member.user_id}-${member.slug}`}
+              <div style={carouselStyle()}>
+                {rideMembers.map((member) => (
+                  <RideCard
+                    key={`ride-${member.user_id}-${member.slug}`}
                     member={member}
-                    extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
-                    extraBody={
-                      <>
-                        {hasContent(member.ride_event_name) ? (
-                          <div>
-                            <strong>Evento:</strong> {member.ride_event_name}
-                          </div>
-                        ) : null}
-                        {hasContent(member.ride_origin) ? (
-                          <div>
-                            <strong>Origem:</strong> {member.ride_origin}
-                          </div>
-                        ) : null}
-                        {hasContent(member.ride_destination) ? (
-                          <div>
-                            <strong>Destino:</strong> {member.ride_destination}
-                          </div>
-                        ) : null}
-                        {hasContent(member.ride_seats) ? (
-                          <div>
-                            <strong>Vagas:</strong> {member.ride_seats}
-                          </div>
-                        ) : null}
-                        {hasContent(member.ride_notes) ? (
-                          <div>
-                            <strong>Observações:</strong> {member.ride_notes}
-                          </div>
-                        ) : null}
-                      </>
-                    }
-                    officialEventUrl={member.ride_event_url || officialEventUrl}
+                    officialEventUrl={heroOfficialUrl}
                   />
                 ))}
-
-                {rideNeedMembers
-                  .filter((member) => member.ride_status === "need")
-                  .map((member) => (
-                    <MemberCard
-                      key={`ride-need-${member.user_id}-${member.slug}`}
-                      member={member}
-                      extraTitle={getRideStatusLabel(member.ride_status) || "Carona"}
-                      extraBody={
-                        <>
-                          {hasContent(member.ride_event_name) ? (
-                            <div>
-                              <strong>Evento:</strong> {member.ride_event_name}
-                            </div>
-                          ) : null}
-                          {hasContent(member.ride_origin) ? (
-                            <div>
-                              <strong>Origem:</strong> {member.ride_origin}
-                            </div>
-                          ) : null}
-                          {hasContent(member.ride_destination) ? (
-                            <div>
-                              <strong>Destino:</strong> {member.ride_destination}
-                            </div>
-                          ) : null}
-                          {hasContent(member.ride_notes) ? (
-                            <div>
-                              <strong>Observações:</strong> {member.ride_notes}
-                            </div>
-                          ) : null}
-                        </>
-                      }
-                      officialEventUrl={member.ride_event_url || officialEventUrl}
-                    />
-                  ))}
               </div>
             )}
           </section>
 
-          <section style={sectionStyle()}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <h2 style={{ margin: 0, fontSize: 26, fontWeight: 900 }}>
-                Encontros combinados
-              </h2>
-              <p style={{ margin: 0, opacity: 0.82 }}>
-                Pontos de encontro e horários que já foram marcados para este evento.
-              </p>
-            </div>
+          <section style={sectionStyle("yellow")}>
+            <SectionTitle
+              icon="◇"
+              title="Encontros combinados"
+              subtitle="Pontos de encontro e horários que já foram marcados para este evento."
+              actionLabel="Ver todos"
+            />
 
             {meetMembers.length === 0 ? (
               <div style={emptyCardStyle()}>
                 Ainda não há encontros ativos mapeados para este evento.
               </div>
             ) : (
-              <div style={memberGridStyle()}>
+              <div style={carouselStyle()}>
                 {meetMembers.map((member) => (
-                  <MemberCard
+                  <MeetCard
                     key={`meet-${member.user_id}-${member.slug}`}
                     member={member}
-                    extraTitle={getMeetStatusLabel(member.meet_status) || "Encontro"}
-                    extraBody={
-                      <>
-                        {hasContent(member.meet_event_name) ? (
-                          <div>
-                            <strong>Evento:</strong> {member.meet_event_name}
-                          </div>
-                        ) : null}
-                        {hasContent(member.meet_meeting_point) ? (
-                          <div>
-                            <strong>Ponto:</strong> {member.meet_meeting_point}
-                          </div>
-                        ) : null}
-                        {hasContent(member.meet_time) ? (
-                          <div>
-                            <strong>Horário:</strong> {member.meet_time}
-                          </div>
-                        ) : null}
-                        {hasContent(member.meet_notes) ? (
-                          <div>
-                            <strong>Observações:</strong> {member.meet_notes}
-                          </div>
-                        ) : null}
-                      </>
-                    }
-                    officialEventUrl={member.meet_event_url || officialEventUrl}
+                    officialEventUrl={heroOfficialUrl}
                   />
                 ))}
               </div>
