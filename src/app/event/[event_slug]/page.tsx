@@ -46,6 +46,10 @@ type ClubProfileRow = {
   event_social_mode: string | null;
   open_to_meet: boolean | null;
   open_to_networking: boolean | null;
+  event_ticket_type: string | null;
+  event_requires_food_kg: boolean | null;
+  event_requires_student_document: boolean | null;
+  event_preparation_notes: string | null;
 };
 
 type EventGroupRow = {
@@ -57,6 +61,10 @@ type EventGroupRow = {
   city_base: string | null;
   title: string | null;
   description: string | null;
+  weather_summary: string | null;
+  weather_temperature: string | null;
+  weather_rain_alert: string | null;
+  preparation_note: string | null;
 };
 
 type EventMember = {
@@ -87,6 +95,10 @@ type EventMember = {
   event_social_mode: string;
   open_to_meet: boolean;
   open_to_networking: boolean;
+  event_ticket_type: string;
+  event_requires_food_kg: boolean;
+  event_requires_student_document: boolean;
+  event_preparation_notes: string;
 };
 
 function normalizeText(value: string | null | undefined): string {
@@ -754,7 +766,11 @@ export default async function EventPage({ params }: PageProps) {
           meet_notes,
           event_social_mode,
           open_to_meet,
-          open_to_networking
+          open_to_networking,
+          event_ticket_type,
+          event_requires_food_kg,
+          event_requires_student_document,
+          event_preparation_notes
         `)
         .in("user_id", userIds)
     : { data: [] as ClubProfileRow[] };
@@ -814,6 +830,10 @@ export default async function EventPage({ params }: PageProps) {
       event_social_mode: normalizeText(profile.event_social_mode),
       open_to_meet: Boolean(profile.open_to_meet),
       open_to_networking: Boolean(profile.open_to_networking),
+      event_ticket_type: normalizeText(profile.event_ticket_type),
+      event_requires_food_kg: Boolean(profile.event_requires_food_kg),
+      event_requires_student_document: Boolean(profile.event_requires_student_document),
+      event_preparation_notes: normalizeText(profile.event_preparation_notes),
     });
   }
 
@@ -837,7 +857,7 @@ export default async function EventPage({ params }: PageProps) {
 
   const { data: eventGroupsData } = await supabase
     .from("event_groups")
-    .select("event_name,event_slug,event_url,event_date,event_image_url,city_base,title,description")
+    .select("event_name,event_slug,event_url,event_date,event_image_url,city_base,title,description,weather_summary,weather_temperature,weather_rain_alert,preparation_note")
     .eq("event_slug", eventSlug)
     .limit(1);
 
@@ -982,6 +1002,163 @@ export default async function EventPage({ params }: PageProps) {
             <span style={{ opacity: 0.84 }}>Encontros ativos</span>
             <strong style={{ fontSize: 34 }}>{meetMembers.length}</strong>
           </div>
+        </div>
+      </section>
+
+ 
+      <section
+        style={{
+          ...sectionStyle("green"),
+          padding: 16,
+          background:
+            "linear-gradient(145deg, rgba(0,255,190,0.065), rgba(125,92,255,0.035), rgba(255,255,255,0.018))",
+        }}
+      >
+        <div style={{ display: "grid", gap: 6 }}>
+          <span
+            style={{
+              width: "fit-content",
+              padding: "7px 10px",
+              borderRadius: 999,
+              border: "1px solid rgba(0,255,190,0.20)",
+              background: "rgba(0,255,190,0.07)",
+              fontSize: 12,
+              fontWeight: 900,
+              color: "#fff",
+            }}
+          >
+            Guia rápido do evento
+          </span>
+
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 22,
+              lineHeight: 1.08,
+              fontWeight: 950,
+            }}
+          >
+            Antes de sair de casa
+          </h2>
+
+          <p style={{ margin: 0, opacity: 0.76, fontSize: 13, lineHeight: 1.45 }}>
+            Um resumo simples para chegar preparado, sem surpresa na entrada.
+          </p>
+        </div>
+
+        <div
+          style={{
+            padding: 14,
+            borderRadius: 20,
+            border: "1px solid rgba(255,255,255,0.09)",
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))",
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.62, fontWeight: 850 }}>
+                Clima previsto
+              </div>
+              <strong style={{ display: "block", marginTop: 3, fontSize: 28, lineHeight: 1 }}>
+                {normalizeText(eventGroup?.weather_temperature) || "A confirmar"}
+              </strong>
+            </div>
+
+            <div
+              style={{
+                padding: "8px 10px",
+                borderRadius: 999,
+                border: "1px solid rgba(0,255,190,0.18)",
+                background: "rgba(0,255,190,0.075)",
+                fontSize: 11,
+                fontWeight: 900,
+              }}
+            >
+              Clima
+            </div>
+          </div>
+
+          <div style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.86 }}>
+            {normalizeText(eventGroup?.weather_summary) || "Previsão ainda não cadastrada."}
+          </div>
+
+          <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.72 }}>
+            {normalizeText(eventGroup?.weather_rain_alert) || "Sem alerta de chuva cadastrado."}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{
+              padding: 13,
+              borderRadius: 18,
+              border: "1px solid rgba(125,92,255,0.16)",
+              background:
+                "linear-gradient(145deg, rgba(125,92,255,0.12), rgba(255,255,255,0.025))",
+              display: "grid",
+              gap: 6,
+            }}
+          >
+            <div style={{ fontSize: 11, opacity: 0.64, fontWeight: 850 }}>
+              Ingresso
+            </div>
+
+            <strong style={{ fontSize: 14, lineHeight: 1.25 }}>
+              {matchedMembers.find((member) => hasContent(member.event_ticket_type))?.event_ticket_type ||
+                "A confirmar"}
+            </strong>
+
+            <span style={{ fontSize: 12, lineHeight: 1.4, opacity: 0.82 }}>
+              {matchedMembers.some((member) => member.event_requires_food_kg)
+                ? "Leve 1 kg de alimento não perecível."
+                : "Confira o ingresso antes de sair."}
+            </span>
+          </div>
+
+          <div
+            style={{
+              padding: 13,
+              borderRadius: 18,
+              border: "1px solid rgba(255,196,0,0.16)",
+              background:
+                "linear-gradient(145deg, rgba(255,196,0,0.10), rgba(255,255,255,0.025))",
+              display: "grid",
+              gap: 6,
+            }}
+          >
+            <div style={{ fontSize: 11, opacity: 0.64, fontWeight: 850 }}>
+              Entrada
+            </div>
+
+            <strong style={{ fontSize: 14, lineHeight: 1.25 }}>
+              Documento em mãos
+            </strong>
+
+            <span style={{ fontSize: 12, lineHeight: 1.4, opacity: 0.82 }}>
+              {matchedMembers.some((member) => member.event_requires_student_document)
+                ? "Leve documento e comprovante de estudante."
+                : "Documento com foto sempre em mãos."}
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: "11px 12px",
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.075)",
+            background: "rgba(0,0,0,0.18)",
+            fontSize: 12,
+            lineHeight: 1.5,
+            opacity: 0.82,
+          }}
+        >
+          {matchedMembers.find((member) => hasContent(member.event_preparation_notes))?.event_preparation_notes ||
+            normalizeText(eventGroup?.preparation_note) ||
+            "Confira ingresso, documento, rota, carona e ponto de encontro antes de sair."}
         </div>
       </section>
 
