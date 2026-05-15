@@ -246,15 +246,6 @@ export default async function DashboardCardsPage() {
                 </div>
               </div>
 
-              <Link
-                href={`/dashboard/cards/${card.card_id}`}
-                style={{
-                  ...subtleButtonStyle(),
-                  background: "rgba(255,255,255,0.035)",
-                }}
-              >
-                Configurações da tag
-              </Link>
             </article>
           );
         })
