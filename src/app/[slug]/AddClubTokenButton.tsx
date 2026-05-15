@@ -371,20 +371,22 @@ export default function AddClubTokenButton({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 8,
-          minHeight: compact ? 34 : 38,
-          padding: compact ? "8px 11px" : "10px 13px",
+          gap: 7,
+          minHeight: compact ? 30 : 36,
+          padding: compact ? "7px 10px" : "9px 13px",
           borderRadius: 999,
-          border: "1px solid rgba(255,255,255,0.16)",
-          background: "rgba(255,255,255,0.10)",
+          border: "1px solid rgba(0,255,190,0.22)",
+          background:
+            "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))",
           color: "#fff",
-          fontSize: compact ? 12 : 13,
-          fontWeight: 850,
+          fontSize: compact ? 11 : 13,
+          fontWeight: 900,
           cursor: "pointer",
-          boxShadow: "0 10px 28px rgba(0,0,0,0.22)",
+          boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
+          opacity: 0.88,
         }}
       >
-        <span style={{ fontSize: compact ? 15 : 16, lineHeight: 1 }}>+</span>
+        <span style={{ fontSize: compact ? 13 : 15, lineHeight: 1, opacity: 0.9 }}>?</span>
         {label}
       </button>
 
