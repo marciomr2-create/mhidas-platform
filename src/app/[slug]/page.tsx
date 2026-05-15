@@ -2017,7 +2017,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
         <header style={topBar}>
           <div>
-            <div style={{ ...pillStyle(), marginBottom: 10 }}>Modo Club</div>
+            <div style={{ ...pillStyle(), marginBottom: 10 }}>Identidade Clubber</div>
 
             <h1
               className="uc-page-title"
