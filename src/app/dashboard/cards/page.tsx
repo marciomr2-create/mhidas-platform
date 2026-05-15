@@ -25,6 +25,107 @@ function formatDate(value: string | null): string {
   }).format(date);
 }
 
+function pageStyle() {
+  return {
+    minHeight: "100vh",
+    width: "100%",
+    maxWidth: 460,
+    margin: "0 auto",
+    padding: "18px 14px 42px",
+    boxSizing: "border-box",
+  } as const;
+}
+
+function heroStyle() {
+  return {
+    padding: 20,
+    borderRadius: 26,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background:
+      "linear-gradient(145deg, rgba(125,92,255,0.16), rgba(0,200,120,0.07), rgba(255,255,255,0.025))",
+    display: "grid",
+    gap: 10,
+    boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
+  } as const;
+}
+
+function nfcCardStyle() {
+  return {
+    marginTop: 16,
+    padding: 18,
+    borderRadius: 26,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025))",
+    display: "grid",
+    gap: 16,
+    boxShadow: "0 18px 46px rgba(0,0,0,0.26)",
+  } as const;
+}
+
+function badgeStyle(active = false) {
+  return {
+    width: "fit-content",
+    padding: "7px 10px",
+    borderRadius: 999,
+    border: active
+      ? "1px solid rgba(0,200,120,0.26)"
+      : "1px solid rgba(255,255,255,0.12)",
+    background: active ? "rgba(0,200,120,0.10)" : "rgba(255,255,255,0.055)",
+    fontSize: 12,
+    fontWeight: 850,
+  } as const;
+}
+
+function modeCardStyle(mode: "club" | "pro") {
+  return {
+    padding: 14,
+    borderRadius: 20,
+    border:
+      mode === "club"
+        ? "1px solid rgba(0,200,120,0.18)"
+        : "1px solid rgba(80,150,255,0.18)",
+    background:
+      mode === "club"
+        ? "linear-gradient(145deg, rgba(0,200,120,0.10), rgba(255,255,255,0.025))"
+        : "linear-gradient(145deg, rgba(80,150,255,0.10), rgba(255,255,255,0.025))",
+    display: "grid",
+    gap: 10,
+  } as const;
+}
+
+function buttonStyle(primary = false) {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "12px 14px",
+    minHeight: 44,
+    borderRadius: 14,
+    border: primary
+      ? "1px solid rgba(255,255,255,0.24)"
+      : "1px solid rgba(255,255,255,0.13)",
+    background: primary
+      ? "linear-gradient(135deg, rgba(125,92,255,0.95), rgba(0,200,120,0.36))"
+      : "rgba(255,255,255,0.06)",
+    color: "#fff",
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: 14,
+    width: "100%",
+    boxSizing: "border-box",
+  } as const;
+}
+
+function subtleButtonStyle() {
+  return {
+    ...buttonStyle(false),
+    minHeight: 40,
+    fontSize: 13,
+    opacity: 0.86,
+  } as const;
+}
+
 export default async function DashboardCardsPage() {
   const supabase = await createServerSupabaseClient();
 
@@ -42,194 +143,122 @@ export default async function DashboardCardsPage() {
 
   const items = error ? [] : ((cards ?? []) as CardRow[]);
 
-  function pageStyle() {
-    return {
-      maxWidth: 1100,
-      margin: "0 auto",
-      padding: 24,
-    } as const;
-  }
-
-  function sectionStyle() {
-    return {
-      marginTop: 24,
-      border: "1px solid rgba(255,255,255,0.12)",
-      borderRadius: 20,
-      padding: 20,
-      background: "rgba(255,255,255,0.03)",
-    } as const;
-  }
-
-  function cardGridStyle() {
-    return {
-      display: "grid",
-      gap: 16,
-      gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-      marginTop: 18,
-    } as const;
-  }
-
-  function cardItemStyle() {
-    return {
-      border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 18,
-      padding: 18,
-      background: "rgba(255,255,255,0.03)",
-      display: "grid",
-      gap: 14,
-    } as const;
-  }
-
-  function badgeStyle(active = false) {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      padding: "6px 10px",
-      borderRadius: 999,
-      border: "1px solid rgba(255,255,255,0.12)",
-      background: active ? "rgba(0,200,120,0.14)" : "rgba(255,255,255,0.06)",
-      fontSize: 12,
-      width: "fit-content",
-    } as const;
-  }
-
-  function modeBadge(color: string) {
-    return {
-      padding: "6px 10px",
-      borderRadius: 999,
-      fontSize: 11,
-      fontWeight: 700,
-      background: color,
-      color: "#fff",
-      width: "fit-content",
-    } as const;
-  }
-
-  function buttonStyle(primary = false) {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "11px 14px",
-      borderRadius: 12,
-      border: "1px solid rgba(255,255,255,0.14)",
-      background: primary ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
-      color: "#fff",
-      textDecoration: "none",
-      fontWeight: 700,
-      width: "fit-content",
-    } as const;
-  }
-
   return (
     <main style={pageStyle()}>
-      <header style={{ display: "grid", gap: 8 }}>
-        <h1 style={{ fontSize: 30, fontWeight: 900, margin: 0 }}>
-          Meus perfis
+      <section style={heroStyle()}>
+        <span style={badgeStyle(true)}>USECLUBBERS</span>
+
+        <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.02, fontWeight: 950 }}>
+          Minhas tags
         </h1>
 
-        <p style={{ margin: 0, opacity: 0.82, lineHeight: 1.6, maxWidth: 760 }}>
-          Cada perfil possui duas identidades: Club (cultural) e Pro (profissional).
+        <p style={{ margin: 0, opacity: 0.82, lineHeight: 1.55, fontSize: 14 }}>
+          Escolha uma tag e edite rapidamente sua Identidade Clubber ou Identidade Profissional.
         </p>
-      </header>
 
-      <section style={sectionStyle()}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>
-              Seus perfis
-            </h2>
-            <p style={{ margin: "8px 0 0 0", opacity: 0.78 }}>
-              Total: {items.length}
-            </p>
-          </div>
+        <div style={{ marginTop: 4, fontSize: 13, opacity: 0.74 }}>
+          Total de tags: <strong>{items.length}</strong>
+        </div>
+      </section>
 
+      {items.length === 0 ? (
+        <section style={nfcCardStyle()}>
+          <strong>Nenhuma tag encontrada.</strong>
+          <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.55 }}>
+            Quando uma tag estiver vinculada à sua conta, ela aparecerá aqui.
+          </p>
           <Link href="/dashboard" style={buttonStyle()}>
             Voltar
           </Link>
-        </div>
+        </section>
+      ) : (
+        items.map((card) => {
+          const slug = card.slug ?? "";
+          const hasSlug = Boolean(slug);
 
-        {items.length === 0 ? (
-          <div style={{ marginTop: 18 }}>
-            Nenhum perfil encontrado.
-          </div>
-        ) : (
-          <div style={cardGridStyle()}>
-            {items.map((card) => (
-              <article key={card.card_id} style={cardItemStyle()}>
-                
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div style={{ fontSize: 20, fontWeight: 900 }}>
-                    {card.label ?? "Perfil sem nome"}
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <span style={badgeStyle()}>
-                      {card.status ?? "—"}
-                    </span>
-
-                    <span style={badgeStyle(Boolean(card.is_published))}>
-                      {card.is_published ? "Publicado" : "Não publicado"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* IDENTIDADE DUAL */}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <span style={modeBadge("rgba(0,200,120,0.5)")}>
-                    CLUB MODE
+          return (
+            <article key={card.card_id} style={nfcCardStyle()}>
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span style={badgeStyle(Boolean(card.is_published))}>
+                    {card.is_published ? "Publicado" : "Não publicado"}
                   </span>
 
-                  <span style={modeBadge("rgba(0,120,255,0.5)")}>
-                    PRO MODE
+                  <span style={badgeStyle()}>
+                    {card.status || "Status indefinido"}
                   </span>
                 </div>
 
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  Criado em: {formatDate(card.issued_at)}
-                </div>
+                <h2 style={{ margin: 0, fontSize: 24, lineHeight: 1.08, fontWeight: 950 }}>
+                  {card.label || "Tag sem nome"}
+                </h2>
 
-                {/* AÇÃO PRINCIPAL */}
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 13, opacity: 0.72, lineHeight: 1.5 }}>
+                  Link: <strong>{slug || "ainda sem slug"}</strong>
+                  <br />
+                  Criada em: {formatDate(card.issued_at)}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={modeCardStyle("club")}>
+                  <div>
+                    <strong style={{ fontSize: 17 }}>Identidade Clubber</strong>
+                    <p style={{ margin: "5px 0 0", opacity: 0.76, fontSize: 13, lineHeight: 1.45 }}>
+                      Perfil cultural, eventos, carona, encontros, música e cena.
+                    </p>
+                  </div>
+
                   <Link
-                    href={`/dashboard/cards/${card.card_id}`}
+                    href={`/dashboard/cards/${card.card_id}/club`}
                     style={buttonStyle(true)}
                   >
-                    Abrir central do perfil
+                    Editar Clubber
                   </Link>
+
+                  {hasSlug ? (
+                    <Link href={`/${slug}?mode=club`} target="_blank" style={subtleButtonStyle()}>
+                      Ver perfil Clubber
+                    </Link>
+                  ) : null}
                 </div>
 
-                {/* LINKS PÚBLICOS */}
-                {card.slug && (
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <Link
-                      href={`/${card.slug}`}
-                      style={buttonStyle()}
-                    >
-                      Club público
-                    </Link>
-
-                    <Link
-                      href={`/pro/${card.slug}`}
-                      style={buttonStyle()}
-                    >
-                      Pro público
-                    </Link>
+                <div style={modeCardStyle("pro")}>
+                  <div>
+                    <strong style={{ fontSize: 17 }}>Identidade Profissional</strong>
+                    <p style={{ margin: "5px 0 0", opacity: 0.76, fontSize: 13, lineHeight: 1.45 }}>
+                      Perfil profissional, networking, contatos e negócios.
+                    </p>
                   </div>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+
+                  <Link
+                    href={`/dashboard/cards/${card.card_id}/pro`}
+                    style={buttonStyle(true)}
+                  >
+                    Editar Profissional
+                  </Link>
+
+                  {hasSlug ? (
+                    <Link href={`/pro/${slug}`} target="_blank" style={subtleButtonStyle()}>
+                      Ver perfil Profissional
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+
+              <Link
+                href={`/dashboard/cards/${card.card_id}`}
+                style={{
+                  ...subtleButtonStyle(),
+                  background: "rgba(255,255,255,0.035)",
+                }}
+              >
+                Configurações da tag
+              </Link>
+            </article>
+          );
+        })
+      )}
     </main>
   );
 }
