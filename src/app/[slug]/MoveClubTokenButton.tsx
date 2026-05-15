@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ export default function MoveClubTokenButton({
   value,
 }: MoveClubTokenButtonProps) {
   const router = useRouter();
-
   const [isOwner, setIsOwner] = useState(false);
   const [checked, setChecked] = useState(false);
   const [loadingDirection, setLoadingDirection] = useState("");
@@ -29,21 +28,15 @@ export default function MoveClubTokenButton({
     async function checkOwner() {
       try {
         const supabase = createBrowserClient();
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
 
         if (!mounted) return;
-
         setIsOwner(Boolean(user?.id && ownerUserId && user.id === ownerUserId));
       } catch {
         if (!mounted) return;
         setIsOwner(false);
       } finally {
-        if (mounted) {
-          setChecked(true);
-        }
+        if (mounted) setChecked(true);
       }
     }
 
@@ -68,21 +61,14 @@ export default function MoveClubTokenButton({
     try {
       const response = await fetch("/api/club-profile/move-token", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cardId,
-          field,
-          value,
-          direction,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, field, value, direction }),
       });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok) {
-        throw new Error(result?.message || "Não foi possível mover este item.");
+        throw new Error(result?.message || "N?o foi poss?vel mover este item.");
       }
 
       router.refresh();
@@ -93,38 +79,37 @@ export default function MoveClubTokenButton({
     }
   }
 
-  if (!checked || !isOwner) {
-    return null;
-  }
+  if (!checked || !isOwner) return null;
 
   const baseButton = {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.58)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(0,0,0,0.34)",
+    backdropFilter: "blur(10px)",
     color: "#fff",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: loadingDirection ? "wait" : "pointer",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 900,
     lineHeight: 1,
-    boxShadow: "0 8px 18px rgba(0,0,0,0.30)",
-    opacity: loadingDirection ? 0.55 : 0.86,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
+    opacity: loadingDirection ? 0.45 : 0.58,
   } as const;
 
   return (
     <div
       style={{
         position: "absolute",
-        left: 9,
-        bottom: 9,
+        left: 10,
+        top: 10,
         zIndex: 8,
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
+        gap: 7,
       }}
     >
       <button
@@ -135,7 +120,7 @@ export default function MoveClubTokenButton({
         disabled={Boolean(loadingDirection)}
         style={baseButton}
       >
-        ‹
+        ?
       </button>
 
       <button
@@ -146,7 +131,7 @@ export default function MoveClubTokenButton({
         disabled={Boolean(loadingDirection)}
         style={baseButton}
       >
-        ›
+        ?
       </button>
     </div>
   );

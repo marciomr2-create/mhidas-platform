@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ export default function RemoveClubArtistButton({
   artistName,
 }: RemoveClubArtistButtonProps) {
   const router = useRouter();
-
   const [isOwner, setIsOwner] = useState(false);
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,21 +28,15 @@ export default function RemoveClubArtistButton({
     async function checkOwner() {
       try {
         const supabase = createBrowserClient();
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
 
         if (!mounted) return;
-
         setIsOwner(Boolean(user?.id && ownerUserId && user.id === ownerUserId));
       } catch {
         if (!mounted) return;
         setIsOwner(false);
       } finally {
-        if (mounted) {
-          setChecked(true);
-        }
+        if (mounted) setChecked(true);
       }
     }
 
@@ -60,8 +53,7 @@ export default function RemoveClubArtistButton({
 
     if (loading) return;
 
-    const confirmed = window.confirm(`Remover "${artistName}" dos seus artistas de referência?`);
-
+    const confirmed = window.confirm(`Remover "${artistName}" dos seus artistas de refer?ncia?`);
     if (!confirmed) return;
 
     setLoading(true);
@@ -69,19 +61,14 @@ export default function RemoveClubArtistButton({
     try {
       const response = await fetch("/api/club-profile/remove-artist", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cardId,
-          spotifyId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, spotifyId }),
       });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok) {
-        throw new Error(result?.message || "Não foi possível remover este artista.");
+        throw new Error(result?.message || "N?o foi poss?vel remover este artista.");
       }
 
       router.refresh();
@@ -92,9 +79,7 @@ export default function RemoveClubArtistButton({
     }
   }
 
-  if (!checked || !isOwner) {
-    return null;
-  }
+  if (!checked || !isOwner) return null;
 
   return (
     <button
@@ -105,27 +90,28 @@ export default function RemoveClubArtistButton({
       disabled={loading}
       style={{
         position: "absolute",
-        right: 9,
-        bottom: 9,
+        right: 10,
+        top: 10,
         zIndex: 8,
-        width: 28,
-        height: 28,
+        width: 30,
+        height: 30,
         borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.18)",
-        background: loading ? "rgba(0,0,0,0.42)" : "rgba(0,0,0,0.58)",
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: loading ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.34)",
+        backdropFilter: "blur(10px)",
         color: "#fff",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: loading ? "wait" : "pointer",
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 900,
         lineHeight: 1,
-        boxShadow: "0 8px 18px rgba(0,0,0,0.30)",
-        opacity: loading ? 0.55 : 0.86,
+        boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
+        opacity: loading ? 0.45 : 0.58,
       }}
     >
-      ×
+      ?
     </button>
   );
 }
