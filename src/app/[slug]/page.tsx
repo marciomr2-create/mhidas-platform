@@ -614,7 +614,7 @@ function editorialCardStyle(width = 235): CSSProperties {
     background:
       "linear-gradient(145deg, rgba(255,255,255,0.095), rgba(255,255,255,0.035))",
     border: "1px solid rgba(255,255,255,0.12)",
-    boxShadow: "0 14px 35px rgba(0,0,0,0.18)",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.26), inset 0 0 22px rgba(255,255,255,0.025)",
     color: "#fff",
     textDecoration: "none",
     position: "relative",
@@ -657,7 +657,7 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
     backgroundSize: imageUrl ? "cover" : undefined,
     backgroundPosition: imageUrl ? "center" : undefined,
     border: "1px solid rgba(255,255,255,0.13)",
-    boxShadow: "0 18px 44px rgba(0,0,0,0.24)",
+    boxShadow: "0 22px 58px rgba(0,0,0,0.34), inset 0 0 26px rgba(255,255,255,0.025)",
     color: "#fff",
     textDecoration: "none",
     position: "relative",
