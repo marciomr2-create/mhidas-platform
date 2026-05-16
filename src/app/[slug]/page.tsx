@@ -1834,7 +1834,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   };
 
   const page: CSSProperties = {
-    maxWidth: 1080,
+    maxWidth: 1320,
     margin: "0 auto",
   };
 
@@ -1933,7 +1933,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     lineHeight: 1.12,
     fontWeight: 720,
     letterSpacing: -0.8,
-    maxWidth: 680,
+    maxWidth: 820,
   };
 
   const artistGrid: CSSProperties = {
@@ -2092,7 +2092,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 fontSize: 15,
                 lineHeight: 1.65,
                 opacity: 0.86,
-                maxWidth: 650,
+                maxWidth: 760,
               }}
             >
               {sceneDescription}
