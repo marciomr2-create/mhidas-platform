@@ -548,8 +548,8 @@ function actionCardStyle(): CSSProperties {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 14,
-    padding: "15px 16px",
+    gap: 18,
+    padding: "20px 20px",
     borderRadius: 18,
     background: "rgba(255,255,255,0.06)",
     border: "1px solid rgba(255,255,255,0.11)",
@@ -596,7 +596,7 @@ function secondaryButtonStyle(): CSSProperties {
 function horizontalRailStyle(): CSSProperties {
   return {
     display: "flex",
-    gap: 14,
+    gap: 18,
     overflowX: "auto",
     padding: "2px 2px 12px 2px",
     scrollSnapType: "x mandatory",
@@ -1842,7 +1842,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 22,
     flexWrap: "wrap",
     marginBottom: 18,
   };
@@ -1874,7 +1874,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     overflow: "hidden",
     display: "grid",
     gridTemplateColumns: "210px 1fr",
-    gap: 22,
+    gap: 30,
     alignItems: "center",
     padding: 22,
     borderRadius: 32,
@@ -2586,7 +2586,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
-                            gap: 16,
+                            gap: 22,
                           }}
                         >
                           <div style={{ display: "grid", gap: 10 }}>
