@@ -636,7 +636,7 @@ function catalogCardStyle(
 
   return {
     ...editorialCardStyle(width),
-    minHeight: imageUrl ? 246 : 150,
+    minHeight: imageUrl ? 310 : 190,
     padding: imageUrl ? 12 : 16,
     background: imageUrl
       ? "linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.040))"
@@ -648,7 +648,7 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
   return {
     flex: `0 0 ${width}px`,
     scrollSnapAlign: "start",
-    minHeight: 190,
+    minHeight: 240,
     padding: 18,
     borderRadius: 24,
     background: imageUrl
@@ -2248,7 +2248,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         </div>
                       )}
 
-                      <div style={{ padding: "12px 44px 56px 12px", minHeight: 112 }}>
+                      <div style={{ padding: "16px 44px 70px 16px", minHeight: 150 }}>
                         <strong>{artist.name}</strong>
                         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
                           Spotify
