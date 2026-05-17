@@ -548,7 +548,7 @@ function actionCardStyle(): CSSProperties {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 18,
+    gap: 28,
     padding: "20px 20px",
     borderRadius: 18,
     background: "rgba(255,255,255,0.06)",
@@ -648,16 +648,16 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
   return {
     flex: `0 0 ${width}px`,
     scrollSnapAlign: "start",
-    minHeight: 240,
+    minHeight: imageUrl ? 420 : 240,
     padding: 18,
     borderRadius: 24,
     background: imageUrl
-      ? `linear-gradient(145deg, rgba(5,5,5,0.20), rgba(5,5,5,0.82)), url("${imageUrl}")`
+      ? `linear-gradient(145deg, rgba(4,4,12,0.10), rgba(4,4,12,0.72)), radial-gradient(circle at 78% 18%, rgba(125,92,255,0.34), transparent 34%), url("${imageUrl}")`
       : "linear-gradient(145deg, rgba(132,92,255,0.18), rgba(255,255,255,0.045))",
     backgroundSize: imageUrl ? "cover" : undefined,
-    backgroundPosition: imageUrl ? "center" : undefined,
-    border: "1px solid rgba(255,255,255,0.13)",
-    boxShadow: "0 22px 58px rgba(0,0,0,0.34), inset 0 0 26px rgba(255,255,255,0.025)",
+    backgroundPosition: imageUrl ? "center center" : undefined,
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.26), inset 0 0 18px rgba(255,255,255,0.018)",
     color: "#fff",
     textDecoration: "none",
     position: "relative",
@@ -916,7 +916,7 @@ function getCheckInCardGlowStyle(status: "none" | "pending" | "active" | "expire
     return {
       border: "1px solid rgba(0,255,190,0.72)",
       boxShadow:
-        "0 0 0 1px rgba(0,255,190,0.22), 0 0 34px rgba(0,255,190,0.26), 0 22px 70px rgba(0,0,0,0.46)",
+        "0 0 0 1px rgba(0,255,190,0.42), 0 0 64px rgba(0,255,190,0.46), 0 0 180px rgba(0,255,190,0.18), 0 32px 100px rgba(0,0,0,0.62)",
     };
   }
 
@@ -958,12 +958,12 @@ function CheckInStatusBadge({
           ? "1px solid rgba(0,255,190,0.62)"
           : "1px solid rgba(255,210,92,0.56)",
         background: isActive
-          ? "linear-gradient(135deg, rgba(0,255,190,0.30), rgba(0,110,95,0.34))"
+          ? "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(0,110,95,0.22))"
           : "linear-gradient(135deg, rgba(255,210,92,0.26), rgba(120,80,0,0.28))",
         color: "#fff",
-        backdropFilter: "blur(10px)",
+        backdropFilter: "blur(18px)",
         boxShadow: isActive
-          ? "0 0 24px rgba(0,255,190,0.28)"
+          ? "0 0 34px rgba(0,255,190,0.42)"
           : "0 0 22px rgba(255,210,92,0.20)",
         fontSize: 11,
         fontWeight: 950,
@@ -978,11 +978,11 @@ function CheckInStatusBadge({
           borderRadius: 999,
           background: isActive ? "#00ffbe" : "#ffd25c",
           boxShadow: isActive
-            ? "0 0 16px rgba(0,255,190,0.92)"
+            ? "0 0 24px rgba(0,255,190,1)"
             : "0 0 14px rgba(255,210,92,0.82)",
         }}
       />
-      {isActive ? "Check-in ativo" : "Check-in sincronizando"}
+      {isActive ? "? CHECK-IN USECLUBBERS" : "? SINCRONIZANDO PRESEN?A"}
     </div>
   );
 }
@@ -1007,8 +1007,8 @@ function CheckInPresenceText({
     : isValidated
       ? "Presença validada"
       : isOutsideRadius
-        ? "Check-in fora do raio"
-        : "Check-in manual";
+        ? "? FORA DO RAIO"
+        : "? CHECK-IN MANUAL";
 
   const border = isValidated
     ? "1px solid rgba(0,255,190,0.48)"
@@ -1067,8 +1067,8 @@ function EventHeatScoreBadge({
 
   const confirmedLabel =
     confirmedCount === 1
-      ? "1 clubber confirmado"
-      : `${confirmedCount} clubbers confirmados`;
+      ? "1 clubber vai"
+      : `${confirmedCount} clubbers v?o`;
 
   const validatedLabel =
     validatedCount > 0
@@ -1102,6 +1102,61 @@ function EventHeatScoreBadge({
     </div>
   );
 }
+
+
+function EventStateBadge({
+  status,
+  heatScore,
+  members,
+}: {
+  status: "none" | "pending" | "active" | "expired";
+  heatScore?: EventHeatScore | null;
+  members?: EventMiniMember[] | null;
+}) {
+  const confirmedCount = Number(heatScore?.confirmedCount || 0);
+  const validatedCount = Number(heatScore?.validatedCount || 0);
+  const membersCount = Number(members?.length || 0);
+
+  let label = "";
+
+  if (status === "active") {
+    label = "LIVE NOW";
+  } else if (validatedCount >= 3) {
+    label = "PRESEN?A VALIDADA";
+  } else if (confirmedCount >= 5) {
+    label = "REDE USECLUBBERS ATIVA";
+  } else if (membersCount >= 3) {
+    label = "GRUPO DA PLATAFORMA";
+  } else if (confirmedCount >= 2) {
+    label = "MOVIMENTO USECLUBBERS";
+  }
+
+  if (!label) return null;
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        width: "fit-content",
+        padding: "8px 11px",
+        borderRadius: 999,
+        border: "1px solid rgba(0,255,190,0.30)",
+        background:
+          "linear-gradient(135deg, rgba(0,255,190,0.14), rgba(125,92,255,0.16))",
+        color: "#fff",
+        fontSize: 11,
+        fontWeight: 950,
+        letterSpacing: 0.45,
+        textTransform: "uppercase",
+        boxShadow: "0 0 26px rgba(0,255,190,0.16)",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
 
 function EventMiniAvatarStack({
   members,
@@ -1158,7 +1213,7 @@ function EventMiniAvatarStack({
       </div>
 
       <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 750 }}>
-        quem vai
+        na plataforma
       </span>
     </div>
   );
@@ -2142,7 +2197,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 </h2>
 
                 {playlistDescription ? (
-                  <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.55 }}>
+                  <p style={{ margin: 0, opacity: 0.52, lineHeight: 1.55 }}>
                     {playlistDescription}
                   </p>
                 ) : null}
@@ -2306,7 +2361,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     marginBottom: 10,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                  <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em" }}>
                     Clubes favoritos
                   </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -2372,7 +2427,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     marginBottom: 10,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                  <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em" }}>
                     Festivais e festas
                   </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -2438,7 +2493,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     marginBottom: 10,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
+                  <h3 style={{ margin: 0, fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em" }}>
                     Últimos eventos
                   </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -2524,8 +2579,148 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   </div>
                 </div>
 
+                {nextEventRowsWithCatalog.length > 0 ? (
+                  <div
+                    style={{
+                      marginBottom: 22,
+                    }}
+                  >
+                    {(() => {
+                      const featuredEvent = nextEventRowsWithCatalog[0];
+
+                      const catalogImage = getSafeClubCoverImage(
+                        featuredEvent.name,
+                        featuredEvent.catalog,
+                        "purple"
+                      );
+
+                      const catalogHref = getCatalogHref(featuredEvent.catalog);
+
+                      const finalEventLink =
+                        featuredEvent.link || catalogHref;
+
+                      const checkInStatus =
+                        getEventCheckInStatus(featuredEvent);
+
+                      const checkInLocationStatus =
+                        (normalizeText(
+                          featuredEvent?.checkin_location_status
+                        ).toLowerCase() as CheckInLocationStatus) ||
+                        "not_checked";
+
+                      return (
+                        <div
+                          style={{
+                            ...getCheckInCardGlowStyle(checkInStatus),
+                            ...eventCardStyle(920, catalogImage),
+                            minHeight: 620,
+                            paddingBottom: 52,
+                          }}
+                        >
+                          <CheckInStatusBadge status={checkInStatus} />
+
+                          <div
+                            style={{
+                              position: "relative",
+                              zIndex: 2,
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "space-between",
+                              gap: 18,
+                              maxWidth: 760,
+                              height: "100%",
+                            }}
+                          >
+                            <span style={microLabelStyle()}>
+                              EVENTO PRINCIPAL
+                            </span>
+
+                            <strong
+                              style={{
+                                fontSize: 60,
+                                lineHeight: 0.92,
+                                letterSpacing: "-0.05em",
+                              }}
+                            >
+                              {featuredEvent.name}
+                            </strong>
+
+                            {featuredEvent.date ? (
+                              <span
+                                style={{
+                                  fontSize: 18,
+                                  opacity: 0.92,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {featuredEvent.date}
+                              </span>
+                            ) : null}
+
+                            {getCatalogLocation(featuredEvent.catalog) ? (
+                              <span
+                                style={{
+                                  fontSize: 15,
+                                  opacity: 0.72,
+                                }}
+                              >
+                                {getCatalogLocation(
+                                  featuredEvent.catalog
+                                )}
+                              </span>
+                            ) : null}
+
+                            <EventStateBadge
+                              status={checkInStatus}
+                              heatScore={featuredEvent.event_heat_score}
+                              members={featuredEvent.event_members}
+                            />
+
+                            <CheckInPresenceText
+                              status={checkInStatus}
+                              locationStatus={checkInLocationStatus}
+                            />
+
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 12,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <CheckInEventButton
+                                cardId={card.card_id}
+                                ownerUserId={card.user_id}
+                                eventName={featuredEvent.name}
+                                eventDate={featuredEvent.date}
+                                eventLink={finalEventLink}
+                                catalogId={
+                                  featuredEvent.catalog?.id || null
+                                }
+                                initialStatus={checkInStatus}
+                                compact
+                              />
+
+                              {finalEventLink ? (
+                                <a
+                                  href={finalEventLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={primaryButtonStyle()}
+                                >
+                                  Abrir evento oficial
+                                </a>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+
                 <div className="uc-scroll" style={horizontalRailStyle()}>
-                  {nextEventRowsWithCatalog.map((event, index) => {
+                  {nextEventRowsWithCatalog.slice(1).map((event, index) => {
                     const catalogImage = getSafeClubCoverImage(
                       event.name,
                       event.catalog,
@@ -2541,12 +2736,13 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     return (
                       <div
                         key={`${event.name}-${index}`}
-                        className="uc-medium-card"
+                        className={index === 0 ? "uc-featured-event-card" : "uc-medium-card"}
                         style={{
                           ...getCheckInCardGlowStyle(checkInStatus),
                           ...eventCardStyle(285, catalogImage),
                           ...getCheckInCardGlowStyle(checkInStatus),
                           paddingBottom: 52,
+                          minHeight: index === 0 ? 420 : undefined,
                         }}
                       >
                         <CheckInStatusBadge status={checkInStatus} />
@@ -2679,7 +2875,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         key={`${item.name}-${index}`}
                         className="uc-medium-card"
                         style={{
-                          ...getCheckInCardGlowStyle(checkInStatus), ...eventCardStyle(285, catalogImage), paddingBottom: 52 }}
+                          ...getCheckInCardGlowStyle(checkInStatus),
+                          ...eventCardStyle(
+                            index === 0 ? 560 : 285,
+                            catalogImage
+                          ),
+                          paddingBottom: 52,
+                          transform: index === 0 ? "scale(1.02)" : "none",
+                          zIndex: index === 0 ? 3 : 1,
+                        }}
                       >
                         <CheckInStatusBadge status={checkInStatus} />
 
@@ -3162,7 +3366,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     </strong>
 
                     <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55 }}>
-                      Combine com pessoas da cena, encontre quem vai para o mesmo evento e facilite novas amizades antes do rolê.
+                      Combine com pessoas da cena, encontre na plataforma para o mesmo evento e facilite novas amizades antes do rolê.
                     </p>
                   </div>
 
