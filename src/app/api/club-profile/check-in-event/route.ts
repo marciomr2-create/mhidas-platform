@@ -281,6 +281,7 @@ export async function POST(request: NextRequest) {
           card_id: cardId,
           event_name: eventName,
           event_key: eventKey,
+          event_slug: eventKey,
           event_date: eventDate || null,
           event_link: eventLink || null,
           catalog_id: catalogId,
@@ -302,7 +303,7 @@ export async function POST(request: NextRequest) {
         }
       )
       .select(
-        "id, event_name, event_key, status, location_status, distance_meters, radius_meters"
+        "id, event_name, event_key, event_slug, status, location_status, distance_meters, radius_meters"
       )
       .maybeSingle();
 

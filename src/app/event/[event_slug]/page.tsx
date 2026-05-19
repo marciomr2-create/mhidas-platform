@@ -6,9 +6,11 @@ export const fetchCache = "force-no-store";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
+import EventParticipantsFilter from "./EventParticipantsFilter";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
+  searchParams?: Promise<{ city?: string; state?: string; region?: string }>;
 };
 
 type CardRow = {
@@ -119,6 +121,43 @@ function toEventSlug(value: string | null | undefined): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function getStateFromCityBase(value: string): string {
+  const text = normalizeText(value);
+  const parts = text.split("-").map((item) => normalizeText(item));
+  return (parts[1] || "").toUpperCase();
+}
+
+function getRegionFromState(state: string): string {
+  const uf = normalizeText(state).toUpperCase();
+
+  if (["PR", "SC", "RS"].includes(uf)) return "Sul";
+  if (["SP", "RJ", "MG", "ES"].includes(uf)) return "Sudeste";
+  if (["DF", "GO", "MT", "MS"].includes(uf)) return "Centro-Oeste";
+  if (["BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"].includes(uf)) return "Nordeste";
+  if (["AM", "PA", "AC", "RO", "RR", "AP", "TO"].includes(uf)) return "Norte";
+
+  return "";
+}
+
+function filterChipStyle(active = false): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "8px 11px",
+    borderRadius: 999,
+    border: active ? "1px solid rgba(0,255,190,0.55)" : "1px solid rgba(255,255,255,0.14)",
+    background: active
+      ? "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.18))"
+      : "rgba(255,255,255,0.055)",
+    color: "#fff",
+    textDecoration: "none",
+    fontSize: 12,
+    fontWeight: 850,
+    whiteSpace: "nowrap",
+  };
 }
 
 function splitEventList(value: string | null | undefined): string[] {
@@ -723,9 +762,13 @@ function MeetCard({
   );
 }
 
-export default async function EventPage({ params }: PageProps) {
+export default async function EventPage({ params, searchParams }: PageProps) {
   const { event_slug } = await params;
+  const sp = searchParams ? await searchParams : undefined;
   const eventSlug = normalizeText(event_slug).toLowerCase();
+  const selectedCity = normalizeText(sp?.city);
+  const selectedState = normalizeText(sp?.state).toUpperCase();
+  const selectedRegion = normalizeText(sp?.region);
 
   const supabase = createPublicClient();
 
@@ -738,7 +781,24 @@ export default async function EventPage({ params }: PageProps) {
   const cards = ((cardsData ?? []) as CardRow[]).filter((card) => hasContent(card.slug));
   const userIds = dedupeStrings(cards.map((card) => card.user_id));
 
-  const { data: profilesData } = userIds.length
+  const { data: eventCheckInsData } = await supabase
+    .from("club_event_checkins")
+    .select("user_id,event_name,event_key,event_slug,status,checked_in_at")
+    .or(`event_slug.eq.${eventSlug},event_key.eq.${eventSlug}`)
+    .eq("status", "active")
+    .order("checked_in_at", { ascending: false });
+
+  const checkedInUserIds = Array.from(
+    new Set(
+      (eventCheckInsData || [])
+        .map((item: any) => normalizeText(item.user_id))
+        .filter(Boolean)
+    )
+  );
+
+  const allUserIds = Array.from(new Set([...userIds, ...checkedInUserIds]));
+
+  const { data: profilesData } = allUserIds.length
     ? await supabase
         .from("club_profiles")
         .select(`
@@ -772,7 +832,7 @@ export default async function EventPage({ params }: PageProps) {
           event_requires_student_document,
           event_preparation_notes
         `)
-        .in("user_id", userIds)
+        .in("user_id", allUserIds)
     : { data: [] as ClubProfileRow[] };
 
   const profileMap = new Map<string, ClubProfileRow>();
@@ -780,6 +840,7 @@ export default async function EventPage({ params }: PageProps) {
     profileMap.set(profile.user_id, profile);
   }
 
+  const checkedInUserIdSet = new Set(checkedInUserIds);
   const matchedMembers: EventMember[] = [];
 
   for (const card of cards) {
@@ -800,7 +861,9 @@ export default async function EventPage({ params }: PageProps) {
     const rideMatch = toEventSlug(profile.ride_event_name) === eventSlug;
     const meetMatch = toEventSlug(profile.meet_event_name) === eventSlug;
 
-    if (!nextEventsMatch && !rideMatch && !meetMatch) continue;
+    const checkInMatch = checkedInUserIdSet.has(card.user_id);
+
+    if (!checkInMatch && !nextEventsMatch && !rideMatch && !meetMatch) continue;
 
     matchedMembers.push({
       user_id: card.user_id,
@@ -878,6 +941,30 @@ export default async function EventPage({ params }: PageProps) {
     officialEventUrl;
 
   const attendees = matchedMembers;
+
+  const availableCities = Array.from(
+    new Set(attendees.map((member) => normalizeText(member.city_base)).filter(Boolean))
+  ).slice(0, 8);
+
+  const availableStates = Array.from(
+    new Set(attendees.map((member) => getStateFromCityBase(member.city_base)).filter(Boolean))
+  ).slice(0, 8);
+
+  const availableRegions = Array.from(
+    new Set(availableStates.map((state) => getRegionFromState(state)).filter(Boolean))
+  ).slice(0, 5);
+
+  const filteredAttendees = attendees.filter((member) => {
+    const memberCity = normalizeText(member.city_base);
+    const memberState = getStateFromCityBase(member.city_base);
+    const memberRegion = getRegionFromState(memberState);
+
+    if (selectedCity && memberCity !== selectedCity) return false;
+    if (selectedState && memberState !== selectedState) return false;
+    if (selectedRegion && memberRegion !== selectedRegion) return false;
+
+    return true;
+  });
 
   const tribeMap = new Map<string, number>();
 
@@ -1221,18 +1308,13 @@ export default async function EventPage({ params }: PageProps) {
               icon="●"
               title="Quem vai para este evento"
               subtitle="Perfis Club que já se conectaram a este evento."
-              actionLabel="Ver todos"
+              actionLabel=""
             />
 
-            <div style={carouselStyle()}>
-              {attendees.map((member) => (
-                <ProfileCard
-                  key={`attendee-${member.user_id}-${member.slug}`}
-                  member={member}
-                  officialEventUrl={heroOfficialUrl}
-                />
-              ))}
-            </div>
+            <EventParticipantsFilter
+              attendees={attendees}
+              officialEventUrl={heroOfficialUrl}
+            />
           </section>
 
           <section style={sectionStyle("green")}>
@@ -1263,7 +1345,7 @@ export default async function EventPage({ params }: PageProps) {
               icon="◇"
               title="Encontros combinados"
               subtitle="Pontos de encontro e horários que já foram marcados para este evento."
-              actionLabel="Ver todos"
+              actionLabel=""
             />
 
             {meetMembers.length === 0 ? (

@@ -94,6 +94,7 @@ function normalizeText(value: any): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+
 function normalizeUrl(value: any): string {
   const text = normalizeText(value);
 
@@ -1160,8 +1161,10 @@ function EventStateBadge({
 
 function EventMiniAvatarStack({
   members,
+  eventSlug,
 }: {
   members?: EventMiniMember[] | null;
+  eventSlug?: string;
 }) {
   const visibleMembers = (members || []).slice(0, 5);
 
@@ -1170,7 +1173,20 @@ function EventMiniAvatarStack({
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+    <Link
+      href={eventSlug ? `/event/${eventSlug}` : "#"}
+      title="Ver participantes do evento"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        width: "fit-content",
+        cursor: "pointer",
+        borderRadius: 999,
+        padding: "4px 7px 4px 0",
+        transition: "all 160ms ease",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center" }}>
         {visibleMembers.map((member, index) => (
           <Link
@@ -1212,10 +1228,10 @@ function EventMiniAvatarStack({
         ))}
       </div>
 
-      <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 750 }}>
-        na plataforma
+      <span style={{ fontSize: 11, opacity: 0.76, fontWeight: 800 }}>
+        Ver participantes
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -1795,6 +1811,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, event.name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, event.name),
       event_heat_score: getEventHeatScore(eventHeatByKey, event.name),
+      event_slug: getEventCheckInKey(event.name),
       event_members: eventMembersByKey.get(getEventCheckInKey(event.name)) || [],
     };
   });
@@ -1814,6 +1831,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       checkin_status: getStoredCheckInStatus(activeCheckInsByKey, name),
       checkin_location_status: getStoredCheckInLocationStatus(activeCheckInsByKey, name),
       event_heat_score: getEventHeatScore(eventHeatByKey, name),
+      event_slug: getEventCheckInKey(name),
       event_members: eventMembersByKey.get(getEventCheckInKey(name)) || [],
     };
   });
@@ -2818,7 +2836,10 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                             <EventHeatScoreBadge heatScore={event.event_heat_score} />
 
-                            <EventMiniAvatarStack members={event.event_members} />
+                            <EventMiniAvatarStack
+  members={event.event_members}
+  eventSlug={event.event_slug}
+/>
                           </div>
 
                           <div style={{ display: "grid", gap: 9 }}>
