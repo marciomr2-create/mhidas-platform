@@ -38,17 +38,10 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
       "House, pista boa e conexões leves antes do evento.",
     club_photo_url:
       "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80",
-    favorite_genres: [
-      "House",
-      "Tech House",
-      "Deep House",
-    ],
+    favorite_genres: ["House", "Tech House", "Deep House"],
     event_social_mode: "networking",
     compatibilityScore: 70,
-    compatibilityBadges: [
-      "Vertentes similares",
-      "Estado SP",
-    ],
+    compatibilityBadges: ["Vertentes similares", "Estado SP"],
   },
   {
     user_id: "TEST_SANDBOX_002",
@@ -59,17 +52,10 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
       "Progressive House, viagens de festival e energia boa.",
     club_photo_url:
       "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=80",
-    favorite_genres: [
-      "Progressive House",
-      "Melodic Techno",
-      "House",
-    ],
+    favorite_genres: ["Progressive House", "Melodic Techno", "House"],
     event_social_mode: "meet",
     compatibilityScore: 64,
-    compatibilityBadges: [
-      "Mesmo evento",
-      "Sul",
-    ],
+    compatibilityBadges: ["Mesmo evento", "Sul"],
   },
   {
     user_id: "TEST_SANDBOX_003",
@@ -80,17 +66,10 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
       "Busco minha tribo para after, carona e pista.",
     club_photo_url:
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80",
-    favorite_genres: [
-      "Techno",
-      "Melodic Techno",
-      "Progressive House",
-    ],
+    favorite_genres: ["Techno", "Melodic Techno", "Progressive House"],
     event_social_mode: "networking",
     compatibilityScore: 81,
-    compatibilityBadges: [
-      "Alta afinidade",
-      "Techno",
-    ],
+    compatibilityBadges: ["Alta afinidade", "Techno"],
   },
   {
     user_id: "TEST_SANDBOX_004",
@@ -101,24 +80,15 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
       "Gosto de festivais grandes, progressive e encontros seguros.",
     club_photo_url:
       "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=900&q=80",
-    favorite_genres: [
-      "Progressive House",
-      "Deep House",
-      "Organic House",
-    ],
+    favorite_genres: ["Progressive House", "Deep House", "Organic House"],
     event_social_mode: "meet",
     compatibilityScore: 77,
-    compatibilityBadges: [
-      "Sudeste",
-      "Progressive",
-    ],
+    compatibilityBadges: ["Sudeste", "Progressive"],
   },
 ];
 
 function normalizeText(value: any): string {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return String(value || "").replace(/\s+/g, " ").trim();
 }
 
 function getStateFromCityBase(value: string): string {
@@ -133,51 +103,45 @@ function getRegionFromState(state: string): string {
   const uf = normalizeText(state).toUpperCase();
 
   if (["PR", "SC", "RS"].includes(uf)) return "Sul";
-
-  if (["SP", "RJ", "MG", "ES"].includes(uf)) {
-    return "Sudeste";
-  }
-
-  if (["DF", "GO", "MT", "MS"].includes(uf)) {
-    return "Centro-Oeste";
-  }
-
-  if (
-    [
-      "BA",
-      "SE",
-      "AL",
-      "PE",
-      "PB",
-      "RN",
-      "CE",
-      "PI",
-      "MA",
-    ].includes(uf)
-  ) {
-    return "Nordeste";
-  }
-
-  if (
-    [
-      "AM",
-      "PA",
-      "AC",
-      "RO",
-      "RR",
-      "AP",
-      "TO",
-    ].includes(uf)
-  ) {
-    return "Norte";
-  }
+  if (["SP", "RJ", "MG", "ES"].includes(uf)) return "Sudeste";
+  if (["DF", "GO", "MT", "MS"].includes(uf)) return "Centro-Oeste";
+  if (["BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"].includes(uf)) return "Nordeste";
+  if (["AM", "PA", "AC", "RO", "RR", "AP", "TO"].includes(uf)) return "Norte";
 
   return "";
 }
 
-function chipStyle(
-  active = false
-): CSSProperties {
+function getClubberTribe(genres: string[]): string {
+  const normalizedGenres = genres.map((genre) => normalizeText(genre).toLowerCase());
+
+  if (normalizedGenres.some((genre) => genre.includes("hard techno"))) {
+    return "🏴 Hard Techno Tribe";
+  }
+
+  if (normalizedGenres.some((genre) => genre.includes("techno"))) {
+    return "🏴 Techno Tribe";
+  }
+
+  if (normalizedGenres.some((genre) => genre.includes("progressive"))) {
+    return "🌌 Progressive Family";
+  }
+
+  if (normalizedGenres.some((genre) => genre.includes("melodic"))) {
+    return "🌙 Melodic Society";
+  }
+
+  if (normalizedGenres.some((genre) => genre.includes("house"))) {
+    return "🎵 House Lovers";
+  }
+
+  if (normalizedGenres.some((genre) => genre.includes("deep"))) {
+    return "🌊 Deep House Circle";
+  }
+
+  return "🔥 Festival Crew";
+}
+
+function chipStyle(active = false): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -214,21 +178,17 @@ function profileCardStyle(): CSSProperties {
     maxWidth: 292,
     flex: "0 0 292px",
     borderRadius: 24,
-    border:
-      "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.12)",
     background:
       "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
-    boxShadow:
-      "0 18px 44px rgba(0,0,0,0.34)",
+    boxShadow: "0 18px 44px rgba(0,0,0,0.34)",
     overflow: "hidden",
     scrollSnapAlign: "start",
     backdropFilter: "blur(14px)",
   };
 }
 
-function actionButtonStyle(
-  primary = false
-): CSSProperties {
+function actionButtonStyle(primary = false): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
@@ -255,17 +215,14 @@ function socialBadgeStyle(): CSSProperties {
     width: "fit-content",
     padding: "6px 9px",
     borderRadius: 999,
-    border:
-      "1px solid rgba(0,255,190,0.22)",
+    border: "1px solid rgba(0,255,190,0.22)",
     background: "rgba(0,255,190,0.10)",
     fontSize: 11,
     fontWeight: 850,
   };
 }
 
-function sectionCardStyle(
-  highlight = false
-): CSSProperties {
+function sectionCardStyle(highlight = false): CSSProperties {
   return {
     display: "grid",
     gap: 8,
@@ -297,18 +254,10 @@ function ParticipantCard({
   member: EventParticipant;
   officialEventUrl?: string;
 }) {
-  const photo = normalizeText(
-    member.club_photo_url
-  );
-
-  const genres = (
-    member.favorite_genres || []
-  ).slice(0, 3);
-
-  const state = getStateFromCityBase(
-    member.city_base
-  );
-
+  const photo = normalizeText(member.club_photo_url);
+  const genres = (member.favorite_genres || []).slice(0, 3);
+  const tribe = getClubberTribe(member.favorite_genres || []);
+  const state = getStateFromCityBase(member.city_base);
   const region = getRegionFromState(state);
 
   return (
@@ -331,8 +280,7 @@ function ParticipantCard({
             left: 14,
             right: 14,
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
             gap: 10,
           }}
@@ -341,10 +289,8 @@ function ParticipantCard({
             style={{
               padding: "7px 10px",
               borderRadius: 999,
-              border:
-                "1px solid rgba(0,255,190,0.30)",
-              background:
-                "rgba(0,0,0,0.48)",
+              border: "1px solid rgba(0,255,190,0.30)",
+              background: "rgba(0,0,0,0.48)",
               color: "#fff",
               fontSize: 11,
               fontWeight: 900,
@@ -358,15 +304,12 @@ function ParticipantCard({
               style={{
                 padding: "7px 10px",
                 borderRadius: 999,
-                border:
-                  "1px solid rgba(255,255,255,0.18)",
-                background:
-                  "rgba(0,0,0,0.55)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(0,0,0,0.55)",
                 color: "#00ffbe",
                 fontSize: 11,
                 fontWeight: 900,
-                boxShadow:
-                  "0 0 18px rgba(0,255,190,0.22)",
+                boxShadow: "0 0 18px rgba(0,255,190,0.22)",
               }}
             >
               {`${member.compatibilityScore}% compatível`}
@@ -415,6 +358,24 @@ function ParticipantCard({
           gap: 14,
         }}
       >
+        <div style={sectionCardStyle(true)}>
+          <div style={sectionTitleStyle()}>
+            Tribo
+          </div>
+
+          <span
+            style={{
+              ...socialBadgeStyle(),
+              background:
+                "linear-gradient(135deg, rgba(0,255,190,0.16), rgba(125,92,255,0.18))",
+              border: "1px solid rgba(0,255,190,0.28)",
+              boxShadow: "0 0 18px rgba(0,255,190,0.10)",
+            }}
+          >
+            {tribe}
+          </span>
+        </div>
+
         {member.club_tagline ? (
           <p
             style={{
@@ -441,26 +402,20 @@ function ParticipantCard({
             }}
           >
             {member.city_base ? (
-              <span
-                style={socialBadgeStyle()}
-              >
+              <span style={socialBadgeStyle()}>
                 {member.city_base}
               </span>
             ) : null}
 
             {region ? (
-              <span
-                style={socialBadgeStyle()}
-              >
+              <span style={socialBadgeStyle()}>
                 {region}
               </span>
             ) : null}
           </div>
         </div>
 
-        <div
-          style={sectionCardStyle(true)}
-        >
+        <div style={sectionCardStyle(true)}>
           <div style={sectionTitleStyle()}>
             Afinidade social
           </div>
@@ -476,40 +431,32 @@ function ParticipantCard({
               <span
                 style={{
                   ...socialBadgeStyle(),
-                  background:
-                    "rgba(0,255,190,0.12)",
-                  border:
-                    "1px solid rgba(0,255,190,0.22)",
+                  background: "rgba(0,255,190,0.12)",
+                  border: "1px solid rgba(0,255,190,0.22)",
                 }}
               >
                 {`${member.compatibilityScore}% compatível`}
               </span>
             ) : null}
 
-            {member.compatibilityBadges?.map(
-              (badge) => (
-                <span
-                  key={badge}
-                  style={{
-                    ...socialBadgeStyle(),
-                    background:
-                      "rgba(125,92,255,0.16)",
-                    border:
-                      "1px solid rgba(125,92,255,0.22)",
-                  }}
-                >
-                  {badge}
-                </span>
-              )
-            )}
+            {member.compatibilityBadges?.map((badge) => (
+              <span
+                key={badge}
+                style={{
+                  ...socialBadgeStyle(),
+                  background: "rgba(125,92,255,0.16)",
+                  border: "1px solid rgba(125,92,255,0.22)",
+                }}
+              >
+                {badge}
+              </span>
+            ))}
           </div>
         </div>
 
         {genres.length > 0 ? (
           <div style={sectionCardStyle()}>
-            <div
-              style={sectionTitleStyle()}
-            >
+            <div style={sectionTitleStyle()}>
               Vertentes
             </div>
 
@@ -521,10 +468,7 @@ function ParticipantCard({
               }}
             >
               {genres.map((genre) => (
-                <span
-                  key={genre}
-                  style={socialBadgeStyle()}
-                >
+                <span key={genre} style={socialBadgeStyle()}>
                   {genre}
                 </span>
               ))}
@@ -535,36 +479,22 @@ function ParticipantCard({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "1fr 1fr",
+            gridTemplateColumns: "1fr 1fr",
             gap: 10,
             marginTop: 2,
           }}
         >
           <Link
             href={`/${member.slug}?mode=club`}
-            style={actionButtonStyle(
-              true
-            )}
+            style={actionButtonStyle(true)}
           >
             Ver perfil
           </Link>
 
           <a
-            href={
-              officialEventUrl ||
-              `/${member.slug}?mode=club`
-            }
-            target={
-              officialEventUrl
-                ? "_blank"
-                : undefined
-            }
-            rel={
-              officialEventUrl
-                ? "noopener noreferrer"
-                : undefined
-            }
+            href={officialEventUrl || `/${member.slug}?mode=club`}
+            target={officialEventUrl ? "_blank" : undefined}
+            rel={officialEventUrl ? "noopener noreferrer" : undefined}
             style={actionButtonStyle()}
           >
             Evento
@@ -574,6 +504,7 @@ function ParticipantCard({
     </article>
   );
 }
+
 export default function EventParticipantsFilter({
   attendees,
   officialEventUrl,
@@ -592,7 +523,13 @@ export default function EventParticipantsFilter({
 
   const cities = useMemo(
     () =>
-      Array.from(new Set(socialParticipants.map((member) => normalizeText(member.city_base)).filter(Boolean)))
+      Array.from(
+        new Set(
+          socialParticipants
+            .map((member) => normalizeText(member.city_base))
+            .filter(Boolean)
+        )
+      )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 40),
     [socialParticipants]
@@ -600,7 +537,13 @@ export default function EventParticipantsFilter({
 
   const states = useMemo(
     () =>
-      Array.from(new Set(socialParticipants.map((member) => getStateFromCityBase(member.city_base)).filter(Boolean)))
+      Array.from(
+        new Set(
+          socialParticipants
+            .map((member) => getStateFromCityBase(member.city_base))
+            .filter(Boolean)
+        )
+      )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 27),
     [socialParticipants]
@@ -608,7 +551,13 @@ export default function EventParticipantsFilter({
 
   const regions = useMemo(
     () =>
-      Array.from(new Set(states.map((state) => getRegionFromState(state)).filter(Boolean)))
+      Array.from(
+        new Set(
+          states
+            .map((state) => getRegionFromState(state))
+            .filter(Boolean)
+        )
+      )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 5),
     [states]
