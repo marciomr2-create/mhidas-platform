@@ -2,7 +2,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 type EventParticipant = {
@@ -50,6 +50,7 @@ type HotConnectionMeta = {
 
 type ConnectionUiState =
   | "idle"
+  | "checking"
   | "sending"
   | "outgoing_pending"
   | "incoming_pending"
@@ -359,7 +360,21 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
   };
 }
 
+function mapApiConnectionState(value: string): ConnectionUiState {
+  const normalized = normalizeText(value).toLowerCase();
+
+  if (normalized === "self") return "self";
+  if (normalized === "outgoing_pending") return "outgoing_pending";
+  if (normalized === "incoming_pending") return "incoming_pending";
+  if (normalized === "connected") return "connected";
+  if (normalized === "blocked") return "blocked";
+  if (normalized === "suspended") return "suspended";
+
+  return "idle";
+}
+
 function getConnectionLabel(state: ConnectionUiState): string {
+  if (state === "checking") return "Verificando...";
   if (state === "sending") return "Enviando...";
   if (state === "outgoing_pending") return "Solicitação enviada";
   if (state === "incoming_pending") return "Solicitação recebida";
@@ -367,13 +382,17 @@ function getConnectionLabel(state: ConnectionUiState): string {
   if (state === "unauthorized") return "Faça login para conectar";
   if (state === "blocked") return "Conexão bloqueada";
   if (state === "suspended") return "Conexão suspensa";
-  if (state === "self") return "Seu próprio perfil";
+  if (state === "self") return "Você está neste evento";
   if (state === "error") return "Tentar novamente";
 
   return "Quero conectar";
 }
 
 function getConnectionFeedback(state: ConnectionUiState): string {
+  if (state === "checking") {
+    return "Verificando se já existe uma conexão entre vocês.";
+  }
+
   if (state === "outgoing_pending") {
     return "Pedido enviado. Após o aceite, vocês poderão combinar conversa, grupo, carona ou encontro.";
   }
@@ -399,7 +418,7 @@ function getConnectionFeedback(state: ConnectionUiState): string {
   }
 
   if (state === "self") {
-    return "Este card pertence ao seu próprio usuário.";
+    return "Outros clubbers poderão encontrar você por afinidade neste evento.";
   }
 
   if (state === "error") {
@@ -411,6 +430,7 @@ function getConnectionFeedback(state: ConnectionUiState): string {
 
 function isConnectionButtonDisabled(state: ConnectionUiState): boolean {
   return [
+    "checking",
     "sending",
     "outgoing_pending",
     "incoming_pending",
@@ -421,7 +441,6 @@ function isConnectionButtonDisabled(state: ConnectionUiState): boolean {
     "self",
   ].includes(state);
 }
-
 function chipStyle(active = false): CSSProperties {
   return {
     display: "inline-flex",
@@ -517,7 +536,9 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
         ? "1px solid rgba(255,85,118,0.42)"
         : `1px solid ${PREMIUM.radarBorder}`,
     background:
-      state === "outgoing_pending" || state === "connected"
+      state === "checking"
+        ? "linear-gradient(135deg, rgba(124,92,255,0.12), rgba(47,128,255,0.10))"
+        : state === "outgoing_pending" || state === "connected"
         ? "linear-gradient(135deg, rgba(0,245,200,0.16), rgba(124,92,255,0.14))"
         : state === "error"
         ? "linear-gradient(135deg, rgba(255,85,118,0.16), rgba(255,255,255,0.04))"
@@ -1015,8 +1036,7 @@ function ConnectionActionPanel({
       color: PREMIUM.violet,
     },
   ];
-
-  return (
+    return (
     <div
       style={{
         display: "grid",
@@ -1047,6 +1067,14 @@ function ConnectionActionPanel({
         >
           {sandboxParticipant
             ? "Veja como a conexão funcionará"
+            : connectionState === "connected"
+            ? "Conexão já aprovada"
+            : connectionState === "outgoing_pending"
+            ? "Aguardando aceite"
+            : connectionState === "incoming_pending"
+            ? "Solicitação recebida"
+            : connectionState === "self"
+            ? "Seu perfil aparece no radar"
             : "Comece uma conexão com segurança"}
         </strong>
       </div>
@@ -1150,7 +1178,7 @@ function ConnectionActionPanel({
                   lineHeight: 1.1,
                 }}
               >
-                Após aceite
+                Após conexão
               </small>
             </span>
           </div>
@@ -1300,6 +1328,65 @@ function ParticipantCard({
       return true;
     })
     .slice(0, 4);
+
+  useEffect(() => {
+    if (sandboxParticipant || !member.user_id) {
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadConnectionStatus() {
+      setConnectionState("checking");
+      setConnectionFeedback(getConnectionFeedback("checking"));
+
+      try {
+        const response = await fetch(
+          `/api/network/connections/status?targetUserId=${encodeURIComponent(member.user_id)}`,
+          {
+            method: "GET",
+          }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (ignore) {
+          return;
+        }
+
+        const code = normalizeText(data?.code);
+        const apiState = normalizeText(data?.state);
+
+        if (response.status === 401 || code === "UNAUTHORIZED") {
+          setConnectionState("unauthorized");
+          setConnectionFeedback(getConnectionFeedback("unauthorized"));
+          return;
+        }
+
+        if (data?.ok) {
+          const nextState = mapApiConnectionState(apiState);
+
+          setConnectionState(nextState);
+          setConnectionFeedback(getConnectionFeedback(nextState));
+          return;
+        }
+
+        setConnectionState("idle");
+        setConnectionFeedback(getConnectionFeedback("idle"));
+      } catch {
+        if (!ignore) {
+          setConnectionState("idle");
+          setConnectionFeedback(getConnectionFeedback("idle"));
+        }
+      }
+    }
+
+    loadConnectionStatus();
+
+    return () => {
+      ignore = true;
+    };
+  }, [member.user_id, sandboxParticipant]);
 
   async function handleConnectionRequest() {
     if (sandboxParticipant || isConnectionButtonDisabled(connectionState)) {
@@ -2119,3 +2206,6 @@ export default function EventParticipantsFilter({
     </>
   );
 }
+
+
+
