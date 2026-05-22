@@ -164,14 +164,18 @@ function getRegionFromState(state: string): string {
   if (["PR", "SC", "RS"].includes(uf)) return "Sul";
   if (["SP", "RJ", "MG", "ES"].includes(uf)) return "Sudeste";
   if (["DF", "GO", "MT", "MS"].includes(uf)) return "Centro-Oeste";
-  if (["BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"].includes(uf)) return "Nordeste";
+  if (["BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"].includes(uf)) {
+    return "Nordeste";
+  }
   if (["AM", "PA", "AC", "RO", "RR", "AP", "TO"].includes(uf)) return "Norte";
 
   return "";
 }
 
 function getClubberTribe(genres: string[]): string {
-  const normalizedGenres = genres.map((genre) => normalizeText(genre).toLowerCase());
+  const normalizedGenres = genres.map((genre) =>
+    normalizeText(genre).toLowerCase()
+  );
 
   if (normalizedGenres.some((genre) => genre.includes("hard techno"))) {
     return "🏴 Hard Techno Tribe";
@@ -314,7 +318,8 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
     return {
       label: "Conexão muito quente",
       shortLabel: "Muito quente",
-      description: "Alta chance de afinidade real por música, região e presença social.",
+      description:
+        "Alta chance de afinidade real por música, região e presença social.",
       border: `1px solid ${PREMIUM.radarBorder}`,
       background:
         "linear-gradient(135deg, rgba(0,245,200,0.12), rgba(47,128,255,0.14), rgba(124,92,255,0.16))",
@@ -340,7 +345,8 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
     return {
       label: "Boa afinidade",
       shortLabel: "Boa",
-      description: "Existe potencial de conexão, principalmente pelo evento e preferências.",
+      description:
+        "Existe potencial de conexão, principalmente pelo evento e preferências.",
       border: "1px solid rgba(124,92,255,0.32)",
       background:
         "linear-gradient(135deg, rgba(124,92,255,0.16), rgba(47,128,255,0.08), rgba(255,255,255,0.035))",
@@ -352,14 +358,14 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
   return {
     label: "Afinidade inicial",
     shortLabel: "Inicial",
-    description: "Conexão inicial pelo evento, ainda com poucos sinais de compatibilidade.",
+    description:
+      "Conexão inicial pelo evento, ainda com poucos sinais de compatibilidade.",
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.045)",
     color: "rgba(255,255,255,0.78)",
     glow: "none",
   };
 }
-
 function mapApiConnectionState(value: string): ConnectionUiState {
   const normalized = normalizeText(value).toLowerCase();
 
@@ -394,15 +400,15 @@ function getConnectionFeedback(state: ConnectionUiState): string {
   }
 
   if (state === "outgoing_pending") {
-    return "Pedido enviado. Após o aceite, vocês poderão combinar conversa, grupo, carona ou encontro.";
+    return "Pedido enviado. Os caminhos sociais serão liberados após o aceite.";
   }
 
   if (state === "incoming_pending") {
-    return "Esta pessoa já enviou uma solicitação para você. Ao aceitar, os caminhos de contato poderão ser liberados.";
+    return "Esta pessoa já enviou uma solicitação. Aceite para liberar conversa, grupo, carona ou encontro.";
   }
 
   if (state === "connected") {
-    return "Conexão aprovada. A próxima camada poderá liberar canais como WhatsApp, Instagram, grupos ou carona.";
+    return "Conexão aprovada. Os caminhos sociais entre vocês já podem ser combinados com mais segurança.";
   }
 
   if (state === "unauthorized") {
@@ -425,7 +431,7 @@ function getConnectionFeedback(state: ConnectionUiState): string {
     return "Não foi possível enviar agora. Tente novamente em instantes.";
   }
 
-  return "Solicite conexão. O contato direto só será liberado após o aceite da outra pessoa.";
+  return "Solicite conexão para liberar conversa, grupo, carona ou encontro após o aceite.";
 }
 
 function isConnectionButtonDisabled(state: ConnectionUiState): boolean {
@@ -441,6 +447,40 @@ function isConnectionButtonDisabled(state: ConnectionUiState): boolean {
     "self",
   ].includes(state);
 }
+
+function canUnlockSocialPaths(state: ConnectionUiState): boolean {
+  return state === "connected";
+}
+
+function getSocialPathStatusLabel(state: ConnectionUiState): string {
+  if (state === "connected") return "Liberado";
+  if (state === "self") return "Para outros clubbers";
+  if (state === "outgoing_pending") return "Aguardando aceite";
+  if (state === "incoming_pending") return "Aceite para liberar";
+  if (state === "checking") return "Verificando";
+  if (state === "unauthorized") return "Login necessário";
+  if (state === "blocked" || state === "suspended") return "Indisponível";
+
+  return "Após conexão";
+}
+
+function getConnectionActionTitle(
+  state: ConnectionUiState,
+  sandboxParticipant: boolean
+): string {
+  if (sandboxParticipant) return "Veja como a conexão funcionará";
+  if (state === "connected") return "Caminhos sociais liberados";
+  if (state === "outgoing_pending") return "Aguardando aceite";
+  if (state === "incoming_pending") return "Solicitação recebida";
+  if (state === "self") return "Seu perfil aparece no radar";
+  if (state === "unauthorized") return "Entre para conectar";
+  if (state === "blocked") return "Conexão bloqueada";
+  if (state === "suspended") return "Conexão suspensa";
+  if (state === "checking") return "Consultando status da conexão";
+
+  return "Solicite conexão para liberar";
+}
+
 function chipStyle(active = false): CSSProperties {
   return {
     display: "inline-flex",
@@ -551,7 +591,10 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
     fontSize: 13,
     fontWeight: 950,
     cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled && state !== "outgoing_pending" && state !== "connected" ? 0.72 : 1,
+    opacity:
+      disabled && state !== "outgoing_pending" && state !== "connected"
+        ? 0.72
+        : 1,
     boxShadow:
       state === "outgoing_pending" || state === "connected"
         ? "0 0 20px rgba(0,245,200,0.12)"
@@ -670,7 +713,8 @@ function VisualInteractionGuide() {
             lineHeight: 1.45,
           }}
         >
-          Primeiro vem a afinidade. Depois vem o aceite. Só então os caminhos sociais são liberados.
+          Primeiro vem a afinidade. Depois vem o aceite. Só então os caminhos
+          sociais são liberados.
         </span>
       </div>
 
@@ -682,7 +726,10 @@ function VisualInteractionGuide() {
         }}
       >
         {steps.map((step) => (
-          <div key={step.title} style={visualTileStyle(step.title === "Conectar")}>
+          <div
+            key={step.title}
+            style={visualTileStyle(step.title === "Conectar")}
+          >
             <span
               style={{
                 width: 30,
@@ -693,7 +740,10 @@ function VisualInteractionGuide() {
                 borderRadius: 999,
                 border: "1px solid rgba(255,255,255,0.12)",
                 background: "rgba(0,0,0,0.26)",
-                color: step.title === "Conectar" ? PREMIUM.radar : "rgba(255,255,255,0.84)",
+                color:
+                  step.title === "Conectar"
+                    ? PREMIUM.radar
+                    : "rgba(255,255,255,0.84)",
                 fontSize: 14,
                 fontWeight: 950,
               }}
@@ -800,7 +850,6 @@ function TribePill({
     </div>
   );
 }
-
 function HotConnectionCard({
   member,
   onSelectHot,
@@ -1014,6 +1063,11 @@ function ConnectionActionPanel({
   connectionFeedback: string;
   onConnect: () => void;
 }) {
+  const unlocked = canUnlockSocialPaths(connectionState);
+  const statusLabel = sandboxParticipant
+    ? "Exemplo"
+    : getSocialPathStatusLabel(connectionState);
+
   const socialPaths = [
     {
       title: "Conversa",
@@ -1036,16 +1090,20 @@ function ConnectionActionPanel({
       color: PREMIUM.violet,
     },
   ];
-    return (
+
+  return (
     <div
       style={{
         display: "grid",
         gap: 11,
         padding: 12,
         borderRadius: 18,
-        border: "1px solid rgba(124,92,255,0.22)",
-        background:
-          "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.07), rgba(0,245,200,0.045))",
+        border: unlocked
+          ? `1px solid ${PREMIUM.radarBorder}`
+          : "1px solid rgba(124,92,255,0.22)",
+        background: unlocked
+          ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(47,128,255,0.08), rgba(124,92,255,0.10))"
+          : "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.07), rgba(0,245,200,0.045))",
       }}
     >
       <div
@@ -1065,17 +1123,7 @@ function ConnectionActionPanel({
             lineHeight: 1.25,
           }}
         >
-          {sandboxParticipant
-            ? "Veja como a conexão funcionará"
-            : connectionState === "connected"
-            ? "Conexão já aprovada"
-            : connectionState === "outgoing_pending"
-            ? "Aguardando aceite"
-            : connectionState === "incoming_pending"
-            ? "Solicitação recebida"
-            : connectionState === "self"
-            ? "Seu perfil aparece no radar"
-            : "Comece uma conexão com segurança"}
+          {getConnectionActionTitle(connectionState, sandboxParticipant)}
         </strong>
       </div>
 
@@ -1112,7 +1160,7 @@ function ConnectionActionPanel({
         }}
       >
         {sandboxParticipant
-          ? "Em perfis reais, o usuário envia uma solicitação. Após o aceite, poderá combinar conversa, grupo, carona ou encontro."
+          ? "Em perfis reais, o usuário envia uma solicitação. Após a conexão, poderá combinar conversa, grupo, carona ou encontro."
           : connectionFeedback}
       </span>
 
@@ -1132,8 +1180,16 @@ function ConnectionActionPanel({
               gap: 7,
               padding: "8px 9px",
               borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.09)",
-              background: "rgba(0,0,0,0.20)",
+              border: unlocked
+                ? "1px solid rgba(0,245,200,0.18)"
+                : "1px solid rgba(255,255,255,0.09)",
+              background: unlocked
+                ? "rgba(0,245,200,0.055)"
+                : "rgba(0,0,0,0.20)",
+              opacity:
+                unlocked || connectionState === "self" || sandboxParticipant
+                  ? 1
+                  : 0.72,
             }}
           >
             <span
@@ -1145,8 +1201,10 @@ function ConnectionActionPanel({
                 justifyContent: "center",
                 borderRadius: 999,
                 background: "rgba(0,0,0,0.28)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: item.color,
+                border: unlocked
+                  ? "1px solid rgba(0,245,200,0.20)"
+                  : "1px solid rgba(255,255,255,0.08)",
+                color: unlocked ? PREMIUM.radar : item.color,
                 fontSize: 11,
                 fontWeight: 950,
               }}
@@ -1172,13 +1230,15 @@ function ConnectionActionPanel({
 
               <small
                 style={{
-                  color: "rgba(255,255,255,0.54)",
+                  color: unlocked
+                    ? PREMIUM.radar
+                    : "rgba(255,255,255,0.54)",
                   fontSize: 9,
                   fontWeight: 800,
                   lineHeight: 1.1,
                 }}
               >
-                Após conexão
+                {statusLabel}
               </small>
             </span>
           </div>
@@ -1342,7 +1402,9 @@ function ParticipantCard({
 
       try {
         const response = await fetch(
-          `/api/network/connections/status?targetUserId=${encodeURIComponent(member.user_id)}`,
+          `/api/network/connections/status?targetUserId=${encodeURIComponent(
+            member.user_id
+          )}`,
           {
             method: "GET",
           }
@@ -1708,7 +1770,8 @@ export default function EventParticipantsFilter({
   const [activeGroup, setActiveGroup] = useState<FilterGroup>("none");
 
   const socialParticipants: EventParticipant[] = useMemo(
-    () => (DEV_SOCIAL_SANDBOX ? [...attendees, ...MOCK_PARTICIPANTS] : attendees),
+    () =>
+      DEV_SOCIAL_SANDBOX ? [...attendees, ...MOCK_PARTICIPANTS] : attendees,
     [attendees]
   );
 
@@ -1743,11 +1806,7 @@ export default function EventParticipantsFilter({
   const regions = useMemo(
     () =>
       Array.from(
-        new Set(
-          states
-            .map((state) => getRegionFromState(state))
-            .filter(Boolean)
-        )
+        new Set(states.map((state) => getRegionFromState(state)).filter(Boolean))
       )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 5),
@@ -1798,10 +1857,7 @@ export default function EventParticipantsFilter({
 
       const socialMode = normalizeText(member.event_social_mode).toLowerCase();
 
-      if (
-        socialMode &&
-        !badges.includes("Presença social ativa")
-      ) {
+      if (socialMode && !badges.includes("Presença social ativa")) {
         score += 10;
         badges.push("Presença social ativa");
       }
@@ -2131,7 +2187,15 @@ export default function EventParticipantsFilter({
               background: "rgba(255,255,255,0.035)",
             }}
           >
-            <div style={{ fontSize: 11, fontWeight: 900, opacity: 0.66, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 900,
+                opacity: 0.66,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
               {activeGroup === "cities"
                 ? "Cidades"
                 : activeGroup === "states"
@@ -2144,7 +2208,12 @@ export default function EventParticipantsFilter({
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {activeGroup === "cities"
                 ? cities.map((city) => (
-                    <button key={`filter-city-${city}`} type="button" onClick={() => selectFilter("city", city)} style={chipStyle(mode === "city" && value === city)}>
+                    <button
+                      key={`filter-city-${city}`}
+                      type="button"
+                      onClick={() => selectFilter("city", city)}
+                      style={chipStyle(mode === "city" && value === city)}
+                    >
                       {city}
                     </button>
                   ))
@@ -2152,7 +2221,12 @@ export default function EventParticipantsFilter({
 
               {activeGroup === "states"
                 ? states.map((state) => (
-                    <button key={`filter-state-${state}`} type="button" onClick={() => selectFilter("state", state)} style={chipStyle(mode === "state" && value === state)}>
+                    <button
+                      key={`filter-state-${state}`}
+                      type="button"
+                      onClick={() => selectFilter("state", state)}
+                      style={chipStyle(mode === "state" && value === state)}
+                    >
                       {state}
                     </button>
                   ))
@@ -2160,7 +2234,12 @@ export default function EventParticipantsFilter({
 
               {activeGroup === "regions"
                 ? regions.map((region) => (
-                    <button key={`filter-region-${region}`} type="button" onClick={() => selectFilter("region", region)} style={chipStyle(mode === "region" && value === region)}>
+                    <button
+                      key={`filter-region-${region}`}
+                      type="button"
+                      onClick={() => selectFilter("region", region)}
+                      style={chipStyle(mode === "region" && value === region)}
+                    >
                       {region}
                     </button>
                   ))
@@ -2168,7 +2247,12 @@ export default function EventParticipantsFilter({
 
               {activeGroup === "genres"
                 ? genres.map((genre) => (
-                    <button key={`filter-genre-${genre}`} type="button" onClick={() => selectFilter("genre", genre)} style={chipStyle(mode === "genre" && value === genre)}>
+                    <button
+                      key={`filter-genre-${genre}`}
+                      type="button"
+                      onClick={() => selectFilter("genre", genre)}
+                      style={chipStyle(mode === "genre" && value === genre)}
+                    >
                       {genre}
                     </button>
                   ))
@@ -2178,7 +2262,14 @@ export default function EventParticipantsFilter({
         ) : null}
       </div>
 
-      <div style={{ marginBottom: 10, fontSize: 12, opacity: 0.82, fontWeight: 750 }}>
+      <div
+        style={{
+          marginBottom: 10,
+          fontSize: 12,
+          opacity: 0.82,
+          fontWeight: 750,
+        }}
+      >
         {mode === "hot"
           ? filtered.length === 1
             ? "1 conexão quente no radar"
@@ -2206,6 +2297,3 @@ export default function EventParticipantsFilter({
     </>
   );
 }
-
-
-
