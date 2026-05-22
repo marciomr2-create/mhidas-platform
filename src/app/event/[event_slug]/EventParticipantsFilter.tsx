@@ -48,7 +48,39 @@ type HotConnectionMeta = {
   glow: string;
 };
 
+type ConnectionUiState =
+  | "idle"
+  | "sending"
+  | "outgoing_pending"
+  | "incoming_pending"
+  | "connected"
+  | "unauthorized"
+  | "blocked"
+  | "suspended"
+  | "self"
+  | "error";
+
 const DEV_SOCIAL_SANDBOX = true;
+
+const PREMIUM = {
+  bg: "#05050A",
+  surface: "rgba(17,17,26,0.86)",
+  surfaceStrong: "rgba(24,24,39,0.82)",
+  violet: "#7C5CFF",
+  violetSoft: "rgba(124,92,255,0.18)",
+  blue: "#2F80FF",
+  blueSoft: "rgba(47,128,255,0.16)",
+  radar: "#00F5C8",
+  radarSoft: "rgba(0,245,200,0.12)",
+  radarBorder: "rgba(0,245,200,0.26)",
+  amber: "#FFBC58",
+  amberSoft: "rgba(255,188,88,0.14)",
+  pink: "#FF5576",
+  whiteBorder: "rgba(255,255,255,0.10)",
+  whiteBorderStrong: "rgba(255,255,255,0.16)",
+  textMuted: "rgba(255,255,255,0.68)",
+  textSoft: "rgba(255,255,255,0.78)",
+};
 
 const MOCK_PARTICIPANTS: EventParticipant[] = [
   {
@@ -56,8 +88,7 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
     label: "Lia Santos",
     slug: "sandbox-lia-santos",
     city_base: "São Paulo - SP",
-    club_tagline:
-      "House, pista boa e conexões leves antes do evento.",
+    club_tagline: "House, pista boa e conexões leves antes do evento.",
     club_photo_url:
       "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80",
     favorite_genres: ["House", "Tech House", "Deep House"],
@@ -70,8 +101,7 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
     label: "Rafa Nunes",
     slug: "sandbox-rafa-nunes",
     city_base: "Curitiba - PR",
-    club_tagline:
-      "Progressive House, viagens de festival e energia boa.",
+    club_tagline: "Progressive House, viagens de festival e energia boa.",
     club_photo_url:
       "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=80",
     favorite_genres: ["Progressive House", "Melodic Techno", "House"],
@@ -84,8 +114,7 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
     label: "Bruno Costa",
     slug: "sandbox-bruno-costa",
     city_base: "Florianópolis - SC",
-    club_tagline:
-      "Busco minha tribo para after, carona e pista.",
+    club_tagline: "Busco minha tribo para after, carona e pista.",
     club_photo_url:
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80",
     favorite_genres: ["Techno", "Melodic Techno", "Progressive House"],
@@ -178,9 +207,9 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Hard Techno",
       description: "Energia intensa, pista pesada e conexão de alta presença.",
       gradient:
-        "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(20,20,28,0.88))",
-      border: "1px solid rgba(255,255,255,0.22)",
-      glow: "0 0 28px rgba(255,255,255,0.10)",
+        "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(12,12,20,0.92))",
+      border: "1px solid rgba(255,255,255,0.18)",
+      glow: "0 0 28px rgba(255,255,255,0.08)",
       accent: "#ffffff",
     };
   }
@@ -192,10 +221,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Techno",
       description: "Grave, atmosfera escura e identidade forte de pista.",
       gradient:
-        "linear-gradient(135deg, rgba(0,255,190,0.20), rgba(9,10,18,0.88))",
-      border: "1px solid rgba(0,255,190,0.34)",
-      glow: "0 0 30px rgba(0,255,190,0.16)",
-      accent: "#00ffbe",
+        "linear-gradient(135deg, rgba(47,128,255,0.18), rgba(124,92,255,0.18), rgba(9,10,18,0.90))",
+      border: "1px solid rgba(124,92,255,0.34)",
+      glow: "0 0 30px rgba(47,128,255,0.14)",
+      accent: PREMIUM.radar,
     };
   }
 
@@ -206,10 +235,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Progressive",
       description: "Viagem melódica, conexão emocional e espírito de festival.",
       gradient:
-        "linear-gradient(135deg, rgba(125,92,255,0.28), rgba(9,10,18,0.88))",
-      border: "1px solid rgba(125,92,255,0.38)",
-      glow: "0 0 30px rgba(125,92,255,0.18)",
-      accent: "#9b7cff",
+        "linear-gradient(135deg, rgba(124,92,255,0.30), rgba(47,128,255,0.12), rgba(9,10,18,0.90))",
+      border: "1px solid rgba(124,92,255,0.42)",
+      glow: "0 0 30px rgba(124,92,255,0.18)",
+      accent: "#9B7CFF",
     };
   }
 
@@ -220,10 +249,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Melodic",
       description: "Atmosfera emocional, synths profundos e encontro sensorial.",
       gradient:
-        "linear-gradient(135deg, rgba(196,124,255,0.24), rgba(9,10,18,0.88))",
+        "linear-gradient(135deg, rgba(196,124,255,0.24), rgba(47,128,255,0.12), rgba(9,10,18,0.90))",
       border: "1px solid rgba(196,124,255,0.34)",
       glow: "0 0 30px rgba(196,124,255,0.16)",
-      accent: "#c47cff",
+      accent: "#C47CFF",
     };
   }
 
@@ -234,10 +263,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "House",
       description: "Groove, alegria de pista e conexões sociais leves.",
       gradient:
-        "linear-gradient(135deg, rgba(255,188,88,0.24), rgba(9,10,18,0.88))",
-      border: "1px solid rgba(255,188,88,0.34)",
-      glow: "0 0 30px rgba(255,188,88,0.14)",
-      accent: "#ffbc58",
+        "linear-gradient(135deg, rgba(255,188,88,0.22), rgba(124,92,255,0.10), rgba(9,10,18,0.90))",
+      border: "1px solid rgba(255,188,88,0.32)",
+      glow: "0 0 28px rgba(255,188,88,0.12)",
+      accent: PREMIUM.amber,
     };
   }
 
@@ -248,10 +277,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Deep",
       description: "Sons elegantes, conexão mais intimista e pista sofisticada.",
       gradient:
-        "linear-gradient(135deg, rgba(62,176,255,0.22), rgba(9,10,18,0.88))",
-      border: "1px solid rgba(62,176,255,0.34)",
-      glow: "0 0 30px rgba(62,176,255,0.14)",
-      accent: "#3eb0ff",
+        "linear-gradient(135deg, rgba(47,128,255,0.22), rgba(124,92,255,0.12), rgba(9,10,18,0.90))",
+      border: "1px solid rgba(47,128,255,0.34)",
+      glow: "0 0 28px rgba(47,128,255,0.14)",
+      accent: "#3EB0FF",
     };
   }
 
@@ -261,10 +290,10 @@ function getTribeVisual(tribe: string): TribeVisual {
     shortName: "Festival",
     description: "Exploradores de eventos, encontros e novas experiências.",
     gradient:
-      "linear-gradient(135deg, rgba(255,85,118,0.24), rgba(9,10,18,0.88))",
-    border: "1px solid rgba(255,85,118,0.34)",
-    glow: "0 0 30px rgba(255,85,118,0.14)",
-    accent: "#ff5576",
+      "linear-gradient(135deg, rgba(255,85,118,0.22), rgba(124,92,255,0.12), rgba(9,10,18,0.90))",
+    border: "1px solid rgba(255,85,118,0.32)",
+    glow: "0 0 28px rgba(255,85,118,0.12)",
+    accent: PREMIUM.pink,
   };
 }
 
@@ -285,11 +314,11 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
       label: "Conexão muito quente",
       shortLabel: "Muito quente",
       description: "Alta chance de afinidade real por música, região e presença social.",
-      border: "1px solid rgba(0,255,190,0.48)",
+      border: `1px solid ${PREMIUM.radarBorder}`,
       background:
-        "linear-gradient(135deg, rgba(0,255,190,0.20), rgba(125,92,255,0.16))",
-      color: "#00ffbe",
-      glow: "0 0 28px rgba(0,255,190,0.20)",
+        "linear-gradient(135deg, rgba(0,245,200,0.12), rgba(47,128,255,0.14), rgba(124,92,255,0.16))",
+      color: PREMIUM.radar,
+      glow: "0 0 26px rgba(0,245,200,0.14)",
     };
   }
 
@@ -298,11 +327,11 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
       label: "Conexão quente",
       shortLabel: "Quente",
       description: "Boa combinação de vertentes, localização e intenção social.",
-      border: "1px solid rgba(255,188,88,0.42)",
+      border: "1px solid rgba(255,188,88,0.34)",
       background:
-        "linear-gradient(135deg, rgba(255,188,88,0.18), rgba(125,92,255,0.14))",
-      color: "#ffbc58",
-      glow: "0 0 24px rgba(255,188,88,0.16)",
+        "linear-gradient(135deg, rgba(255,188,88,0.13), rgba(124,92,255,0.16), rgba(47,128,255,0.10))",
+      color: PREMIUM.amber,
+      glow: "0 0 24px rgba(255,188,88,0.12)",
     };
   }
 
@@ -311,11 +340,11 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
       label: "Boa afinidade",
       shortLabel: "Boa",
       description: "Existe potencial de conexão, principalmente pelo evento e preferências.",
-      border: "1px solid rgba(125,92,255,0.34)",
+      border: "1px solid rgba(124,92,255,0.32)",
       background:
-        "linear-gradient(135deg, rgba(125,92,255,0.16), rgba(255,255,255,0.04))",
-      color: "#b8a4ff",
-      glow: "0 0 20px rgba(125,92,255,0.12)",
+        "linear-gradient(135deg, rgba(124,92,255,0.16), rgba(47,128,255,0.08), rgba(255,255,255,0.035))",
+      color: "#B8A4FF",
+      glow: "0 0 20px rgba(124,92,255,0.10)",
     };
   }
 
@@ -323,11 +352,74 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
     label: "Afinidade inicial",
     shortLabel: "Inicial",
     description: "Conexão inicial pelo evento, ainda com poucos sinais de compatibilidade.",
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.045)",
     color: "rgba(255,255,255,0.78)",
     glow: "none",
   };
+}
+
+function getConnectionLabel(state: ConnectionUiState): string {
+  if (state === "sending") return "Enviando...";
+  if (state === "outgoing_pending") return "Solicitação enviada";
+  if (state === "incoming_pending") return "Solicitação recebida";
+  if (state === "connected") return "Já conectado";
+  if (state === "unauthorized") return "Faça login para conectar";
+  if (state === "blocked") return "Conexão bloqueada";
+  if (state === "suspended") return "Conexão suspensa";
+  if (state === "self") return "Seu próprio perfil";
+  if (state === "error") return "Tentar novamente";
+
+  return "Quero conectar";
+}
+
+function getConnectionFeedback(state: ConnectionUiState): string {
+  if (state === "outgoing_pending") {
+    return "Pedido enviado. Após o aceite, vocês poderão combinar conversa, grupo, carona ou encontro.";
+  }
+
+  if (state === "incoming_pending") {
+    return "Esta pessoa já enviou uma solicitação para você. Ao aceitar, os caminhos de contato poderão ser liberados.";
+  }
+
+  if (state === "connected") {
+    return "Conexão aprovada. A próxima camada poderá liberar canais como WhatsApp, Instagram, grupos ou carona.";
+  }
+
+  if (state === "unauthorized") {
+    return "Entre na sua conta para solicitar conexão com este clubber.";
+  }
+
+  if (state === "blocked") {
+    return "Não é possível conectar devido a bloqueio de relacionamento.";
+  }
+
+  if (state === "suspended") {
+    return "Esta conexão está suspensa no momento.";
+  }
+
+  if (state === "self") {
+    return "Este card pertence ao seu próprio usuário.";
+  }
+
+  if (state === "error") {
+    return "Não foi possível enviar agora. Tente novamente em instantes.";
+  }
+
+  return "Solicite conexão. O contato direto só será liberado após o aceite da outra pessoa.";
+}
+
+function isConnectionButtonDisabled(state: ConnectionUiState): boolean {
+  return [
+    "sending",
+    "outgoing_pending",
+    "incoming_pending",
+    "connected",
+    "unauthorized",
+    "blocked",
+    "suspended",
+    "self",
+  ].includes(state);
 }
 
 function chipStyle(active = false): CSSProperties {
@@ -338,11 +430,11 @@ function chipStyle(active = false): CSSProperties {
     padding: "8px 11px",
     borderRadius: 999,
     border: active
-      ? "1px solid rgba(0,255,190,0.55)"
-      : "1px solid rgba(255,255,255,0.14)",
+      ? `1px solid ${PREMIUM.radarBorder}`
+      : "1px solid rgba(255,255,255,0.13)",
     background: active
-      ? "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.18))"
-      : "rgba(255,255,255,0.055)",
+      ? "linear-gradient(135deg, rgba(0,245,200,0.12), rgba(124,92,255,0.16))"
+      : "rgba(255,255,255,0.05)",
     color: "#fff",
     fontSize: 12,
     fontWeight: 850,
@@ -367,10 +459,10 @@ function profileCardStyle(): CSSProperties {
     maxWidth: 292,
     flex: "0 0 292px",
     borderRadius: 24,
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.11)",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
-    boxShadow: "0 18px 44px rgba(0,0,0,0.34)",
+      "linear-gradient(180deg, rgba(24,24,39,0.76), rgba(12,12,20,0.94))",
+    boxShadow: "0 18px 44px rgba(0,0,0,0.38)",
     overflow: "hidden",
     scrollSnapAlign: "start",
     backdropFilter: "blur(14px)",
@@ -386,11 +478,11 @@ function actionButtonStyle(primary = false): CSSProperties {
     padding: "11px 12px",
     borderRadius: 14,
     border: primary
-      ? "1px solid rgba(0,255,190,0.34)"
+      ? "1px solid rgba(124,92,255,0.34)"
       : "1px solid rgba(255,255,255,0.14)",
     background: primary
-      ? "linear-gradient(135deg, rgba(0,255,190,0.20), rgba(125,92,255,0.18))"
-      : "rgba(255,255,255,0.06)",
+      ? "linear-gradient(135deg, rgba(124,92,255,0.18), rgba(47,128,255,0.12))"
+      : "rgba(255,255,255,0.055)",
     color: "#fff",
     textDecoration: "none",
     fontSize: 12,
@@ -407,14 +499,54 @@ function disabledActionButtonStyle(primary = false): CSSProperties {
   };
 }
 
+function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
+  const disabled = isConnectionButtonDisabled(state);
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 46,
+    padding: "12px 14px",
+    borderRadius: 16,
+    border:
+      state === "outgoing_pending" || state === "connected"
+        ? `1px solid ${PREMIUM.radarBorder}`
+        : state === "error"
+        ? "1px solid rgba(255,85,118,0.42)"
+        : `1px solid ${PREMIUM.radarBorder}`,
+    background:
+      state === "outgoing_pending" || state === "connected"
+        ? "linear-gradient(135deg, rgba(0,245,200,0.16), rgba(124,92,255,0.14))"
+        : state === "error"
+        ? "linear-gradient(135deg, rgba(255,85,118,0.16), rgba(255,255,255,0.04))"
+        : "linear-gradient(135deg, rgba(0,245,200,0.15), rgba(47,128,255,0.12), rgba(124,92,255,0.14))",
+    color:
+      state === "outgoing_pending" || state === "connected"
+        ? PREMIUM.radar
+        : "#fff",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 950,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled && state !== "outgoing_pending" && state !== "connected" ? 0.72 : 1,
+    boxShadow:
+      state === "outgoing_pending" || state === "connected"
+        ? "0 0 20px rgba(0,245,200,0.12)"
+        : "0 0 18px rgba(124,92,255,0.10)",
+  };
+}
+
 function socialBadgeStyle(): CSSProperties {
   return {
     display: "inline-flex",
     width: "fit-content",
     padding: "6px 9px",
     borderRadius: 999,
-    border: "1px solid rgba(0,255,190,0.22)",
-    background: "rgba(0,255,190,0.10)",
+    border: "1px solid rgba(124,92,255,0.22)",
+    background: "rgba(124,92,255,0.12)",
+    color: "rgba(255,255,255,0.88)",
     fontSize: 11,
     fontWeight: 850,
   };
@@ -427,11 +559,11 @@ function sectionCardStyle(highlight = false): CSSProperties {
     padding: 12,
     borderRadius: 16,
     background: highlight
-      ? "rgba(125,92,255,0.06)"
-      : "rgba(255,255,255,0.03)",
+      ? "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.05))"
+      : "rgba(255,255,255,0.035)",
     border: highlight
-      ? "1px solid rgba(125,92,255,0.14)"
-      : "1px solid rgba(255,255,255,0.06)",
+      ? "1px solid rgba(124,92,255,0.18)"
+      : "1px solid rgba(255,255,255,0.07)",
   };
 }
 
@@ -443,6 +575,136 @@ function sectionTitleStyle(): CSSProperties {
     opacity: 0.66,
     textTransform: "uppercase",
   };
+}
+
+function visualTileStyle(active = false): CSSProperties {
+  return {
+    display: "grid",
+    gap: 5,
+    padding: 10,
+    borderRadius: 16,
+    border: active
+      ? `1px solid ${PREMIUM.radarBorder}`
+      : "1px solid rgba(255,255,255,0.10)",
+    background: active
+      ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(124,92,255,0.10))"
+      : "rgba(255,255,255,0.045)",
+    minHeight: 74,
+  };
+}
+
+function VisualInteractionGuide() {
+  const steps = [
+    {
+      icon: "◎",
+      title: "Encontrar",
+      text: "afinidades",
+    },
+    {
+      icon: "↗",
+      title: "Conectar",
+      text: "com aceite",
+    },
+    {
+      icon: "✓",
+      title: "Liberar",
+      text: "contato",
+    },
+    {
+      icon: "◇",
+      title: "Combinar",
+      text: "grupo ou encontro",
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 12,
+        marginBottom: 16,
+        padding: 14,
+        borderRadius: 22,
+        border: "1px solid rgba(124,92,255,0.24)",
+        background:
+          "linear-gradient(135deg, rgba(124,92,255,0.13), rgba(47,128,255,0.08), rgba(0,245,200,0.045))",
+        boxShadow: "0 0 28px rgba(124,92,255,0.10)",
+      }}
+    >
+      <div style={{ display: "grid", gap: 4 }}>
+        <strong
+          style={{
+            color: "#fff",
+            fontSize: 15,
+            lineHeight: 1.2,
+          }}
+        >
+          Como a conexão acontece
+        </strong>
+
+        <span
+          style={{
+            color: PREMIUM.textMuted,
+            fontSize: 12,
+            lineHeight: 1.45,
+          }}
+        >
+          Primeiro vem a afinidade. Depois vem o aceite. Só então os caminhos sociais são liberados.
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
+      >
+        {steps.map((step) => (
+          <div key={step.title} style={visualTileStyle(step.title === "Conectar")}>
+            <span
+              style={{
+                width: 30,
+                height: 30,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(0,0,0,0.26)",
+                color: step.title === "Conectar" ? PREMIUM.radar : "rgba(255,255,255,0.84)",
+                fontSize: 14,
+                fontWeight: 950,
+              }}
+            >
+              {step.icon}
+            </span>
+
+            <strong
+              style={{
+                color: "#fff",
+                fontSize: 12,
+                lineHeight: 1.15,
+              }}
+            >
+              {step.title}
+            </strong>
+
+            <span
+              style={{
+                color: "rgba(255,255,255,0.66)",
+                fontSize: 10,
+                lineHeight: 1.25,
+                fontWeight: 750,
+              }}
+            >
+              {step.text}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function TribePill({
@@ -720,6 +982,289 @@ function HotConnectionPanel({
   );
 }
 
+function ConnectionActionPanel({
+  sandboxParticipant,
+  connectionState,
+  connectionFeedback,
+  onConnect,
+}: {
+  sandboxParticipant: boolean;
+  connectionState: ConnectionUiState;
+  connectionFeedback: string;
+  onConnect: () => void;
+}) {
+  const socialPaths = [
+    {
+      title: "Conversa",
+      symbol: "●",
+      color: PREMIUM.radar,
+    },
+    {
+      title: "Grupo",
+      symbol: "◇",
+      color: PREMIUM.blue,
+    },
+    {
+      title: "Carona",
+      symbol: "↗",
+      color: PREMIUM.amber,
+    },
+    {
+      title: "Encontro",
+      symbol: "◎",
+      color: PREMIUM.violet,
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 11,
+        padding: 12,
+        borderRadius: 18,
+        border: "1px solid rgba(124,92,255,0.22)",
+        background:
+          "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.07), rgba(0,245,200,0.045))",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gap: 3,
+        }}
+      >
+        <span style={sectionTitleStyle()}>
+          Próximo passo
+        </span>
+
+        <strong
+          style={{
+            color: "#fff",
+            fontSize: 14,
+            lineHeight: 1.25,
+          }}
+        >
+          {sandboxParticipant
+            ? "Veja como a conexão funcionará"
+            : "Comece uma conexão com segurança"}
+        </strong>
+      </div>
+
+      {sandboxParticipant ? (
+        <span
+          aria-disabled="true"
+          title="Em perfis reais, este botão envia uma solicitação antes de liberar contato ou grupos."
+          style={{
+            ...disabledActionButtonStyle(true),
+            width: "100%",
+            minHeight: 46,
+            fontSize: 13,
+            fontWeight: 950,
+          }}
+        >
+          Exemplo de conexão
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          disabled={isConnectionButtonDisabled(connectionState)}
+          style={connectionButtonStyle(connectionState)}
+        >
+          {getConnectionLabel(connectionState)}
+        </button>
+      )}
+
+      <span
+        style={{
+          color: "rgba(255,255,255,0.68)",
+          fontSize: 11,
+          lineHeight: 1.45,
+        }}
+      >
+        {sandboxParticipant
+          ? "Em perfis reais, o usuário envia uma solicitação. Após o aceite, poderá combinar conversa, grupo, carona ou encontro."
+          : connectionFeedback}
+      </span>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+        }}
+      >
+        {socialPaths.map((item) => (
+          <div
+            key={item.title}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "8px 9px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.09)",
+              background: "rgba(0,0,0,0.20)",
+            }}
+          >
+            <span
+              style={{
+                width: 24,
+                height: 24,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 999,
+                background: "rgba(0,0,0,0.28)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: item.color,
+                fontSize: 11,
+                fontWeight: 950,
+              }}
+            >
+              {item.symbol}
+            </span>
+
+            <span
+              style={{
+                display: "grid",
+                gap: 1,
+              }}
+            >
+              <strong
+                style={{
+                  color: "#fff",
+                  fontSize: 11,
+                  lineHeight: 1.1,
+                }}
+              >
+                {item.title}
+              </strong>
+
+              <small
+                style={{
+                  color: "rgba(255,255,255,0.54)",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  lineHeight: 1.1,
+                }}
+              >
+                Após aceite
+              </small>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CompactAffinityGrid({
+  tribe,
+  city,
+  region,
+  genres,
+  badges,
+}: {
+  tribe: string;
+  city: string;
+  region: string;
+  genres: string[];
+  badges: string[];
+}) {
+  const visual = getTribeVisual(tribe);
+  const mainGenre = genres[0] || visual.shortName;
+  const secondGenre = genres[1] || "";
+  const mainBadge = badges[0] || "Mesmo evento";
+
+  const items = [
+    {
+      label: "Tribo",
+      value: visual.shortName,
+      sub: visual.name,
+      accent: visual.accent,
+    },
+    {
+      label: "Base",
+      value: city || region || "Evento",
+      sub: region || "Presença no evento",
+      accent: PREMIUM.radar,
+    },
+    {
+      label: "Som",
+      value: mainGenre,
+      sub: secondGenre || "Vertente principal",
+      accent: PREMIUM.violet,
+    },
+    {
+      label: "Sinal",
+      value: mainBadge,
+      sub: "Afinidade social",
+      accent: PREMIUM.amber,
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 8,
+      }}
+    >
+      {items.map((item) => (
+        <div
+          key={`${item.label}-${item.value}`}
+          style={{
+            display: "grid",
+            gap: 5,
+            padding: 10,
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.09)",
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
+            minHeight: 78,
+          }}
+        >
+          <span
+            style={{
+              color: "rgba(255,255,255,0.52)",
+              fontSize: 10,
+              fontWeight: 900,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            {item.label}
+          </span>
+
+          <strong
+            style={{
+              color: item.accent,
+              fontSize: 12,
+              lineHeight: 1.15,
+            }}
+          >
+            {item.value}
+          </strong>
+
+          <span
+            style={{
+              color: "rgba(255,255,255,0.58)",
+              fontSize: 10,
+              lineHeight: 1.25,
+              fontWeight: 750,
+            }}
+          >
+            {item.sub}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ParticipantCard({
   member,
   officialEventUrl,
@@ -727,6 +1272,12 @@ function ParticipantCard({
   member: EventParticipant;
   officialEventUrl?: string;
 }) {
+  const [connectionState, setConnectionState] =
+    useState<ConnectionUiState>("idle");
+  const [connectionFeedback, setConnectionFeedback] = useState(
+    getConnectionFeedback("idle")
+  );
+
   const photo = normalizeText(member.club_photo_url);
   const genres = (member.favorite_genres || []).slice(0, 3);
   const tribe = getClubberTribe(member.favorite_genres || []);
@@ -738,15 +1289,106 @@ function ParticipantCard({
   const score = member.compatibilityScore || 0;
   const hotMeta = getHotConnectionMeta(score);
 
+  const visibleAffinityBadges = (member.compatibilityBadges || [])
+    .filter((badge) => {
+      const normalized = normalizeText(badge).toLowerCase();
+
+      if (!normalized) return false;
+      if (normalized.includes("100")) return false;
+      if (normalized.includes("compatível")) return false;
+
+      return true;
+    })
+    .slice(0, 4);
+
+  async function handleConnectionRequest() {
+    if (sandboxParticipant || isConnectionButtonDisabled(connectionState)) {
+      return;
+    }
+
+    setConnectionState("sending");
+    setConnectionFeedback("Enviando solicitação de conexão...");
+
+    try {
+      const response = await fetch("/api/network/connections", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          targetUserId: member.user_id,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+      const code = normalizeText(data?.code);
+      const apiState = normalizeText(data?.state);
+
+      if (response.status === 401 || code === "UNAUTHORIZED") {
+        setConnectionState("unauthorized");
+        setConnectionFeedback(getConnectionFeedback("unauthorized"));
+        return;
+      }
+
+      if (data?.ok && apiState === "outgoing_pending") {
+        setConnectionState("outgoing_pending");
+        setConnectionFeedback(getConnectionFeedback("outgoing_pending"));
+        return;
+      }
+
+      if (code === "ALREADY_CONNECTED") {
+        setConnectionState("connected");
+        setConnectionFeedback(getConnectionFeedback("connected"));
+        return;
+      }
+
+      if (code === "REQUEST_ALREADY_SENT") {
+        setConnectionState("outgoing_pending");
+        setConnectionFeedback(getConnectionFeedback("outgoing_pending"));
+        return;
+      }
+
+      if (code === "INCOMING_REQUEST_EXISTS") {
+        setConnectionState("incoming_pending");
+        setConnectionFeedback(getConnectionFeedback("incoming_pending"));
+        return;
+      }
+
+      if (code === "RELATIONSHIP_BLOCKED") {
+        setConnectionState("blocked");
+        setConnectionFeedback(getConnectionFeedback("blocked"));
+        return;
+      }
+
+      if (code === "RELATIONSHIP_SUSPENDED") {
+        setConnectionState("suspended");
+        setConnectionFeedback(getConnectionFeedback("suspended"));
+        return;
+      }
+
+      if (code === "INVALID_TARGET") {
+        setConnectionState("self");
+        setConnectionFeedback(getConnectionFeedback("self"));
+        return;
+      }
+
+      setConnectionState("error");
+      setConnectionFeedback(getConnectionFeedback("error"));
+    } catch {
+      setConnectionState("error");
+      setConnectionFeedback(getConnectionFeedback("error"));
+    }
+  }
+
   return (
     <article style={profileCardStyle()}>
       <div
         style={{
-          height: 215,
+          height: 232,
           position: "relative",
           background: photo
-            ? `linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.82)), url(${photo})`
-            : "linear-gradient(135deg, rgba(125,92,255,0.32), rgba(0,255,190,0.12))",
+            ? `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.84)), url(${photo})`
+            : "linear-gradient(135deg, rgba(124,92,255,0.26), rgba(47,128,255,0.16))",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -756,7 +1398,7 @@ function ParticipantCard({
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(circle at 18% 12%, rgba(0,255,190,0.18), transparent 28%), radial-gradient(circle at 84% 18%, rgba(125,92,255,0.20), transparent 26%)",
+              "radial-gradient(circle at 18% 12%, rgba(0,245,200,0.12), transparent 28%), radial-gradient(circle at 84% 18%, rgba(124,92,255,0.22), transparent 26%)",
             pointerEvents: "none",
           }}
         />
@@ -819,7 +1461,7 @@ function ParticipantCard({
         >
           <strong
             style={{
-              fontSize: 19,
+              fontSize: 20,
               lineHeight: 1.1,
             }}
           >
@@ -831,7 +1473,7 @@ function ParticipantCard({
               style={{
                 opacity: 0.88,
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
               }}
             >
               {member.city_base}
@@ -859,27 +1501,34 @@ function ParticipantCard({
         style={{
           padding: 16,
           display: "grid",
-          gap: 14,
+          gap: 13,
         }}
       >
-        <div style={sectionCardStyle(true)}>
-          <div style={sectionTitleStyle()}>
-            Tribo dominante
-          </div>
-
-          <TribePill tribe={tribe} />
-        </div>
-
         {score > 0 ? (
           <HotConnectionPanel score={score} />
         ) : null}
+
+        <ConnectionActionPanel
+          sandboxParticipant={sandboxParticipant}
+          connectionState={connectionState}
+          connectionFeedback={connectionFeedback}
+          onConnect={handleConnectionRequest}
+        />
+
+        <CompactAffinityGrid
+          tribe={tribe}
+          city={member.city_base}
+          region={region}
+          genres={genres}
+          badges={visibleAffinityBadges}
+        />
 
         {member.club_tagline ? (
           <p
             style={{
               margin: 0,
-              lineHeight: 1.6,
-              opacity: 0.88,
+              lineHeight: 1.55,
+              opacity: 0.82,
               fontSize: 13,
             }}
           >
@@ -887,90 +1536,27 @@ function ParticipantCard({
           </p>
         ) : null}
 
-        <div style={sectionCardStyle()}>
-          <div style={sectionTitleStyle()}>
-            Localização
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 7,
-              flexWrap: "wrap",
-            }}
-          >
-            {member.city_base ? (
-              <span style={socialBadgeStyle()}>
-                {member.city_base}
-              </span>
-            ) : null}
-
-            {region ? (
-              <span style={socialBadgeStyle()}>
-                {region}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
         <div style={sectionCardStyle(true)}>
           <div style={sectionTitleStyle()}>
-            Afinidade social
+            Tribo dominante
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 7,
-              flexWrap: "wrap",
-            }}
-          >
-            {member.compatibilityScore ? (
-              <span
-                style={{
-                  ...socialBadgeStyle(),
-                  background: "rgba(0,255,190,0.12)",
-                  border: "1px solid rgba(0,255,190,0.22)",
-                }}
-              >
-                {`${member.compatibilityScore}% compatível`}
-              </span>
-            ) : null}
-
-            {member.compatibilityBadges?.map((badge) => (
-              <span
-                key={badge}
-                style={{
-                  ...socialBadgeStyle(),
-                  background: "rgba(125,92,255,0.16)",
-                  border: "1px solid rgba(125,92,255,0.22)",
-                }}
-              >
-                {badge}
-              </span>
-            ))}
-          </div>
+          <TribePill tribe={tribe} compact />
         </div>
 
         {genres.length > 0 ? (
-          <div style={sectionCardStyle()}>
-            <div style={sectionTitleStyle()}>
-              Vertentes
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 7,
-                flexWrap: "wrap",
-              }}
-            >
-              {genres.map((genre) => (
-                <span key={genre} style={socialBadgeStyle()}>
-                  {genre}
-                </span>
-              ))}
-            </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 7,
+              flexWrap: "wrap",
+            }}
+          >
+            {genres.map((genre) => (
+              <span key={genre} style={socialBadgeStyle()}>
+                {genre}
+              </span>
+            ))}
           </div>
         ) : null}
 
@@ -1223,6 +1809,8 @@ export default function EventParticipantsFilter({
 
   return (
     <>
+      <VisualInteractionGuide />
+
       {hotConnections.length > 0 ? (
         <div
           style={{
@@ -1505,7 +2093,9 @@ export default function EventParticipantsFilter({
 
       <div style={{ marginBottom: 10, fontSize: 12, opacity: 0.82, fontWeight: 750 }}>
         {mode === "hot"
-          ? `${filtered.length} conexão${filtered.length === 1 ? "" : "ões"} quente${filtered.length === 1 ? "" : "s"} no radar`
+          ? filtered.length === 1
+            ? "1 conexão quente no radar"
+            : `${filtered.length} conexões quentes no radar`
           : mode === "genre" && value
           ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} conectados pela vertente ${value}`
           : mode === "city" && value
