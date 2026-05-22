@@ -18,7 +18,7 @@ type EventParticipant = {
   compatibilityBadges?: string[];
 };
 
-type FilterMode = "all" | "city" | "state" | "region" | "genre";
+type FilterMode = "all" | "hot" | "city" | "state" | "region" | "genre";
 
 type FilterGroup =
   | "none"
@@ -36,6 +36,16 @@ type TribeVisual = {
   border: string;
   glow: string;
   accent: string;
+};
+
+type HotConnectionMeta = {
+  label: string;
+  shortLabel: string;
+  description: string;
+  border: string;
+  background: string;
+  color: string;
+  glow: string;
 };
 
 const DEV_SOCIAL_SANDBOX = true;
@@ -269,6 +279,57 @@ function getSocialModeLabel(mode: string): string {
   return "Presença social ativa";
 }
 
+function getHotConnectionMeta(score = 0): HotConnectionMeta {
+  if (score >= 85) {
+    return {
+      label: "Conexão muito quente",
+      shortLabel: "Muito quente",
+      description: "Alta chance de afinidade real por música, região e presença social.",
+      border: "1px solid rgba(0,255,190,0.48)",
+      background:
+        "linear-gradient(135deg, rgba(0,255,190,0.20), rgba(125,92,255,0.16))",
+      color: "#00ffbe",
+      glow: "0 0 28px rgba(0,255,190,0.20)",
+    };
+  }
+
+  if (score >= 70) {
+    return {
+      label: "Conexão quente",
+      shortLabel: "Quente",
+      description: "Boa combinação de vertentes, localização e intenção social.",
+      border: "1px solid rgba(255,188,88,0.42)",
+      background:
+        "linear-gradient(135deg, rgba(255,188,88,0.18), rgba(125,92,255,0.14))",
+      color: "#ffbc58",
+      glow: "0 0 24px rgba(255,188,88,0.16)",
+    };
+  }
+
+  if (score >= 50) {
+    return {
+      label: "Boa afinidade",
+      shortLabel: "Boa",
+      description: "Existe potencial de conexão, principalmente pelo evento e preferências.",
+      border: "1px solid rgba(125,92,255,0.34)",
+      background:
+        "linear-gradient(135deg, rgba(125,92,255,0.16), rgba(255,255,255,0.04))",
+      color: "#b8a4ff",
+      glow: "0 0 20px rgba(125,92,255,0.12)",
+    };
+  }
+
+  return {
+    label: "Afinidade inicial",
+    shortLabel: "Inicial",
+    description: "Conexão inicial pelo evento, ainda com poucos sinais de compatibilidade.",
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(255,255,255,0.05)",
+    color: "rgba(255,255,255,0.78)",
+    glow: "none",
+  };
+}
+
 function chipStyle(active = false): CSSProperties {
   return {
     display: "inline-flex",
@@ -457,6 +518,208 @@ function TribePill({
   );
 }
 
+function HotConnectionCard({
+  member,
+  onSelectHot,
+}: {
+  member: EventParticipant;
+  onSelectHot: () => void;
+}) {
+  const score = member.compatibilityScore || 0;
+  const meta = getHotConnectionMeta(score);
+  const tribe = getClubberTribe(member.favorite_genres || []);
+  const visual = getTribeVisual(tribe);
+  const sandboxParticipant = isSandboxParticipant(member);
+
+  return (
+    <button
+      type="button"
+      onClick={onSelectHot}
+      style={{
+        minWidth: 232,
+        maxWidth: 232,
+        flex: "0 0 232px",
+        display: "grid",
+        gap: 10,
+        textAlign: "left",
+        padding: 13,
+        borderRadius: 22,
+        border: meta.border,
+        background: meta.background,
+        boxShadow: meta.glow,
+        color: "#fff",
+        cursor: "pointer",
+        scrollSnapAlign: "start",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: 4,
+            minWidth: 0,
+          }}
+        >
+          <strong
+            style={{
+              fontSize: 14,
+              lineHeight: 1.2,
+            }}
+          >
+            {member.label}
+          </strong>
+
+          <span
+            style={{
+              color: "rgba(255,255,255,0.68)",
+              fontSize: 11,
+              lineHeight: 1.35,
+            }}
+          >
+            {sandboxParticipant ? "Perfil demonstrativo" : "Perfil real"}
+          </span>
+        </div>
+
+        <span
+          style={{
+            minWidth: 48,
+            height: 48,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.34)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            color: meta.color,
+            fontSize: 13,
+            fontWeight: 950,
+          }}
+        >
+          {score}%
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 7,
+          flexWrap: "wrap",
+        }}
+      >
+        <span
+          style={{
+            padding: "6px 9px",
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.30)",
+            border: meta.border,
+            color: meta.color,
+            fontSize: 11,
+            fontWeight: 900,
+          }}
+        >
+          {meta.shortLabel}
+        </span>
+
+        <span
+          style={{
+            padding: "6px 9px",
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.25)",
+            border: visual.border,
+            color: visual.accent,
+            fontSize: 11,
+            fontWeight: 900,
+          }}
+        >
+          {visual.shortName}
+        </span>
+      </div>
+
+      <span
+        style={{
+          color: "rgba(255,255,255,0.76)",
+          fontSize: 11,
+          lineHeight: 1.45,
+        }}
+      >
+        {meta.description}
+      </span>
+    </button>
+  );
+}
+
+function HotConnectionPanel({
+  score,
+}: {
+  score: number;
+}) {
+  const meta = getHotConnectionMeta(score);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 7,
+        padding: 12,
+        borderRadius: 16,
+        border: meta.border,
+        background: meta.background,
+        boxShadow: meta.glow,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 10,
+          alignItems: "center",
+        }}
+      >
+        <span style={sectionTitleStyle()}>
+          Conexão no radar
+        </span>
+
+        <strong
+          style={{
+            color: meta.color,
+            fontSize: 12,
+            fontWeight: 950,
+          }}
+        >
+          {score}%
+        </strong>
+      </div>
+
+      <strong
+        style={{
+          color: "#fff",
+          fontSize: 13,
+          lineHeight: 1.2,
+        }}
+      >
+        {meta.label}
+      </strong>
+
+      <span
+        style={{
+          color: "rgba(255,255,255,0.74)",
+          fontSize: 11,
+          lineHeight: 1.45,
+        }}
+      >
+        {meta.description}
+      </span>
+    </div>
+  );
+}
+
 function ParticipantCard({
   member,
   officialEventUrl,
@@ -472,6 +735,8 @@ function ParticipantCard({
   const region = getRegionFromState(state);
   const socialMode = getSocialModeLabel(member.event_social_mode);
   const sandboxParticipant = isSandboxParticipant(member);
+  const score = member.compatibilityScore || 0;
+  const hotMeta = getHotConnectionMeta(score);
 
   return (
     <article style={profileCardStyle()}>
@@ -528,15 +793,15 @@ function ParticipantCard({
               style={{
                 padding: "7px 10px",
                 borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.18)",
+                border: hotMeta.border,
                 background: "rgba(0,0,0,0.55)",
-                color: "#00ffbe",
+                color: hotMeta.color,
                 fontSize: 11,
                 fontWeight: 900,
-                boxShadow: "0 0 18px rgba(0,255,190,0.22)",
+                boxShadow: hotMeta.glow,
               }}
             >
-              {`${member.compatibilityScore}% compatível`}
+              {hotMeta.shortLabel}
             </span>
           ) : null}
         </div>
@@ -604,6 +869,10 @@ function ParticipantCard({
 
           <TribePill tribe={tribe} />
         </div>
+
+        {score > 0 ? (
+          <HotConnectionPanel score={score} />
+        ) : null}
 
         {member.club_tagline ? (
           <p
@@ -854,10 +1123,20 @@ export default function EventParticipantsFilter({
         badges.push(region);
       }
 
+      const socialMode = normalizeText(member.event_social_mode).toLowerCase();
+
+      if (
+        socialMode &&
+        !badges.includes("Presença social ativa")
+      ) {
+        score += 10;
+        badges.push("Presença social ativa");
+      }
+
       return {
         ...member,
         compatibilityScore: Math.min(score, 100),
-        compatibilityBadges: badges.slice(0, 3),
+        compatibilityBadges: badges.slice(0, 4),
       };
     });
   }, [socialParticipants]);
@@ -880,6 +1159,13 @@ export default function EventParticipantsFilter({
       .slice(0, 5);
   }, [enrichedAttendees]);
 
+  const hotConnections = useMemo(() => {
+    return [...enrichedAttendees]
+      .filter((member) => (member.compatibilityScore || 0) >= 70)
+      .sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0))
+      .slice(0, 6);
+  }, [enrichedAttendees]);
+
   const filtered = useMemo(() => {
     return enrichedAttendees
       .filter((member) => {
@@ -890,6 +1176,7 @@ export default function EventParticipantsFilter({
           normalizeText(item)
         );
 
+        if (mode === "hot") return (member.compatibilityScore || 0) >= 70;
         if (mode === "city") return city === value;
         if (mode === "state") return state === value;
         if (mode === "region") return region === value;
@@ -918,6 +1205,10 @@ export default function EventParticipantsFilter({
   function selectFilter(nextMode: FilterMode, nextValue = "") {
     setMode(nextMode);
     setValue(nextValue);
+
+    if (nextMode === "all" || nextMode === "hot") {
+      setActiveGroup("none");
+    }
   }
 
   function selectAll() {
@@ -932,6 +1223,61 @@ export default function EventParticipantsFilter({
 
   return (
     <>
+      {hotConnections.length > 0 ? (
+        <div
+          style={{
+            display: "grid",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gap: 4,
+            }}
+          >
+            <strong
+              style={{
+                color: "#fff",
+                fontSize: 15,
+                lineHeight: 1.2,
+              }}
+            >
+              Conexões quentes no radar
+            </strong>
+
+            <span
+              style={{
+                color: "rgba(255,255,255,0.68)",
+                fontSize: 12,
+                lineHeight: 1.45,
+              }}
+            >
+              Clubbers com maior chance de afinidade neste evento.
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              overflowX: "auto",
+              paddingBottom: 4,
+              scrollSnapType: "x mandatory",
+            }}
+          >
+            {hotConnections.map((member) => (
+              <HotConnectionCard
+                key={`hot-connection-${member.user_id}-${member.slug}`}
+                member={member}
+                onSelectHot={() => selectFilter("hot")}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {topTribes.length > 0 ? (
         <div
           style={{
@@ -1078,6 +1424,10 @@ export default function EventParticipantsFilter({
             Todos
           </button>
 
+          <button type="button" onClick={() => selectFilter("hot")} style={chipStyle(mode === "hot")}>
+            Conexões quentes
+          </button>
+
           <button type="button" onClick={() => toggleGroup("cities")} style={chipStyle(activeGroup === "cities")}>
             Cidades
           </button>
@@ -1154,7 +1504,9 @@ export default function EventParticipantsFilter({
       </div>
 
       <div style={{ marginBottom: 10, fontSize: 12, opacity: 0.82, fontWeight: 750 }}>
-        {mode === "genre" && value
+        {mode === "hot"
+          ? `${filtered.length} conexão${filtered.length === 1 ? "" : "ões"} quente${filtered.length === 1 ? "" : "s"} no radar`
+          : mode === "genre" && value
           ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} conectados pela vertente ${value}`
           : mode === "city" && value
           ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} da cidade ${value}`
