@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// src/app/event/[event_slug]/EventParticipantsFilter.tsx
+"use client";
 
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
@@ -25,6 +26,17 @@ type FilterGroup =
   | "states"
   | "regions"
   | "genres";
+
+type TribeVisual = {
+  icon: string;
+  name: string;
+  shortName: string;
+  description: string;
+  gradient: string;
+  border: string;
+  glow: string;
+  accent: string;
+};
 
 const DEV_SOCIAL_SANDBOX = true;
 
@@ -91,6 +103,13 @@ function normalizeText(value: any): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function isSandboxParticipant(member: EventParticipant): boolean {
+  return (
+    normalizeText(member.user_id).startsWith("TEST_SANDBOX_") ||
+    normalizeText(member.slug).startsWith("sandbox-")
+  );
+}
+
 function getStateFromCityBase(value: string): string {
   const parts = normalizeText(value)
     .split("-")
@@ -139,6 +158,115 @@ function getClubberTribe(genres: string[]): string {
   }
 
   return "🔥 Festival Crew";
+}
+
+function getTribeVisual(tribe: string): TribeVisual {
+  if (tribe.includes("Hard Techno")) {
+    return {
+      icon: "🏴",
+      name: "Hard Techno Tribe",
+      shortName: "Hard Techno",
+      description: "Energia intensa, pista pesada e conexão de alta presença.",
+      gradient:
+        "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(20,20,28,0.88))",
+      border: "1px solid rgba(255,255,255,0.22)",
+      glow: "0 0 28px rgba(255,255,255,0.10)",
+      accent: "#ffffff",
+    };
+  }
+
+  if (tribe.includes("Techno")) {
+    return {
+      icon: "🏴",
+      name: "Techno Tribe",
+      shortName: "Techno",
+      description: "Grave, atmosfera escura e identidade forte de pista.",
+      gradient:
+        "linear-gradient(135deg, rgba(0,255,190,0.20), rgba(9,10,18,0.88))",
+      border: "1px solid rgba(0,255,190,0.34)",
+      glow: "0 0 30px rgba(0,255,190,0.16)",
+      accent: "#00ffbe",
+    };
+  }
+
+  if (tribe.includes("Progressive")) {
+    return {
+      icon: "🌌",
+      name: "Progressive Family",
+      shortName: "Progressive",
+      description: "Viagem melódica, conexão emocional e espírito de festival.",
+      gradient:
+        "linear-gradient(135deg, rgba(125,92,255,0.28), rgba(9,10,18,0.88))",
+      border: "1px solid rgba(125,92,255,0.38)",
+      glow: "0 0 30px rgba(125,92,255,0.18)",
+      accent: "#9b7cff",
+    };
+  }
+
+  if (tribe.includes("Melodic")) {
+    return {
+      icon: "🌙",
+      name: "Melodic Society",
+      shortName: "Melodic",
+      description: "Atmosfera emocional, synths profundos e encontro sensorial.",
+      gradient:
+        "linear-gradient(135deg, rgba(196,124,255,0.24), rgba(9,10,18,0.88))",
+      border: "1px solid rgba(196,124,255,0.34)",
+      glow: "0 0 30px rgba(196,124,255,0.16)",
+      accent: "#c47cff",
+    };
+  }
+
+  if (tribe.includes("House")) {
+    return {
+      icon: "🎵",
+      name: "House Lovers",
+      shortName: "House",
+      description: "Groove, alegria de pista e conexões sociais leves.",
+      gradient:
+        "linear-gradient(135deg, rgba(255,188,88,0.24), rgba(9,10,18,0.88))",
+      border: "1px solid rgba(255,188,88,0.34)",
+      glow: "0 0 30px rgba(255,188,88,0.14)",
+      accent: "#ffbc58",
+    };
+  }
+
+  if (tribe.includes("Deep")) {
+    return {
+      icon: "🌊",
+      name: "Deep House Circle",
+      shortName: "Deep",
+      description: "Sons elegantes, conexão mais intimista e pista sofisticada.",
+      gradient:
+        "linear-gradient(135deg, rgba(62,176,255,0.22), rgba(9,10,18,0.88))",
+      border: "1px solid rgba(62,176,255,0.34)",
+      glow: "0 0 30px rgba(62,176,255,0.14)",
+      accent: "#3eb0ff",
+    };
+  }
+
+  return {
+    icon: "🔥",
+    name: "Festival Crew",
+    shortName: "Festival",
+    description: "Exploradores de eventos, encontros e novas experiências.",
+    gradient:
+      "linear-gradient(135deg, rgba(255,85,118,0.24), rgba(9,10,18,0.88))",
+    border: "1px solid rgba(255,85,118,0.34)",
+    glow: "0 0 30px rgba(255,85,118,0.14)",
+    accent: "#ff5576",
+  };
+}
+
+function getSocialModeLabel(mode: string): string {
+  const normalized = normalizeText(mode).toLowerCase();
+
+  if (normalized.includes("network")) return "Aberto a conexões";
+  if (normalized.includes("meet")) return "Aberto a encontros";
+  if (normalized.includes("ride")) return "Aberto a caronas";
+  if (normalized.includes("after")) return "A caminho do after";
+
+  return "Presença social ativa";
 }
 
 function chipStyle(active = false): CSSProperties {
@@ -209,6 +337,15 @@ function actionButtonStyle(primary = false): CSSProperties {
   };
 }
 
+function disabledActionButtonStyle(primary = false): CSSProperties {
+  return {
+    ...actionButtonStyle(primary),
+    opacity: 0.62,
+    cursor: "not-allowed",
+    color: "rgba(255,255,255,0.72)",
+  };
+}
+
 function socialBadgeStyle(): CSSProperties {
   return {
     display: "inline-flex",
@@ -247,6 +384,79 @@ function sectionTitleStyle(): CSSProperties {
   };
 }
 
+function TribePill({
+  tribe,
+  compact = false,
+}: {
+  tribe: string;
+  compact?: boolean;
+}) {
+  const visual = getTribeVisual(tribe);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        gap: compact ? 8 : 10,
+        alignItems: "center",
+        padding: compact ? "8px 10px" : "12px",
+        borderRadius: compact ? 16 : 18,
+        border: visual.border,
+        background: visual.gradient,
+        boxShadow: visual.glow,
+      }}
+    >
+      <span
+        style={{
+          width: compact ? 30 : 38,
+          height: compact ? 30 : 38,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 999,
+          background: "rgba(0,0,0,0.34)",
+          border: "1px solid rgba(255,255,255,0.16)",
+          fontSize: compact ? 15 : 18,
+          flexShrink: 0,
+        }}
+      >
+        {visual.icon}
+      </span>
+
+      <span
+        style={{
+          display: "grid",
+          gap: compact ? 1 : 3,
+          minWidth: 0,
+        }}
+      >
+        <strong
+          style={{
+            color: "#fff",
+            fontSize: compact ? 12 : 14,
+            lineHeight: 1.1,
+          }}
+        >
+          {visual.name}
+        </strong>
+
+        {!compact ? (
+          <span
+            style={{
+              color: "rgba(255,255,255,0.76)",
+              fontSize: 11,
+              lineHeight: 1.35,
+            }}
+          >
+            {visual.description}
+          </span>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
 function ParticipantCard({
   member,
   officialEventUrl,
@@ -257,8 +467,11 @@ function ParticipantCard({
   const photo = normalizeText(member.club_photo_url);
   const genres = (member.favorite_genres || []).slice(0, 3);
   const tribe = getClubberTribe(member.favorite_genres || []);
+  const tribeVisual = getTribeVisual(tribe);
   const state = getStateFromCityBase(member.city_base);
   const region = getRegionFromState(state);
+  const socialMode = getSocialModeLabel(member.event_social_mode);
+  const sandboxParticipant = isSandboxParticipant(member);
 
   return (
     <article style={profileCardStyle()}>
@@ -276,6 +489,16 @@ function ParticipantCard({
         <div
           style={{
             position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 18% 12%, rgba(0,255,190,0.18), transparent 28%), radial-gradient(circle at 84% 18%, rgba(125,92,255,0.20), transparent 26%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
             top: 14,
             left: 14,
             right: 14,
@@ -289,14 +512,15 @@ function ParticipantCard({
             style={{
               padding: "7px 10px",
               borderRadius: 999,
-              border: "1px solid rgba(0,255,190,0.30)",
-              background: "rgba(0,0,0,0.48)",
+              border: tribeVisual.border,
+              background: "rgba(0,0,0,0.52)",
               color: "#fff",
               fontSize: 11,
               fontWeight: 900,
+              boxShadow: tribeVisual.glow,
             }}
           >
-            Participante
+            {tribeVisual.shortName}
           </span>
 
           {member.compatibilityScore ? (
@@ -324,7 +548,7 @@ function ParticipantCard({
             right: 16,
             bottom: 16,
             display: "grid",
-            gap: 5,
+            gap: 7,
             color: "#fff",
           }}
         >
@@ -348,6 +572,21 @@ function ParticipantCard({
               {member.city_base}
             </span>
           ) : null}
+
+          <span
+            style={{
+              width: "fit-content",
+              padding: "6px 9px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(0,0,0,0.42)",
+              color: "rgba(255,255,255,0.88)",
+              fontSize: 11,
+              fontWeight: 850,
+            }}
+          >
+            {socialMode}
+          </span>
         </div>
       </div>
 
@@ -360,20 +599,10 @@ function ParticipantCard({
       >
         <div style={sectionCardStyle(true)}>
           <div style={sectionTitleStyle()}>
-            Tribo
+            Tribo dominante
           </div>
 
-          <span
-            style={{
-              ...socialBadgeStyle(),
-              background:
-                "linear-gradient(135deg, rgba(0,255,190,0.16), rgba(125,92,255,0.18))",
-              border: "1px solid rgba(0,255,190,0.28)",
-              boxShadow: "0 0 18px rgba(0,255,190,0.10)",
-            }}
-          >
-            {tribe}
-          </span>
+          <TribePill tribe={tribe} />
         </div>
 
         {member.club_tagline ? (
@@ -484,21 +713,41 @@ function ParticipantCard({
             marginTop: 2,
           }}
         >
-          <Link
-            href={`/${member.slug}?mode=club`}
-            style={actionButtonStyle(true)}
-          >
-            Ver perfil
-          </Link>
+          {sandboxParticipant ? (
+            <span
+              aria-disabled="true"
+              title="Perfil demonstrativo sem página pública cadastrada"
+              style={disabledActionButtonStyle(true)}
+            >
+              Perfil demo
+            </span>
+          ) : (
+            <Link
+              href={`/${member.slug}?mode=club`}
+              style={actionButtonStyle(true)}
+            >
+              Ver perfil
+            </Link>
+          )}
 
-          <a
-            href={officialEventUrl || `/${member.slug}?mode=club`}
-            target={officialEventUrl ? "_blank" : undefined}
-            rel={officialEventUrl ? "noopener noreferrer" : undefined}
-            style={actionButtonStyle()}
-          >
-            Evento
-          </a>
+          {officialEventUrl ? (
+            <a
+              href={officialEventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={actionButtonStyle()}
+            >
+              Evento
+            </a>
+          ) : (
+            <span
+              aria-disabled="true"
+              title="Link oficial do evento não informado"
+              style={disabledActionButtonStyle()}
+            >
+              Evento
+            </span>
+          )}
         </div>
       </div>
     </article>
@@ -613,6 +862,24 @@ export default function EventParticipantsFilter({
     });
   }, [socialParticipants]);
 
+  const topTribes = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const member of enrichedAttendees) {
+      const tribe = getClubberTribe(member.favorite_genres || []);
+      counts.set(tribe, (counts.get(tribe) || 0) + 1);
+    }
+
+    return Array.from(counts.entries())
+      .map(([tribe, count]) => ({
+        tribe,
+        count,
+        visual: getTribeVisual(tribe),
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [enrichedAttendees]);
+
   const filtered = useMemo(() => {
     return enrichedAttendees
       .filter((member) => {
@@ -665,6 +932,146 @@ export default function EventParticipantsFilter({
 
   return (
     <>
+      {topTribes.length > 0 ? (
+        <div
+          style={{
+            display: "grid",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gap: 4,
+            }}
+          >
+            <strong
+              style={{
+                color: "#fff",
+                fontSize: 15,
+                lineHeight: 1.2,
+              }}
+            >
+              Tribos em destaque neste evento
+            </strong>
+
+            <span
+              style={{
+                color: "rgba(255,255,255,0.68)",
+                fontSize: 12,
+                lineHeight: 1.45,
+              }}
+            >
+              Encontre clubbers por afinidade musical, região e presença social.
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              overflowX: "auto",
+              paddingBottom: 4,
+              scrollSnapType: "x mandatory",
+            }}
+          >
+            {topTribes.map(({ tribe, count, visual }) => (
+              <button
+                key={`tribe-highlight-${tribe}`}
+                type="button"
+                onClick={() => {
+                  setMode("all");
+                  setValue("");
+                  setActiveGroup("genres");
+                }}
+                style={{
+                  minWidth: 210,
+                  maxWidth: 210,
+                  flex: "0 0 210px",
+                  display: "grid",
+                  gap: 10,
+                  textAlign: "left",
+                  padding: 12,
+                  borderRadius: 20,
+                  border: visual.border,
+                  background: visual.gradient,
+                  boxShadow: visual.glow,
+                  color: "#fff",
+                  cursor: "pointer",
+                  scrollSnapAlign: "start",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 36,
+                      height: 36,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 999,
+                      background: "rgba(0,0,0,0.34)",
+                      border: "1px solid rgba(255,255,255,0.16)",
+                      fontSize: 17,
+                    }}
+                  >
+                    {visual.icon}
+                  </span>
+
+                  <span
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: 999,
+                      background: "rgba(0,0,0,0.30)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      color: visual.accent,
+                      fontSize: 11,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {count} {count === 1 ? "clubber" : "clubbers"}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 4,
+                  }}
+                >
+                  <strong
+                    style={{
+                      fontSize: 14,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {visual.name}
+                  </strong>
+
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.74)",
+                      fontSize: 11,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {visual.description}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={selectAll} style={chipStyle(mode === "all")}>
