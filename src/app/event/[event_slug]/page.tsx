@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
 import EventParticipantsFilter from "./EventParticipantsFilter";
+import RideMeetCards from "./RideMeetCards";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
@@ -1317,53 +1318,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             />
           </section>
 
-          <section style={sectionStyle("green")}>
-            <SectionTitle
-              icon="▰"
-              title="Carona compartilhada"
-              subtitle="Quem oferece e quem procura carona para este evento."
-              actionLabel="Ver todas"
-            />
-
-            {rideMembers.length === 0 ? (
-              <div style={emptyCardStyle()}>Ainda não há caronas mapeadas para este evento.</div>
-            ) : (
-              <div style={carouselStyle()}>
-                {rideMembers.map((member) => (
-                  <RideCard
-                    key={`ride-${member.user_id}-${member.slug}`}
-                    member={member}
-                    officialEventUrl={heroOfficialUrl}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section style={sectionStyle("yellow")}>
-            <SectionTitle
-              icon="◇"
-              title="Encontros combinados"
-              subtitle="Pontos de encontro e horários que já foram marcados para este evento."
-              actionLabel=""
-            />
-
-            {meetMembers.length === 0 ? (
-              <div style={emptyCardStyle()}>
-                Ainda não há encontros ativos mapeados para este evento.
-              </div>
-            ) : (
-              <div style={carouselStyle()}>
-                {meetMembers.map((member) => (
-                  <MeetCard
-                    key={`meet-${member.user_id}-${member.slug}`}
-                    member={member}
-                    officialEventUrl={heroOfficialUrl}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          <RideMeetCards
+            rideMembers={rideMembers}
+            meetMembers={meetMembers}
+            officialEventUrl={heroOfficialUrl}
+          />
         </>
       )}
     </main>
