@@ -508,15 +508,24 @@ export default function RideMeetCards({
             </p>
           </div>
 
-          <span
+               <span
             style={{
-              ...actionButtonStyle(false),
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               width: "auto",
               minHeight: 34,
               padding: "8px 11px",
+              borderRadius: 999,
+              border: "1px solid rgba(0,255,190,0.14)",
+              background: "rgba(0,255,190,0.055)",
+              color: "rgba(0,255,190,0.86)",
+              fontSize: 11,
+              fontWeight: 850,
+              whiteSpace: "nowrap",
             }}
           >
-            Ver todas
+            Radar ativo
           </span>
         </div>
 
