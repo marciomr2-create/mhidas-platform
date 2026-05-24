@@ -618,6 +618,7 @@ function getConnectionActionTitle(
 
   return "Solicite conexão para liberar";
 }
+
 function chipStyle(active = false): CSSProperties {
   return {
     display: "inline-flex",
@@ -726,8 +727,8 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
         : "#fff",
     textDecoration: "none",
     fontSize: 11,
-            fontWeight: 950,
-            whiteSpace: "nowrap",
+    fontWeight: 950,
+    whiteSpace: "nowrap",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity:
       disabled && state !== "outgoing_pending" && state !== "connected"
@@ -1374,8 +1375,8 @@ function HotConnectionPanel({
           style={{
             color: meta.color,
             fontSize: 11,
-                        fontWeight: 950,
-                        whiteSpace: "nowrap",
+            fontWeight: 950,
+            whiteSpace: "nowrap",
           }}
         >
           {score}%
@@ -1424,21 +1425,25 @@ function ConnectionActionPanel({
   const socialPaths = [
     {
       title: "Conversa",
+      helper: unlocked ? "Contato liberado" : "Depois do aceite",
       symbol: "●",
       color: PREMIUM.radar,
     },
     {
       title: "Grupo",
+      helper: unlocked ? "Pode combinar" : "Depois do aceite",
       symbol: "◇",
       color: PREMIUM.blue,
     },
     {
       title: "Carona",
+      helper: unlocked ? "Organizar rota" : "Depois do aceite",
       symbol: "↗",
       color: PREMIUM.amber,
     },
     {
       title: "Encontro",
+      helper: unlocked ? "Ponto no evento" : "Depois do aceite",
       symbol: "◎",
       color: PREMIUM.violet,
     },
@@ -1465,7 +1470,7 @@ function ConnectionActionPanel({
           gap: 3,
         }}
       >
-        <span style={sectionTitleStyle()}>Próximo passo</span>
+        <span style={sectionTitleStyle()}>Caminhos sociais</span>
 
         <strong
           style={{
@@ -1512,7 +1517,7 @@ function ConnectionActionPanel({
         }}
       >
         {sandboxParticipant
-          ? "Em perfis reais, o usuário envia uma solicitação. Após a conexão, poderá combinar conversa, grupo, carona ou encontro."
+          ? "Em perfis reais, o usuário envia uma solicitação. Após a conexão aceita, poderá combinar conversa, grupo, carona ou encontro."
           : connectionFeedback}
       </span>
 
@@ -1590,7 +1595,7 @@ function ConnectionActionPanel({
                   lineHeight: 1.1,
                 }}
               >
-                {statusLabel}
+                {unlocked ? item.helper : statusLabel}
               </small>
             </span>
           </div>
@@ -1599,6 +1604,7 @@ function ConnectionActionPanel({
     </div>
   );
 }
+
 function CompactAffinityGrid({
   tribe,
   city,
@@ -2699,6 +2705,3 @@ export default function EventParticipantsFilter({
     </>
   );
 }
-
-
-
