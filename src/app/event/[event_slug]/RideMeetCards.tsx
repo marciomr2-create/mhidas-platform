@@ -554,8 +554,27 @@ export default function RideMeetCards({
               {"Pontos de encontro e hor\u00e1rios que j\u00e1 foram marcados para este evento."}
             </p>
           </div>
-        </div>
 
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "auto",
+              minHeight: 34,
+              padding: "8px 11px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,196,0,0.16)",
+              background: "rgba(255,196,0,0.06)",
+              color: "rgba(255,196,0,0.90)",
+              fontSize: 11,
+              fontWeight: 850,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Ponto ativo
+          </span>
+        </div>
         {meetMembers.length === 0 ? (
           <div style={emptyCardStyle()}>
             {"Ainda n\u00e3o h\u00e1 encontros ativos mapeados para este evento."}
