@@ -210,6 +210,15 @@ function actionButtonStyle(primary = false): CSSProperties {
   };
 }
 
+function disabledEventButtonStyle(): CSSProperties {
+  return {
+    ...actionButtonStyle(false),
+    opacity: 0.58,
+    cursor: "not-allowed",
+    color: "rgba(255,255,255,0.58)",
+  };
+}
+
 function emptyCardStyle(): CSSProperties {
   return {
     padding: 18,
@@ -219,6 +228,30 @@ function emptyCardStyle(): CSSProperties {
     color: "rgba(255,255,255,0.76)",
     fontSize: 13,
     lineHeight: 1.6,
+  };
+}
+
+function statusBadgeStyle(kind: "ride" | "meet"): CSSProperties {
+  const isRide = kind === "ride";
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "auto",
+    minHeight: 34,
+    padding: "8px 11px",
+    borderRadius: 999,
+    border: isRide
+      ? "1px solid rgba(0,255,190,0.14)"
+      : "1px solid rgba(255,196,0,0.16)",
+    background: isRide
+      ? "rgba(0,255,190,0.055)"
+      : "rgba(255,196,0,0.06)",
+    color: isRide ? "rgba(0,255,190,0.86)" : "rgba(255,196,0,0.90)",
+    fontSize: 11,
+    fontWeight: 850,
+    whiteSpace: "nowrap",
   };
 }
 
@@ -312,6 +345,32 @@ function NotesBox({ value }: { value: unknown }) {
     </div>
   );
 }
+function EventOfficialAction({ href }: { href: string }) {
+  const normalizedHref = normalizeText(href);
+
+  if (!normalizedHref) {
+    return (
+      <span
+        aria-disabled="true"
+        title="Link oficial do evento ainda n\u00e3o confirmado"
+        style={disabledEventButtonStyle()}
+      >
+        Evento indispon\u00edvel
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={normalizedHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={actionButtonStyle()}
+    >
+      Evento oficial
+    </a>
+  );
+}
 
 function RideCard({
   member,
@@ -324,6 +383,7 @@ function RideCard({
   const seatsLabel = hasContent(member.ride_seats)
     ? String(member.ride_seats) + " vagas"
     : "";
+  const officialHref = normalizeText(member.ride_event_url || officialEventUrl);
 
   return (
     <article style={wideCardStyle()}>
@@ -382,22 +442,7 @@ function RideCard({
             Ver perfil Club
           </Link>
 
-          <a
-            href={
-              member.ride_event_url ||
-              officialEventUrl ||
-              `/${member.slug}?mode=club`
-            }
-            target={member.ride_event_url || officialEventUrl ? "_blank" : undefined}
-            rel={
-              member.ride_event_url || officialEventUrl
-                ? "noopener noreferrer"
-                : undefined
-            }
-            style={actionButtonStyle()}
-          >
-            Evento oficial
-          </a>
+          <EventOfficialAction href={officialHref} />
         </div>
       </div>
     </article>
@@ -412,6 +457,7 @@ function MeetCard({
   officialEventUrl?: string;
 }) {
   const meetLabel = getMeetStatusLabel(member.meet_status);
+  const officialHref = normalizeText(member.meet_event_url || officialEventUrl);
 
   return (
     <article style={wideCardStyle()}>
@@ -470,22 +516,7 @@ function MeetCard({
             Ver perfil Club
           </Link>
 
-          <a
-            href={
-              member.meet_event_url ||
-              officialEventUrl ||
-              `/${member.slug}?mode=club`
-            }
-            target={member.meet_event_url || officialEventUrl ? "_blank" : undefined}
-            rel={
-              member.meet_event_url || officialEventUrl
-                ? "noopener noreferrer"
-                : undefined
-            }
-            style={actionButtonStyle()}
-          >
-            Evento oficial
-          </a>
+          <EventOfficialAction href={officialHref} />
         </div>
       </div>
     </article>
@@ -508,25 +539,7 @@ export default function RideMeetCards({
             </p>
           </div>
 
-               <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "auto",
-              minHeight: 34,
-              padding: "8px 11px",
-              borderRadius: 999,
-              border: "1px solid rgba(0,255,190,0.14)",
-              background: "rgba(0,255,190,0.055)",
-              color: "rgba(0,255,190,0.86)",
-              fontSize: 11,
-              fontWeight: 850,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Radar ativo
-          </span>
+          <span style={statusBadgeStyle("ride")}>Radar ativo</span>
         </div>
 
         {rideMembers.length === 0 ? (
@@ -555,26 +568,9 @@ export default function RideMeetCards({
             </p>
           </div>
 
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "auto",
-              minHeight: 34,
-              padding: "8px 11px",
-              borderRadius: 999,
-              border: "1px solid rgba(255,196,0,0.16)",
-              background: "rgba(255,196,0,0.06)",
-              color: "rgba(255,196,0,0.90)",
-              fontSize: 11,
-              fontWeight: 850,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Ponto ativo
-          </span>
+          <span style={statusBadgeStyle("meet")}>Ponto ativo</span>
         </div>
+
         {meetMembers.length === 0 ? (
           <div style={emptyCardStyle()}>
             {"Ainda n\u00e3o h\u00e1 encontros ativos mapeados para este evento."}
