@@ -45,3 +45,6 @@ backups/
 *.backup
 *.zip
 .env.local
+
+# Allow Supabase migration files
+!supabase/migrations/*.sql
