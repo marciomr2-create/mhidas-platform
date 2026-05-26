@@ -352,10 +352,10 @@ function EventOfficialAction({ href }: { href: string }) {
     return (
       <span
         aria-disabled="true"
-        title="Link oficial do evento ainda n\u00e3o confirmado"
+        title="Link oficial do evento ainda não confirmado"
         style={disabledEventButtonStyle()}
       >
-        Evento indispon\u00edvel
+        {"Evento indisponível"}
       </span>
     );
   }
@@ -371,7 +371,6 @@ function EventOfficialAction({ href }: { href: string }) {
     </a>
   );
 }
-
 function RideCard({
   member,
   officialEventUrl,
@@ -383,8 +382,7 @@ function RideCard({
   const seatsLabel = hasContent(member.ride_seats)
     ? String(member.ride_seats) + " vagas"
     : "";
-  const officialHref = normalizeText(member.ride_event_url || officialEventUrl);
-
+  const officialHref = normalizeText(officialEventUrl);
   return (
     <article style={wideCardStyle()}>
       <div style={{ padding: 15, display: "grid", gap: 13 }}>
@@ -457,8 +455,7 @@ function MeetCard({
   officialEventUrl?: string;
 }) {
   const meetLabel = getMeetStatusLabel(member.meet_status);
-  const officialHref = normalizeText(member.meet_event_url || officialEventUrl);
-
+  const officialHref = normalizeText(officialEventUrl);
   return (
     <article style={wideCardStyle()}>
       <div style={{ padding: 15, display: "grid", gap: 13 }}>

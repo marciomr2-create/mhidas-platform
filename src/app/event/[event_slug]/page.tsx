@@ -59,6 +59,10 @@ type EventGroupRow = {
   event_name: string | null;
   event_slug: string | null;
   event_url: string | null;
+  official_url: string | null;
+  official_status: string | null;
+  official_confidence: number | null;
+  official_source_type: string | null;
   event_date: string | null;
   event_image_url: string | null;
   city_base: string | null;
@@ -921,7 +925,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
   const { data: eventGroupsData } = await supabase
     .from("event_groups")
-    .select("event_name,event_slug,event_url,event_date,event_image_url,city_base,title,description,weather_summary,weather_temperature,weather_rain_alert,preparation_note")
+    .select("event_name,event_slug,event_url,official_url,official_status,official_confidence,official_source_type,event_date,event_image_url,city_base,title,description,weather_summary,weather_temperature,weather_rain_alert,preparation_note")
     .eq("event_slug", eventSlug)
     .limit(1);
 
@@ -937,9 +941,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     normalizeText(eventGroup?.event_image_url) ||
     "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1800&auto=format&fit=crop";
 
-  const heroOfficialUrl =
-    normalizeText(eventGroup?.event_url) ||
-    officialEventUrl;
+  const eventGroupOfficialStatus = normalizeText(eventGroup?.official_status);
+  const confirmedOfficialUrl =
+    eventGroupOfficialStatus === "confirmed" && isHttpUrl(eventGroup?.official_url)
+      ? normalizeText(eventGroup?.official_url)
+      : "";
+
+  const heroOfficialUrl = confirmedOfficialUrl;
 
   const attendees = matchedMembers;
 
