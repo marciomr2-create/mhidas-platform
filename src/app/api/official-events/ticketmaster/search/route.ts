@@ -347,6 +347,11 @@ export async function GET(request: NextRequest) {
       searchParams.get("classificationName")
     );
     const size = clamp(Number(searchParams.get("size") || 10) || 10, 1, 20);
+    const saveParam = normalizeText(searchParams.get("save")).toLowerCase();
+    const shouldSave =
+      saveParam !== "false" &&
+      saveParam !== "0" &&
+      saveParam !== "no";
 
     if (query.length < 2) {
       return NextResponse.json(
@@ -410,9 +415,10 @@ export async function GET(request: NextRequest) {
       .filter(Boolean) as CandidateRow[];
 
     const saveResults = [];
-
-    for (const candidate of candidates) {
-      saveResults.push(await saveCandidate(supabase, candidate));
+    if (shouldSave) {
+      for (const candidate of candidates) {
+        saveResults.push(await saveCandidate(supabase, candidate));
+      }
     }
 
     const failedSaves = saveResults.filter((result) => !result.ok);
@@ -421,9 +427,10 @@ export async function GET(request: NextRequest) {
       ok: true,
       provider: "ticketmaster",
       query,
+      save: shouldSave,
       count: candidates.length,
-      savedCount: saveResults.length - failedSaves.length,
-      failedSaveCount: failedSaves.length,
+      savedCount: shouldSave ? saveResults.length - failedSaves.length : 0,
+      failedSaveCount: shouldSave ? failedSaves.length : 0,
       candidates: candidates.map((candidate) => ({
         provider: candidate.provider,
         provider_event_id: candidate.provider_event_id,
