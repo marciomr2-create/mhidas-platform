@@ -36,13 +36,46 @@ type CandidateRow = {
   source_type: "ticket";
   candidate_status: "probable";
   confidence: number;
+  discovery_type: "artist" | "event" | "festival" | "venue" | "party" | "mixed";
+  normalized_query: string | null;
+  query_city: string | null;
+  query_state: string | null;
+  query_country: string | null;
+  query_start_date: string | null;
+  query_end_date: string | null;
+  match_reason: string | null;
+  match_details: JsonRecord | null;
   event_group_id: string | null;
   raw_payload: JsonRecord;
   notes: string;
 };
-
 function normalizeText(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeForDiscovery(value: unknown): string {
+  return normalizeText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getDiscoveryType(value: unknown): CandidateRow["discovery_type"] {
+  const normalized = normalizeForDiscovery(value);
+
+  if (normalized === "artist" || normalized === "artista" || normalized === "dj") {
+    return "artist";
+  }
+
+  if (normalized === "festival") return "festival";
+  if (normalized === "venue" || normalized === "local") return "venue";
+  if (normalized === "party" || normalized === "festa") return "party";
+  if (normalized === "event" || normalized === "evento") return "event";
+
+  return "mixed";
 }
 
 function asRecord(value: unknown): JsonRecord {
@@ -142,6 +175,13 @@ function calculateConfidence(params: {
 function mapTicketmasterEvent(params: {
   event: JsonRecord;
   query: string;
+  normalizedQuery: string;
+  discoveryType: CandidateRow["discovery_type"];
+  queryCity: string;
+  queryState: string;
+  queryCountry: string;
+  queryStartDate: string;
+  queryEndDate: string;
   eventGroupId: string;
 }): CandidateRow | null {
   const event = params.event;
@@ -221,6 +261,32 @@ function mapTicketmasterEvent(params: {
     source_type: "ticket",
     candidate_status: "probable",
     confidence,
+    discovery_type: params.discoveryType,
+    normalized_query: params.normalizedQuery || null,
+    query_city: params.queryCity || null,
+    query_state: params.queryState || null,
+    query_country: params.queryCountry || null,
+    query_start_date: params.queryStartDate || null,
+    query_end_date: params.queryEndDate || null,
+    match_reason: `Matched by Ticketmaster using query "${params.query}".`,
+    match_details: {
+      provider: "ticketmaster",
+      query: params.query,
+      normalized_query: params.normalizedQuery,
+      discovery_type: params.discoveryType,
+      query_city: params.queryCity || null,
+      query_state: params.queryState || null,
+      query_country: params.queryCountry || null,
+      query_start_date: params.queryStartDate || null,
+      query_end_date: params.queryEndDate || null,
+      result_city: city,
+      result_state: state,
+      result_country: country,
+      result_venue: venueName,
+      result_artist: normalizeText(firstAttraction.name) || null,
+      result_event_date: eventDate,
+      confidence,
+    },
     event_group_id: params.eventGroupId || null,
     raw_payload: event,
     notes: "Imported from Ticketmaster Discovery API. Requires confirmation before becoming official.",
@@ -341,7 +407,14 @@ export async function GET(request: NextRequest) {
       searchParams.get("q") || searchParams.get("keyword")
     );
     const city = normalizeText(searchParams.get("city"));
+    const state = normalizeText(searchParams.get("state"));
     const countryCode = normalizeText(searchParams.get("countryCode"));
+    const queryStartDate = normalizeText(searchParams.get("startDate"));
+    const queryEndDate = normalizeText(searchParams.get("endDate"));
+    const discoveryType = getDiscoveryType(
+      searchParams.get("discoveryType") || searchParams.get("type")
+    );
+    const normalizedQuery = normalizeForDiscovery(query);
     const eventGroupId = normalizeText(searchParams.get("eventGroupId"));
     const classificationName = normalizeText(
       searchParams.get("classificationName")
@@ -409,11 +482,17 @@ export async function GET(request: NextRequest) {
         mapTicketmasterEvent({
           event,
           query,
+          normalizedQuery,
+          discoveryType,
+          queryCity: city,
+          queryState: state,
+          queryCountry: countryCode,
+          queryStartDate,
+          queryEndDate,
           eventGroupId,
         })
       )
       .filter(Boolean) as CandidateRow[];
-
     const saveResults = [];
     if (shouldSave) {
       for (const candidate of candidates) {
@@ -448,6 +527,14 @@ export async function GET(request: NextRequest) {
         image_url: candidate.image_url,
         candidate_status: candidate.candidate_status,
         confidence: candidate.confidence,
+        discovery_type: candidate.discovery_type,
+        normalized_query: candidate.normalized_query,
+        query_city: candidate.query_city,
+        query_state: candidate.query_state,
+        query_country: candidate.query_country,
+        query_start_date: candidate.query_start_date,
+        query_end_date: candidate.query_end_date,
+        match_reason: candidate.match_reason,
       })),
     });
   } catch (error) {
