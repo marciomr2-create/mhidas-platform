@@ -6,77 +6,19 @@ export const fetchCache = "force-no-store";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-type JsonRecord = Record<string, unknown>;
+import {
+  type OfficialEventCandidate,
+  type JsonRecord,
+  getDiscoveryType,
+  normalizeForDiscovery,
+  normalizeText,
+} from "@/app/api/official-events/_shared/resolverTypes";
 
 type AdminClient = {
   from: (table: string) => any;
 };
 
-type CandidateRow = {
-  provider: "ticketmaster";
-  provider_event_id: string | null;
-  provider_url: string | null;
-  query_text: string | null;
-  event_name: string;
-  artist_name: string | null;
-  event_date: string | null;
-  event_datetime: string | null;
-  event_timezone: string | null;
-  venue_name: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  official_url: string | null;
-  ticket_url: string | null;
-  image_url: string | null;
-  source_name: string;
-  source_type: "ticket";
-  candidate_status: "probable";
-  confidence: number;
-  discovery_type: "artist" | "event" | "festival" | "venue" | "party" | "mixed";
-  normalized_query: string | null;
-  query_city: string | null;
-  query_state: string | null;
-  query_country: string | null;
-  query_start_date: string | null;
-  query_end_date: string | null;
-  match_reason: string | null;
-  match_details: JsonRecord | null;
-  event_group_id: string | null;
-  raw_payload: JsonRecord;
-  notes: string;
-};
-function normalizeText(value: unknown): string {
-  return String(value || "").replace(/\s+/g, " ").trim();
-}
-
-function normalizeForDiscovery(value: unknown): string {
-  return normalizeText(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getDiscoveryType(value: unknown): CandidateRow["discovery_type"] {
-  const normalized = normalizeForDiscovery(value);
-
-  if (normalized === "artist" || normalized === "artista" || normalized === "dj") {
-    return "artist";
-  }
-
-  if (normalized === "festival") return "festival";
-  if (normalized === "venue" || normalized === "local") return "venue";
-  if (normalized === "party" || normalized === "festa") return "party";
-  if (normalized === "event" || normalized === "evento") return "event";
-
-  return "mixed";
-}
+type CandidateRow = OfficialEventCandidate;
 
 function asRecord(value: unknown): JsonRecord {
   return typeof value === "object" && value !== null ? (value as JsonRecord) : {};
