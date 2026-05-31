@@ -152,6 +152,52 @@ export const OFFICIAL_EVENT_PROVIDER_REGISTRY: OfficialEventProviderRegistryItem
       "Validate official developer documentation, API availability, partnership path, allowed fields and commercial usage.",
   },
   {
+    provider: "guicheweb",
+    publicName: "Guiche Web",
+    priority: 55,
+    primaryMarkets: ["BR", "regional_events", "shows", "festivals"],
+    integrationStatus: "research_required",
+    requiresPartnership: true,
+    supportedDiscoveryTypes: ["event", "festival", "party", "venue", "mixed"],
+    capabilities: {
+      event_search: true,
+      artist_search: false,
+      city_search: true,
+      date_range_search: false,
+      venue_search: false,
+      official_ticket_url: true,
+      official_image: false,
+      commercial_api_access: false,
+    },
+    strategicRole:
+      "Brazilian ticketing provider to validate for broader event, festival and regional coverage in the official resolver.",
+    validationNotes:
+      "Validate official API availability, partnership model, commercial permission, allowed data fields, event image usage and official ticket URL usage.",
+  },
+  {
+    provider: "ticket360",
+    publicName: "Ticket360",
+    priority: 58,
+    primaryMarkets: ["BR", "shows", "festivals", "venues"],
+    integrationStatus: "research_required",
+    requiresPartnership: true,
+    supportedDiscoveryTypes: ["event", "festival", "party", "venue", "mixed"],
+    capabilities: {
+      event_search: true,
+      artist_search: false,
+      city_search: true,
+      date_range_search: false,
+      venue_search: false,
+      official_ticket_url: true,
+      official_image: false,
+      commercial_api_access: false,
+    },
+    strategicRole:
+      "Brazilian ticketing provider to validate for official event discovery, shows, festivals and venue-based coverage.",
+    validationNotes:
+      "Validate official API availability, partner access, commercial permission, rate limits, event search support and whether third-party discovery is allowed.",
+  },
+  {
     provider: "eventbrite",
     publicName: "Eventbrite",
     priority: 60,

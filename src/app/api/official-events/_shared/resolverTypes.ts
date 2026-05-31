@@ -6,6 +6,8 @@ export type OfficialEventProvider =
   | "sympla"
   | "shotgun"
   | "blueticket"
+  | "guicheweb"
+  | "ticket360"
   | "eventbrite"
   | "bandsintown"
   | "manual"
