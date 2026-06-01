@@ -7,7 +7,7 @@ import {
 } from "@/app/api/official-events/_shared/resolverSearchInput";
 import { getOfficialEventProviderRegistry } from "@/app/api/official-events/_shared/providerRegistry";
 import { type OfficialEventProvider } from "@/app/api/official-events/_shared/resolverTypes";
-import { getOfficialEventPreviewAdapters } from "@/app/api/official-events/_shared/providerAdapterRegistry";
+import { getOfficialEventProviderAdapters } from "@/app/api/official-events/_shared/providerAdapterFactory";
 import { runOfficialEventProviderOrchestrator } from "@/app/api/official-events/_shared/providerOrchestrator";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,9 @@ export async function GET(request: NextRequest) {
 
   const result = await runOfficialEventProviderOrchestrator({
     input,
-    adapters: getOfficialEventPreviewAdapters(),
+    adapters: getOfficialEventProviderAdapters({
+      mode: "preview",
+    }),
     options: {
       providers,
       requestId: "preview",
