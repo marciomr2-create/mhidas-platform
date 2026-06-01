@@ -4,6 +4,7 @@ import { type OfficialEventProvider } from "./resolverTypes";
 import { getOfficialEventProviderRegistry } from "./providerRegistry";
 import { type OfficialEventProviderAdapter } from "./providerAdapter";
 import { getOfficialEventPreviewAdapters } from "./providerAdapterRegistry";
+import { createTicketmasterProviderAdapter } from "../_providers/ticketmasterAdapter";
 
 export type OfficialEventAdapterFactoryMode = "preview" | "production";
 
@@ -33,6 +34,12 @@ function filterAdaptersByEnabledStatus(
   return adapters.filter((adapter) => adapter.isEnabled);
 }
 
+function getOfficialEventProductionAdapters(): OfficialEventProviderAdapter[] {
+  return [
+    createTicketmasterProviderAdapter(),
+  ];
+}
+
 export function getOfficialEventProviderAdapters(
   options: OfficialEventAdapterFactoryOptions = {}
 ): OfficialEventProviderAdapter[] {
@@ -42,7 +49,7 @@ export function getOfficialEventProviderAdapters(
   const adapters =
     mode === "preview"
       ? getOfficialEventPreviewAdapters()
-      : [];
+      : getOfficialEventProductionAdapters();
 
   return filterAdaptersByEnabledStatus(
     filterAdaptersByProvider(adapters, options.providers),
