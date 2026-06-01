@@ -5,19 +5,10 @@ import {
   parseOfficialEventSearchInput,
   validateOfficialEventSearchInput,
 } from "@/app/api/official-events/_shared/resolverSearchInput";
-import {
-  getOfficialEventProviderRegistry,
-} from "@/app/api/official-events/_shared/providerRegistry";
-import {
-  type OfficialEventProvider,
-} from "@/app/api/official-events/_shared/resolverTypes";
-import {
-  type OfficialEventProviderAdapter,
-  createEmptyProviderAdapterResult,
-} from "@/app/api/official-events/_shared/providerAdapter";
-import {
-  runOfficialEventProviderOrchestrator,
-} from "@/app/api/official-events/_shared/providerOrchestrator";
+import { getOfficialEventProviderRegistry } from "@/app/api/official-events/_shared/providerRegistry";
+import { type OfficialEventProvider } from "@/app/api/official-events/_shared/resolverTypes";
+import { getOfficialEventPreviewAdapters } from "@/app/api/official-events/_shared/providerAdapterRegistry";
+import { runOfficialEventProviderOrchestrator } from "@/app/api/official-events/_shared/providerOrchestrator";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,20 +33,6 @@ function parseRequestedProviders(searchParams: URLSearchParams): OfficialEventPr
   return providers.length ? providers : registry.map((item) => item.provider);
 }
 
-const previewAdapters: OfficialEventProviderAdapter[] = [
-  {
-    provider: "ticketmaster",
-    displayName: "Ticketmaster Preview Adapter",
-    isEnabled: true,
-    requiresApiKey: false,
-    search: async (context) =>
-      createEmptyProviderAdapterResult({
-        provider: "ticketmaster",
-        message: `Preview adapter executed for "${context.input.query}". No external API was called.`,
-      }),
-  },
-];
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
@@ -76,7 +53,7 @@ export async function GET(request: NextRequest) {
 
   const result = await runOfficialEventProviderOrchestrator({
     input,
-    adapters: previewAdapters,
+    adapters: getOfficialEventPreviewAdapters(),
     options: {
       providers,
       requestId: "preview",
