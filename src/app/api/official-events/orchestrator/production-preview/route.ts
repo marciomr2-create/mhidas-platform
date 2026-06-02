@@ -14,6 +14,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
+function normalizeSecret(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
 function parseRequestedProviders(searchParams: URLSearchParams): OfficialEventProvider[] {
   const registry = getOfficialEventProviderRegistry();
   const allowedProviders = new Set(registry.map((item) => item.provider));
@@ -33,12 +37,33 @@ function parseRequestedProviders(searchParams: URLSearchParams): OfficialEventPr
   return providers.length ? providers : registry.map((item) => item.provider);
 }
 
+function isPersistenceAuthorized(
+  request: NextRequest,
+  searchParams: URLSearchParams
+): boolean {
+  const configuredSecret = normalizeSecret(process.env.OFFICIAL_EVENTS_RESOLVER_SECRET);
+
+  if (!configuredSecret && process.env.NODE_ENV !== "production") {
+    return true;
+  }
+
+  if (!configuredSecret) {
+    return false;
+  }
+
+  const headerSecret = normalizeSecret(request.headers.get("x-official-events-secret"));
+  const querySecret = normalizeSecret(searchParams.get("secret"));
+
+  return headerSecret === configuredSecret || querySecret === configuredSecret;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
   const input = parseOfficialEventSearchInput(searchParams);
   const validation = validateOfficialEventSearchInput(input);
   const providers = parseRequestedProviders(searchParams);
+  const persistenceEnabled = input.save === true && isPersistenceAuthorized(request, searchParams);
 
   if (!validation.ok) {
     return NextResponse.json({
@@ -47,6 +72,7 @@ export async function GET(request: NextRequest) {
       message: validation.message,
       input,
       providers,
+      persistenceEnabled,
       result: null,
     });
   }
@@ -59,6 +85,7 @@ export async function GET(request: NextRequest) {
     options: {
       providers,
       requestId: "production-preview",
+      persistenceEnabled,
     },
   });
 
@@ -66,7 +93,8 @@ export async function GET(request: NextRequest) {
     ok: result.ok,
     scope: "official-event-orchestrator-production-preview",
     message:
-      "Official event provider orchestrator production preview executed without real external API calls.",
+      "Official event provider orchestrator production preview executed with controlled persistence gate.",
+    persistenceEnabled,
     result,
   });
 }

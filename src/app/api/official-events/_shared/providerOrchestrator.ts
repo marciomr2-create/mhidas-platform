@@ -24,11 +24,16 @@ import {
   summarizeOfficialEventCandidateRanking,
 } from "./candidateRanking";
 import { prepareOfficialEventCandidatesForPersistence } from "./candidatePersistence";
+import {
+  type OfficialEventCandidatePersistenceWriteResponse,
+  persistOfficialEventCandidateRows,
+} from "./candidatePersistenceWriter";
 
 export type OfficialEventProviderOrchestratorOptions = {
   providers?: OfficialEventProvider[];
   requestId?: string;
   signal?: AbortSignal;
+  persistenceEnabled?: boolean;
 };
 
 export type OfficialEventProviderOrchestratorSummary = {
@@ -62,6 +67,7 @@ export type OfficialEventProviderOrchestratorResult = {
   rankingSummary: OfficialEventCandidateRankingSummary;
   persistencePreparation: ReturnType<typeof prepareOfficialEventCandidatesForPersistence>;
   persistenceControl: OfficialEventProviderOrchestratorPersistenceControl;
+  persistenceWrite: OfficialEventCandidatePersistenceWriteResponse;
   summary: OfficialEventProviderOrchestratorSummary;
 };
 
@@ -88,7 +94,9 @@ function summarizeProviderResults(
 
 function resolvePersistenceControl(params: {
   saveRequested: boolean;
+  persistenceEnabled: boolean;
   persistencePreparation: ReturnType<typeof prepareOfficialEventCandidatesForPersistence>;
+  persistenceWrite: OfficialEventCandidatePersistenceWriteResponse;
 }): OfficialEventProviderOrchestratorPersistenceControl {
   const preparedCount = params.persistencePreparation.summary.preparedCount;
   const skippedCount = params.persistencePreparation.summary.skippedCount;
@@ -104,14 +112,50 @@ function resolvePersistenceControl(params: {
     };
   }
 
+  if (!params.persistenceEnabled) {
+    return {
+      saveRequested: true,
+      saveEnabled: false,
+      willPersist: false,
+      preparedCount,
+      skippedCount,
+      reason:
+        "Persistence save=true was requested, but this route did not enable persistence.",
+    };
+  }
+
+  if (!params.persistenceWrite.summary.saveEnabled) {
+    return {
+      saveRequested: true,
+      saveEnabled: false,
+      willPersist: false,
+      preparedCount,
+      skippedCount,
+      reason:
+        "Persistence save=true was requested, but Supabase persistence is not available.",
+    };
+  }
+
+  if (params.persistenceWrite.summary.failedCount > 0) {
+    return {
+      saveRequested: true,
+      saveEnabled: true,
+      willPersist: params.persistenceWrite.summary.willPersist,
+      preparedCount,
+      skippedCount,
+      reason: "Persistence executed with failures.",
+    };
+  }
+
   return {
     saveRequested: true,
-    saveEnabled: false,
-    willPersist: false,
+    saveEnabled: true,
+    willPersist: params.persistenceWrite.summary.willPersist,
     preparedCount,
     skippedCount,
-    reason:
-      "Persistence save=true was requested, but Supabase persistence is disabled in this foundation version.",
+    reason: params.persistenceWrite.summary.willPersist
+      ? "Persistence executed by controlled Supabase writer."
+      : "Persistence was enabled, but there were no rows to persist.",
   };
 }
 
@@ -182,14 +226,26 @@ export async function runOfficialEventProviderOrchestrator(params: {
   const candidates = rankedCandidates.map((item) => item.candidate);
   const rankingSummary = summarizeOfficialEventCandidateRanking(rankedCandidates);
   const persistencePreparation = prepareOfficialEventCandidatesForPersistence(candidates);
-  const persistenceControl = resolvePersistenceControl({
-    saveRequested: params.input.save === true,
-    persistencePreparation,
+
+  const saveRequested = params.input.save === true;
+  const persistenceEnabled = params.options?.persistenceEnabled === true;
+
+  const persistenceWrite = await persistOfficialEventCandidateRows({
+    saveRequested: saveRequested && persistenceEnabled,
+    rows: persistencePreparation.rows,
   });
+
+  const persistenceControl = resolvePersistenceControl({
+    saveRequested,
+    persistenceEnabled,
+    persistencePreparation,
+    persistenceWrite,
+  });
+
   const summary = summarizeProviderResults(results, candidates);
 
   return {
-    ok: summary.errorCount === 0,
+    ok: summary.errorCount === 0 && persistenceWrite.ok,
     input: params.input,
     providers,
     results,
@@ -200,6 +256,7 @@ export async function runOfficialEventProviderOrchestrator(params: {
     rankingSummary,
     persistencePreparation,
     persistenceControl,
+    persistenceWrite,
     summary,
   };
 }
