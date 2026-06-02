@@ -13,6 +13,12 @@ import {
   createProviderAdapterErrorResult,
   createProviderAdapterNotConfiguredResult,
 } from "./providerAdapter";
+import {
+  type RankedOfficialEventCandidate,
+  type OfficialEventCandidateRankingSummary,
+  rankOfficialEventCandidates,
+  summarizeOfficialEventCandidateRanking,
+} from "./candidateRanking";
 
 export type OfficialEventProviderOrchestratorOptions = {
   providers?: OfficialEventProvider[];
@@ -36,6 +42,8 @@ export type OfficialEventProviderOrchestratorResult = {
   providers: OfficialEventProvider[];
   results: OfficialEventProviderAdapterSearchResult[];
   candidates: OfficialEventCandidate[];
+  rankedCandidates: RankedOfficialEventCandidate[];
+  rankingSummary: OfficialEventCandidateRankingSummary;
   summary: OfficialEventProviderOrchestratorSummary;
 };
 
@@ -121,7 +129,10 @@ export async function runOfficialEventProviderOrchestrator(params: {
     }
   }
 
-  const candidates = results.flatMap((result) => result.candidates);
+  const rawCandidates = results.flatMap((result) => result.candidates);
+  const rankedCandidates = rankOfficialEventCandidates(rawCandidates);
+  const candidates = rankedCandidates.map((item) => item.candidate);
+  const rankingSummary = summarizeOfficialEventCandidateRanking(rankedCandidates);
   const summary = summarizeProviderResults(results, candidates);
 
   return {
@@ -130,6 +141,8 @@ export async function runOfficialEventProviderOrchestrator(params: {
     providers,
     results,
     candidates,
+    rankedCandidates,
+    rankingSummary,
     summary,
   };
 }
