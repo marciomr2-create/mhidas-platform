@@ -14,6 +14,10 @@ import {
   createProviderAdapterNotConfiguredResult,
 } from "./providerAdapter";
 import {
+  type OfficialEventCandidateDeduplicationResult,
+  deduplicateOfficialEventCandidates,
+} from "./candidateDeduplication";
+import {
   type RankedOfficialEventCandidate,
   type OfficialEventCandidateRankingSummary,
   rankOfficialEventCandidates,
@@ -41,7 +45,9 @@ export type OfficialEventProviderOrchestratorResult = {
   input: OfficialEventSearchInput;
   providers: OfficialEventProvider[];
   results: OfficialEventProviderAdapterSearchResult[];
+  rawCandidates: OfficialEventCandidate[];
   candidates: OfficialEventCandidate[];
+  deduplicationResult: OfficialEventCandidateDeduplicationResult;
   rankedCandidates: RankedOfficialEventCandidate[];
   rankingSummary: OfficialEventCandidateRankingSummary;
   summary: OfficialEventProviderOrchestratorSummary;
@@ -130,7 +136,8 @@ export async function runOfficialEventProviderOrchestrator(params: {
   }
 
   const rawCandidates = results.flatMap((result) => result.candidates);
-  const rankedCandidates = rankOfficialEventCandidates(rawCandidates);
+  const deduplicationResult = deduplicateOfficialEventCandidates(rawCandidates);
+  const rankedCandidates = rankOfficialEventCandidates(deduplicationResult.candidates);
   const candidates = rankedCandidates.map((item) => item.candidate);
   const rankingSummary = summarizeOfficialEventCandidateRanking(rankedCandidates);
   const summary = summarizeProviderResults(results, candidates);
@@ -140,7 +147,9 @@ export async function runOfficialEventProviderOrchestrator(params: {
     input: params.input,
     providers,
     results,
+    rawCandidates,
     candidates,
+    deduplicationResult,
     rankedCandidates,
     rankingSummary,
     summary,
