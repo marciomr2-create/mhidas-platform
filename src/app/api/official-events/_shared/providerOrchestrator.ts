@@ -23,6 +23,7 @@ import {
   rankOfficialEventCandidates,
   summarizeOfficialEventCandidateRanking,
 } from "./candidateRanking";
+import { prepareOfficialEventCandidatesForPersistence } from "./candidatePersistence";
 
 export type OfficialEventProviderOrchestratorOptions = {
   providers?: OfficialEventProvider[];
@@ -50,6 +51,7 @@ export type OfficialEventProviderOrchestratorResult = {
   deduplicationResult: OfficialEventCandidateDeduplicationResult;
   rankedCandidates: RankedOfficialEventCandidate[];
   rankingSummary: OfficialEventCandidateRankingSummary;
+  persistencePreparation: ReturnType<typeof prepareOfficialEventCandidatesForPersistence>;
   summary: OfficialEventProviderOrchestratorSummary;
 };
 
@@ -140,6 +142,7 @@ export async function runOfficialEventProviderOrchestrator(params: {
   const rankedCandidates = rankOfficialEventCandidates(deduplicationResult.candidates);
   const candidates = rankedCandidates.map((item) => item.candidate);
   const rankingSummary = summarizeOfficialEventCandidateRanking(rankedCandidates);
+  const persistencePreparation = prepareOfficialEventCandidatesForPersistence(candidates);
   const summary = summarizeProviderResults(results, candidates);
 
   return {
@@ -152,6 +155,7 @@ export async function runOfficialEventProviderOrchestrator(params: {
     deduplicationResult,
     rankedCandidates,
     rankingSummary,
+    persistencePreparation,
     summary,
   };
 }
