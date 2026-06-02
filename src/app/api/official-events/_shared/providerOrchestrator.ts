@@ -41,6 +41,15 @@ export type OfficialEventProviderOrchestratorSummary = {
   errorCount: number;
 };
 
+export type OfficialEventProviderOrchestratorPersistenceControl = {
+  saveRequested: boolean;
+  saveEnabled: boolean;
+  willPersist: boolean;
+  preparedCount: number;
+  skippedCount: number;
+  reason: string;
+};
+
 export type OfficialEventProviderOrchestratorResult = {
   ok: boolean;
   input: OfficialEventSearchInput;
@@ -52,6 +61,7 @@ export type OfficialEventProviderOrchestratorResult = {
   rankedCandidates: RankedOfficialEventCandidate[];
   rankingSummary: OfficialEventCandidateRankingSummary;
   persistencePreparation: ReturnType<typeof prepareOfficialEventCandidatesForPersistence>;
+  persistenceControl: OfficialEventProviderOrchestratorPersistenceControl;
   summary: OfficialEventProviderOrchestratorSummary;
 };
 
@@ -73,6 +83,35 @@ function summarizeProviderResults(
     notConfiguredCount: results.filter((result) => result.status === "not_configured").length,
     disabledCount: results.filter((result) => result.status === "disabled").length,
     errorCount: results.filter((result) => result.status === "error").length,
+  };
+}
+
+function resolvePersistenceControl(params: {
+  saveRequested: boolean;
+  persistencePreparation: ReturnType<typeof prepareOfficialEventCandidatesForPersistence>;
+}): OfficialEventProviderOrchestratorPersistenceControl {
+  const preparedCount = params.persistencePreparation.summary.preparedCount;
+  const skippedCount = params.persistencePreparation.summary.skippedCount;
+
+  if (!params.saveRequested) {
+    return {
+      saveRequested: false,
+      saveEnabled: false,
+      willPersist: false,
+      preparedCount,
+      skippedCount,
+      reason: "Persistence preview only. No save requested.",
+    };
+  }
+
+  return {
+    saveRequested: true,
+    saveEnabled: false,
+    willPersist: false,
+    preparedCount,
+    skippedCount,
+    reason:
+      "Persistence save=true was requested, but Supabase persistence is disabled in this foundation version.",
   };
 }
 
@@ -143,6 +182,10 @@ export async function runOfficialEventProviderOrchestrator(params: {
   const candidates = rankedCandidates.map((item) => item.candidate);
   const rankingSummary = summarizeOfficialEventCandidateRanking(rankedCandidates);
   const persistencePreparation = prepareOfficialEventCandidatesForPersistence(candidates);
+  const persistenceControl = resolvePersistenceControl({
+    saveRequested: params.input.save === true,
+    persistencePreparation,
+  });
   const summary = summarizeProviderResults(results, candidates);
 
   return {
@@ -156,6 +199,7 @@ export async function runOfficialEventProviderOrchestrator(params: {
     rankedCandidates,
     rankingSummary,
     persistencePreparation,
+    persistenceControl,
     summary,
   };
 }
