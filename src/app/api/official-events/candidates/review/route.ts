@@ -13,6 +13,61 @@ type AdminClient = {
 
 type ReviewCandidateStatus = "probable" | "review" | "confirmed" | "rejected" | "expired";
 
+type ReviewCandidateRow = {
+  candidate_id: string;
+  provider: string;
+  provider_event_id: string | null;
+  provider_url: string | null;
+  query_text: string | null;
+  event_name: string;
+  artist_name: string | null;
+  event_date: string | null;
+  event_datetime: string | null;
+  venue_name: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  official_url: string | null;
+  ticket_url: string | null;
+  image_url: string | null;
+  source_name: string | null;
+  source_type: string | null;
+  candidate_status: ReviewCandidateStatus;
+  confidence: number | null;
+  discovery_type: string | null;
+  normalized_query: string | null;
+  query_city: string | null;
+  query_state: string | null;
+  query_country: string | null;
+  query_start_date: string | null;
+  query_end_date: string | null;
+  match_reason: string | null;
+  event_group_id: string | null;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+type CandidateReviewSummary = {
+  primaryOfficialUrl: string | null;
+  hasValidOfficialUrl: boolean;
+  hasEventGroup: boolean;
+  needsEventGroupSelection: boolean;
+  canAttemptDryRunConfirmation: boolean;
+  canConfirmAutomatically: false;
+  suggestedAction:
+    | "select_event_group"
+    | "run_confirmation_dry_run"
+    | "already_confirmed"
+    | "review_rejected_or_expired_candidate"
+    | "missing_valid_official_url";
+  warnings: string[];
+};
+
+type EnrichedReviewCandidate = ReviewCandidateRow & {
+  review_summary: CandidateReviewSummary;
+};
+
 function normalizeText(value: unknown): string {
   return String(value ?? "").trim();
 }
@@ -68,6 +123,147 @@ function getRequestedStatuses(searchParams: URLSearchParams): ReviewCandidateSta
   if (status === "review") return ["review"];
 
   return ["probable", "review"];
+}
+
+function isValidHttpUrl(value: unknown): boolean {
+  const text = normalizeText(value);
+
+  if (!text) return false;
+
+  try {
+    const url = new URL(text);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function getPrimaryOfficialUrl(candidate: ReviewCandidateRow): string | null {
+  return (
+    normalizeText(candidate.official_url) ||
+    normalizeText(candidate.ticket_url) ||
+    normalizeText(candidate.provider_url) ||
+    null
+  );
+}
+
+function buildCandidateReviewSummary(candidate: ReviewCandidateRow): CandidateReviewSummary {
+  const primaryOfficialUrl = getPrimaryOfficialUrl(candidate);
+  const hasValidOfficialUrl = isValidHttpUrl(primaryOfficialUrl);
+  const hasEventGroup = Boolean(normalizeText(candidate.event_group_id));
+  const warnings: string[] = [];
+
+  if (!hasValidOfficialUrl) {
+    warnings.push("Candidate does not have a valid official URL.");
+  }
+
+  if (!hasEventGroup) {
+    warnings.push("Candidate is not linked to an event_group yet.");
+  }
+
+  if (!candidate.event_date) {
+    warnings.push("Candidate does not have event_date.");
+  }
+
+  if (!candidate.city && !candidate.state && !candidate.country) {
+    warnings.push("Candidate does not have enough location data.");
+  }
+
+  if (Number(candidate.confidence || 0) < 60) {
+    warnings.push("Candidate confidence is below recommended manual review threshold.");
+  }
+
+  if (candidate.candidate_status === "confirmed") {
+    return {
+      primaryOfficialUrl,
+      hasValidOfficialUrl,
+      hasEventGroup,
+      needsEventGroupSelection: false,
+      canAttemptDryRunConfirmation: false,
+      canConfirmAutomatically: false,
+      suggestedAction: "already_confirmed",
+      warnings,
+    };
+  }
+
+  if (candidate.candidate_status === "rejected" || candidate.candidate_status === "expired") {
+    return {
+      primaryOfficialUrl,
+      hasValidOfficialUrl,
+      hasEventGroup,
+      needsEventGroupSelection: false,
+      canAttemptDryRunConfirmation: false,
+      canConfirmAutomatically: false,
+      suggestedAction: "review_rejected_or_expired_candidate",
+      warnings,
+    };
+  }
+
+  if (!hasValidOfficialUrl) {
+    return {
+      primaryOfficialUrl,
+      hasValidOfficialUrl,
+      hasEventGroup,
+      needsEventGroupSelection: !hasEventGroup,
+      canAttemptDryRunConfirmation: false,
+      canConfirmAutomatically: false,
+      suggestedAction: "missing_valid_official_url",
+      warnings,
+    };
+  }
+
+  if (!hasEventGroup) {
+    return {
+      primaryOfficialUrl,
+      hasValidOfficialUrl,
+      hasEventGroup,
+      needsEventGroupSelection: true,
+      canAttemptDryRunConfirmation: false,
+      canConfirmAutomatically: false,
+      suggestedAction: "select_event_group",
+      warnings,
+    };
+  }
+
+  return {
+    primaryOfficialUrl,
+    hasValidOfficialUrl,
+    hasEventGroup,
+    needsEventGroupSelection: false,
+    canAttemptDryRunConfirmation: true,
+    canConfirmAutomatically: false,
+    suggestedAction: "run_confirmation_dry_run",
+    warnings,
+  };
+}
+
+function summarizeCandidates(candidates: EnrichedReviewCandidate[]) {
+  return {
+    total: candidates.length,
+    probableCount: candidates.filter((candidate) => candidate.candidate_status === "probable")
+      .length,
+    reviewCount: candidates.filter((candidate) => candidate.candidate_status === "review").length,
+    confirmedCount: candidates.filter((candidate) => candidate.candidate_status === "confirmed")
+      .length,
+    rejectedCount: candidates.filter((candidate) => candidate.candidate_status === "rejected")
+      .length,
+    expiredCount: candidates.filter((candidate) => candidate.candidate_status === "expired")
+      .length,
+    withEventGroupCount: candidates.filter((candidate) => candidate.review_summary.hasEventGroup)
+      .length,
+    withoutEventGroupCount: candidates.filter(
+      (candidate) => !candidate.review_summary.hasEventGroup
+    ).length,
+    withValidOfficialUrlCount: candidates.filter(
+      (candidate) => candidate.review_summary.hasValidOfficialUrl
+    ).length,
+    readyForDryRunCount: candidates.filter(
+      (candidate) => candidate.review_summary.canAttemptDryRunConfirmation
+    ).length,
+    needsEventGroupSelectionCount: candidates.filter(
+      (candidate) => candidate.review_summary.needsEventGroupSelection
+    ).length,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -174,7 +370,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const candidates = Array.isArray(data) ? data : [];
+  const candidates = (Array.isArray(data) ? data : []) as ReviewCandidateRow[];
+  const enrichedCandidates: EnrichedReviewCandidate[] = candidates.map((candidate) => ({
+    ...candidate,
+    review_summary: buildCandidateReviewSummary(candidate),
+  }));
 
   return NextResponse.json({
     ok: true,
@@ -186,7 +386,8 @@ export async function GET(request: NextRequest) {
     provider: provider || null,
     query: query || null,
     limit,
-    count: candidates.length,
-    candidates,
+    count: enrichedCandidates.length,
+    summary: summarizeCandidates(enrichedCandidates),
+    candidates: enrichedCandidates,
   });
 }
