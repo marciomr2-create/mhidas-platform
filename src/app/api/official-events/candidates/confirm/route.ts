@@ -54,6 +54,59 @@ type ConfirmRequestBody = {
   note?: unknown;
 };
 
+type ConfirmationSafety = {
+  canConfirm: boolean;
+  warnings: string[];
+  blockingReasons: string[];
+  checks: Record<string, boolean>;
+};
+
+type ConfirmationPreview = {
+  official_url: string | null;
+  official_source_name: string;
+  official_source_url: string | null;
+  official_source_type: string;
+  official_status: "confirmed";
+  official_confidence: number;
+  official_notes: string;
+};
+
+type ConfirmationAdminSummary = {
+  requestedDryRun: boolean;
+  effectiveDryRun: boolean;
+  canConfirm: boolean;
+  wroteChanges: boolean;
+  canConfirmAutomatically: false;
+  showDryRunButton: boolean;
+  showConfirmButton: boolean;
+  nextRecommendedAction:
+    | "already_confirmed"
+    | "run_dry_run"
+    | "confirm_manually"
+    | "review_blocking_reasons"
+    | "missing_required_fields"
+    | "not_found"
+    | "confirmed"
+    | "none";
+  reason: string;
+  candidate: {
+    candidate_id: string | null;
+    event_name: string | null;
+    candidate_status: string | null;
+    event_group_id: string | null;
+  };
+  eventGroup: {
+    group_id: string | null;
+    event_name: string | null;
+    official_status: string | null;
+  };
+  links: {
+    official_url: string | null;
+    source_name: string | null;
+    source_type: string | null;
+  };
+};
+
 function normalizeText(value: unknown): string {
   return String(value ?? "").trim();
 }
@@ -168,12 +221,7 @@ function buildManualConfirmationNotes(params: {
 function evaluateConfirmationSafety(params: {
   candidate: CandidateRecord;
   eventGroup: EventGroupRecord;
-}): {
-  canConfirm: boolean;
-  warnings: string[];
-  blockingReasons: string[];
-  checks: Record<string, boolean>;
-} {
+}): ConfirmationSafety {
   const warnings: string[] = [];
   const blockingReasons: string[] = [];
 
@@ -213,7 +261,11 @@ function evaluateConfirmationSafety(params: {
   const hasValidOfficialUrl = isValidHttpUrl(officialUrl);
 
   if (!statusAllowed) {
-    blockingReasons.push("Candidate status must be probable or review before manual confirmation.");
+    if (params.candidate.candidate_status === "confirmed") {
+      blockingReasons.push("Candidate is already confirmed.");
+    } else {
+      blockingReasons.push("Candidate status must be probable or review before manual confirmation.");
+    }
   }
 
   if (!groupIsActive) {
@@ -252,6 +304,72 @@ function evaluateConfirmationSafety(params: {
       nameMatches,
       dateMatches,
       cityMatches,
+    },
+  };
+}
+
+function buildConfirmationAdminSummary(params: {
+  candidate: CandidateRecord | null;
+  eventGroup: EventGroupRecord | null;
+  preview: ConfirmationPreview | null;
+  safety: ConfirmationSafety | null;
+  requestedDryRun: boolean;
+  effectiveDryRun: boolean;
+  wroteChanges: boolean;
+  reason: string;
+}): ConfirmationAdminSummary {
+  const candidate = params.candidate;
+  const eventGroup = params.eventGroup;
+  const safety = params.safety;
+
+  let nextRecommendedAction: ConfirmationAdminSummary["nextRecommendedAction"] = "none";
+  let showDryRunButton = false;
+  let showConfirmButton = false;
+
+  if (!candidate || !eventGroup) {
+    nextRecommendedAction = "not_found";
+  } else if (candidate.candidate_status === "confirmed") {
+    nextRecommendedAction = "already_confirmed";
+  } else if (!safety) {
+    nextRecommendedAction = "missing_required_fields";
+  } else if (!safety.canConfirm) {
+    nextRecommendedAction = "review_blocking_reasons";
+    showDryRunButton = true;
+  } else if (params.wroteChanges) {
+    nextRecommendedAction = "confirmed";
+  } else if (params.effectiveDryRun) {
+    nextRecommendedAction = "confirm_manually";
+    showConfirmButton = true;
+  } else {
+    nextRecommendedAction = "run_dry_run";
+    showDryRunButton = true;
+  }
+
+  return {
+    requestedDryRun: params.requestedDryRun,
+    effectiveDryRun: params.effectiveDryRun,
+    canConfirm: Boolean(safety?.canConfirm),
+    wroteChanges: params.wroteChanges,
+    canConfirmAutomatically: false,
+    showDryRunButton,
+    showConfirmButton,
+    nextRecommendedAction,
+    reason: params.reason,
+    candidate: {
+      candidate_id: candidate?.candidate_id || null,
+      event_name: candidate?.event_name || null,
+      candidate_status: candidate?.candidate_status || null,
+      event_group_id: candidate?.event_group_id || null,
+    },
+    eventGroup: {
+      group_id: eventGroup?.group_id || null,
+      event_name: eventGroup?.event_name || null,
+      official_status: eventGroup?.official_status || null,
+    },
+    links: {
+      official_url: params.preview?.official_url || null,
+      source_name: params.preview?.official_source_name || null,
+      source_type: params.preview?.official_source_type || null,
     },
   };
 }
@@ -305,7 +423,7 @@ async function getCandidate(params: {
   }
 
   return {
-    candidate: data || null,
+    candidate: data ? (data as CandidateRecord) : null,
     error: null,
   };
 }
@@ -342,7 +460,7 @@ async function getEventGroup(params: {
   }
 
   return {
-    eventGroup: data || null,
+    eventGroup: data ? (data as EventGroupRecord) : null,
     error: null,
   };
 }
@@ -387,6 +505,16 @@ export async function POST(request: NextRequest) {
         scope: "official-event-candidate-confirmation",
         message: "candidate_id and event_group_id are required.",
         dryRun,
+        admin_summary: buildConfirmationAdminSummary({
+          candidate: null,
+          eventGroup: null,
+          preview: null,
+          safety: null,
+          requestedDryRun: dryRun,
+          effectiveDryRun: true,
+          wroteChanges: false,
+          reason: "candidate_id and event_group_id are required.",
+        }),
       },
       { status: 400 }
     );
@@ -420,6 +548,16 @@ export async function POST(request: NextRequest) {
         candidate_id: candidateId,
         event_group_id: eventGroupId,
         dryRun,
+        admin_summary: buildConfirmationAdminSummary({
+          candidate: null,
+          eventGroup: null,
+          preview: null,
+          safety: null,
+          requestedDryRun: dryRun,
+          effectiveDryRun: true,
+          wroteChanges: false,
+          reason: "Candidate was not found.",
+        }),
       },
       { status: 404 }
     );
@@ -453,6 +591,16 @@ export async function POST(request: NextRequest) {
         candidate_id: candidateId,
         event_group_id: eventGroupId,
         dryRun,
+        admin_summary: buildConfirmationAdminSummary({
+          candidate: candidateResult.candidate,
+          eventGroup: null,
+          preview: null,
+          safety: null,
+          requestedDryRun: dryRun,
+          effectiveDryRun: true,
+          wroteChanges: false,
+          reason: "Event group was not found.",
+        }),
       },
       { status: 404 }
     );
@@ -473,7 +621,7 @@ export async function POST(request: NextRequest) {
     note,
   });
 
-  const preview = {
+  const preview: ConfirmationPreview = {
     official_url: officialUrl || null,
     official_source_name: candidate.source_name || candidate.provider || "Manual review",
     official_source_url: candidate.provider_url || candidate.ticket_url || candidate.official_url || null,
@@ -484,20 +632,34 @@ export async function POST(request: NextRequest) {
   };
 
   if (dryRun || !safety.canConfirm) {
+    const reason = safety.canConfirm
+      ? "Candidate can be manually confirmed. No changes were written because dryRun is true."
+      : "Candidate cannot be confirmed safely for the selected event group.";
+
     return NextResponse.json({
       ok: safety.canConfirm,
       scope: "official-event-candidate-confirmation",
       mode: "dry_run",
       dryRun: true,
+      requestedDryRun: dryRun,
+      effectiveDryRun: true,
       canConfirm: safety.canConfirm,
-      message: safety.canConfirm
-        ? "Candidate can be manually confirmed. No changes were written because dryRun is true."
-        : "Candidate cannot be confirmed safely for the selected event group.",
+      message: reason,
       candidate,
       eventGroup,
       preview,
       safety,
       wroteChanges: false,
+      admin_summary: buildConfirmationAdminSummary({
+        candidate,
+        eventGroup,
+        preview,
+        safety,
+        requestedDryRun: dryRun,
+        effectiveDryRun: true,
+        wroteChanges: false,
+        reason,
+      }),
     });
   }
 
@@ -524,8 +686,20 @@ export async function POST(request: NextRequest) {
         scope: "official-event-candidate-confirmation",
         message: eventGroupUpdateError.message || "Failed to update event group.",
         dryRun: false,
+        requestedDryRun: false,
+        effectiveDryRun: false,
         canConfirm: true,
         wroteChanges: false,
+        admin_summary: buildConfirmationAdminSummary({
+          candidate,
+          eventGroup,
+          preview,
+          safety,
+          requestedDryRun: false,
+          effectiveDryRun: false,
+          wroteChanges: false,
+          reason: eventGroupUpdateError.message || "Failed to update event group.",
+        }),
       },
       { status: 500 }
     );
@@ -548,25 +722,58 @@ export async function POST(request: NextRequest) {
         scope: "official-event-candidate-confirmation",
         message: candidateUpdateError.message || "Event group was updated, but candidate update failed.",
         dryRun: false,
+        requestedDryRun: false,
+        effectiveDryRun: false,
         canConfirm: true,
         wroteChanges: true,
         partialWrite: true,
+        admin_summary: buildConfirmationAdminSummary({
+          candidate,
+          eventGroup,
+          preview,
+          safety,
+          requestedDryRun: false,
+          effectiveDryRun: false,
+          wroteChanges: true,
+          reason: candidateUpdateError.message || "Event group was updated, but candidate update failed.",
+        }),
       },
       { status: 500 }
     );
   }
+
+  const reason = "Candidate manually confirmed as official event source.";
 
   return NextResponse.json({
     ok: true,
     scope: "official-event-candidate-confirmation",
     mode: "confirmed",
     dryRun: false,
+    requestedDryRun: false,
+    effectiveDryRun: false,
     canConfirm: true,
-    message: "Candidate manually confirmed as official event source.",
+    message: reason,
     candidate_id: candidate.candidate_id,
     event_group_id: eventGroup.group_id,
     official_url: preview.official_url,
     official_status: "confirmed",
     wroteChanges: true,
+    admin_summary: buildConfirmationAdminSummary({
+      candidate: {
+        ...candidate,
+        candidate_status: "confirmed",
+        event_group_id: eventGroup.group_id,
+      },
+      eventGroup: {
+        ...eventGroup,
+        official_status: "confirmed",
+      },
+      preview,
+      safety,
+      requestedDryRun: false,
+      effectiveDryRun: false,
+      wroteChanges: true,
+      reason,
+    }),
   });
 }
