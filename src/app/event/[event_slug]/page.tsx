@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
+import TicketIntentButton from "./TicketIntentButton";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
@@ -56,6 +57,7 @@ type ClubProfileRow = {
 };
 
 type EventGroupRow = {
+  group_id: string;
   event_name: string | null;
   event_slug: string | null;
   event_url: string | null;
@@ -925,7 +927,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
   const { data: eventGroupsData } = await supabase
     .from("event_groups")
-    .select("event_name,event_slug,event_url,official_url,official_status,official_confidence,official_source_type,event_date,event_image_url,city_base,title,description,weather_summary,weather_temperature,weather_rain_alert,preparation_note")
+    .select("group_id,event_name,event_slug,event_url,official_url,official_status,official_confidence,official_source_type,event_date,event_image_url,city_base,title,description,weather_summary,weather_temperature,weather_rain_alert,preparation_note")
     .eq("event_slug", eventSlug)
     .limit(1);
 
@@ -1076,6 +1078,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
               Voltar ao ecossistema
             </Link>
           </div>
+
+          {eventGroup?.group_id ? (
+            <TicketIntentButton eventGroupId={eventGroup.group_id} compact />
+          ) : null}
         </div>
 
         <div style={statsGridStyle()}>
