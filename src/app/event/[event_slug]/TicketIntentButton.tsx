@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type TicketIntentStatus =
   | "interested"
@@ -25,6 +25,18 @@ type TicketIntentApiResponse = {
     updated_at?: string;
   } | null;
 };
+
+const TICKET_INTENT_STATUSES: TicketIntentStatus[] = [
+  "interested",
+  "wants_ticket",
+  "ticket_acquired",
+  "cancelled",
+  "checked_in",
+];
+
+function isTicketIntentStatus(value: unknown): value is TicketIntentStatus {
+  return TICKET_INTENT_STATUSES.includes(value as TicketIntentStatus);
+}
 
 function getButtonLabel(status: TicketIntentStatus | null) {
   if (status === "ticket_acquired") {
@@ -64,6 +76,9 @@ export default function TicketIntentButton({
   compact = false,
 }: TicketIntentButtonProps) {
   const [status, setStatus] = useState<TicketIntentStatus | null>(initialStatus);
+  const [isLoadingInitialStatus, setIsLoadingInitialStatus] = useState(
+    Boolean(eventGroupId)
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,8 +88,66 @@ export default function TicketIntentButton({
   const buttonLabel = useMemo(() => getButtonLabel(status), [status]);
   const helperText = useMemo(() => getHelperText(status), [status]);
 
+  useEffect(() => {
+    if (!eventGroupId) {
+      setIsLoadingInitialStatus(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadSavedIntent() {
+      setIsLoadingInitialStatus(true);
+
+      try {
+        const response = await fetch(
+          `/api/event-ticket-intents?event_group_id=${encodeURIComponent(
+            eventGroupId
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal,
+          }
+        );
+
+        if (response.status === 401) {
+          return;
+        }
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as TicketIntentApiResponse;
+        const savedStatus = data.intent?.status;
+
+        if (isTicketIntentStatus(savedStatus)) {
+          setStatus(savedStatus);
+        }
+      } catch (caughtError) {
+        if (
+          caughtError instanceof DOMException &&
+          caughtError.name === "AbortError"
+        ) {
+          return;
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingInitialStatus(false);
+        }
+      }
+    }
+
+    void loadSavedIntent();
+
+    return () => {
+      controller.abort();
+    };
+  }, [eventGroupId]);
+
   async function saveIntent(nextStatus: TicketIntentStatus) {
-    if (!eventGroupId || isSaving) {
+    if (!eventGroupId || isSaving || isLoadingInitialStatus) {
       return;
     }
 
@@ -98,7 +171,7 @@ export default function TicketIntentButton({
               : "Clubber updated ticket intent from event page.",
           metadata: {
             component: "TicketIntentButton",
-            version: "v4.2.2",
+            version: "v4.2.5",
           },
         }),
       });
@@ -125,6 +198,9 @@ export default function TicketIntentButton({
       setIsSaving(false);
     }
   }
+
+  const isButtonDisabled =
+    isLoadingInitialStatus || isSaving || !eventGroupId;
 
   return (
     <section
@@ -157,7 +233,9 @@ export default function TicketIntentButton({
               lineHeight: 1.25,
             }}
           >
-            {isTicketAcquired ? "Você já está no caminho do evento" : "Vai nesse evento?"}
+            {isTicketAcquired
+              ? "Você já está no caminho do evento"
+              : "Vai nesse evento?"}
           </p>
 
           <p
@@ -175,14 +253,14 @@ export default function TicketIntentButton({
         <button
           type="button"
           onClick={() => saveIntent("ticket_acquired")}
-          disabled={isSaving || !eventGroupId}
+          disabled={isButtonDisabled}
           style={{
             width: compact ? "100%" : "auto",
             minWidth: compact ? "100%" : 216,
             border: "1px solid rgba(255,255,255,0.2)",
             borderRadius: 999,
             padding: "12px 15px",
-            cursor: isSaving || !eventGroupId ? "not-allowed" : "pointer",
+            cursor: isButtonDisabled ? "not-allowed" : "pointer",
             background: isTicketAcquired
               ? "linear-gradient(135deg, rgba(34,197,94,0.95), rgba(21,128,61,0.95))"
               : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(214,214,214,0.92))",
@@ -190,13 +268,17 @@ export default function TicketIntentButton({
             fontSize: 13,
             fontWeight: 950,
             letterSpacing: "-0.01em",
-            opacity: isSaving || !eventGroupId ? 0.68 : 1,
+            opacity: isButtonDisabled ? 0.68 : 1,
             boxShadow: isTicketAcquired
               ? "0 14px 34px rgba(34,197,94,0.24)"
               : "0 14px 34px rgba(255,255,255,0.12)",
           }}
         >
-          {isSaving ? "Salvando..." : buttonLabel}
+          {isLoadingInitialStatus
+            ? "Verificando..."
+            : isSaving
+              ? "Salvando..."
+              : buttonLabel}
         </button>
       </div>
 
@@ -204,7 +286,9 @@ export default function TicketIntentButton({
         <p
           style={{
             margin: "10px 0 0",
-            color: error ? "rgba(248,113,113,0.95)" : "rgba(134,239,172,0.95)",
+            color: error
+              ? "rgba(248,113,113,0.95)"
+              : "rgba(134,239,172,0.95)",
             fontSize: 12,
             fontWeight: 800,
             lineHeight: 1.35,
