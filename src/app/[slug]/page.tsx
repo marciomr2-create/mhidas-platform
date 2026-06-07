@@ -1162,11 +1162,18 @@ function EventStateBadge({
 function EventMiniAvatarStack({
   members,
   eventSlug,
+  returnTo,
 }: {
   members?: EventMiniMember[] | null;
   eventSlug?: string;
+  returnTo?: string;
 }) {
   const visibleMembers = (members || []).slice(0, 5);
+  const eventHref = eventSlug
+    ? returnTo
+      ? `/event/${eventSlug}?return_to=${encodeURIComponent(returnTo)}`
+      : `/event/${eventSlug}`
+    : "#";
 
   if (visibleMembers.length <= 0) {
     return null;
@@ -1174,7 +1181,7 @@ function EventMiniAvatarStack({
 
   return (
     <Link
-      href={eventSlug ? `/event/${eventSlug}` : "#"}
+      href={eventHref}
       title="Ver participantes do evento"
       style={{
         display: "flex",
@@ -2839,6 +2846,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                             <EventMiniAvatarStack
   members={event.event_members}
   eventSlug={event.event_slug}
+  returnTo={`/${card.slug}?mode=club`}
 />
                           </div>
 
