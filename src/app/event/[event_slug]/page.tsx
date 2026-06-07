@@ -12,7 +12,12 @@ import TicketIntentButton from "./TicketIntentButton";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
-  searchParams?: Promise<{ city?: string; state?: string; region?: string }>;
+  searchParams?: Promise<{
+    city?: string;
+    state?: string;
+    region?: string;
+    return_to?: string;
+  }>;
 };
 
 type CardRow = {
@@ -183,6 +188,54 @@ function hasContent(value: string | null | undefined): boolean {
 
 function isHttpUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(normalizeText(value));
+}
+
+const RESERVED_RETURN_SLUGS = new Set([
+  "api",
+  "dashboard",
+  "event",
+  "invalid",
+  "login",
+  "network",
+  "pro",
+  "r",
+  "t",
+  "u",
+]);
+
+function getRequestedClubReturnSlug(
+  value: string | null | undefined
+): string {
+  const candidate = String(value || "").trim();
+
+  if (
+    !candidate.startsWith("/") ||
+    candidate.startsWith("//") ||
+    candidate.includes("\\") ||
+    /[\u0000-\u001F\u007F]/.test(candidate)
+  ) {
+    return "";
+  }
+
+  const [pathname, queryString = ""] = candidate.split("?", 2);
+
+  if (!/^\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
+    return "";
+  }
+
+  const slug = pathname.slice(1).toLowerCase();
+
+  if (RESERVED_RETURN_SLUGS.has(slug)) {
+    return "";
+  }
+
+  const query = new URLSearchParams(queryString);
+
+  if (query.size !== 1 || query.get("mode") !== "club") {
+    return "";
+  }
+
+  return slug;
 }
 
 function dedupeStrings(values: string[]): string[] {
@@ -776,6 +829,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const selectedCity = normalizeText(sp?.city);
   const selectedState = normalizeText(sp?.state).toUpperCase();
   const selectedRegion = normalizeText(sp?.region);
+  const requestedClubReturnSlug = getRequestedClubReturnSlug(sp?.return_to);
 
   const supabase = createPublicClient();
 
@@ -786,6 +840,18 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     .eq("is_published", true);
 
   const cards = ((cardsData ?? []) as CardRow[]).filter((card) => hasContent(card.slug));
+  const returnCard = requestedClubReturnSlug
+    ? cards.find(
+        (card) =>
+          normalizeText(card.slug).toLowerCase() === requestedClubReturnSlug
+      )
+    : undefined;
+  const heroReturnHref = returnCard
+    ? `/${returnCard.slug}?mode=club`
+    : "/login";
+  const heroReturnLabel = returnCard
+    ? "Voltar ao perfil Club"
+    : "Entrar no USECLUBBERS";
   const userIds = dedupeStrings(cards.map((card) => card.user_id));
 
   const { data: eventCheckInsData } = await supabase
@@ -1068,14 +1134,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             ) : null}
 
             <Link
-              href="/network"
+              href={heroReturnHref}
               style={{
                 ...actionButtonStyle(),
                 width: "fit-content",
                 padding: "15px 20px",
               }}
             >
-              Voltar ao ecossistema
+              {heroReturnLabel}
             </Link>
           </div>
 
