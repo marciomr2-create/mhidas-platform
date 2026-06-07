@@ -213,7 +213,7 @@ export default async function DashboardPage() {
 
         <div style={actionGridStyle()}>
           <Link href="/dashboard/cards" style={buttonStyle(true)}>
-            {hasProfiles ? "Abrir meus perfis" : "Criar meu perfil Club"}
+            {hasProfiles ? "Abrir meus perfis" : "Ver meus perfis"}
           </Link>
 
           {firstPublishedClubProfile?.slug ? (
@@ -275,7 +275,7 @@ export default async function DashboardPage() {
           <span style={labelStyle()}>Próximo passo</span>
 
           <h2 style={{ margin: 0, fontSize: 24, letterSpacing: "-0.035em" }}>
-            {hasProfiles ? "Fortaleça sua presença Club" : "Crie seu perfil Club"}
+            {hasProfiles ? "Fortaleça sua presença Club" : "Prepare seu perfil Club"}
           </h2>
 
           <p style={mutedTextStyle()}>
@@ -286,7 +286,7 @@ export default async function DashboardPage() {
 
           <div style={actionGridStyle(180)}>
             <Link href="/dashboard/cards" style={buttonStyle(true)}>
-              {hasProfiles ? "Editar meu perfil" : "Começar agora"}
+              {hasProfiles ? "Editar meu perfil" : "Ver como começar"}
             </Link>
 
             {firstPublishedClubProfile?.slug ? (
