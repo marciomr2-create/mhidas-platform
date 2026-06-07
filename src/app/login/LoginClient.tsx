@@ -1,17 +1,124 @@
+// src/app/login/LoginClient.tsx
+
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
+
+const RESERVED_NEXT_SLUGS = new Set([
+  "api",
+  "dashboard",
+  "event",
+  "invalid",
+  "login",
+  "network",
+  "pro",
+  "r",
+  "t",
+  "u",
+]);
+
+function getSafeNextPath(value: string | null): string {
+  const candidate = String(value || "").trim();
+
+  if (
+    !candidate.startsWith("/") ||
+    candidate.startsWith("//") ||
+    candidate.includes("\\") ||
+    /[\u0000-\u001F\u007F]/.test(candidate)
+  ) {
+    return "";
+  }
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(candidate, "https://useclubbers.local");
+  } catch {
+    return "";
+  }
+
+  const pathname = parsedUrl.pathname;
+  const search = parsedUrl.search;
+
+  if (pathname === "/dashboard") {
+    return "/dashboard";
+  }
+
+  if (pathname === "/dashboard/cards") {
+    return "/dashboard/cards";
+  }
+
+  if (/^\/event\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
+    return `${pathname}${search}`;
+  }
+
+  if (/^\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
+    const slug = pathname.slice(1).toLowerCase();
+
+    if (RESERVED_NEXT_SLUGS.has(slug)) {
+      return "";
+    }
+
+    const query = new URLSearchParams(search);
+
+    if (query.size === 1 && query.get("mode") === "club") {
+      return `${pathname}?mode=club`;
+    }
+  }
+
+  return "";
+}
 
 export default function LoginClient() {
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const searchParams = useSearchParams();
+  const supabase = useMemo(() => createBrowserClient(), []);
+
+  const safeNextPath = useMemo(
+    () => getSafeNextPath(searchParams.get("next")),
+    [searchParams]
+  );
+  const redirectPath = safeNextPath || "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkExistingSession() {
+      try {
+        const { data } = await supabase.auth.getSession();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (data.session) {
+          router.replace(redirectPath);
+          router.refresh();
+          return;
+        }
+
+        setIsCheckingSession(false);
+      } catch {
+        if (isMounted) {
+          setIsCheckingSession(false);
+        }
+      }
+    }
+
+    void checkExistingSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [redirectPath, router, supabase]);
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,13 +135,22 @@ export default function LoginClient() {
         throw new Error(error.message);
       }
 
-      router.push("/dashboard");
+      router.push(redirectPath);
       router.refresh();
     } catch (err: any) {
       setErrorMsg(err?.message ?? "Falha ao entrar.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (isCheckingSession) {
+    return (
+      <main style={{ padding: 24, maxWidth: 520 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Login</h1>
+        <p style={{ marginTop: 10, opacity: 0.85 }}>Verificando acesso...</p>
+      </main>
+    );
   }
 
   return (
@@ -120,7 +236,8 @@ export default function LoginClient() {
       </button>
 
       <p style={{ margin: 0, opacity: 0.75 }}>
-        Após autenticar, você será redirecionado para: <strong>/dashboard</strong>
+        Após autenticar, você será redirecionado para:{" "}
+        <strong>{redirectPath}</strong>
       </p>
     </form>
   );
