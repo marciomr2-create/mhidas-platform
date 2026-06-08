@@ -110,29 +110,33 @@ function pageContainerStyle(): CSSProperties {
   return {
     maxWidth: 1180,
     margin: "0 auto",
-    padding: 24,
+    padding: "16px 12px 44px",
+    color: "#F8FAFC",
   };
 }
 
 function panelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.74), rgba(255,255,255,0.025))",
     borderRadius: 22,
     padding: 18,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
   };
 }
 
 function heroStyle(): CSSProperties {
   return {
     marginTop: 24,
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(148,163,184,0.18)",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
+      "radial-gradient(circle at 18% 10%, rgba(37,99,235,0.20), transparent 34%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.18), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
     borderRadius: 28,
-    padding: 24,
+    padding: "24px 18px",
     display: "grid",
     gap: 18,
+    boxShadow: "0 24px 74px rgba(0,0,0,0.36)",
   };
 }
 
@@ -148,11 +152,13 @@ function inputStyle(): CSSProperties {
   return {
     width: "100%",
     padding: "12px 14px",
+    minHeight: 46,
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.20)",
+    background: "rgba(15,23,42,0.72)",
+    color: "#F8FAFC",
     outline: "none",
+    boxSizing: "border-box",
   };
 }
 
@@ -160,19 +166,21 @@ function selectStyle(): CSSProperties {
   return {
     width: "100%",
     padding: "12px 14px",
+    minHeight: 46,
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.20)",
+    background: "rgba(15,23,42,0.72)",
+    color: "#F8FAFC",
     outline: "none",
     colorScheme: "dark",
+    boxSizing: "border-box",
   };
 }
 
 function optionStyle(): CSSProperties {
   return {
-    background: "#111111",
-    color: "#ffffff",
+    background: "#0F172A",
+    color: "#F8FAFC",
   };
 }
 
@@ -181,73 +189,75 @@ function buttonStyle(): CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "12px 16px",
+    padding: "11px 14px",
+    minHeight: 44,
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    border: "1px solid rgba(148,163,184,0.22)",
+    background: "rgba(15,23,42,0.72)",
+    color: "#F8FAFC",
     textDecoration: "none",
     fontWeight: 800,
     cursor: "pointer",
+    boxSizing: "border-box",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(96,165,250,0.34)",
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
+    boxShadow: "0 14px 36px rgba(37,99,235,0.20)",
   };
 }
 
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
+    color: "rgba(191,219,254,0.94)",
     fontSize: 12,
-    opacity: 0.94,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
   };
 }
 
 function quickBadgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "7px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.05)",
+    color: "rgba(203,213,225,0.86)",
     fontSize: 12,
-    fontWeight: 700,
-    opacity: 0.94,
+    fontWeight: 800,
+    letterSpacing: "0.015em",
   };
 }
 
 function cardStyle(isFeatured = false): CSSProperties {
   return {
     border: isFeatured
-      ? "1px solid rgba(255,255,255,0.18)"
-      : "1px solid rgba(255,255,255,0.12)",
+      ? "1px solid rgba(37,99,235,0.30)"
+      : "1px solid rgba(148,163,184,0.16)",
     background: isFeatured
-      ? "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)"
-      : "rgba(255,255,255,0.03)",
-    borderRadius: 24,
-    padding: 18,
+      ? "linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.05))"
+      : "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
+    borderRadius: 22,
+    padding: 17,
     display: "grid",
-    gap: 16,
-    boxShadow: isFeatured ? "0 10px 28px rgba(0,0,0,0.16)" : "none",
+    gap: 15,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
   };
 }
 
 function statCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 18,
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
+    borderRadius: 20,
     padding: 16,
     display: "grid",
-    gap: 6,
+    gap: 7,
+    boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
   };
 }
 
@@ -261,8 +271,8 @@ function infoGridStyle(): CSSProperties {
 
 function infoCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(148,163,184,0.14)",
+    background: "rgba(15,23,42,0.52)",
     borderRadius: 16,
     padding: 14,
     display: "grid",
@@ -282,35 +292,29 @@ function statusSealStyle(kind: "complete" | "quick_contact" | "featured"): CSSPr
   if (kind === "featured") {
     return {
       display: "inline-block",
-      padding: "7px 10px",
-      borderRadius: 999,
-      border: "1px solid rgba(255,184,0,0.28)",
-      background: "rgba(255,184,0,0.10)",
+      color: "rgba(191,219,254,0.96)",
       fontSize: 12,
       fontWeight: 800,
+      letterSpacing: "0.02em",
     };
   }
 
   if (kind === "quick_contact") {
     return {
       display: "inline-block",
-      padding: "7px 10px",
-      borderRadius: 999,
-      border: "1px solid rgba(0,200,120,0.28)",
-      background: "rgba(0,200,120,0.10)",
+      color: "rgba(165,180,252,0.94)",
       fontSize: 12,
       fontWeight: 800,
+      letterSpacing: "0.02em",
     };
   }
 
   return {
     display: "inline-block",
-    padding: "7px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
+    color: "rgba(203,213,225,0.86)",
     fontSize: 12,
     fontWeight: 800,
+    letterSpacing: "0.02em",
   };
 }
 
@@ -767,28 +771,28 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         </h1>
 
         <p style={{ margin: 0, opacity: 0.82, maxWidth: 900, lineHeight: 1.6 }}>
-          Encontre perfis profissionais ativos na rede, descubra novas conexões e
-          abra conversas com mais rapidez.
+          Encontre profissionais ativos na rede, filtre por atuação e abra
+          conversas com mais contexto.
         </p>
 
         <div style={{ marginTop: 8 }}>
-          <Link href="/dashboard" style={{ textDecoration: "underline" }}>
-            Voltar ao dashboard
+          <Link href="/dashboard" style={{ color: "#BFDBFE", textDecoration: "none", fontWeight: 800 }}>
+            Voltar à central
           </Link>
         </div>
       </header>
 
       <section style={heroStyle()}>
         <div style={{ display: "grid", gap: 8 }}>
-          <span style={badgeStyle()}>Busca profissional da rede</span>
+          <span style={badgeStyle()}>Área profissional</span>
 
           <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>
-            Perfis visíveis para novas conexões
+            Profissionais disponíveis para novas conexões
           </div>
 
           <p style={{ margin: 0, opacity: 0.88, lineHeight: 1.6, maxWidth: 860 }}>
-            Esta página mostra apenas perfis ativos na rede profissional. Perfis
-            suspensos ou bloqueados por você não aparecem aqui.
+            Esta página mostra apenas perfis ativos na rede profissional. Contatos
+            pausados ou bloqueados por você não aparecem aqui.
           </p>
         </div>
 
@@ -900,7 +904,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         <div style={statCardStyle()}>
           <div style={{ fontSize: 12, opacity: 0.72 }}>OCULTADOS POR VOCÊ</div>
           <div style={{ fontSize: 34, fontWeight: 900 }}>{hiddenUserIds.size}</div>
-          <div style={{ opacity: 0.8 }}>Suspensos ou bloqueados fora da busca</div>
+          <div style={{ opacity: 0.8 }}>Pausados ou bloqueados fora da busca</div>
         </div>
 
         <div style={statCardStyle()}>
@@ -952,7 +956,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                           height: 82,
                           borderRadius: 20,
                           objectFit: "cover",
-                          border: "1px solid rgba(255,255,255,0.12)",
+                          border: "1px solid rgba(148,163,184,0.18)",
                           flexShrink: 0,
                         }}
                       />
@@ -962,8 +966,8 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                           width: 82,
                           height: 82,
                           borderRadius: 20,
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(148,163,184,0.18)",
+                          background: "rgba(15,23,42,0.56)",
                           display: "grid",
                           placeItems: "center",
                           fontWeight: 900,
