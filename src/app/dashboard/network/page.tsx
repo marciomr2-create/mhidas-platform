@@ -81,39 +81,44 @@ type ControlItem = PersonCardData & {
 
 function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1120,
+    maxWidth: 980,
     margin: "0 auto",
-    padding: 24,
+    padding: "16px 12px 42px",
+    color: "#ffffff",
   };
 }
 
 function heroPanelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid rgba(148,163,184,0.18)",
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
-    borderRadius: 24,
-    padding: 22,
+      "radial-gradient(circle at 18% 10%, rgba(37,99,235,0.20), transparent 34%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.18), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
+    borderRadius: 28,
+    padding: "24px 18px",
     display: "grid",
-    gap: 14,
+    gap: 16,
+    boxShadow: "0 24px 74px rgba(0,0,0,0.36)",
   };
 }
 
 function panelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.74), rgba(255,255,255,0.025))",
     borderRadius: 22,
-    padding: 18,
+    padding: 17,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
   };
 }
 
 function priorityPanelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,180,0,0.35)",
-    background: "rgba(255,180,0,0.08)",
+    border: "1px solid rgba(37,99,235,0.24)",
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.06))",
     borderRadius: 22,
-    padding: 18,
+    padding: 17,
     display: "grid",
     gap: 10,
   };
@@ -121,39 +126,43 @@ function priorityPanelStyle(): CSSProperties {
 
 function statCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 18,
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
+    borderRadius: 20,
     padding: 16,
     display: "grid",
-    gap: 6,
+    gap: 7,
+    boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
   };
 }
 
 function sectionHeaderCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 18,
+    border: "1px solid rgba(148,163,184,0.14)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.68), rgba(255,255,255,0.02))",
+    borderRadius: 20,
     padding: 16,
     display: "grid",
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   };
 }
 
 function cardStyle(isPriority = false): CSSProperties {
   return {
     border: isPriority
-      ? "1px solid rgba(255,180,0,0.28)"
-      : "1px solid rgba(255,255,255,0.12)",
+      ? "1px solid rgba(37,99,235,0.30)"
+      : "1px solid rgba(148,163,184,0.16)",
     background: isPriority
-      ? "rgba(255,180,0,0.05)"
-      : "rgba(255,255,255,0.03)",
+      ? "linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.05))"
+      : "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
     borderRadius: 22,
-    padding: 18,
+    padding: 17,
     display: "grid",
-    gap: 16,
+    gap: 15,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
   };
 }
 
@@ -163,73 +172,98 @@ function buttonStyle(): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     padding: "11px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    minHeight: 44,
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.22)",
+    background: "rgba(15,23,42,0.72)",
+    color: "#F8FAFC",
     textDecoration: "none",
-    fontWeight: 700,
+    fontWeight: 800,
     cursor: "pointer",
+    boxSizing: "border-box",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(96,165,250,0.34)",
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
+    boxShadow: "0 14px 36px rgba(37,99,235,0.20)",
   };
 }
 
 function successButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(45,212,191,0.28)",
+    background:
+      "linear-gradient(135deg, rgba(20,184,166,0.86), rgba(13,148,136,0.90))",
+    boxShadow: "0 12px 30px rgba(20,184,166,0.16)",
   };
 }
 
 function dangerButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(248,113,113,0.22)",
+    background: "rgba(127,29,29,0.18)",
   };
 }
 
 function subtleButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.04)",
+    background: "rgba(15,23,42,0.50)",
+  };
+}
+
+function statusTextStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: 36,
+    padding: "8px 0",
+    color: "rgba(203,213,225,0.68)",
+    fontSize: 13,
+    fontWeight: 800,
+  };
+}
+
+function cautionButtonStyle(): CSSProperties {
+  return {
+    ...buttonStyle(),
+    border: "1px solid rgba(251,191,36,0.20)",
+    background: "rgba(120,53,15,0.12)",
+    color: "rgba(254,243,199,0.92)",
   };
 }
 
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
+    color: "rgba(191,219,254,0.94)",
     fontSize: 12,
-    opacity: 0.92,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
   };
 }
 
 function quickBadgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "7px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.05)",
+    color: "rgba(203,213,225,0.86)",
     fontSize: 12,
-    fontWeight: 700,
-    opacity: 0.94,
+    fontWeight: 800,
+    letterSpacing: "0.015em",
   };
 }
 
 function infoBoxStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(148,163,184,0.14)",
+    background: "rgba(15,23,42,0.52)",
     borderRadius: 16,
     padding: 14,
     display: "grid",
@@ -243,12 +277,12 @@ function anchorLinkStyle(): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.04)",
-    color: "#fff",
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.18)",
+    background: "rgba(15,23,42,0.62)",
+    color: "#F8FAFC",
     textDecoration: "none",
-    fontWeight: 700,
+    fontWeight: 800,
   };
 }
 
@@ -287,7 +321,7 @@ function buildPersonCardData(
   const title =
     profile?.profession?.trim() ||
     card?.label?.trim() ||
-    "Pessoa da rede";
+    "Profissional da rede";
 
   const subtitle =
     profile?.company_name?.trim() ||
@@ -446,7 +480,7 @@ function ContactCard({
         style={{
           display: "grid",
           gap: 10,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         }}
       >
         <div style={infoBoxStyle()}>
@@ -476,8 +510,8 @@ function ContactCard({
             Ver perfil
           </Link>
         ) : (
-          <span style={{ ...buttonStyle(), opacity: 0.55, cursor: "default" }}>
-            Perfil ainda indisponível
+          <span style={statusTextStyle()}>
+            Perfil profissional ainda indisponível
           </span>
         )}
 
@@ -519,8 +553,8 @@ function ContactCard({
         {showRelationshipActions && suspendAction ? (
           <form action={suspendAction}>
             <input type="hidden" name="target_user_id" value={item.user_id} />
-            <button type="submit" style={subtleButtonStyle()}>
-              Suspender perfil
+            <button type="submit" style={cautionButtonStyle()}>
+              Pausar contato
             </button>
           </form>
         ) : null}
@@ -529,7 +563,7 @@ function ContactCard({
           <form action={blockAction}>
             <input type="hidden" name="target_user_id" value={item.user_id} />
             <button type="submit" style={dangerButtonStyle()}>
-              Bloquear perfil
+              Bloquear contato
             </button>
           </form>
         ) : null}
@@ -590,7 +624,7 @@ function ControlledProfileCard({
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {item.city ? <span style={quickBadgeStyle()}>{item.city}</span> : null}
             <span style={quickBadgeStyle()}>
-              {item.control_status === "blocked" ? "perfil bloqueado" : "perfil suspenso"}
+              {item.control_status === "blocked" ? "contato bloqueado" : "contato pausado"}
             </span>
           </div>
         </div>
@@ -604,7 +638,7 @@ function ControlledProfileCard({
         style={{
           display: "grid",
           gap: 10,
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         }}
       >
         <div style={infoBoxStyle()}>
@@ -629,8 +663,8 @@ function ControlledProfileCard({
           <input type="hidden" name="target_user_id" value={item.user_id} />
           <button type="submit" style={primaryButtonStyle()}>
             {item.control_status === "blocked"
-              ? "Desbloquear perfil"
-              : "Reativar perfil"}
+              ? "Desbloquear contato"
+              : "Reativar contato"}
           </button>
         </form>
       </div>
@@ -962,14 +996,14 @@ export default async function DashboardNetworkPage() {
     activeReceivedItems.length > 0
       ? `Você tem ${activeReceivedItems.length} contato(s) aguardando sua resposta`
       : activeAcceptedItems.length > 0
-      ? "Sua rede já está ativa"
+      ? "Seus contatos profissionais estão ativos"
       : "Sua rede profissional está pronta para crescer";
 
   const priorityText =
     activeReceivedItems.length > 0
       ? "Responder agora aumenta suas chances de gerar novas conexões, negócios e continuidade de conversa."
       : activeAcceptedItems.length > 0
-      ? "Você já tem conexões confirmadas. Continue acompanhando sua rede para manter ritmo e qualidade de relacionamento."
+      ? "Você já tem contatos confirmados. Continue acompanhando sua rede para manter ritmo e qualidade de relacionamento."
       : "Quando alguém quiser falar com você, esta área será o ponto central para acompanhar tudo com clareza.";
 
   const priorityButtonHref =
@@ -981,33 +1015,33 @@ export default async function DashboardNetworkPage() {
 
   return (
     <main style={pageContainerStyle()}>
-      <header style={{ display: "grid", gap: 10 }}>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
-          Meus contatos
+      <header style={{ display: "grid", gap: 10, maxWidth: 760 }}>
+        <h1 style={{ margin: 0, fontSize: "clamp(32px, 8vw, 54px)", lineHeight: 0.98, fontWeight: 950, letterSpacing: "-0.05em" }}>
+          Meus contatos profissionais
         </h1>
 
         <p style={{ margin: 0, opacity: 0.82, maxWidth: 880, lineHeight: 1.6 }}>
-          Pessoas interessadas em se conectar com você. Responder rápido aumenta suas oportunidades e mantém sua rede organizada.
+          Acompanhe convites, contatos confirmados e oportunidades profissionais em um ambiente separado da Experiência Club.
         </p>
 
         <div style={{ marginTop: 8 }}>
           <Link href="/dashboard" style={{ textDecoration: "underline" }}>
-            Voltar para minha área
+            Voltar à central
           </Link>
         </div>
       </header>
 
       <section style={{ ...heroPanelStyle(), marginTop: 24 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <span style={quickBadgeStyle()}>Central da sua rede</span>
+          <span style={quickBadgeStyle()}>Área profissional</span>
           {activeReceivedItems.length > 0 ? (
             <span style={quickBadgeStyle()}>
-              Prioridade alta: responder contatos
+              Prioridade: responder contatos
             </span>
           ) : null}
           {blockedItems.length > 0 || suspendedItems.length > 0 ? (
             <span style={quickBadgeStyle()}>
-              Controles ativos: {suspendedItems.length} suspenso(s) • {blockedItems.length} bloqueado(s)
+              Segurança: {suspendedItems.length} pausado(s) · {blockedItems.length} bloqueado(s)
             </span>
           ) : null}
         </div>
@@ -1025,30 +1059,14 @@ export default async function DashboardNetworkPage() {
             {priorityButtonLabel}
           </Link>
 
-          <Link href="/network" style={buttonStyle()}>
-            Abrir busca principal
-          </Link>
+          {activeReceivedItems.length > 0 ? (
+            <Link href="/network" style={buttonStyle()}>
+              Descobrir profissionais
+            </Link>
+          ) : null}
 
           <Link href="/network/connections" style={buttonStyle()}>
             Ver minhas conexões
-          </Link>
-        </div>
-      </section>
-
-      <section style={{ ...priorityPanelStyle(), marginTop: 24 }}>
-        <div style={{ fontSize: 12, letterSpacing: 0.4, opacity: 0.8 }}>
-          PRÓXIMA AÇÃO RECOMENDADA
-        </div>
-
-        <div style={{ fontSize: 28, fontWeight: 900 }}>{priorityTitle}</div>
-
-        <div style={{ opacity: 0.88, lineHeight: 1.6, maxWidth: 760 }}>
-          {priorityText}
-        </div>
-
-        <div style={{ marginTop: 4 }}>
-          <Link href={priorityButtonHref} style={primaryButtonStyle()}>
-            {priorityButtonLabel}
           </Link>
         </div>
       </section>
@@ -1058,7 +1076,7 @@ export default async function DashboardNetworkPage() {
           marginTop: 24,
           display: "grid",
           gap: 16,
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
         }}
       >
         <div style={statCardStyle()}>
@@ -1076,19 +1094,19 @@ export default async function DashboardNetworkPage() {
         <div style={statCardStyle()}>
           <div style={{ fontSize: 12, opacity: 0.72 }}>CONTATOS CONFIRMADOS</div>
           <div style={{ fontSize: 34, fontWeight: 900 }}>{activeAcceptedItems.length}</div>
-          <div style={{ opacity: 0.8 }}>Conexões já consolidadas</div>
+          <div style={{ opacity: 0.8 }}>Contatos já consolidados</div>
         </div>
 
         <div style={statCardStyle()}>
-          <div style={{ fontSize: 12, opacity: 0.72 }}>SUSPENSOS</div>
+          <div style={{ fontSize: 12, opacity: 0.72 }}>PAUSADOS</div>
           <div style={{ fontSize: 34, fontWeight: 900 }}>{suspendedItems.length}</div>
-          <div style={{ opacity: 0.8 }}>Perfis pausados por você</div>
+          <div style={{ opacity: 0.8 }}>Contatos pausados por você</div>
         </div>
 
         <div style={statCardStyle()}>
           <div style={{ fontSize: 12, opacity: 0.72 }}>BLOQUEADOS</div>
           <div style={{ fontSize: 34, fontWeight: 900 }}>{blockedItems.length}</div>
-          <div style={{ opacity: 0.8 }}>Perfis impedidos por você</div>
+          <div style={{ opacity: 0.8 }}>Contatos bloqueados por você</div>
         </div>
       </section>
 
@@ -1155,9 +1173,9 @@ export default async function DashboardNetworkPage() {
 
       <section style={{ ...panelStyle(), marginTop: 24 }}>
         <div style={{ fontSize: 14, opacity: 0.82 }}>
-          {activeReceivedItems.length} novo(s) contato(s) • {activeSentItems.length} convite(s) enviado(s) •{" "}
+          {activeReceivedItems.length} novo(s) contato(s) · {activeSentItems.length} convite(s) enviado(s) •{" "}
           {activeAcceptedItems.length} contato(s) confirmado(s) •{" "}
-          {suspendedItems.length} suspenso(s) • {blockedItems.length} bloqueado(s)
+          {suspendedItems.length} pausado(s) · {blockedItems.length} bloqueado(s)
         </div>
       </section>
 
@@ -1178,7 +1196,7 @@ export default async function DashboardNetworkPage() {
             Meus contatos
           </a>
           <a href="#perfis-suspensos" style={anchorLinkStyle()}>
-            Suspensos
+            Pausados
           </a>
           <a href="#perfis-bloqueados" style={anchorLinkStyle()}>
             Bloqueados
@@ -1206,7 +1224,7 @@ export default async function DashboardNetworkPage() {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             }}
           >
             {activeReceivedItems.map((item, index) => (
@@ -1247,7 +1265,7 @@ export default async function DashboardNetworkPage() {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             }}
           >
             {activeSentItems.map((item) => (
@@ -1284,7 +1302,7 @@ export default async function DashboardNetworkPage() {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             }}
           >
             {activeAcceptedItems.map((item) => (
@@ -1303,17 +1321,17 @@ export default async function DashboardNetworkPage() {
 
       <section id="perfis-suspensos" style={{ marginTop: 32 }}>
         <div style={sectionHeaderCardStyle()}>
-          <h2 style={{ margin: 0 }}>Perfis suspensos</h2>
+          <h2 style={{ margin: 0 }}>Contatos pausados</h2>
           <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
-            Perfis pausados por você. Eles saem da sua área ativa até você reativar.
+            Contatos pausados por você. Eles saem da sua área ativa até você reativar.
           </p>
         </div>
 
         {suspendedItems.length === 0 ? (
           <div style={panelStyle()}>
-            <h3 style={{ marginTop: 0 }}>Nenhum perfil suspenso</h3>
+            <h3 style={{ marginTop: 0 }}>Nenhum contato pausado</h3>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Quando você suspender alguém, o perfil aparecerá aqui.
+              Quando você pausar alguém, o contato aparecerá aqui.
             </p>
           </div>
         ) : (
@@ -1321,7 +1339,7 @@ export default async function DashboardNetworkPage() {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             }}
           >
             {suspendedItems.map((item) => (
@@ -1337,17 +1355,17 @@ export default async function DashboardNetworkPage() {
 
       <section id="perfis-bloqueados" style={{ marginTop: 32 }}>
         <div style={sectionHeaderCardStyle()}>
-          <h2 style={{ margin: 0 }}>Perfis bloqueados</h2>
+          <h2 style={{ margin: 0 }}>Contatos bloqueados</h2>
           <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.6 }}>
-            Perfis bloqueados por você. Eles ficam fora da sua área ativa até o desbloqueio.
+            Contatos bloqueados por você. Eles ficam fora da sua área ativa até o desbloqueio.
           </p>
         </div>
 
         {blockedItems.length === 0 ? (
           <div style={panelStyle()}>
-            <h3 style={{ marginTop: 0 }}>Nenhum perfil bloqueado</h3>
+            <h3 style={{ marginTop: 0 }}>Nenhum contato bloqueado</h3>
             <p style={{ marginBottom: 0, opacity: 0.82 }}>
-              Quando você bloquear alguém, o perfil aparecerá aqui.
+              Quando você bloquear alguém, o contato aparecerá aqui.
             </p>
           </div>
         ) : (
@@ -1355,7 +1373,7 @@ export default async function DashboardNetworkPage() {
             style={{
               display: "grid",
               gap: 18,
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             }}
           >
             {blockedItems.map((item) => (
