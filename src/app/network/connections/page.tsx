@@ -77,27 +77,66 @@ function pageContainerStyle(): CSSProperties {
   return {
     maxWidth: 1100,
     margin: "0 auto",
-    padding: 24,
+    padding: "16px 12px 44px",
+    color: "#F8FAFC",
+  };
+}
+
+function heroStyle(): CSSProperties {
+  return {
+    border: "1px solid rgba(148,163,184,0.18)",
+    background:
+      "radial-gradient(circle at 18% 10%, rgba(37,99,235,0.20), transparent 34%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.18), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
+    borderRadius: 28,
+    padding: "24px 18px",
+    display: "grid",
+    gap: 18,
+    boxShadow: "0 24px 74px rgba(0,0,0,0.36)",
   };
 }
 
 function panelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.74), rgba(255,255,255,0.025))",
     borderRadius: 22,
     padding: 18,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
   };
 }
 
 function cardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
     borderRadius: 22,
-    padding: 18,
+    padding: 17,
     display: "grid",
-    gap: 16,
+    gap: 15,
+    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
+  };
+}
+
+function statGridStyle(): CSSProperties {
+  return {
+    display: "grid",
+    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+  };
+}
+
+function statCardStyle(): CSSProperties {
+  return {
+    border: "1px solid rgba(148,163,184,0.16)",
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
+    borderRadius: 20,
+    padding: 16,
+    display: "grid",
+    gap: 6,
+    boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
   };
 }
 
@@ -107,32 +146,54 @@ function buttonStyle(): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     padding: "11px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    minHeight: 44,
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.22)",
+    background: "rgba(15,23,42,0.72)",
+    color: "#F8FAFC",
     textDecoration: "none",
-    fontWeight: 700,
+    fontWeight: 800,
     cursor: "pointer",
+    boxSizing: "border-box",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(96,165,250,0.34)",
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
+    boxShadow: "0 14px 36px rgba(37,99,235,0.20)",
   };
 }
 
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
+    color: "rgba(191,219,254,0.94)",
     fontSize: 12,
-    opacity: 0.92,
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+  };
+}
+
+function actionGroupStyle(): CSSProperties {
+  return {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+  };
+}
+
+function sectionTitleStyle(): CSSProperties {
+  return {
+    marginTop: 0,
+    marginBottom: 16,
+    color: "#F8FAFC",
+    fontSize: 22,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
   };
 }
 
@@ -150,7 +211,7 @@ function getSummary(item: ConnectionItem): string {
   if (item.ai_summary?.trim()) return item.ai_summary.trim();
   if (item.bio_text?.trim()) return item.bio_text.trim();
   if (item.services?.trim()) return item.services.trim();
-  return "Perfil profissional disponível para networking.";
+  return "Perfil profissional disponível para contato.";
 }
 
 function buildConnectionItems(
@@ -205,8 +266,31 @@ function ConnectionGrid({
   if (items.length === 0) {
     return (
       <div style={panelStyle()}>
-        <h2 style={{ marginTop: 0 }}>{emptyTitle}</h2>
-        <p style={{ marginBottom: 0, opacity: 0.82 }}>{emptyDescription}</p>
+        <div
+          style={{
+            color: "rgba(191,219,254,0.94)",
+            fontSize: 12,
+            fontWeight: 900,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}
+        >
+          Área profissional
+        </div>
+
+        <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 900 }}>
+          {emptyTitle}
+        </h2>
+
+        <p
+          style={{
+            margin: "8px 0 0",
+            color: "rgba(203,213,225,0.82)",
+            lineHeight: 1.6,
+          }}
+        >
+          {emptyDescription}
+        </p>
       </div>
     );
   }
@@ -231,7 +315,8 @@ function ConnectionGrid({
                   height: 76,
                   borderRadius: 18,
                   objectFit: "cover",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(148,163,184,0.22)",
+                  boxShadow: "0 14px 30px rgba(0,0,0,0.20)",
                   flexShrink: 0,
                 }}
               />
@@ -241,12 +326,14 @@ function ConnectionGrid({
                   width: 76,
                   height: 76,
                   borderRadius: 18,
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(96,165,250,0.24)",
+                  background:
+                    "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(15,23,42,0.82))",
                   display: "grid",
                   placeItems: "center",
-                  fontWeight: 800,
-                  opacity: 0.75,
+                  color: "rgba(191,219,254,0.92)",
+                  fontWeight: 900,
+                  letterSpacing: "0.06em",
                   flexShrink: 0,
                 }}
               >
@@ -254,16 +341,25 @@ function ConnectionGrid({
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 20, fontWeight: 900 }}>
+            <div style={{ display: "grid", gap: 7, minWidth: 0 }}>
+              <div
+                style={{
+                  color: "#F8FAFC",
+                  fontSize: 20,
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                }}
+              >
                 {item.profession || item.card_label || "Perfil profissional"}
               </div>
 
               {item.company_name ? (
-                <div style={{ opacity: 0.88 }}>{item.company_name}</div>
+                <div style={{ color: "rgba(203,213,225,0.88)", lineHeight: 1.35 }}>
+                  {item.company_name}
+                </div>
               ) : null}
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {item.industry ? (
                   <span style={badgeStyle()}>{item.industry}</span>
                 ) : null}
@@ -272,19 +368,22 @@ function ConnectionGrid({
             </div>
           </div>
 
-          <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.6 }}>
+          <p
+            style={{
+              margin: 0,
+              color: "rgba(203,213,225,0.90)",
+              lineHeight: 1.6,
+            }}
+          >
             {getSummary(item)}
           </p>
 
-          <div style={{ fontSize: 13, opacity: 0.72 }}>
+          <div style={{ color: "rgba(148,163,184,0.82)", fontSize: 13 }}>
             Registro em: {formatDate(item.created_at)}
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            <Link
-              href={`/${item.slug}?mode=pro`}
-              style={primaryButtonStyle()}
-            >
+          <div style={actionGroupStyle()}>
+            <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
               Abrir perfil profissional
             </Link>
 
@@ -300,10 +399,7 @@ function ConnectionGrid({
             ) : null}
 
             {item.accepts_professional_contact && item.professional_email ? (
-              <a
-                href={`mailto:${item.professional_email}`}
-                style={buttonStyle()}
-              >
+              <a href={`mailto:${item.professional_email}`} style={buttonStyle()}>
                 E-mail
               </a>
             ) : null}
@@ -458,41 +554,117 @@ export default async function NetworkConnectionsPage() {
 
   return (
     <main style={pageContainerStyle()}>
-      <header style={{ display: "grid", gap: 10 }}>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
-          Minhas conexões
-        </h1>
+      <section style={heroStyle()}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div
+            style={{
+              color: "rgba(191,219,254,0.94)",
+              fontSize: 12,
+              fontWeight: 900,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            Área profissional
+          </div>
 
-        <p style={{ margin: 0, opacity: 0.82, maxWidth: 880, lineHeight: 1.6 }}>
-          Visualize os profissionais que se conectaram com você e também aqueles
-          com quem você já se conectou dentro da rede USECLUBBERS.
-        </p>
-      </header>
+          <Link
+            href="/dashboard/network"
+            style={{
+              color: "rgba(203,213,225,0.86)",
+              fontSize: 13,
+              fontWeight: 800,
+              textDecoration: "none",
+            }}
+          >
+            Voltar aos contatos
+          </Link>
+        </div>
 
-      <section style={{ ...panelStyle(), marginTop: 24 }}>
-        <div style={{ fontSize: 14, opacity: 0.82 }}>
-          {incomingItems.length} conexão(ões) recebida(s) •{" "}
-          {outgoingItems.length} conexão(ões) iniciada(s)
+        <div style={{ display: "grid", gap: 10 }}>
+          <h1
+            style={{
+              margin: 0,
+              color: "#F8FAFC",
+              fontSize: "clamp(30px, 7vw, 44px)",
+              fontWeight: 950,
+              letterSpacing: "-0.055em",
+              lineHeight: 1.02,
+            }}
+          >
+            Minhas conexões profissionais
+          </h1>
+
+          <p
+            style={{
+              margin: 0,
+              color: "rgba(203,213,225,0.86)",
+              maxWidth: 820,
+              lineHeight: 1.6,
+              fontSize: 15,
+            }}
+          >
+            Acompanhe quem já demonstrou interesse profissional em você e os
+            contatos que você iniciou dentro da rede USECLUBBERS.
+          </p>
+        </div>
+
+        <div style={actionGroupStyle()}>
+          <Link href="/network" style={primaryButtonStyle()}>
+            Descobrir profissionais
+          </Link>
+
+          <Link href="/dashboard/network" style={buttonStyle()}>
+            Voltar à central profissional
+          </Link>
         </div>
       </section>
 
-      <section style={{ marginTop: 24 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 16 }}>Conectaram comigo</h2>
+      <section style={{ marginTop: 18 }}>
+        <div style={statGridStyle()}>
+          <div style={statCardStyle()}>
+            <div style={{ color: "rgba(203,213,225,0.72)", fontSize: 13 }}>
+              Conexões recebidas
+            </div>
+            <strong style={{ color: "#F8FAFC", fontSize: 28, lineHeight: 1 }}>
+              {incomingItems.length}
+            </strong>
+            <div style={{ color: "rgba(203,213,225,0.70)", fontSize: 13 }}>
+              Profissionais que chegaram até você
+            </div>
+          </div>
+
+          <div style={statCardStyle()}>
+            <div style={{ color: "rgba(203,213,225,0.72)", fontSize: 13 }}>
+              Conexões iniciadas
+            </div>
+            <strong style={{ color: "#F8FAFC", fontSize: 28, lineHeight: 1 }}>
+              {outgoingItems.length}
+            </strong>
+            <div style={{ color: "rgba(203,213,225,0.70)", fontSize: 13 }}>
+              Contatos que você começou
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ marginTop: 26 }}>
+        <h2 style={sectionTitleStyle()}>Conectaram comigo</h2>
 
         <ConnectionGrid
           items={incomingItems}
           emptyTitle="Ainda não há conexões recebidas"
-          emptyDescription="Quando outros membros clicarem em conectar no seu perfil dentro da rede, eles aparecerão aqui."
+          emptyDescription="Quando outros membros iniciarem contato profissional com você, eles aparecerão aqui."
         />
       </section>
 
       <section style={{ marginTop: 32 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 16 }}>Conectei com</h2>
+        <h2 style={sectionTitleStyle()}>Conectei com</h2>
 
         <ConnectionGrid
           items={outgoingItems}
           emptyTitle="Você ainda não iniciou conexões"
-          emptyDescription="Quando você clicar em conectar nos perfis da rede, eles aparecerão aqui."
+          emptyDescription="Quando você clicar em conectar nos perfis profissionais da rede, eles aparecerão aqui."
         />
       </section>
     </main>
