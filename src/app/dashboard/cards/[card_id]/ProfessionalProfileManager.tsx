@@ -119,7 +119,7 @@ const PROMPT_PRESETS: PromptPreset[] = [
   {
     id: "consultor-autoridade",
     title: "Consultor com autoridade",
-    subtitle: "Para networking, vendas e apresentação comercial",
+    subtitle: "Para conexões, vendas e apresentação comercial",
     style: "consultor de autoridade",
     prompt:
       "Use esta foto como base, mantendo a identidade facial totalmente reconhecível. Gere um retrato profissional de consultor de alto valor, com postura firme, expressão confiante, presença executiva, iluminação refinada, roupa bem escolhida, fundo elegante e discreto, aparência polida e respeitável, transmitindo clareza, maturidade e confiança comercial.",
@@ -148,13 +148,28 @@ const EMPTY_FORM: FormState = {
   accepts_professional_contact: true,
 };
 
+const PRO_SURFACE = "rgba(15,23,42,0.92)";
+const PRO_SURFACE_SOFT = "rgba(15,23,42,0.72)";
+const PRO_SURFACE_DEEP = "rgba(2,6,23,0.74)";
+const PRO_BORDER = "1px solid rgba(148,163,184,0.18)";
+const PRO_BORDER_STRONG = "1px solid rgba(96,165,250,0.34)";
+const PRO_TEXT = "#f8fafc";
+const PRO_TEXT_SOFT = "#cbd5e1";
+const PRO_TEXT_MUTED = "#94a3b8";
+const PRO_PRIMARY = "#60a5fa";
+const PRO_INDIGO = "#818cf8";
+const PRO_TEAL = "#14b8a6";
+
+
 function sectionStyle() {
   return {
-    padding: 14,
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 14,
+    padding: 16,
+    border: PRO_BORDER,
+    borderRadius: 18,
+    background: PRO_SURFACE_SOFT,
     display: "grid",
     gap: 14,
+    boxShadow: "0 18px 44px rgba(2,6,23,0.20)",
   } as const;
 }
 
@@ -162,11 +177,12 @@ function inputStyle() {
   return {
     width: "100%",
     padding: "12px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.04)",
-    color: "#fff",
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.22)",
+    background: "rgba(2,6,23,0.46)",
+    color: PRO_TEXT,
     outline: "none",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.025)",
   } as const;
 }
 
@@ -182,56 +198,59 @@ function labelTitleStyle() {
   return {
     display: "block",
     marginBottom: 8,
+    color: PRO_TEXT_SOFT,
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: 800,
   } as const;
 }
 
 function cardStyle() {
   return {
-    padding: 16,
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.035)",
+    padding: 18,
+    borderRadius: 22,
+    border: PRO_BORDER,
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.96), rgba(17,24,39,0.90))",
     display: "grid",
-    gap: 12,
+    gap: 14,
+    boxShadow: "0 22px 58px rgba(2,6,23,0.28)",
   } as const;
 }
 
 function actionButtonStyle(disabled = false) {
   return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-    color: "#fff",
+    borderRadius: 14,
+    border: disabled ? "1px solid rgba(71,85,105,0.40)" : "1px solid rgba(148,163,184,0.22)",
+    background: disabled ? "rgba(15,23,42,0.48)" : "rgba(15,23,42,0.82)",
+    color: disabled ? PRO_TEXT_MUTED : PRO_TEXT,
     fontWeight: 800,
     textDecoration: "none",
     cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.55 : 1,
+    opacity: disabled ? 0.58 : 1,
   } as const;
 }
 
 function presetCardStyle(active: boolean) {
   return {
     padding: 14,
-    borderRadius: 14,
-    border: active
-      ? "1px solid rgba(0,200,120,0.28)"
-      : "1px solid rgba(255,255,255,0.12)",
-    background: active
-      ? "rgba(0,200,120,0.08)"
-      : "rgba(255,255,255,0.03)",
+    borderRadius: 16,
+    border: active ? PRO_BORDER_STRONG : PRO_BORDER,
+    background: active ? "rgba(30,64,175,0.20)" : PRO_SURFACE_DEEP,
     display: "grid",
     gap: 10,
+    boxShadow: active ? "0 14px 34px rgba(37,99,235,0.14)" : "none",
   } as const;
 }
 
 function collapsibleStyle() {
   return {
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 14,
-    background: "rgba(255,255,255,0.03)",
+    border: PRO_BORDER,
+    borderRadius: 16,
+    background: PRO_SURFACE_DEEP,
     overflow: "hidden",
   } as const;
 }
@@ -241,6 +260,7 @@ function summaryStyle() {
     cursor: "pointer",
     listStyle: "none",
     padding: "14px 16px",
+    color: PRO_TEXT,
     fontWeight: 900,
     userSelect: "none" as const,
   };
@@ -251,9 +271,9 @@ function searchBlockStyle() {
     display: "grid",
     gap: 10,
     padding: 12,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.03)",
+    borderRadius: 16,
+    border: PRO_BORDER,
+    background: PRO_SURFACE_DEEP,
     marginTop: 10,
   } as const;
 }
@@ -265,15 +285,11 @@ function suggestionButtonStyle(active = false) {
     gap: 6,
     padding: "9px 10px",
     borderRadius: 12,
-    border: active
-      ? "1px solid rgba(0,200,120,0.28)"
-      : "1px solid rgba(255,255,255,0.10)",
-    background: active
-      ? "rgba(0,200,120,0.10)"
-      : "rgba(255,255,255,0.04)",
-    color: "#fff",
+    border: active ? PRO_BORDER_STRONG : "1px solid rgba(148,163,184,0.18)",
+    background: active ? "rgba(30,64,175,0.24)" : "rgba(15,23,42,0.70)",
+    color: PRO_TEXT,
     cursor: "pointer",
-    fontWeight: 700,
+    fontWeight: 750,
     textAlign: "left" as const,
   };
 }
@@ -281,9 +297,9 @@ function suggestionButtonStyle(active = false) {
 function previewCardStyle() {
   return {
     padding: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    border: PRO_BORDER,
+    background: PRO_SURFACE_DEEP,
     display: "grid",
     gap: 6,
   } as const;
@@ -331,26 +347,26 @@ function getStatusMeta(status: "incomplete" | "ready" | "optimized") {
   if (status === "optimized") {
     return {
       label: "Publicado e otimizado",
-      background: "rgba(0,200,120,0.12)",
-      border: "1px solid rgba(0,200,120,0.32)",
-      color: "#7dffbe",
+      background: "rgba(30,64,175,0.22)",
+      border: "1px solid rgba(96,165,250,0.36)",
+      color: "#bfdbfe",
     };
   }
 
   if (status === "ready") {
     return {
-      label: "Pronto para networking",
-      background: "rgba(255,184,0,0.12)",
-      border: "1px solid rgba(255,184,0,0.32)",
-      color: "#ffd76a",
+      label: "Pronto para conexões profissionais",
+      background: "rgba(79,70,229,0.20)",
+      border: "1px solid rgba(129,140,248,0.34)",
+      color: "#c4b5fd",
     };
   }
 
   return {
     label: "Incompleto",
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "#fff",
+    background: "rgba(15,23,42,0.76)",
+    border: "1px solid rgba(148,163,184,0.22)",
+    color: PRO_TEXT_SOFT,
   };
 }
 
@@ -766,7 +782,7 @@ export default function ProfessionalProfileManager({
       { key: "pro_photo_url", label: "Foto profissional", done: hasContent(effectivePhotoPreview) },
       {
         key: "visible_in_network",
-        label: "Visibilidade no networking",
+        label: "Visibilidade na rede profissional",
         done: Boolean(form.visible_in_network),
       },
     ];
@@ -777,7 +793,7 @@ export default function ProfessionalProfileManager({
   const completionPercent = Math.round((completedCount / totalChecklistItems) * 100);
   const missingItems = checklist.filter((item) => !item.done);
 
-  const readyForNetworking =
+  const readyForProfessionalNetwork =
     hasContent(form.profession) &&
     hasContent(form.industry) &&
     hasContent(form.city) &&
@@ -794,7 +810,7 @@ export default function ProfessionalProfileManager({
 
   const profileStatus: "incomplete" | "ready" | "optimized" = optimized
     ? "optimized"
-    : readyForNetworking
+    : readyForProfessionalNetwork
       ? "ready"
       : "incomplete";
 
@@ -806,7 +822,7 @@ export default function ProfessionalProfileManager({
       : "Preencha ao menos WhatsApp ou e-mail para abrir um canal claro de contato.";
 
   if (loading) {
-    return <p>Carregando...</p>;
+    return <p style={{ color: PRO_TEXT_SOFT }}>Carregando...</p>;
   }
 
   return (
@@ -823,9 +839,9 @@ export default function ProfessionalProfileManager({
             }}
           >
             <div style={{ display: "grid", gap: 6 }}>
-              <h3 style={{ margin: 0, fontWeight: 900 }}>Checklist do Pro Mode</h3>
+              <h3 style={{ margin: 0, fontWeight: 900 }}>Checklist do perfil profissional</h3>
               <p style={{ margin: 0, opacity: 0.78 }}>
-                Fortaleça seu perfil profissional antes de competir na busca e no networking.
+                Fortaleça seu perfil profissional antes de aparecer melhor na busca e nas conexões profissionais.
               </p>
             </div>
 
@@ -874,10 +890,10 @@ export default function ProfessionalProfileManager({
                   height: "100%",
                   borderRadius: 999,
                   background: optimized
-                    ? "linear-gradient(90deg, #00c878, #67f0aa)"
-                    : readyForNetworking
-                      ? "linear-gradient(90deg, #ffb800, #ffd86b)"
-                      : "linear-gradient(90deg, #ffffff, #bdbdbd)",
+                    ? "linear-gradient(90deg, #2563eb, #60a5fa)"
+                    : readyForProfessionalNetwork
+                      ? "linear-gradient(90deg, #4f46e5, #818cf8)"
+                      : "linear-gradient(90deg, #64748b, #cbd5e1)",
                 }}
               />
             </div>
@@ -899,11 +915,11 @@ export default function ProfessionalProfileManager({
                   padding: "12px 14px",
                   borderRadius: 12,
                   border: item.done
-                    ? "1px solid rgba(0,200,120,0.28)"
+                    ? "1px solid rgba(96,165,250,0.34)"
                     : "1px solid rgba(255,255,255,0.12)",
                   background: item.done
-                    ? "rgba(0,200,120,0.08)"
-                    : "rgba(255,255,255,0.03)",
+                    ? "rgba(30,64,175,0.20)"
+                    : "rgba(15,23,42,0.56)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -920,8 +936,8 @@ export default function ProfessionalProfileManager({
             style={{
               padding: 14,
               borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.56)",
               display: "grid",
               gap: 8,
             }}
@@ -936,8 +952,8 @@ export default function ProfessionalProfileManager({
                     style={{
                       padding: "8px 10px",
                       borderRadius: 999,
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(148,163,184,0.18)",
+                      background: "rgba(15,23,42,0.66)",
                       fontSize: 13,
                     }}
                   >
@@ -994,8 +1010,8 @@ export default function ProfessionalProfileManager({
                 height: 120,
                 borderRadius: 18,
                 overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(148,163,184,0.18)",
+                background: "rgba(15,23,42,0.66)",
                 display: "grid",
                 placeItems: "center",
                 fontSize: 12,
@@ -1034,7 +1050,7 @@ export default function ProfessionalProfileManager({
               <p style={{ margin: 0, opacity: 0.88 }}>
                 {hasContent(form.ai_summary)
                   ? form.ai_summary
-                  : "Preencha o resumo principal para melhorar sua clareza e autoridade no networking."}
+                  : "Preencha o resumo principal para melhorar sua clareza e autoridade profissional."}
               </p>
             </div>
           </div>
@@ -1148,7 +1164,7 @@ export default function ProfessionalProfileManager({
             <textarea
               value={form.looking_for}
               onChange={(e) => updateField("looking_for", e.target.value)}
-              placeholder="Ex: networking, clientes, parcerias, oportunidades"
+              placeholder="Ex: clientes, parcerias, oportunidades, fornecedores"
               style={textareaStyle()}
             />
           </label>
@@ -1175,16 +1191,16 @@ export default function ProfessionalProfileManager({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  border: "1px solid rgba(255,255,255,0.14)",
+                  border: "1px solid rgba(148,163,184,0.22)",
                   borderRadius: 12,
-                  background: "rgba(255,255,255,0.04)",
+                  background: "rgba(15,23,42,0.66)",
                   overflow: "hidden",
                 }}
               >
                 <span
                   style={{
                     padding: "12px 14px",
-                    borderRight: "1px solid rgba(255,255,255,0.10)",
+                    borderRight: "1px solid rgba(148,163,184,0.18)",
                     opacity: 0.88,
                     fontWeight: 700,
                     whiteSpace: "nowrap",
@@ -1340,8 +1356,8 @@ export default function ProfessionalProfileManager({
                 height: 90,
                 borderRadius: 16,
                 overflow: "hidden",
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(148,163,184,0.18)",
+                background: "rgba(15,23,42,0.66)",
                 display: "grid",
                 placeItems: "center",
                 textAlign: "center",
@@ -1426,8 +1442,8 @@ export default function ProfessionalProfileManager({
                   style={{
                     padding: 14,
                     borderRadius: 14,
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(148,163,184,0.18)",
+                    background: "rgba(15,23,42,0.56)",
                     display: "grid",
                     gap: 8,
                   }}
@@ -1444,7 +1460,7 @@ export default function ProfessionalProfileManager({
                     <br />
                     5. Gere a imagem profissional final.
                     <br />
-                    6. Volte ao MHIDAS, envie a nova foto e clique em Salvar.
+                    6. Volte ao USECLUBBERS, envie a nova foto e clique em Salvar.
                   </div>
                 </div>
 
@@ -1552,7 +1568,7 @@ export default function ProfessionalProfileManager({
 
         <section style={sectionStyle()}>
           <div style={{ display: "grid", gap: 4 }}>
-            <h3 style={{ margin: 0, fontWeight: 900 }}>Leitura atual do Pro Mode</h3>
+            <h3 style={{ margin: 0, fontWeight: 900 }}>Leitura atual do perfil profissional</h3>
             <p style={{ margin: 0, opacity: 0.78 }}>
               Este bloco mostra como o sistema está entendendo a identidade pública profissional.
             </p>
@@ -1610,9 +1626,11 @@ export default function ProfessionalProfileManager({
             style={{
               padding: "10px 14px",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(255,255,255,0.06)",
-              color: "#fff",
+              border: "1px solid rgba(20,184,166,0.34)",
+              background: saving
+                ? "rgba(15,23,42,0.70)"
+                : "linear-gradient(135deg, rgba(13,148,136,0.96), rgba(20,184,166,0.82))",
+              color: PRO_TEXT,
               fontWeight: 800,
               cursor: saving ? "not-allowed" : "pointer",
               opacity: saving ? 0.6 : 1,
@@ -1665,10 +1683,10 @@ export default function ProfessionalProfileManager({
 
             <div
               style={{
-                background: "#111",
+                background: "#020617",
                 borderRadius: 18,
                 padding: 12,
-                border: "1px solid rgba(255,255,255,0.12)",
+                border: "1px solid rgba(148,163,184,0.18)",
               }}
             >
               <img
