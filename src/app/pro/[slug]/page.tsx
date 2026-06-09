@@ -140,11 +140,17 @@ async function getProfessionalProfile(
   return (data as ProfessionalProfile | null) ?? null;
 }
 
+const PRO_BORDER = "rgba(148,163,184,0.22)";
+const PRO_BORDER_STRONG = "rgba(59,130,246,0.34)";
+const PRO_TEXT = "#F8FAFC";
+const PRO_TEXT_SECONDARY = "#CBD5E1";
+
 function pageStyle(): CSSProperties {
   return {
-    padding: 24,
-    maxWidth: 980,
+    maxWidth: 1080,
     margin: "0 auto",
+    padding: 24,
+    color: PRO_TEXT,
   };
 }
 
@@ -163,72 +169,75 @@ function heroStyle(): CSSProperties {
     marginTop: 20,
     padding: 24,
     borderRadius: 28,
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: `1px solid ${PRO_BORDER_STRONG}`,
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)",
+      "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(17,24,39,0.94) 48%, rgba(30,41,95,0.82) 100%)",
     display: "grid",
     gap: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
+    boxShadow: "0 24px 70px rgba(2,6,23,0.42)",
   };
 }
 
 function heroKickerStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
     fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: 0.3,
+    fontWeight: 900,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
-    opacity: 0.95,
+    color: "#93C5FD",
   };
 }
 
 function modeButtonStyle(active: boolean): CSSProperties {
   return {
-    display: "inline-block",
-    padding: "10px 18px",
-    borderRadius: "999px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 16px",
+    borderRadius: 14,
     border: active
-      ? "1px solid rgba(255,255,255,0.24)"
-      : "1px solid rgba(255,255,255,0.12)",
-    background: active ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)",
-    color: "#fff",
-    fontWeight: 800,
+      ? `1px solid ${PRO_BORDER_STRONG}`
+      : `1px solid ${PRO_BORDER}`,
+    background: active
+      ? "linear-gradient(135deg, rgba(37,99,235,0.82), rgba(79,70,229,0.55))"
+      : "rgba(15,23,42,0.72)",
+    color: PRO_TEXT,
+    fontWeight: 850,
     textDecoration: "none",
-    marginRight: 10,
     transition: "all 0.2s ease",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "14px 18px",
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(255,255,255,0.16)",
-    color: "#fff",
+    border: "1px solid rgba(45,212,191,0.32)",
+    background: "linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)",
+    color: "#FFFFFF",
     textDecoration: "none",
     fontWeight: 900,
     lineHeight: 1.2,
-    boxShadow: "0 8px 22px rgba(0,0,0,0.18)",
+    boxShadow: "0 14px 28px rgba(20,184,166,0.18)",
   };
 }
 
 function secondaryButtonStyle(): CSSProperties {
   return {
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "14px 18px",
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    border: `1px solid ${PRO_BORDER}`,
+    background: "rgba(15,23,42,0.78)",
+    color: PRO_TEXT,
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: 850,
     lineHeight: 1.2,
   };
 }
@@ -239,15 +248,17 @@ function linkCardStyle(isFirst: boolean): CSSProperties {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 14,
-    padding: "14px 16px",
+    padding: "15px 16px",
     borderRadius: 16,
     border: isFirst
-      ? "1px solid rgba(255,255,255,0.18)"
-      : "1px solid rgba(255,255,255,0.12)",
-    background: isFirst ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
-    color: "#fff",
+      ? `1px solid ${PRO_BORDER_STRONG}`
+      : `1px solid ${PRO_BORDER}`,
+    background: isFirst
+      ? "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(15,23,42,0.84))"
+      : "rgba(15,23,42,0.74)",
+    color: PRO_TEXT,
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: 850,
   };
 }
 
@@ -256,34 +267,30 @@ function sectionCardStyle(): CSSProperties {
     marginTop: 24,
     padding: 20,
     borderRadius: 22,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.03)",
+    border: `1px solid ${PRO_BORDER}`,
+    background:
+      "linear-gradient(135deg, rgba(15,23,42,0.86), rgba(17,24,39,0.78))",
+    boxShadow: "0 16px 40px rgba(2,6,23,0.24)",
   };
 }
 
-function badgeStyle(): CSSProperties {
+function metaLabelStyle(): CSSProperties {
   return {
     display: "inline-block",
-    padding: "7px 11px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
+    color: "#93C5FD",
     fontSize: 12,
-    opacity: 0.95,
-    fontWeight: 700,
+    fontWeight: 850,
+    letterSpacing: 0.35,
   };
 }
 
-function compactBadgeStyle(): CSSProperties {
+function highlightTextStyle(): CSSProperties {
   return {
-    display: "inline-block",
-    padding: "8px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.05)",
-    fontSize: 12,
-    fontWeight: 700,
-    opacity: 0.95,
+    margin: 0,
+    color: PRO_TEXT_SECONDARY,
+    fontSize: 13,
+    fontWeight: 750,
+    lineHeight: 1.6,
   };
 }
 
@@ -300,8 +307,8 @@ function infoCardStyle(): CSSProperties {
   return {
     padding: 14,
     borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    border: `1px solid ${PRO_BORDER}`,
+    background: "rgba(15,23,42,0.64)",
   };
 }
 
@@ -318,52 +325,23 @@ function quickPanelStyle(): CSSProperties {
   return {
     padding: 16,
     borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-  };
-}
-
-function authorityStripStyle(): CSSProperties {
-  return {
-    display: "grid",
-    gap: 12,
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    marginTop: 16,
-  };
-}
-
-function authorityCardStyle(): CSSProperties {
-  return {
-    padding: 14,
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    minHeight: 90,
+    border: `1px solid ${PRO_BORDER}`,
+    background: "rgba(15,23,42,0.68)",
   };
 }
 
 function channelButtonStyle(): CSSProperties {
   return {
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "12px 14px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    border: `1px solid ${PRO_BORDER}`,
+    background: "rgba(15,23,42,0.78)",
+    color: PRO_TEXT,
     textDecoration: "none",
-    fontWeight: 700,
-  };
-}
-
-function emptyCalloutStyle(): CSSProperties {
-  return {
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    lineHeight: 1.6,
-    opacity: 0.9,
+    fontWeight: 750,
   };
 }
 
@@ -410,7 +388,7 @@ function getDisplayName(label: string | null, fallback: string): string {
     const common = resolveCommonName(rawLabel);
     if (common) return common;
 
-    const hasUppercase = /[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇ]/.test(rawLabel);
+    const hasUppercase = rawLabel !== rawLabel.toLowerCase();
     return hasUppercase ? rawLabel : titleCaseWords(rawLabel);
   }
 
@@ -579,52 +557,6 @@ function getHeroHighlights(
   return items.slice(0, 4);
 }
 
-function getAuthorityBlocks(
-  professionalProfile: ProfessionalProfile | null,
-  canConnect: boolean
-): Array<{ title: string; value: string }> {
-  if (!professionalProfile) return [];
-
-  const blocks: Array<{ title: string; value: string }> = [];
-
-  if (professionalProfile.services) {
-    blocks.push({
-      title: "Entrega principal",
-      value: limitText(professionalProfile.services, 110),
-    });
-  }
-
-  if (professionalProfile.looking_for) {
-    blocks.push({
-      title: "Busca atual",
-      value: limitText(professionalProfile.looking_for, 110),
-    });
-  }
-
-  if (canConnect) {
-    if (professionalProfile.whatsapp_business) {
-      blocks.push({
-        title: "Canal mais rápido",
-        value: "WhatsApp profissional disponível para contato direto.",
-      });
-    } else if (professionalProfile.professional_email) {
-      blocks.push({
-        title: "Canal direto",
-        value: "E-mail profissional disponível para continuidade da conversa.",
-      });
-    }
-  }
-
-  if (professionalProfile.company_name) {
-    blocks.push({
-      title: "Marca ou empresa",
-      value: professionalProfile.company_name,
-    });
-  }
-
-  return blocks.slice(0, 4);
-}
-
 function getLinkHint(link: PublicSocialLink, index: number): string {
   const key = normalizeText(link.label || link.platform).toLowerCase();
 
@@ -700,8 +632,6 @@ export default async function ProPublicPage({ params }: PageProps) {
   const heroTitle = buildProHeadline(professionalProfile, canConnect, professionalQuickAction);
   const heroDescription = buildProDescription(professionalProfile, canConnect, professionalQuickAction);
   const heroHighlights = getHeroHighlights(professionalProfile, canConnect);
-  const authorityBlocks = getAuthorityBlocks(professionalProfile, canConnect);
-
   const hasProfessionalChannels = !!(
     professionalProfile.website ||
     professionalProfile.portfolio ||
@@ -714,31 +644,21 @@ export default async function ProPublicPage({ params }: PageProps) {
       ? "Escolha o canal que preferir para continuar a conversa."
       : "A conexão profissional é o principal caminho deste perfil no momento.";
 
-  const showQuickSummary = !!(
-    professionalProfile.services ||
-    professionalProfile.looking_for ||
-    professionalProfile.industry
-  );
-
   return (
     <main style={pageStyle()}>
       <header style={{ display: "grid", gap: 12 }}>
         <div style={topBarStyle()}>
           <div style={{ display: "grid", gap: 8 }}>
-            <span style={badgeStyle()}>{formatClicks(clicks)}</span>
+            <span style={metaLabelStyle()}>{formatClicks(clicks)}</span>
 
             <h1 style={{ fontSize: 32, lineHeight: 1.1, margin: 0 }}>
               {profileName}
             </h1>
-
-            <p style={{ opacity: 0.72, margin: 0 }}>
-              Perfil profissional: {card.slug}
-            </p>
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <Link href={`/${card.slug}`} style={modeButtonStyle(false)}>
-              Experiência Club
+              Ver experiência Club
             </Link>
 
             <Link href={`/pro/${card.slug}`} style={modeButtonStyle(true)}>
@@ -767,7 +687,7 @@ export default async function ProPublicPage({ params }: PageProps) {
                   height: 110,
                   objectFit: "cover",
                   borderRadius: 20,
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: `1px solid ${PRO_BORDER}`,
                   display: "block",
                 }}
               />
@@ -776,7 +696,7 @@ export default async function ProPublicPage({ params }: PageProps) {
 
           <div style={{ display: "grid", gap: 12 }}>
             <span style={heroKickerStyle()}>
-              Modo Profissional
+              Área profissional
             </span>
 
             <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.08 }}>
@@ -796,13 +716,9 @@ export default async function ProPublicPage({ params }: PageProps) {
             </p>
 
             {heroHighlights.length > 0 ? (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {heroHighlights.map((item) => (
-                  <span key={item} style={compactBadgeStyle()}>
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <p style={highlightTextStyle()}>
+                {heroHighlights.join(" • ")}
+              </p>
             ) : null}
           </div>
         </div>
@@ -869,22 +785,10 @@ export default async function ProPublicPage({ params }: PageProps) {
           ) : null}
         </div>
 
-        {authorityBlocks.length > 0 ? (
-          <div style={authorityStripStyle()}>
-            {authorityBlocks.map((block) => (
-              <div key={`${block.title}-${block.value}`} style={authorityCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  {block.title}
-                </strong>
-                <div style={{ opacity: 0.88, lineHeight: 1.55 }}>{block.value}</div>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </section>
 
       <section style={sectionCardStyle()}>
-        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Por que este perfil vale a conversa</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>Resumo profissional</h2>
 
         {(professionalProfile.accepts_professional_contact || hasProfessionalChannels) ? (
           <div style={quickPanelsGridStyle()}>
@@ -1008,7 +912,7 @@ export default async function ProPublicPage({ params }: PageProps) {
                   height: 110,
                   objectFit: "cover",
                   borderRadius: 20,
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: `1px solid ${PRO_BORDER}`,
                   display: "block",
                 }}
               />
@@ -1085,86 +989,34 @@ export default async function ProPublicPage({ params }: PageProps) {
           </div>
         ) : null}
 
-        {!links.length ? (
-          <div style={emptyCalloutStyle()}>
-            Este perfil está priorizando conexão e contato direto. Quando houver canais adicionais ativos, eles aparecerão aqui com destaque.
-          </div>
-        ) : null}
       </section>
 
-      {showQuickSummary ? (
+      {links.length > 0 ? (
         <section style={sectionCardStyle()}>
-          <h2 style={{ marginTop: 0, marginBottom: 10 }}>Resumo rápido</h2>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginBottom: 14,
+            }}
+          >
+            <div>
+              <h2 style={{ marginTop: 0, marginBottom: 6 }}>
+                Canais adicionais
+              </h2>
+              <p style={{ margin: 0, opacity: 0.78 }}>
+                Escolha abaixo o melhor caminho para continuar.
+              </p>
+            </div>
 
-          <div style={infoGridStyle()}>
-            {professionalProfile.services ? (
-              <div style={infoCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  Entrega principal
-                </strong>
-                <div style={{ lineHeight: 1.55 }}>
-                  {limitText(professionalProfile.services, 120)}
-                </div>
-              </div>
-            ) : null}
-
-            {professionalProfile.looking_for ? (
-              <div style={infoCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  Busca atual
-                </strong>
-                <div style={{ lineHeight: 1.55 }}>
-                  {limitText(professionalProfile.looking_for, 120)}
-                </div>
-              </div>
-            ) : null}
-
-            {professionalProfile.industry ? (
-              <div style={infoCardStyle()}>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  Segmento
-                </strong>
-                <div style={{ lineHeight: 1.55 }}>
-                  {professionalProfile.industry}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      <section style={sectionCardStyle()}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>
-              Canais adicionais
-            </h2>
-            <p style={{ margin: 0, opacity: 0.78 }}>
-              Escolha abaixo o melhor caminho para continuar.
-            </p>
-          </div>
-
-          {links.length > 0 ? (
-            <span style={badgeStyle()}>
+            <span style={metaLabelStyle()}>
               {links.length === 1 ? "1 link ativo" : `${links.length} links ativos`}
             </span>
-          ) : null}
-        </div>
+          </div>
 
-        {links.length === 0 ? (
-          <p style={{ marginBottom: 0 }}>
-            Ainda não há links ativos disponíveis neste perfil.
-          </p>
-        ) : (
           <div style={{ display: "grid", gap: 12 }}>
             {links.map((l, index) => {
               const label = getDisplayName(l.label, l.platform);
@@ -1200,8 +1052,8 @@ export default async function ProPublicPage({ params }: PageProps) {
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }
