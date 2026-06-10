@@ -43,6 +43,7 @@ type ProfessionalProfile = {
   city: string | null;
   services: string | null;
   looking_for: string | null;
+  search_keywords: string[] | null;
   business_instagram: string | null;
   website: string | null;
   portfolio: string | null;
@@ -122,6 +123,7 @@ async function getProfessionalProfile(
       city,
       services,
       looking_for,
+      search_keywords,
       business_instagram,
       website,
       portfolio,
@@ -345,8 +347,42 @@ function channelButtonStyle(): CSSProperties {
   };
 }
 
+function keywordChipStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "9px 12px",
+    borderRadius: 999,
+    border: "1px solid rgba(59,130,246,0.34)",
+    background: "linear-gradient(135deg, rgba(37,99,235,0.24), rgba(15,23,42,0.76))",
+    color: "#DBEAFE",
+    fontSize: 13,
+    fontWeight: 850,
+    lineHeight: 1.2,
+  };
+}
+
 function normalizeText(value: string | null | undefined): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeKeywordList(value: string[] | null | undefined): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const unique = new Map<string, string>();
+
+  for (const item of value) {
+    const keyword = normalizeText(item);
+    if (!keyword) continue;
+
+    const key = keyword.toLowerCase();
+    if (!unique.has(key)) {
+      unique.set(key, keyword);
+    }
+  }
+
+  return Array.from(unique.values()).slice(0, 10);
 }
 
 function limitText(value: string | null | undefined, max = 120): string {
@@ -638,6 +674,7 @@ export default async function ProPublicPage({ params }: PageProps) {
     professionalProfile.linkedin ||
     professionalProfile.business_instagram
   );
+  const professionalKeywords = normalizeKeywordList(professionalProfile.search_keywords);
 
   const contactSummary =
     professionalProfile.whatsapp_business || professionalProfile.professional_email
@@ -986,6 +1023,30 @@ export default async function ProPublicPage({ params }: PageProps) {
             <p style={{ marginTop: 8, lineHeight: 1.65 }}>
               {professionalProfile.looking_for}
             </p>
+          </div>
+        ) : null}
+
+        {professionalKeywords.length > 0 ? (
+          <div style={{ marginTop: 18 }}>
+            <strong>Competências e temas</strong>
+            <p
+              style={{
+                marginTop: 8,
+                marginBottom: 12,
+                color: PRO_TEXT_SECONDARY,
+                lineHeight: 1.65,
+              }}
+            >
+              Termos que ajudam a entender melhor a atuação deste perfil.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {professionalKeywords.map((keyword) => (
+                <span key={keyword} style={keywordChipStyle()}>
+                  {keyword}
+                </span>
+              ))}
+            </div>
           </div>
         ) : null}
 
