@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
+import ProfessionalLinksManager from "./ProfessionalLinksManager";
 
 type ProfessionalProfileRow = {
   id: string;
@@ -54,6 +55,7 @@ type FormState = {
 };
 
 type ProfessionalProfileManagerProps = {
+  cardId: string;
   proPublicHref?: string;
   hasPublicSlug?: boolean;
   isPublished?: boolean;
@@ -469,6 +471,7 @@ function useBrazilCitySearch(
 }
 
 export default function ProfessionalProfileManager({
+  cardId,
   proPublicHref = "",
   hasPublicSlug = false,
   isPublished = false,
@@ -1240,62 +1243,7 @@ export default function ProfessionalProfileManager({
           </div>
         </section>
 
-        <section style={sectionStyle()}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <h3 style={{ margin: 0, fontWeight: 900 }}>Canais profissionais</h3>
-            <p style={{ margin: 0, opacity: 0.78 }}>
-              Esses canais aparecem como acessos complementares no perfil profissional.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 14,
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            }}
-          >
-            <label>
-              <span style={labelTitleStyle()}>Website</span>
-              <input
-                value={form.website}
-                onChange={(e) => updateField("website", e.target.value)}
-                placeholder="Ex: https://seusite.com"
-                style={inputStyle()}
-              />
-            </label>
-
-            <label>
-              <span style={labelTitleStyle()}>Portfólio</span>
-              <input
-                value={form.portfolio}
-                onChange={(e) => updateField("portfolio", e.target.value)}
-                placeholder="Ex: https://portfolio.com"
-                style={inputStyle()}
-              />
-            </label>
-
-            <label>
-              <span style={labelTitleStyle()}>LinkedIn</span>
-              <input
-                value={form.linkedin}
-                onChange={(e) => updateField("linkedin", e.target.value)}
-                placeholder="Ex: https://linkedin.com/in/seuperfil"
-                style={inputStyle()}
-              />
-            </label>
-
-            <label>
-              <span style={labelTitleStyle()}>Instagram do negócio</span>
-              <input
-                value={form.business_instagram}
-                onChange={(e) => updateField("business_instagram", e.target.value)}
-                placeholder="Ex: https://instagram.com/suamarca"
-                style={inputStyle()}
-              />
-            </label>
-          </div>
-        </section>
+        <ProfessionalLinksManager cardId={cardId} />
 
         <section style={sectionStyle()}>
           <div style={{ display: "grid", gap: 4 }}>

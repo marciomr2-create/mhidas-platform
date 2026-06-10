@@ -183,6 +183,7 @@ export default async function CardProPage({ params }: PageProps) {
 
         <section style={sectionStyle()}>
           <ProfessionalProfileManager
+            cardId={c.card_id}
             proPublicHref={proPublicHref}
             hasPublicSlug={hasPublicSlug}
             isPublished={c.is_published}

@@ -32,7 +32,7 @@ const SLOT_COUNT = 6;
 
 const SLOT_PLATFORMS = Array.from(
   { length: SLOT_COUNT },
-  (_, index) => `pro_link_${index + 1}`
+  (_, index) => `pro_link_${index + 1}`,
 );
 
 const PRESETS = [
@@ -61,8 +61,14 @@ function emptyDraft(): LinkDraft {
   };
 }
 
+function createEmptyDrafts(): LinkDraft[] {
+  return Array.from({ length: SLOT_COUNT }, emptyDraft);
+}
+
 function normalizeText(value: string | null | undefined): string {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalizeUrl(rawValue: string, label: string): string {
@@ -128,35 +134,36 @@ function serializeDrafts(drafts: LinkDraft[]): string {
       label: normalizeText(draft.label),
       url: normalizeText(draft.url),
       isActive: draft.isActive,
-    }))
+    })),
   );
 }
 
-function pageCardStyle(): CSSProperties {
+function sectionStyle(): CSSProperties {
   return {
-    marginTop: 18,
-    padding: 18,
-    borderRadius: 22,
+    padding: 16,
+    borderRadius: 18,
     border: `1px solid ${PRO_BORDER}`,
-    background:
-      "linear-gradient(135deg, rgba(15,23,42,0.9), rgba(17,24,39,0.82))",
-    boxShadow: "0 18px 48px rgba(2,6,23,0.28)",
+    background: "rgba(15,23,42,0.72)",
+    boxShadow: "0 18px 44px rgba(2,6,23,0.20)",
     color: PRO_TEXT,
   };
 }
 
-function linkCardStyle(isActive: boolean): CSSProperties {
+function compactRowStyle(
+  isActive: boolean,
+  isExpanded: boolean,
+): CSSProperties {
   return {
-    display: "grid",
-    gap: 14,
-    padding: 16,
-    borderRadius: 18,
+    borderRadius: 16,
     border: isActive
       ? "1px solid rgba(45,212,191,0.34)"
-      : `1px solid ${PRO_BORDER}`,
+      : isExpanded
+        ? `1px solid ${PRO_BORDER_STRONG}`
+        : `1px solid ${PRO_BORDER}`,
     background: isActive
-      ? "linear-gradient(135deg, rgba(13,148,136,0.12), rgba(15,23,42,0.8))"
-      : "rgba(15,23,42,0.64)",
+      ? "linear-gradient(135deg, rgba(13,148,136,0.10), rgba(15,23,42,0.72))"
+      : "rgba(15,23,42,0.62)",
+    overflow: "hidden",
   };
 }
 
@@ -217,8 +224,8 @@ function buttonStyle(options?: {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 42,
-    padding: "10px 14px",
+    minHeight: 40,
+    padding: "9px 13px",
     borderRadius: 12,
     border,
     background: disabled ? "rgba(15,23,42,0.45)" : background,
@@ -271,24 +278,29 @@ function messageStyle(kind: "success" | "error"): CSSProperties {
         ? "1px solid rgba(45,212,191,0.3)"
         : "1px solid rgba(248,113,113,0.3)",
     background:
-      kind === "success"
-        ? "rgba(13,148,136,0.12)"
-        : "rgba(127,29,29,0.18)",
+      kind === "success" ? "rgba(13,148,136,0.12)" : "rgba(127,29,29,0.18)",
     color: kind === "success" ? "#CCFBF1" : "#FECACA",
     lineHeight: 1.5,
   };
+}
+
+function getRowDescription(draft: LinkDraft): string {
+  const label = normalizeText(draft.label);
+  const url = normalizeText(draft.url);
+
+  if (label) return label;
+  if (url) return url;
+  return "Ainda não configurado";
 }
 
 export default function ProfessionalLinksManager({ cardId }: Props) {
   const supabase = useMemo(() => createBrowserClient(), []);
 
   const [rows, setRows] = useState<ProfessionalLinkRow[]>([]);
-  const [drafts, setDrafts] = useState<LinkDraft[]>(
-    Array.from({ length: SLOT_COUNT }, emptyDraft)
-  );
-  const [originalDrafts, setOriginalDrafts] = useState<LinkDraft[]>(
-    Array.from({ length: SLOT_COUNT }, emptyDraft)
-  );
+  const [drafts, setDrafts] = useState<LinkDraft[]>(createEmptyDrafts);
+  const [originalDrafts, setOriginalDrafts] =
+    useState<LinkDraft[]>(createEmptyDrafts);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -299,16 +311,14 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
   const activeCount = drafts.filter(
     (draft) =>
-      draft.isActive &&
-      normalizeText(draft.label) &&
-      normalizeText(draft.url)
+      draft.isActive && normalizeText(draft.label) && normalizeText(draft.url),
   ).length;
 
   async function fetchLinks(userId: string): Promise<ProfessionalLinkRow[]> {
     const { data, error } = await supabase
       .from("social_links")
       .select(
-        "id,platform,url,label,is_active,sort_order,position,clicks_count,mode,updated_at"
+        "id,platform,url,label,is_active,sort_order,position,clicks_count,mode,updated_at",
       )
       .eq("user_id", userId)
       .eq("card_id", cardId)
@@ -338,11 +348,15 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       const userId = data.user?.id;
 
       if (!userId) {
-        throw new Error("Sessão expirada. Entre novamente para editar os links.");
+        throw new Error(
+          "Sessão expirada. Entre novamente para editar os links.",
+        );
       }
 
       if (!cardId) {
-        throw new Error("Perfil inválido para carregar os links profissionais.");
+        throw new Error(
+          "Perfil inválido para carregar os links profissionais.",
+        );
       }
 
       const nextRows = await fetchLinks(userId);
@@ -351,15 +365,18 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       setRows(nextRows);
       setDrafts(nextDrafts);
       setOriginalDrafts(nextDrafts);
+      setExpandedIndex(null);
     } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
           : "Não foi possível carregar os links profissionais.";
 
+      const empty = createEmptyDrafts();
       setRows([]);
-      setDrafts(Array.from({ length: SLOT_COUNT }, emptyDraft));
-      setOriginalDrafts(Array.from({ length: SLOT_COUNT }, emptyDraft));
+      setDrafts(empty);
+      setOriginalDrafts(empty);
+      setExpandedIndex(null);
       setErrorMsg(message);
     } finally {
       setLoading(false);
@@ -369,7 +386,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
   function updateDraft<K extends keyof LinkDraft>(
     index: number,
     field: K,
-    value: LinkDraft[K]
+    value: LinkDraft[K],
   ) {
     setDrafts((current) =>
       current.map((draft, draftIndex) =>
@@ -378,8 +395,8 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
               ...draft,
               [field]: value,
             }
-          : draft
-      )
+          : draft,
+      ),
     );
 
     setSuccessMsg(null);
@@ -388,15 +405,14 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
   function applyPreset(index: number, preset: string) {
     if (!preset) return;
-
     updateDraft(index, "label", preset);
   }
 
   function clearSlot(index: number) {
     setDrafts((current) =>
       current.map((draft, draftIndex) =>
-        draftIndex === index ? emptyDraft() : draft
-      )
+        draftIndex === index ? emptyDraft() : draft,
+      ),
     );
 
     setSuccessMsg(null);
@@ -418,6 +434,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       return next;
     });
 
+    setExpandedIndex(targetIndex);
     setSuccessMsg(null);
     setErrorMsg(null);
   }
@@ -480,10 +497,6 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
       const prepared = validateDrafts();
 
-      if (prepared.filter((item) => item.isActive).length > SLOT_COUNT) {
-        throw new Error("O Perfil profissional permite no máximo 6 links ativos.");
-      }
-
       const { data, error } = await supabase.auth.getUser();
 
       if (error) throw error;
@@ -491,7 +504,9 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       const userId = data.user?.id;
 
       if (!userId) {
-        throw new Error("Sessão expirada. Entre novamente para salvar os links.");
+        throw new Error(
+          "Sessão expirada. Entre novamente para salvar os links.",
+        );
       }
 
       const now = new Date().toISOString();
@@ -520,7 +535,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       }
 
       const filledPlatforms = new Set(
-        prepared.map((item) => SLOT_PLATFORMS[item.index])
+        prepared.map((item) => SLOT_PLATFORMS[item.index]),
       );
 
       const rowsToDelete = rows
@@ -544,6 +559,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       setRows(refreshedRows);
       setDrafts(refreshedDrafts);
       setOriginalDrafts(refreshedDrafts);
+      setExpandedIndex(null);
       setSuccessMsg("Links profissionais salvos com sucesso.");
     } catch (error: unknown) {
       const message =
@@ -563,7 +579,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
   }, [cardId]);
 
   return (
-    <section style={pageCardStyle()}>
+    <section style={sectionStyle()}>
       <div
         style={{
           display: "flex",
@@ -573,33 +589,20 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "grid", gap: 7, maxWidth: 720 }}>
-          <div
-            style={{
-              color: "#93C5FD",
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            Links profissionais
-          </div>
-
-          <h2 style={{ margin: 0, fontSize: 22, lineHeight: 1.15 }}>
+        <div style={{ display: "grid", gap: 6, maxWidth: 720 }}>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>
             Seus caminhos profissionais
-          </h2>
+          </h3>
 
           <p
             style={{
               margin: 0,
               color: PRO_TEXT_SECONDARY,
-              lineHeight: 1.6,
+              lineHeight: 1.55,
             }}
           >
-            Configure até 6 links. Apenas os links ativos e válidos aparecem no
-            perfil público. Os quatro primeiros ficam em destaque e os links 5
-            e 6 aparecem como canais complementares.
+            Configure até 6 links. Apenas os ativos e válidos aparecem no perfil
+            público. Abra somente a linha que deseja editar.
           </p>
         </div>
 
@@ -625,41 +628,48 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
         </p>
       ) : (
         <>
-          <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
+          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
             {drafts.map((draft, index) => {
-              const normalizedPreviewUrl = normalizeUrl(
-                draft.url,
-                draft.label
+              const isExpanded = expandedIndex === index;
+              const normalizedPreviewUrl = normalizeUrl(draft.url, draft.label);
+              const canOpen = Boolean(
+                normalizeText(draft.label) && isValidUrl(normalizedPreviewUrl),
               );
-              const canOpen =
-                normalizeText(draft.label) &&
-                isValidUrl(normalizedPreviewUrl);
+              const isConfigured = Boolean(
+                normalizeText(draft.label) || normalizeText(draft.url),
+              );
 
               return (
-                <article key={SLOT_PLATFORMS[index]} style={linkCardStyle(draft.isActive)}>
+                <article
+                  key={SLOT_PLATFORMS[index]}
+                  style={compactRowStyle(draft.isActive, isExpanded)}
+                >
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       gap: 12,
+                      padding: 14,
                       flexWrap: "wrap",
                     }}
                   >
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <strong style={{ fontSize: 16 }}>
+                    <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+                      <strong style={{ fontSize: 15 }}>
                         Link profissional {index + 1}
                       </strong>
 
                       <span
                         style={{
-                          color: PRO_TEXT_SECONDARY,
-                          fontSize: 12,
+                          color: isConfigured ? PRO_TEXT_SECONDARY : "#94A3B8",
+                          fontSize: 13,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: 440,
                         }}
                       >
-                        {index < 4
-                          ? "Aparece em destaque no perfil público."
-                          : "Aparece em canais complementares."}
+                        {getRowDescription(draft)}
                       </span>
                     </div>
 
@@ -668,12 +678,15 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
                         display: "flex",
                         alignItems: "center",
                         gap: 10,
+                        flexWrap: "wrap",
                       }}
                     >
                       <span
                         style={{
-                          color: draft.isActive ? "#5EEAD4" : PRO_TEXT_SECONDARY,
-                          fontSize: 13,
+                          color: draft.isActive
+                            ? "#5EEAD4"
+                            : PRO_TEXT_SECONDARY,
+                          fontSize: 12,
                           fontWeight: 850,
                         }}
                       >
@@ -695,136 +708,155 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
                       >
                         <span style={switchKnobStyle(draft.isActive)} />
                       </button>
+
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        disabled={saving}
+                        onClick={() =>
+                          setExpandedIndex(isExpanded ? null : index)
+                        }
+                        style={buttonStyle({ disabled: saving })}
+                      >
+                        {isExpanded
+                          ? "Fechar"
+                          : isConfigured
+                            ? "Editar"
+                            : "Adicionar"}
+                      </button>
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(220px, 1fr))",
-                      gap: 12,
-                    }}
-                  >
-                    <label style={labelStyle()}>
-                      <span>Modelo opcional</span>
-                      <select
-                        value=""
-                        disabled={saving}
-                        onChange={(event) =>
-                          applyPreset(index, event.target.value)
-                        }
-                        style={selectStyle()}
-                      >
-                        <option value="">Escolha um modelo</option>
-                        {PRESETS.map((preset) => (
-                          <option key={preset} value={preset}>
-                            {preset}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label style={labelStyle()}>
-                      <span>Texto do botão</span>
-                      <input
-                        value={draft.label}
-                        disabled={saving}
-                        onChange={(event) =>
-                          updateDraft(index, "label", event.target.value)
-                        }
-                        placeholder="Ex: Ver produtos no marketplace"
-                        maxLength={60}
-                        style={inputStyle()}
-                      />
-                    </label>
-
-                    <label style={labelStyle()}>
-                      <span>URL de destino</span>
-                      <input
-                        value={draft.url}
-                        disabled={saving}
-                        onChange={(event) =>
-                          updateDraft(index, "url", event.target.value)
-                        }
-                        placeholder="Ex: https://seusite.com"
-                        inputMode="url"
-                        style={inputStyle()}
-                      />
-                    </label>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 10,
-                      flexWrap: "wrap",
-                    }}
-                  >
+                  {isExpanded ? (
                     <div
                       style={{
-                        display: "flex",
-                        gap: 8,
-                        flexWrap: "wrap",
+                        display: "grid",
+                        gap: 14,
+                        padding: "0 14px 14px",
+                        borderTop: `1px solid ${PRO_BORDER}`,
                       }}
                     >
-                      <button
-                        type="button"
-                        disabled={saving || index === 0}
-                        onClick={() => moveSlot(index, -1)}
-                        style={buttonStyle({
-                          disabled: saving || index === 0,
-                        })}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(220px, 1fr))",
+                          gap: 12,
+                          paddingTop: 14,
+                        }}
                       >
-                        Mover acima
-                      </button>
+                        <label style={labelStyle()}>
+                          <span>Modelo opcional</span>
+                          <select
+                            value=""
+                            disabled={saving}
+                            onChange={(event) =>
+                              applyPreset(index, event.target.value)
+                            }
+                            style={selectStyle()}
+                          >
+                            <option value="">Escolha um modelo</option>
+                            {PRESETS.map((preset) => (
+                              <option key={preset} value={preset}>
+                                {preset}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
 
-                      <button
-                        type="button"
-                        disabled={saving || index === SLOT_COUNT - 1}
-                        onClick={() => moveSlot(index, 1)}
-                        style={buttonStyle({
-                          disabled: saving || index === SLOT_COUNT - 1,
-                        })}
-                      >
-                        Mover abaixo
-                      </button>
+                        <label style={labelStyle()}>
+                          <span>Texto do botão</span>
+                          <input
+                            value={draft.label}
+                            disabled={saving}
+                            onChange={(event) =>
+                              updateDraft(index, "label", event.target.value)
+                            }
+                            placeholder="Ex: Ver produtos no marketplace"
+                            maxLength={60}
+                            style={inputStyle()}
+                          />
+                        </label>
 
-                      <button
-                        type="button"
-                        disabled={
-                          saving ||
-                          (!normalizeText(draft.label) &&
-                            !normalizeText(draft.url) &&
-                            !draft.isActive)
-                        }
-                        onClick={() => clearSlot(index)}
-                        style={buttonStyle({
-                          danger: true,
-                          disabled:
-                            saving ||
-                            (!normalizeText(draft.label) &&
-                              !normalizeText(draft.url) &&
-                              !draft.isActive),
-                        })}
+                        <label style={labelStyle()}>
+                          <span>URL de destino</span>
+                          <input
+                            value={draft.url}
+                            disabled={saving}
+                            onChange={(event) =>
+                              updateDraft(index, "url", event.target.value)
+                            }
+                            placeholder="Ex: https://seusite.com"
+                            inputMode="url"
+                            style={inputStyle()}
+                          />
+                        </label>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 10,
+                          flexWrap: "wrap",
+                        }}
                       >
-                        Limpar linha
-                      </button>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            disabled={saving || index === 0}
+                            onClick={() => moveSlot(index, -1)}
+                            style={buttonStyle({
+                              disabled: saving || index === 0,
+                            })}
+                          >
+                            Mover acima
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={saving || index === SLOT_COUNT - 1}
+                            onClick={() => moveSlot(index, 1)}
+                            style={buttonStyle({
+                              disabled: saving || index === SLOT_COUNT - 1,
+                            })}
+                          >
+                            Mover abaixo
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={saving || !isConfigured}
+                            onClick={() => clearSlot(index)}
+                            style={buttonStyle({
+                              danger: true,
+                              disabled: saving || !isConfigured,
+                            })}
+                          >
+                            Limpar linha
+                          </button>
+                        </div>
+
+                        {canOpen ? (
+                          <a
+                            href={normalizedPreviewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={buttonStyle()}
+                          >
+                            Abrir para testar
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
-
-                    {canOpen ? (
-                      <a
-                        href={normalizedPreviewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={buttonStyle()}
-                      >
-                        Abrir para testar
-                      </a>
-                    ) : null}
-                  </div>
+                  ) : null}
                 </article>
               );
             })}
@@ -837,7 +869,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
               alignItems: "center",
               gap: 12,
               flexWrap: "wrap",
-              marginTop: 18,
+              marginTop: 16,
             }}
           >
             <button
