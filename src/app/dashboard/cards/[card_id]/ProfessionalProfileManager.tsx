@@ -28,6 +28,7 @@ type ProfessionalProfileRow = {
   pro_photo_style: string | null;
   visible_in_network: boolean;
   accepts_professional_contact: boolean;
+  search_keywords: string[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -52,6 +53,7 @@ type FormState = {
   pro_photo_style: string;
   visible_in_network: boolean;
   accepts_professional_contact: boolean;
+  search_keywords: string[];
 };
 
 type ProfessionalProfileManagerProps = {
@@ -66,6 +68,8 @@ type ChecklistItem = {
   label: string;
   done: boolean;
 };
+
+type AutosaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
 
 type PromptPreset = {
   id: string;
@@ -84,6 +88,9 @@ type BrazilCityItem = {
 };
 
 const STORAGE_BUCKET = "professional-photos";
+const MAX_SEARCH_KEYWORDS = 10;
+const MAX_SEARCH_KEYWORD_LENGTH = 50;
+const AUTOSAVE_DELAY_MS = 900;
 
 const PROMPT_PRESETS: PromptPreset[] = [
   {
@@ -148,6 +155,7 @@ const EMPTY_FORM: FormState = {
   pro_photo_style: "",
   visible_in_network: true,
   accepts_professional_contact: true,
+  search_keywords: [],
 };
 
 const PRO_SURFACE = "rgba(15,23,42,0.92)";
@@ -311,6 +319,41 @@ function normalizeText(value: string | null | undefined): string {
   return String(value || "").trim();
 }
 
+function normalizeKeywordText(value: string | null | undefined): string {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeKeywordKey(value: string | null | undefined): string {
+  return normalizeKeywordText(value).toLocaleLowerCase("pt-BR");
+}
+
+function normalizeSearchKeywords(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of value) {
+    const keyword = normalizeKeywordText(
+      typeof item === "string" ? item : ""
+    );
+
+    if (!keyword) continue;
+
+    const key = normalizeKeywordKey(keyword);
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    normalized.push(keyword);
+
+    if (normalized.length >= MAX_SEARCH_KEYWORDS) break;
+  }
+
+  return normalized;
+}
+
 function normalizeSearchText(value: string | null | undefined) {
   return String(value || "")
     .normalize("NFD")
@@ -411,7 +454,67 @@ function mapRowToForm(row: ProfessionalProfileRow | null | undefined): FormState
     pro_photo_style: row?.pro_photo_style ?? "",
     visible_in_network: row?.visible_in_network ?? true,
     accepts_professional_contact: row?.accepts_professional_contact ?? true,
+    search_keywords: normalizeSearchKeywords(row?.search_keywords),
   };
+}
+
+function serializeFormForAutosave(value: FormState): string {
+  return JSON.stringify({
+    profession: normalizeText(value.profession),
+    company_name: normalizeText(value.company_name),
+    industry: normalizeText(value.industry),
+    city: normalizeText(value.city),
+    services: normalizeText(value.services),
+    looking_for: normalizeText(value.looking_for),
+    business_instagram: normalizeText(value.business_instagram),
+    website: normalizeText(value.website),
+    portfolio: normalizeText(value.portfolio),
+    linkedin: normalizeText(value.linkedin),
+    whatsapp_business: extractBrazilPhoneDigits(value.whatsapp_business),
+    professional_email: normalizeText(value.professional_email),
+    bio_text: normalizeText(value.bio_text),
+    ai_summary: normalizeText(value.ai_summary),
+    pro_photo_url: normalizeText(value.pro_photo_url),
+    pro_photo_prompt: normalizeText(value.pro_photo_prompt),
+    pro_photo_style: normalizeText(value.pro_photo_style),
+    visible_in_network: Boolean(value.visible_in_network),
+    accepts_professional_contact: Boolean(value.accepts_professional_contact),
+    search_keywords: normalizeSearchKeywords(value.search_keywords),
+  });
+}
+
+function getAutosaveStatusText(status: AutosaveStatus, lastSavedAt: string) {
+  if (status === "saving") return "Salvando automaticamente...";
+  if (status === "dirty") return "Alterações detectadas. Salvamento automático em instantes.";
+  if (status === "error") return "Não foi possível salvar automaticamente. Verifique a conexão.";
+  if (status === "saved" && lastSavedAt) return `Salvo automaticamente às ${lastSavedAt}`;
+  if (status === "saved") return "Salvo automaticamente.";
+  return "Alterações são salvas automaticamente.";
+}
+
+function autosaveStatusStyle(status: AutosaveStatus) {
+  const isSaving = status === "saving";
+  const isError = status === "error";
+  const isDirty = status === "dirty";
+
+  return {
+    padding: "10px 12px",
+    borderRadius: 14,
+    border: isError
+      ? "1px solid rgba(248,113,113,0.28)"
+      : isSaving || isDirty
+        ? "1px solid rgba(96,165,250,0.30)"
+        : "1px solid rgba(45,212,191,0.26)",
+    background: isError
+      ? "rgba(127,29,29,0.16)"
+      : isSaving || isDirty
+        ? "rgba(30,64,175,0.16)"
+        : "rgba(13,148,136,0.12)",
+    color: isError ? "#fecaca" : isSaving || isDirty ? "#dbeafe" : "#ccfbf1",
+    fontSize: 13,
+    fontWeight: 800,
+    lineHeight: 1.45,
+  } as const;
 }
 
 function useDebouncedValue<T>(value: T, delay = 220) {
@@ -479,6 +582,11 @@ export default function ProfessionalProfileManager({
   const router = useRouter();
   const supabase = useMemo(() => createBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const autosaveTimerRef = useRef<number | null>(null);
+  const initialLoadDoneRef = useRef(false);
+  const lastSavedSignatureRef = useRef("");
+  const latestFormRef = useRef<FormState>(EMPTY_FORM);
+  const activeSaveIdRef = useRef(0);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -489,6 +597,9 @@ export default function ProfessionalProfileManager({
   const [localPhotoPreview, setLocalPhotoPreview] = useState("");
   const [photoTouched, setPhotoTouched] = useState(false);
   const [showPhotoViewer, setShowPhotoViewer] = useState(false);
+  const [keywordInput, setKeywordInput] = useState("");
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState("");
 
   const citySearch = useBrazilCitySearch(supabase, form.city);
 
@@ -523,23 +634,77 @@ export default function ProfessionalProfileManager({
 
     if (data) {
       const row = data as ProfessionalProfileRow;
+      const nextForm = mapRowToForm(row);
       setProfileId(row.id);
-      setForm(mapRowToForm(row));
+      setForm(nextForm);
+      latestFormRef.current = nextForm;
+      lastSavedSignatureRef.current = serializeFormForAutosave(nextForm);
     } else {
+      const nextForm = { ...EMPTY_FORM };
       setProfileId(null);
-      setForm(EMPTY_FORM);
+      setForm(nextForm);
+      latestFormRef.current = nextForm;
+      lastSavedSignatureRef.current = serializeFormForAutosave(nextForm);
     }
 
+    initialLoadDoneRef.current = true;
+    setAutosaveStatus("saved");
     setLoading(false);
   }
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setAutosaveStatus("dirty");
   }
 
   function handleWhatsAppChange(value: string) {
     const digits = extractBrazilPhoneDigits(value).slice(0, 11);
     updateField("whatsapp_business", digits);
+  }
+
+  function addSearchKeyword(rawValue = keywordInput) {
+    const keyword = normalizeKeywordText(rawValue);
+
+    if (!keyword) {
+      setMessage("Digite uma palavra-chave antes de adicionar.");
+      return;
+    }
+
+    if (keyword.length > MAX_SEARCH_KEYWORD_LENGTH) {
+      setMessage(
+        `Cada palavra-chave pode ter no máximo ${MAX_SEARCH_KEYWORD_LENGTH} caracteres.`
+      );
+      return;
+    }
+
+    if (form.search_keywords.length >= MAX_SEARCH_KEYWORDS) {
+      setMessage("Você já adicionou o limite de 10 palavras-chave.");
+      return;
+    }
+
+    const keywordKey = normalizeKeywordKey(keyword);
+    const alreadyExists = form.search_keywords.some(
+      (item) => normalizeKeywordKey(item) === keywordKey
+    );
+
+    if (alreadyExists) {
+      setMessage("Essa palavra-chave já foi adicionada.");
+      return;
+    }
+
+    updateField("search_keywords", [...form.search_keywords, keyword]);
+    setKeywordInput("");
+    setAutosaveStatus("dirty");
+    setMessage("Palavra-chave adicionada. O salvamento será automático.");
+  }
+
+  function removeSearchKeyword(indexToRemove: number) {
+    updateField(
+      "search_keywords",
+      form.search_keywords.filter((_, index) => index !== indexToRemove)
+    );
+    setAutosaveStatus("dirty");
+    setMessage("Palavra-chave removida. O salvamento será automático.");
   }
 
   async function copyProLink() {
@@ -601,7 +766,8 @@ export default function ProfessionalProfileManager({
       setSelectedPhotoFile(selectedFile);
       setLocalPhotoPreview(preview);
       setPhotoTouched(true);
-      setMessage("Foto selecionada com sucesso. Agora clique em Salvar.");
+      setAutosaveStatus("dirty");
+      setMessage("Foto selecionada. O salvamento será automático.");
     } catch {
       setMessage("Não foi possível preparar a pré-visualização da imagem.");
     }
@@ -618,25 +784,40 @@ export default function ProfessionalProfileManager({
       pro_photo_url: "",
     }));
     setShowPhotoViewer(false);
-    setMessage("Foto removida do formulário. Agora clique em Salvar.");
+    setAutosaveStatus("dirty");
+    setMessage("Foto removida. O salvamento será automático.");
   }
 
-  async function uploadPendingPhotoIfNeeded(userId: string): Promise<string> {
-    if (!photoTouched) {
-      return normalizeText(form.pro_photo_url);
+  async function uploadPendingPhotoIfNeeded(
+    userId: string,
+    options?: {
+      formSnapshot?: FormState;
+      photoTouchedSnapshot?: boolean;
+      selectedPhotoFileSnapshot?: File | null;
+    }
+  ): Promise<string> {
+    const currentForm = options?.formSnapshot ?? form;
+    const currentPhotoTouched = options?.photoTouchedSnapshot ?? photoTouched;
+    const currentSelectedPhotoFile =
+      options?.selectedPhotoFileSnapshot ?? selectedPhotoFile;
+
+    if (!currentPhotoTouched) {
+      return normalizeText(currentForm.pro_photo_url);
     }
 
-    if (!selectedPhotoFile) {
+    if (!currentSelectedPhotoFile) {
       return "";
     }
 
-    const sanitizedName = sanitizeFileName(selectedPhotoFile.name || "foto-profissional");
+    const sanitizedName = sanitizeFileName(
+      currentSelectedPhotoFile.name || "foto-profissional"
+    );
     const fileExt = sanitizedName.includes(".") ? sanitizedName.split(".").pop() : "jpg";
     const filePath = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filePath, selectedPhotoFile, {
+      .upload(filePath, currentSelectedPhotoFile, {
         cacheControl: "3600",
         upsert: false,
       });
@@ -660,44 +841,71 @@ export default function ProfessionalProfileManager({
     return publicUrl;
   }
 
-  async function saveProfile() {
-    setSaving(true);
-    setMessage("");
+  async function saveProfile(options?: {
+    mode?: "manual" | "auto";
+    formSnapshot?: FormState;
+    photoTouchedSnapshot?: boolean;
+    selectedPhotoFileSnapshot?: File | null;
+  }) {
+    const mode = options?.mode ?? "manual";
+    const currentForm = options?.formSnapshot ?? form;
+    const currentPhotoTouched = options?.photoTouchedSnapshot ?? photoTouched;
+    const currentSelectedPhotoFile =
+      options?.selectedPhotoFileSnapshot ?? selectedPhotoFile;
+    const snapshotSignature = serializeFormForAutosave(currentForm);
+    const saveId = activeSaveIdRef.current + 1;
+    activeSaveIdRef.current = saveId;
+
+    if (mode === "manual") {
+      setSaving(true);
+      setMessage("");
+    } else {
+      setAutosaveStatus("saving");
+    }
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setSaving(false);
-      setMessage("Faça login novamente para salvar.");
+      if (mode === "manual") {
+        setSaving(false);
+        setMessage("Faça login novamente para salvar.");
+      } else {
+        setAutosaveStatus("error");
+      }
       return;
     }
 
     try {
-      const whatsappUrl = buildWhatsAppUrl(form.whatsapp_business);
-      const finalPhotoUrl = await uploadPendingPhotoIfNeeded(user.id);
+      const whatsappUrl = buildWhatsAppUrl(currentForm.whatsapp_business);
+      const finalPhotoUrl = await uploadPendingPhotoIfNeeded(user.id, {
+        formSnapshot: currentForm,
+        photoTouchedSnapshot: currentPhotoTouched,
+        selectedPhotoFileSnapshot: currentSelectedPhotoFile,
+      });
 
       const basePayload = {
-        profession: normalizeText(form.profession) || null,
-        company_name: normalizeText(form.company_name) || null,
-        industry: normalizeText(form.industry) || null,
-        city: normalizeText(form.city) || null,
-        services: normalizeText(form.services) || null,
-        looking_for: normalizeText(form.looking_for) || null,
-        business_instagram: normalizeText(form.business_instagram) || null,
-        website: normalizeText(form.website) || null,
-        portfolio: normalizeText(form.portfolio) || null,
-        linkedin: normalizeText(form.linkedin) || null,
+        profession: normalizeText(currentForm.profession) || null,
+        company_name: normalizeText(currentForm.company_name) || null,
+        industry: normalizeText(currentForm.industry) || null,
+        city: normalizeText(currentForm.city) || null,
+        services: normalizeText(currentForm.services) || null,
+        looking_for: normalizeText(currentForm.looking_for) || null,
+        business_instagram: normalizeText(currentForm.business_instagram) || null,
+        website: normalizeText(currentForm.website) || null,
+        portfolio: normalizeText(currentForm.portfolio) || null,
+        linkedin: normalizeText(currentForm.linkedin) || null,
         whatsapp_business: whatsappUrl || null,
-        professional_email: normalizeText(form.professional_email) || null,
-        bio_text: normalizeText(form.bio_text) || null,
-        ai_summary: normalizeText(form.ai_summary) || null,
+        professional_email: normalizeText(currentForm.professional_email) || null,
+        bio_text: normalizeText(currentForm.bio_text) || null,
+        ai_summary: normalizeText(currentForm.ai_summary) || null,
         pro_photo_url: finalPhotoUrl || null,
-        pro_photo_prompt: normalizeText(form.pro_photo_prompt) || null,
-        pro_photo_style: normalizeText(form.pro_photo_style) || null,
-        visible_in_network: form.visible_in_network,
-        accepts_professional_contact: form.accepts_professional_contact,
+        pro_photo_prompt: normalizeText(currentForm.pro_photo_prompt) || null,
+        pro_photo_style: normalizeText(currentForm.pro_photo_style) || null,
+        visible_in_network: currentForm.visible_in_network,
+        accepts_professional_contact: currentForm.accepts_professional_contact,
+        search_keywords: normalizeSearchKeywords(currentForm.search_keywords),
         updated_at: new Date().toISOString(),
       };
 
@@ -708,8 +916,12 @@ export default function ProfessionalProfileManager({
         .select("*");
 
       if (updateError) {
-        setSaving(false);
-        setMessage(`Não foi possível atualizar agora. ${updateError.message}`);
+        if (mode === "manual") {
+          setSaving(false);
+          setMessage(`Não foi possível atualizar agora. ${updateError.message}`);
+        } else {
+          setAutosaveStatus("error");
+        }
         return;
       }
 
@@ -729,46 +941,101 @@ export default function ProfessionalProfileManager({
           .single();
 
         if (insertError) {
-          setSaving(false);
-          setMessage(`Não foi possível inserir agora. ${insertError.message}`);
+          if (mode === "manual") {
+            setSaving(false);
+            setMessage(`Não foi possível inserir agora. ${insertError.message}`);
+          } else {
+            setAutosaveStatus("error");
+          }
           return;
         }
 
         persistedRow = insertedRow as ProfessionalProfileRow;
       }
 
-      const { data: confirmedRow, error: confirmError } = await supabase
-        .from("professional_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      const finalForm = mapRowToForm(persistedRow);
+      const latestSignature = serializeFormForAutosave(latestFormRef.current);
+      const canSyncFormSafely = latestSignature === snapshotSignature;
 
-      if (confirmError || !confirmedRow) {
-        setSaving(false);
-        setMessage("O salvamento foi iniciado, mas não foi possível confirmar a persistência no banco.");
-        return;
+      setProfileId(persistedRow.id);
+      lastSavedSignatureRef.current = serializeFormForAutosave(finalForm);
+      setLastSavedAt(new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }));
+
+      if (canSyncFormSafely) {
+        setForm(finalForm);
+        latestFormRef.current = finalForm;
+        setSelectedPhotoFile(null);
+        setLocalPhotoPreview("");
+        setPhotoTouched(false);
+        setKeywordInput("");
+        setAutosaveStatus("saved");
+      } else {
+        setAutosaveStatus("dirty");
       }
 
-      const finalRow = confirmedRow as ProfessionalProfileRow;
+      if (mode === "manual") {
+        setSaving(false);
+        setMessage("Perfil profissional salvo e confirmado no banco.");
+      }
 
-      setProfileId(finalRow.id);
-      setForm(mapRowToForm(finalRow));
-      setSelectedPhotoFile(null);
-      setLocalPhotoPreview("");
-      setPhotoTouched(false);
-      setSaving(false);
-      setMessage("Perfil profissional salvo com sucesso e confirmado no banco.");
-
-      router.refresh();
+      if (saveId === activeSaveIdRef.current) {
+        router.refresh();
+      }
     } catch (error) {
-      setSaving(false);
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível salvar o perfil profissional."
-      );
+      if (mode === "manual") {
+        setSaving(false);
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar o perfil profissional."
+        );
+      } else {
+        setAutosaveStatus("error");
+      }
     }
   }
+
+  useEffect(() => {
+    latestFormRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    if (loading || !initialLoadDoneRef.current) return;
+
+    const signature = serializeFormForAutosave(form);
+
+    if (signature === lastSavedSignatureRef.current && !photoTouched) {
+      if (autosaveStatus === "dirty" || autosaveStatus === "saving") {
+        setAutosaveStatus("saved");
+      }
+      return;
+    }
+
+    setAutosaveStatus("dirty");
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = window.setTimeout(() => {
+      void saveProfile({
+        mode: "auto",
+        formSnapshot: form,
+        photoTouchedSnapshot: photoTouched,
+        selectedPhotoFileSnapshot: selectedPhotoFile,
+      });
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, photoTouched, selectedPhotoFile, loading]);
 
   const effectivePhotoPreview = localPhotoPreview || form.pro_photo_url;
 
@@ -780,6 +1047,11 @@ export default function ProfessionalProfileManager({
       { key: "city", label: "Cidade e estado", done: hasContent(form.city) },
       { key: "services", label: "O que oferece", done: hasContent(form.services) },
       { key: "looking_for", label: "O que busca", done: hasContent(form.looking_for) },
+      {
+        key: "search_keywords",
+        label: "Palavras-chave",
+        done: form.search_keywords.length >= 3,
+      },
       { key: "whatsapp_business", label: "WhatsApp", done: hasContent(form.whatsapp_business) },
       { key: "ai_summary", label: "Resumo", done: hasContent(form.ai_summary) },
       { key: "pro_photo_url", label: "Foto profissional", done: hasContent(effectivePhotoPreview) },
@@ -823,6 +1095,7 @@ export default function ProfessionalProfileManager({
     : hasContent(form.professional_email)
       ? "WhatsApp ainda não foi preenchido. O e-mail será o fallback de contato."
       : "Preencha ao menos WhatsApp ou e-mail para abrir um canal claro de contato.";
+  const autosaveText = getAutosaveStatusText(autosaveStatus, lastSavedAt);
 
   if (loading) {
     return <p style={{ color: PRO_TEXT_SOFT }}>Carregando...</p>;
@@ -1174,6 +1447,177 @@ export default function ProfessionalProfileManager({
         </section>
 
         <section style={sectionStyle()}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "grid", gap: 4, maxWidth: 720 }}>
+              <h3 style={{ margin: 0, fontWeight: 900 }}>
+                Palavras-chave para ser encontrado
+              </h3>
+              <p style={{ margin: 0, opacity: 0.78, lineHeight: 1.55 }}>
+                Adicione de 3 a 10 termos que as pessoas podem usar para
+                encontrar seus produtos, serviços ou competências.
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: "8px 12px",
+                borderRadius: 999,
+                border:
+                  form.search_keywords.length >= 3
+                    ? "1px solid rgba(20,184,166,0.34)"
+                    : PRO_BORDER,
+                background:
+                  form.search_keywords.length >= 3
+                    ? "rgba(13,148,136,0.16)"
+                    : PRO_SURFACE_DEEP,
+                color:
+                  form.search_keywords.length >= 3
+                    ? "#99f6e4"
+                    : PRO_TEXT_SOFT,
+                fontWeight: 900,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {form.search_keywords.length}/{MAX_SEARCH_KEYWORDS}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) auto",
+              gap: 10,
+              alignItems: "end",
+            }}
+          >
+            <label>
+              <span style={labelTitleStyle()}>Nova palavra-chave</span>
+              <input
+                value={keywordInput}
+                onChange={(event) => setKeywordInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addSearchKeyword();
+                  }
+                }}
+                placeholder="Ex: inteligência artificial"
+                maxLength={MAX_SEARCH_KEYWORD_LENGTH}
+                disabled={
+                  saving ||
+                  form.search_keywords.length >= MAX_SEARCH_KEYWORDS
+                }
+                style={inputStyle()}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => addSearchKeyword()}
+              disabled={
+                saving ||
+                !normalizeKeywordText(keywordInput) ||
+                form.search_keywords.length >= MAX_SEARCH_KEYWORDS
+              }
+              style={actionButtonStyle(
+                saving ||
+                  !normalizeKeywordText(keywordInput) ||
+                  form.search_keywords.length >= MAX_SEARCH_KEYWORDS
+              )}
+            >
+              Adicionar
+            </button>
+          </div>
+
+          <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.72 }}>
+            Pressione Enter ou clique em Adicionar. Use expressões objetivas,
+            como “loja online”, “automação comercial” ou “estágio em marketing”.
+          </div>
+
+          {form.search_keywords.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+              {form.search_keywords.map((keyword, index) => (
+                <div
+                  key={`${normalizeKeywordKey(keyword)}-${index}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "9px 10px 9px 12px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(96,165,250,0.30)",
+                    background: "rgba(30,64,175,0.18)",
+                    color: "#dbeafe",
+                    fontWeight: 800,
+                  }}
+                >
+                  <span>{keyword}</span>
+
+                  <button
+                    type="button"
+                    onClick={() => removeSearchKeyword(index)}
+                    disabled={saving}
+                    aria-label={`Remover palavra-chave ${keyword}`}
+                    title={`Remover ${keyword}`}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      border: "1px solid rgba(148,163,184,0.24)",
+                      background: "rgba(15,23,42,0.72)",
+                      color: PRO_TEXT,
+                      cursor: saving ? "not-allowed" : "pointer",
+                      opacity: saving ? 0.55 : 1,
+                      fontWeight: 900,
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 14,
+                border: PRO_BORDER,
+                background: PRO_SURFACE_DEEP,
+                color: PRO_TEXT_MUTED,
+                lineHeight: 1.55,
+              }}
+            >
+              Nenhuma palavra-chave cadastrada. Adicione pelo menos 3 para
+              fortalecer sua descoberta na rede profissional.
+            </div>
+          )}
+
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 14,
+              border: "1px solid rgba(148,163,184,0.16)",
+              background: "rgba(15,23,42,0.48)",
+              color: PRO_TEXT_SOFT,
+              fontSize: 13,
+              lineHeight: 1.55,
+            }}
+          >
+            As palavras-chave serão usadas para busca e relevância profissional.
+            Alterações são salvas automaticamente em instantes.
+          </div>
+        </section>
+
+        <section style={sectionStyle()}>
           <div style={{ display: "grid", gap: 4 }}>
             <h3 style={{ margin: 0, fontWeight: 900 }}>Contato rápido</h3>
             <p style={{ margin: 0, opacity: 0.78 }}>
@@ -1408,7 +1852,7 @@ export default function ProfessionalProfileManager({
                     <br />
                     5. Gere a imagem profissional final.
                     <br />
-                    6. Volte ao USECLUBBERS, envie a nova foto e clique em Salvar.
+                    6. Volte ao USECLUBBERS, envie a nova foto e aguarde o salvamento automático.
                   </div>
                 </div>
 
@@ -1568,30 +2012,30 @@ export default function ProfessionalProfileManager({
         </section>
 
         <div style={{ display: "grid", gap: 10 }}>
+          <div style={autosaveStatusStyle(autosaveStatus)}>{autosaveText}</div>
+
           <button
-            onClick={saveProfile}
+            onClick={() => void saveProfile({ mode: "manual" })}
             disabled={saving}
             style={{
               padding: "10px 14px",
               borderRadius: 12,
-              border: "1px solid rgba(20,184,166,0.34)",
-              background: saving
-                ? "rgba(15,23,42,0.70)"
-                : "linear-gradient(135deg, rgba(13,148,136,0.96), rgba(20,184,166,0.82))",
-              color: PRO_TEXT,
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(15,23,42,0.70)",
+              color: PRO_TEXT_SOFT,
               fontWeight: 800,
               cursor: saving ? "not-allowed" : "pointer",
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? "Salvando..." : "Salvar"}
+            {saving ? "Salvando agora..." : "Salvar agora"}
           </button>
 
           {message ? <p style={{ margin: 0, opacity: 0.88 }}>{message}</p> : null}
 
           {profileId ? (
             <p style={{ margin: 0, opacity: 0.55, fontSize: 12 }}>
-              Perfil profissional carregado e pronto para edição.
+              Perfil profissional carregado. As alterações são salvas automaticamente.
             </p>
           ) : null}
         </div>

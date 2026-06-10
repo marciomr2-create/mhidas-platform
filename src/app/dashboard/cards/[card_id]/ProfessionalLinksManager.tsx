@@ -2,7 +2,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createBrowserClient } from "@/utils/supabase/client";
 
 type ProfessionalLinkRow = {
@@ -28,7 +28,10 @@ type Props = {
   cardId: string;
 };
 
+type AutosaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
+
 const SLOT_COUNT = 6;
+const AUTOSAVE_DELAY_MS = 900;
 
 const SLOT_PLATFORMS = Array.from(
   { length: SLOT_COUNT },
@@ -136,6 +139,25 @@ function serializeDrafts(drafts: LinkDraft[]): string {
       isActive: draft.isActive,
     })),
   );
+}
+
+function getIncompleteDraftIndex(drafts: LinkDraft[]): number | null {
+  const index = drafts.findIndex((draft) => {
+    const label = normalizeText(draft.label);
+    const url = normalizeText(draft.url);
+    return Boolean(label || url || draft.isActive) && (!label || !url);
+  });
+
+  return index >= 0 ? index : null;
+}
+
+function getLinksAutosaveStatusText(status: AutosaveStatus, lastSavedAt: string) {
+  if (status === "saving") return "Salvando links automaticamente...";
+  if (status === "dirty") return "Alterações detectadas. Salvamento automático em instantes.";
+  if (status === "error") return "Não foi possível salvar automaticamente. Revise os links.";
+  if (status === "saved" && lastSavedAt) return `Links salvos automaticamente às ${lastSavedAt}`;
+  if (status === "saved") return "Links salvos automaticamente.";
+  return "Links profissionais são salvos automaticamente.";
 }
 
 function sectionStyle(): CSSProperties {
@@ -284,6 +306,32 @@ function messageStyle(kind: "success" | "error"): CSSProperties {
   };
 }
 
+function autosaveStatusStyle(status: AutosaveStatus): CSSProperties {
+  const isError = status === "error";
+  const isDirty = status === "dirty";
+  const isSaving = status === "saving";
+
+  return {
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 14,
+    border: isError
+      ? "1px solid rgba(248,113,113,0.3)"
+      : isDirty || isSaving
+        ? "1px solid rgba(96,165,250,0.30)"
+        : "1px solid rgba(45,212,191,0.3)",
+    background: isError
+      ? "rgba(127,29,29,0.18)"
+      : isDirty || isSaving
+        ? "rgba(30,64,175,0.16)"
+        : "rgba(13,148,136,0.12)",
+    color: isError ? "#FECACA" : isDirty || isSaving ? "#DBEAFE" : "#CCFBF1",
+    lineHeight: 1.5,
+    fontSize: 13,
+    fontWeight: 800,
+  };
+}
+
 function getRowDescription(draft: LinkDraft): string {
   const label = normalizeText(draft.label);
   const url = normalizeText(draft.url);
@@ -295,6 +343,11 @@ function getRowDescription(draft: LinkDraft): string {
 
 export default function ProfessionalLinksManager({ cardId }: Props) {
   const supabase = useMemo(() => createBrowserClient(), []);
+  const autosaveTimerRef = useRef<number | null>(null);
+  const autosaveReadyRef = useRef(false);
+  const lastSavedDraftsRef = useRef(serializeDrafts(createEmptyDrafts()));
+  const latestDraftsRef = useRef<LinkDraft[]>(createEmptyDrafts());
+  const activeSaveIdRef = useRef(0);
 
   const [rows, setRows] = useState<ProfessionalLinkRow[]>([]);
   const [drafts, setDrafts] = useState<LinkDraft[]>(createEmptyDrafts);
@@ -305,6 +358,8 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState("");
 
   const hasChanges =
     serializeDrafts(drafts) !== serializeDrafts(originalDrafts);
@@ -365,6 +420,10 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       setRows(nextRows);
       setDrafts(nextDrafts);
       setOriginalDrafts(nextDrafts);
+      latestDraftsRef.current = nextDrafts;
+      lastSavedDraftsRef.current = serializeDrafts(nextDrafts);
+      autosaveReadyRef.current = true;
+      setAutosaveStatus("saved");
       setExpandedIndex(null);
     } catch (error: unknown) {
       const message =
@@ -376,7 +435,11 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       setRows([]);
       setDrafts(empty);
       setOriginalDrafts(empty);
+      latestDraftsRef.current = empty;
+      lastSavedDraftsRef.current = serializeDrafts(empty);
+      autosaveReadyRef.current = false;
       setExpandedIndex(null);
+      setAutosaveStatus("error");
       setErrorMsg(message);
     } finally {
       setLoading(false);
@@ -401,6 +464,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
     setSuccessMsg(null);
     setErrorMsg(null);
+    setAutosaveStatus("dirty");
   }
 
   function applyPreset(index: number, preset: string) {
@@ -417,6 +481,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
     setSuccessMsg(null);
     setErrorMsg(null);
+    setAutosaveStatus("dirty");
   }
 
   function moveSlot(index: number, direction: -1 | 1) {
@@ -437,9 +502,10 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
     setExpandedIndex(targetIndex);
     setSuccessMsg(null);
     setErrorMsg(null);
+    setAutosaveStatus("dirty");
   }
 
-  function validateDrafts(): Array<{
+  function validateDrafts(currentDrafts = drafts): Array<{
     index: number;
     label: string;
     url: string;
@@ -452,7 +518,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       isActive: boolean;
     }> = [];
 
-    drafts.forEach((draft, index) => {
+    currentDrafts.forEach((draft, index) => {
       const label = normalizeText(draft.label);
       const rawUrl = normalizeText(draft.url);
 
@@ -485,17 +551,31 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
     return prepared;
   }
 
-  async function saveAll() {
+  async function saveAll(options?: {
+    mode?: "manual" | "auto";
+    keepExpanded?: boolean;
+    draftsSnapshot?: LinkDraft[];
+  }) {
+    const mode = options?.mode ?? "manual";
+    const currentDrafts = options?.draftsSnapshot ?? drafts;
+    const saveId = activeSaveIdRef.current + 1;
+    activeSaveIdRef.current = saveId;
+
     setErrorMsg(null);
     setSuccessMsg(null);
-    setSaving(true);
+
+    if (mode === "manual") {
+      setSaving(true);
+    } else {
+      setAutosaveStatus("saving");
+    }
 
     try {
       if (!cardId) {
         throw new Error("Perfil inválido para salvar os links profissionais.");
       }
 
-      const prepared = validateDrafts();
+      const prepared = validateDrafts(currentDrafts);
 
       const { data, error } = await supabase.auth.getUser();
 
@@ -555,23 +635,106 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
 
       const refreshedRows = await fetchLinks(userId);
       const refreshedDrafts = buildDrafts(refreshedRows);
+      const savedSignature = serializeDrafts(currentDrafts);
+      const latestSignature = serializeDrafts(latestDraftsRef.current);
+      const canSyncDraftsSafely = latestSignature === savedSignature;
 
-      setRows(refreshedRows);
-      setDrafts(refreshedDrafts);
-      setOriginalDrafts(refreshedDrafts);
-      setExpandedIndex(null);
-      setSuccessMsg("Links profissionais salvos com sucesso.");
+      lastSavedDraftsRef.current = savedSignature;
+      setLastSavedAt(new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }));
+
+      if (canSyncDraftsSafely) {
+        setRows(refreshedRows);
+        setDrafts(refreshedDrafts);
+        setOriginalDrafts(refreshedDrafts);
+        latestDraftsRef.current = refreshedDrafts;
+        lastSavedDraftsRef.current = serializeDrafts(refreshedDrafts);
+        setAutosaveStatus("saved");
+
+        if (!options?.keepExpanded) {
+          setExpandedIndex(null);
+        }
+
+        if (mode === "manual") {
+          setSuccessMsg("Links profissionais salvos com sucesso.");
+        }
+      } else {
+        setAutosaveStatus("dirty");
+      }
+
+      if (saveId !== activeSaveIdRef.current) {
+        setAutosaveStatus("dirty");
+      }
     } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
           : "Não foi possível salvar os links profissionais.";
 
+      setAutosaveStatus("error");
       setErrorMsg(message);
     } finally {
-      setSaving(false);
+      if (mode === "manual") {
+        setSaving(false);
+      }
     }
   }
+
+  useEffect(() => {
+    latestDraftsRef.current = drafts;
+  }, [drafts]);
+
+  useEffect(() => {
+    if (loading || !autosaveReadyRef.current) return;
+
+    const serialized = serializeDrafts(drafts);
+
+    if (serialized === lastSavedDraftsRef.current) {
+      if (autosaveStatus === "dirty" || autosaveStatus === "saving") {
+        setAutosaveStatus("saved");
+      }
+      return;
+    }
+
+    const incompleteIndex = getIncompleteDraftIndex(drafts);
+
+    if (incompleteIndex !== null) {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+
+      setAutosaveStatus("dirty");
+      setSuccessMsg(null);
+      setErrorMsg(
+        `Complete texto e URL do link ${incompleteIndex + 1} para salvar automaticamente.`
+      );
+      return;
+    }
+
+    setAutosaveStatus("dirty");
+    setErrorMsg(null);
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = window.setTimeout(() => {
+      void saveAll({
+        mode: "auto",
+        keepExpanded: true,
+        draftsSnapshot: drafts,
+      });
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drafts, loading]);
 
   useEffect(() => {
     void loadLinks();
@@ -602,7 +765,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
             }}
           >
             Configure até 6 links. Apenas os ativos e válidos aparecem no perfil
-            público. Abra somente a linha que deseja editar.
+            público. As alterações são salvas automaticamente.
           </p>
         </div>
 
@@ -621,6 +784,9 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
       {successMsg ? (
         <div style={messageStyle("success")}>{successMsg}</div>
       ) : null}
+      <div style={autosaveStatusStyle(autosaveStatus)}>
+        {getLinksAutosaveStatusText(autosaveStatus, lastSavedAt)}
+      </div>
 
       {loading ? (
         <p style={{ color: PRO_TEXT_SECONDARY, marginBottom: 0 }}>
@@ -874,27 +1040,26 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
           >
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || autosaveStatus === "saving"}
               onClick={() => {
                 void loadLinks();
               }}
-              style={buttonStyle({ disabled: saving })}
+              style={buttonStyle({ disabled: saving || autosaveStatus === "saving" })}
             >
               Recarregar
             </button>
 
             <button
               type="button"
-              disabled={saving || !hasChanges}
+              disabled={saving || autosaveStatus === "saving" || !hasChanges}
               onClick={() => {
-                void saveAll();
+                void saveAll({ mode: "manual" });
               }}
               style={buttonStyle({
-                primary: true,
-                disabled: saving || !hasChanges,
+                disabled: saving || autosaveStatus === "saving" || !hasChanges,
               })}
             >
-              {saving ? "Salvando..." : "Salvar links profissionais"}
+              {saving ? "Salvando agora..." : "Salvar agora"}
             </button>
           </div>
         </>
