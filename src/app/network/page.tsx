@@ -884,6 +884,120 @@ export default async function NetworkPage({ searchParams }: PageProps) {
 
   return (
     <main style={pageContainerStyle()}>
+      <style>{`
+        .network-result-card-mobile-polish {
+          scroll-margin-top: 24px;
+        }
+
+        .network-result-card-title {
+          overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 720px) {
+          .network-results-list {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 14px !important;
+          }
+
+          .network-result-card-mobile-polish {
+            padding: 14px !important;
+            border-radius: 20px !important;
+            gap: 12px !important;
+          }
+
+          .network-result-card-header {
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+
+          .network-result-photo {
+            width: 58px !important;
+            height: 58px !important;
+            border-radius: 16px !important;
+          }
+
+          .network-result-copy {
+            gap: 5px !important;
+          }
+
+          .network-result-card-title {
+            font-size: 19px !important;
+            line-height: 1.12 !important;
+          }
+
+          .network-result-badges {
+            gap: 6px !important;
+          }
+
+          .network-result-summary {
+            font-size: 14px !important;
+            line-height: 1.48 !important;
+          }
+
+          .network-keywords-box {
+            padding: 11px !important;
+            border-radius: 15px !important;
+            gap: 8px !important;
+          }
+
+          .network-keywords-header {
+            gap: 6px !important;
+          }
+
+          .network-keyword-chips {
+            gap: 6px !important;
+          }
+
+          .network-info-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 8px !important;
+          }
+
+          .network-info-card {
+            padding: 10px !important;
+            border-radius: 14px !important;
+          }
+
+          .network-primary-actions {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 8px !important;
+          }
+
+          .network-primary-actions a,
+          .network-primary-actions button {
+            width: 100% !important;
+            min-height: 42px !important;
+            padding: 10px 12px !important;
+          }
+
+          .network-secondary-actions {
+            gap: 8px !important;
+          }
+
+          .network-secondary-actions a {
+            min-height: 38px !important;
+            padding: 8px 11px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .network-result-card-mobile-polish {
+            padding: 13px !important;
+          }
+
+          .network-result-photo {
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 14px !important;
+          }
+
+          .network-result-card-title {
+            font-size: 18px !important;
+          }
+        }
+      `}</style>
+
       <header style={{ display: "grid", gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
           Descobrir profissionais
@@ -1052,6 +1166,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div
+            className="network-results-list"
             style={{
               display: "grid",
               gap: 18,
@@ -1068,12 +1183,20 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               const isCompleteProfile = item.completenessScore >= 8;
 
               return (
-                <article key={item.user_id} style={cardStyle(item.isFeaturedProfile)}>
-                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                <article
+                  key={item.user_id}
+                  className="network-result-card-mobile-polish"
+                  style={cardStyle(item.isFeaturedProfile)}
+                >
+                  <div
+                    className="network-result-card-header"
+                    style={{ display: "flex", gap: 14, alignItems: "center" }}
+                  >
                     {item.pro_photo_url ? (
                       <img
                         src={item.pro_photo_url}
                         alt="Foto profissional"
+                        className="network-result-photo"
                         style={{
                           width: 82,
                           height: 82,
@@ -1085,6 +1208,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       />
                     ) : (
                       <div
+                        className="network-result-photo"
                         style={{
                           width: 82,
                           height: 82,
@@ -1102,8 +1226,14 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       </div>
                     )}
 
-                    <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div
+                      className="network-result-copy"
+                      style={{ display: "grid", gap: 6, minWidth: 0 }}
+                    >
+                      <div
+                        className="network-result-badges"
+                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                      >
                         {item.isFeaturedProfile ? (
                           <span style={statusSealStyle("featured")}>Destaque da rede</span>
                         ) : null}
@@ -1117,7 +1247,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                         ) : null}
                       </div>
 
-                      <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}>
+                      <div
+                        className="network-result-card-title"
+                        style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}
+                      >
                         {item.profile_name}
                       </div>
 
@@ -1128,7 +1261,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       ) : null}
 
                       {quickBadges.length > 0 ? (
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div
+                          className="network-result-badges"
+                          style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                        >
                           {quickBadges.map((badge) => (
                             <span key={badge} style={badgeStyle()}>
                               {badge}
@@ -1139,12 +1275,16 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                     </div>
                   </div>
 
-                  <p style={{ margin: 0, opacity: 0.92, lineHeight: 1.65 }}>
+                  <p
+                    className="network-result-summary"
+                    style={{ margin: 0, opacity: 0.92, lineHeight: 1.65 }}
+                  >
                     {buildSummary(item)}
                   </p>
 
                   {profileKeywords.length > 0 ? (
                     <div
+                      className="network-keywords-box"
                       style={{
                         border: "1px solid rgba(96,165,250,0.16)",
                         background: "rgba(15,23,42,0.40)",
@@ -1155,6 +1295,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       }}
                     >
                       <div
+                        className="network-keywords-header"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -1176,7 +1317,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                         ) : null}
                       </div>
 
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <div
+                        className="network-keyword-chips"
+                        style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+                      >
                         {profileKeywords.map((keyword) => {
                           const isMatched = keywordMatchesCurrentSearch(keyword, q);
 
@@ -1193,22 +1337,22 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                     </div>
                   ) : null}
 
-                  <div style={infoGridStyle()}>
-                    <div style={infoCardStyle()}>
+                  <div className="network-info-grid" style={infoGridStyle()}>
+                    <div className="network-info-card" style={infoCardStyle()}>
                       <strong style={{ fontSize: 14 }}>Entrega principal</strong>
                       <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
                         {getPrimaryValueText(item)}
                       </span>
                     </div>
 
-                    <div style={infoCardStyle()}>
+                    <div className="network-info-card" style={infoCardStyle()}>
                       <strong style={{ fontSize: 14 }}>Busca atual</strong>
                       <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
                         {getCurrentGoalText(item)}
                       </span>
                     </div>
 
-                    <div style={infoCardStyle()}>
+                    <div className="network-info-card" style={infoCardStyle()}>
                       <strong style={{ fontSize: 14 }}>Disponível agora</strong>
                       <span style={{ opacity: 0.82, lineHeight: 1.55 }}>
                         {getAvailabilityText(item)}
@@ -1216,7 +1360,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                     </div>
                   </div>
 
-                  <div style={actionGroupStyle()}>
+                  <div className="network-primary-actions" style={actionGroupStyle()}>
                     <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
                       Abrir perfil profissional
                     </Link>
@@ -1236,7 +1380,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                   </div>
 
                   {secondaryChannels.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    <div
+                      className="network-secondary-actions"
+                      style={{ display: "flex", flexWrap: "wrap", gap: 10 }}
+                    >
                       {secondaryChannels.map((channel) => (
                         <a
                           key={`${item.user_id}-${channel.label}`}
