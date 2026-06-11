@@ -234,6 +234,27 @@ function quickBadgeStyle(): CSSProperties {
   };
 }
 
+function keywordChipStyle(isMatched = false): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "7px 10px",
+    borderRadius: 999,
+    border: isMatched
+      ? "1px solid rgba(45,212,191,0.52)"
+      : "1px solid rgba(96,165,250,0.24)",
+    background: isMatched
+      ? "linear-gradient(135deg, rgba(20,184,166,0.22), rgba(37,99,235,0.14))"
+      : "rgba(30,64,175,0.18)",
+    color: isMatched ? "#A7F3D0" : "#BFDBFE",
+    fontSize: 12,
+    fontWeight: 850,
+    lineHeight: 1.1,
+    boxShadow: isMatched ? "0 10px 24px rgba(20,184,166,0.12)" : "none",
+  };
+}
+
 function cardStyle(isFeatured = false): CSSProperties {
   return {
     border: isFeatured
@@ -394,6 +415,30 @@ function includesKeywordSearch(
   );
 
   return normalizedKeywords.some((keyword) => keyword.includes(query));
+}
+
+function keywordMatchesCurrentSearch(keyword: string, query: string): boolean {
+  const normalizedKeyword = normalizedLower(keyword);
+  const normalizedQuery = normalizedLower(query);
+
+  if (!normalizedKeyword || !normalizedQuery) {
+    return false;
+  }
+
+  if (
+    normalizedKeyword === normalizedQuery ||
+    normalizedKeyword.startsWith(normalizedQuery) ||
+    normalizedKeyword.includes(normalizedQuery)
+  ) {
+    return true;
+  }
+
+  const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+  return (
+    queryTokens.length > 1 &&
+    queryTokens.every((token) => normalizedKeyword.includes(token))
+  );
 }
 
 function computeKeywordRelevanceBonus(
@@ -1016,6 +1061,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             {sortedItems.map((item) => {
               const quickBadges = getQuickBadges(item);
               const secondaryChannels = getSecondaryChannels(item);
+              const profileKeywords = normalizeKeywordList(item.search_keywords);
+              const matchedKeywords = profileKeywords.filter((keyword) =>
+                keywordMatchesCurrentSearch(keyword, q)
+              );
               const isCompleteProfile = item.completenessScore >= 8;
 
               return (
@@ -1093,6 +1142,56 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                   <p style={{ margin: 0, opacity: 0.92, lineHeight: 1.65 }}>
                     {buildSummary(item)}
                   </p>
+
+                  {profileKeywords.length > 0 ? (
+                    <div
+                      style={{
+                        border: "1px solid rgba(96,165,250,0.16)",
+                        background: "rgba(15,23,42,0.40)",
+                        borderRadius: 16,
+                        padding: 13,
+                        display: "grid",
+                        gap: 9,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <strong style={{ fontSize: 13 }}>
+                          {matchedKeywords.length > 0
+                            ? "Encontrado por palavras-chave"
+                            : "Temas profissionais"}
+                        </strong>
+
+                        {matchedKeywords.length > 0 ? (
+                          <span style={{ color: "#A7F3D0", fontSize: 12, fontWeight: 850 }}>
+                            {matchedKeywords.length} termo{matchedKeywords.length > 1 ? "s" : ""} ligado{matchedKeywords.length > 1 ? "s" : ""} à busca
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {profileKeywords.map((keyword) => {
+                          const isMatched = keywordMatchesCurrentSearch(keyword, q);
+
+                          return (
+                            <span
+                              key={`${item.user_id}-${keyword}`}
+                              style={keywordChipStyle(isMatched)}
+                            >
+                              {keyword}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div style={infoGridStyle()}>
                     <div style={infoCardStyle()}>
