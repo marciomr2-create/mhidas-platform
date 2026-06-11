@@ -43,6 +43,7 @@ type ProfessionalProfileRow = {
   bio_text: string | null;
   ai_summary: string | null;
   pro_photo_url: string | null;
+  search_keywords: string[] | null;
   accepts_professional_contact: boolean;
   visible_in_network: boolean;
 };
@@ -73,6 +74,7 @@ type NetworkProfileItem = {
   ai_summary: string | null;
   bio_text: string | null;
   pro_photo_url: string | null;
+  search_keywords: string[] | null;
   accepts_professional_contact: boolean;
   relevanceScore: number;
   completenessScore: number;
@@ -362,6 +364,72 @@ function includesSearch(haystack: string | null | undefined, query: string): boo
   return normalizedLower(haystack).includes(query);
 }
 
+function normalizeKeywordList(value: string[] | null | undefined): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of value ?? []) {
+    const keyword = normalizeText(item);
+    const key = keyword.toLowerCase();
+
+    if (!keyword || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    normalized.push(keyword);
+  }
+
+  return normalized.slice(0, 10);
+}
+
+function includesKeywordSearch(
+  keywords: string[] | null | undefined,
+  query: string
+): boolean {
+  if (!query) return false;
+
+  const normalizedKeywords = normalizeKeywordList(keywords).map((keyword) =>
+    keyword.toLowerCase()
+  );
+
+  return normalizedKeywords.some((keyword) => keyword.includes(query));
+}
+
+function computeKeywordRelevanceBonus(
+  keywords: string[] | null | undefined,
+  query: string
+): number {
+  const normalizedKeywords = normalizeKeywordList(keywords).map((keyword) =>
+    keyword.toLowerCase()
+  );
+
+  if (normalizedKeywords.length === 0) {
+    return 0;
+  }
+
+  let bonus = Math.min(normalizedKeywords.length, 10) * 2;
+
+  if (!query) {
+    return bonus;
+  }
+
+  const keywordBlob = normalizedKeywords.join(" " );
+  const queryTokens = query.split(" " ).filter(Boolean);
+
+  if (normalizedKeywords.some((keyword) => keyword === query)) {
+    bonus += 70;
+  } else if (normalizedKeywords.some((keyword) => keyword.startsWith(query))) {
+    bonus += 52;
+  } else if (normalizedKeywords.some((keyword) => keyword.includes(query))) {
+    bonus += 40;
+  } else if (queryTokens.length > 1 && queryTokens.every((token) => keywordBlob.includes(token))) {
+    bonus += 26;
+  }
+
+  return bonus;
+}
+
 function computeCompletenessScore(
   item: Omit<
     NetworkProfileItem,
@@ -380,6 +448,7 @@ function computeCompletenessScore(
   if (normalizeText(item.pro_photo_url)) score += 1;
   if (item.accepts_professional_contact) score += 1;
   if (normalizeText(item.whatsapp_business)) score += 1;
+  if (normalizeKeywordList(item.search_keywords).length >= 3) score += 1;
 
   return score;
 }
@@ -403,6 +472,8 @@ function computeRelevanceScore(
   if (normalizeText(item.looking_for)) score += 10;
   if (normalizeText(item.ai_summary)) score += 14;
   if (normalizeText(item.pro_photo_url)) score += 15;
+
+  score += computeKeywordRelevanceBonus(item.search_keywords, query);
 
   if (item.accepts_professional_contact) score += 10;
   if (normalizeText(item.whatsapp_business)) score += 20;
@@ -654,6 +725,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
       bio_text,
       ai_summary,
       pro_photo_url,
+      search_keywords,
       accepts_professional_contact,
       visible_in_network
     `)
@@ -708,6 +780,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         ai_summary: profile.ai_summary,
         bio_text: profile.bio_text,
         pro_photo_url: profile.pro_photo_url,
+        search_keywords: profile.search_keywords,
         accepts_professional_contact: profile.accepts_professional_contact,
       };
     })
@@ -741,7 +814,8 @@ export default async function NetworkPage({ searchParams }: PageProps) {
       includesSearch(item.services, q) ||
       includesSearch(item.looking_for, q) ||
       includesSearch(item.ai_summary, q) ||
-      includesSearch(item.bio_text, q);
+      includesSearch(item.bio_text, q) ||
+      includesKeywordSearch(item.search_keywords, q);
 
     const matchesCity = !cityFilter || includesSearch(item.city, cityFilter);
     const matchesIndustry =
