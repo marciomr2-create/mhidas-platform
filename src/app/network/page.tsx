@@ -313,20 +313,20 @@ function actionGroupStyle(): CSSProperties {
 
 function carouselCardStyle(): CSSProperties {
   return {
-    minWidth: 176,
-    maxWidth: 176,
+    minWidth: 174,
+    maxWidth: 174,
     scrollSnapAlign: "start",
     border: "1px solid rgba(96,165,250,0.18)",
     background:
-      "linear-gradient(180deg, rgba(15,23,42,0.86), rgba(15,23,42,0.56))",
-    borderRadius: 18,
-    padding: 14,
+      "linear-gradient(180deg, rgba(15,23,42,0.88), rgba(15,23,42,0.58))",
+    borderRadius: 16,
+    padding: 13,
     display: "grid",
     justifyItems: "center",
     gap: 9,
     color: "#F8FAFC",
     textDecoration: "none",
-    boxShadow: "0 16px 34px rgba(0,0,0,0.22)",
+    boxShadow: "0 14px 30px rgba(0,0,0,0.20)",
   };
 }
 
@@ -336,8 +336,8 @@ function carouselPhotoStyle(): CSSProperties {
     height: 78,
     borderRadius: 999,
     objectFit: "cover",
-    border: "2px solid rgba(96,165,250,0.36)",
-    boxShadow: "0 12px 26px rgba(37,99,235,0.18)",
+    border: "2px solid rgba(96,165,250,0.38)",
+    boxShadow: "0 10px 22px rgba(37,99,235,0.18)",
   };
 }
 
@@ -347,12 +347,41 @@ function carouselActionStyle(): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    minHeight: 34,
-    borderRadius: 11,
+    minHeight: 32,
+    borderRadius: 10,
     background: "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
     color: "#F8FAFC",
     fontWeight: 900,
     fontSize: 12,
+  };
+}
+
+function carouselInfoPillStyle(isMatched = false): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    maxWidth: "100%",
+    padding: "4px 7px",
+    borderRadius: 999,
+    border: isMatched
+      ? "1px solid rgba(45,212,191,0.54)"
+      : "1px solid rgba(96,165,250,0.30)",
+    background: isMatched ? "rgba(20,184,166,0.14)" : "rgba(37,99,235,0.13)",
+    color: isMatched ? "#A7F3D0" : "#BFDBFE",
+    fontSize: 10.5,
+    fontWeight: 900,
+    lineHeight: 1.12,
+    textAlign: "center",
+  };
+}
+
+function carouselContextStyle(): CSSProperties {
+  return {
+    color: "rgba(203,213,225,0.82)",
+    fontSize: 11.5,
+    lineHeight: 1.22,
+    textAlign: "center",
   };
 }
 
@@ -938,6 +967,10 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           overflow-wrap: anywhere;
         }
 
+        .network-carousel-mobile-polish {
+          scroll-margin-top: 20px;
+        }
+
         .network-profile-carousel {
           scrollbar-width: thin;
           scrollbar-color: rgba(96,165,250,0.42) rgba(15,23,42,0.30);
@@ -962,6 +995,53 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         }
 
         @media (max-width: 720px) {
+          .network-carousel-mobile-polish {
+            gap: 10px !important;
+            margin-top: 18px !important;
+          }
+
+          .network-profile-carousel {
+            gap: 10px !important;
+            padding: 2px 2px 10px !important;
+            scrollbar-width: none !important;
+          }
+
+          .network-profile-carousel::-webkit-scrollbar {
+            display: none !important;
+          }
+
+          .network-profile-carousel-card {
+            min-width: 158px !important;
+            max-width: 158px !important;
+            padding: 11px !important;
+            border-radius: 16px !important;
+            gap: 7px !important;
+          }
+
+          .network-carousel-photo {
+            width: 70px !important;
+            height: 70px !important;
+          }
+
+          .network-carousel-card-title {
+            font-size: 13px !important;
+            min-height: 28px !important;
+          }
+
+          .network-carousel-context {
+            font-size: 10.5px !important;
+          }
+
+          .network-carousel-match {
+            font-size: 10px !important;
+            padding: 4px 6px !important;
+          }
+
+          .network-carousel-action {
+            min-height: 30px !important;
+            font-size: 11px !important;
+          }
+
           .network-results-list {
             grid-template-columns: minmax(0, 1fr) !important;
             gap: 14px !important;
@@ -1225,6 +1305,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
 
       {sortedItems.length > 0 ? (
         <section
+          className="network-carousel-mobile-polish"
           style={{
             marginTop: 24,
             display: "grid",
@@ -1271,8 +1352,20 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               const subtitle =
                 normalizeText(item.profession) ||
                 normalizeText(item.industry) ||
-                normalizeText(item.company_name) ||
                 "Perfil profissional";
+              const companyOrCity =
+                normalizeText(item.company_name) ||
+                normalizeText(item.city) ||
+                "Disponível na rede";
+              const keywords = normalizeKeywordList(item.search_keywords);
+              const matchedKeywords = q
+                ? keywords.filter((keyword) => keywordMatchesCurrentSearch(keyword, q))
+                : [];
+              const featuredKeyword = matchedKeywords[0] || keywords[0] || "";
+              const hasMatchedKeyword = !!featuredKeyword && matchedKeywords.includes(featuredKeyword);
+              const contactLabel = item.accepts_professional_contact
+                ? "Contato disponível"
+                : "Perfil completo";
 
               return (
                 <Link
@@ -1310,7 +1403,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       style={{
                         fontSize: 15,
                         lineHeight: 1.14,
-                        minHeight: 34,
+                        minHeight: 31,
                         display: "grid",
                         alignItems: "center",
                       }}
@@ -1318,12 +1411,32 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                       {limitText(item.profile_name, 34)}
                     </strong>
 
-                    <span style={{ opacity: 0.72, fontSize: 12, lineHeight: 1.25 }}>
-                      {limitText(subtitle, 36)}
+                    <span className="network-carousel-context" style={carouselContextStyle()}>
+                      {limitText(subtitle, 30)}
+                    </span>
+
+                    <span className="network-carousel-context" style={carouselContextStyle()}>
+                      {limitText(companyOrCity, 30)}
                     </span>
                   </div>
 
-                  <span style={carouselActionStyle()}>Ver perfil</span>
+                  {featuredKeyword ? (
+                    <span
+                      className="network-carousel-match"
+                      style={carouselInfoPillStyle(hasMatchedKeyword)}
+                    >
+                      {hasMatchedKeyword ? "Busca: " : "Tema: "}
+                      {limitText(featuredKeyword, 24)}
+                    </span>
+                  ) : (
+                    <span className="network-carousel-match" style={carouselInfoPillStyle(false)}>
+                      {contactLabel}
+                    </span>
+                  )}
+
+                  <span className="network-carousel-action" style={carouselActionStyle()}>
+                    Ver perfil
+                  </span>
                 </Link>
               );
             })}
