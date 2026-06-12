@@ -311,6 +311,51 @@ function actionGroupStyle(): CSSProperties {
   };
 }
 
+function carouselCardStyle(): CSSProperties {
+  return {
+    minWidth: 176,
+    maxWidth: 176,
+    scrollSnapAlign: "start",
+    border: "1px solid rgba(96,165,250,0.18)",
+    background:
+      "linear-gradient(180deg, rgba(15,23,42,0.86), rgba(15,23,42,0.56))",
+    borderRadius: 18,
+    padding: 14,
+    display: "grid",
+    justifyItems: "center",
+    gap: 9,
+    color: "#F8FAFC",
+    textDecoration: "none",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.22)",
+  };
+}
+
+function carouselPhotoStyle(): CSSProperties {
+  return {
+    width: 78,
+    height: 78,
+    borderRadius: 999,
+    objectFit: "cover",
+    border: "2px solid rgba(96,165,250,0.36)",
+    boxShadow: "0 12px 26px rgba(37,99,235,0.18)",
+  };
+}
+
+function carouselActionStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 34,
+    borderRadius: 11,
+    background: "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
+    color: "#F8FAFC",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+}
+
 function statusSealStyle(kind: "complete" | "quick_contact" | "featured"): CSSProperties {
   if (kind === "featured") {
     return {
@@ -893,6 +938,29 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           overflow-wrap: anywhere;
         }
 
+        .network-profile-carousel {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(96,165,250,0.42) rgba(15,23,42,0.30);
+        }
+
+        .network-profile-carousel::-webkit-scrollbar {
+          height: 8px;
+        }
+
+        .network-profile-carousel::-webkit-scrollbar-track {
+          background: rgba(15,23,42,0.30);
+          border-radius: 999px;
+        }
+
+        .network-profile-carousel::-webkit-scrollbar-thumb {
+          background: rgba(96,165,250,0.42);
+          border-radius: 999px;
+        }
+
+        .network-carousel-card-title {
+          overflow-wrap: anywhere;
+        }
+
         @media (max-width: 720px) {
           .network-results-list {
             grid-template-columns: minmax(0, 1fr) !important;
@@ -1154,6 +1222,114 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           <div style={{ opacity: 0.8 }}>Critério ativo na descoberta</div>
         </div>
       </section>
+
+      {sortedItems.length > 0 ? (
+        <section
+          style={{
+            marginTop: 24,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 14,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "grid", gap: 5 }}>
+              <span style={badgeStyle()}>Descoberta rápida</span>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
+                Profissionais disponíveis
+              </h2>
+              <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.5 }}>
+                Arraste para o lado e abra o perfil de quem combina com sua busca.
+              </p>
+            </div>
+
+            <span style={{ color: "rgba(191,219,254,0.86)", fontSize: 13, fontWeight: 850 }}>
+              {sortedItems.length} perfil{sortedItems.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div
+            className="network-profile-carousel"
+            style={{
+              display: "flex",
+              gap: 12,
+              overflowX: "auto",
+              overscrollBehaviorX: "contain",
+              WebkitOverflowScrolling: "touch",
+              scrollSnapType: "x mandatory",
+              padding: "2px 2px 12px",
+            }}
+          >
+            {sortedItems.map((item) => {
+              const subtitle =
+                normalizeText(item.profession) ||
+                normalizeText(item.industry) ||
+                normalizeText(item.company_name) ||
+                "Perfil profissional";
+
+              return (
+                <Link
+                  key={`carousel-${item.user_id}`}
+                  href={`/${item.slug}?mode=pro`}
+                  className="network-profile-carousel-card"
+                  style={carouselCardStyle()}
+                >
+                  {item.pro_photo_url ? (
+                    <img
+                      src={item.pro_photo_url}
+                      alt="Foto profissional"
+                      className="network-carousel-photo"
+                      style={carouselPhotoStyle()}
+                    />
+                  ) : (
+                    <div
+                      className="network-carousel-photo"
+                      style={{
+                        ...carouselPhotoStyle(),
+                        display: "grid",
+                        placeItems: "center",
+                        background: "rgba(15,23,42,0.72)",
+                        fontWeight: 900,
+                        objectFit: undefined,
+                      }}
+                    >
+                      PRO
+                    </div>
+                  )}
+
+                  <div style={{ display: "grid", gap: 4, textAlign: "center", width: "100%" }}>
+                    <strong
+                      className="network-carousel-card-title"
+                      style={{
+                        fontSize: 15,
+                        lineHeight: 1.14,
+                        minHeight: 34,
+                        display: "grid",
+                        alignItems: "center",
+                      }}
+                    >
+                      {limitText(item.profile_name, 34)}
+                    </strong>
+
+                    <span style={{ opacity: 0.72, fontSize: 12, lineHeight: 1.25 }}>
+                      {limitText(subtitle, 36)}
+                    </span>
+                  </div>
+
+                  <span style={carouselActionStyle()}>Ver perfil</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <section style={{ marginTop: 32 }}>
         {sortedItems.length === 0 ? (
