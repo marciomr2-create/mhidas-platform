@@ -108,6 +108,17 @@ function normalizeSort(value: string | undefined): SortOption {
   return "relevance";
 }
 
+function sortLabel(sort: SortOption): string {
+  if (sort === "name_asc") return "Nome A-Z";
+  if (sort === "name_desc") return "Nome Z-A";
+  if (sort === "city_asc") return "Cidade A-Z";
+  if (sort === "city_desc") return "Cidade Z-A";
+  if (sort === "industry_asc") return "Área A-Z";
+  if (sort === "industry_desc") return "Área Z-A";
+
+  return "Relevância";
+}
+
 function pageContainerStyle(): CSSProperties {
   return {
     maxWidth: 1180,
@@ -948,6 +959,8 @@ export default async function NetworkPage({ searchParams }: PageProps) {
     isFeaturedProfile: index === 0 && sort === "relevance",
   }));
 
+  const currentSortLabel = sortLabel(sort);
+
   const uniqueCities = Array.from(
     new Set(items.map((item) => normalizeText(item.city)).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -994,7 +1007,66 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           overflow-wrap: anywhere;
         }
 
+        .network-mobile-sort-chip {
+          display: none;
+        }
+
         @media (max-width: 720px) {
+          .network-stats-section {
+            margin-top: 16px !important;
+            display: grid !important;
+            gap: 9px !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+
+          .network-mobile-sort-chip {
+            display: inline-flex !important;
+          }
+
+          .network-stats-track {
+            display: flex !important;
+            gap: 9px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            padding: 1px 2px 9px !important;
+            scroll-snap-type: x proximity !important;
+            scrollbar-width: none !important;
+          }
+
+          .network-stats-track::-webkit-scrollbar {
+            display: none !important;
+          }
+
+          .network-stat-card-mobile {
+            min-width: 132px !important;
+            max-width: 142px !important;
+            padding: 10px !important;
+            border-radius: 15px !important;
+            gap: 4px !important;
+            scroll-snap-align: start !important;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.18) !important;
+          }
+
+          .network-stat-label {
+            font-size: 9.5px !important;
+            letter-spacing: 0.035em !important;
+            line-height: 1.1 !important;
+          }
+
+          .network-stat-value {
+            font-size: 24px !important;
+            line-height: 1 !important;
+          }
+
+          .network-stat-description {
+            font-size: 10.5px !important;
+            line-height: 1.28 !important;
+          }
+
+          .network-stat-sort-card {
+            display: none !important;
+          }
+
           .network-carousel-mobile-polish {
             gap: 10px !important;
             margin-top: 18px !important;
@@ -1263,6 +1335,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
       </section>
 
       <section
+        className="network-stats-section"
         style={{
           marginTop: 24,
           display: "grid",
@@ -1270,36 +1343,72 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
         }}
       >
-        <div style={statCardStyle()}>
-          <div style={{ fontSize: 12, opacity: 0.72 }}>PERFIS VISÍVEIS</div>
-          <div style={{ fontSize: 34, fontWeight: 900 }}>{items.length}</div>
-          <div style={{ opacity: 0.8 }}>Perfis disponíveis para descoberta</div>
+        <div
+          className="network-mobile-sort-chip"
+          style={{
+            alignItems: "center",
+            width: "fit-content",
+            padding: "7px 10px",
+            borderRadius: 999,
+            border: "1px solid rgba(96,165,250,0.22)",
+            background: "rgba(15,23,42,0.68)",
+            color: "#BFDBFE",
+            fontSize: 11,
+            fontWeight: 850,
+            lineHeight: 1,
+          }}
+        >
+          Ordenando por: {currentSortLabel}
         </div>
 
-        <div style={statCardStyle()}>
-          <div style={{ fontSize: 12, opacity: 0.72 }}>RESULTADO FILTRADO</div>
-          <div style={{ fontSize: 34, fontWeight: 900 }}>{sortedItems.length}</div>
-          <div style={{ opacity: 0.8 }}>Perfis encontrados com os filtros atuais</div>
-        </div>
-
-        <div style={statCardStyle()}>
-          <div style={{ fontSize: 12, opacity: 0.72 }}>OCULTADOS POR VOCÊ</div>
-          <div style={{ fontSize: 34, fontWeight: 900 }}>{hiddenUserIds.size}</div>
-          <div style={{ opacity: 0.8 }}>Pausados ou bloqueados fora da busca</div>
-        </div>
-
-        <div style={statCardStyle()}>
-          <div style={{ fontSize: 12, opacity: 0.72 }}>ORDEM ATUAL</div>
-          <div style={{ fontSize: 20, fontWeight: 900 }}>
-            {sort === "relevance" && "Relevância"}
-            {sort === "name_asc" && "Nome A-Z"}
-            {sort === "name_desc" && "Nome Z-A"}
-            {sort === "city_asc" && "Cidade A-Z"}
-            {sort === "city_desc" && "Cidade Z-A"}
-            {sort === "industry_asc" && "Área A-Z"}
-            {sort === "industry_desc" && "Área Z-A"}
+        <div className="network-stats-track" style={{ display: "contents" }}>
+          <div className="network-stat-card-mobile" style={statCardStyle()}>
+            <div className="network-stat-label" style={{ fontSize: 12, opacity: 0.72 }}>
+              PERFIS VISÍVEIS
+            </div>
+            <div className="network-stat-value" style={{ fontSize: 34, fontWeight: 900 }}>
+              {items.length}
+            </div>
+            <div className="network-stat-description" style={{ opacity: 0.8 }}>
+              Disponíveis para descoberta
+            </div>
           </div>
-          <div style={{ opacity: 0.8 }}>Critério ativo na descoberta</div>
+
+          <div className="network-stat-card-mobile" style={statCardStyle()}>
+            <div className="network-stat-label" style={{ fontSize: 12, opacity: 0.72 }}>
+              RESULTADO
+            </div>
+            <div className="network-stat-value" style={{ fontSize: 34, fontWeight: 900 }}>
+              {sortedItems.length}
+            </div>
+            <div className="network-stat-description" style={{ opacity: 0.8 }}>
+              Encontrados com os filtros
+            </div>
+          </div>
+
+          <div className="network-stat-card-mobile" style={statCardStyle()}>
+            <div className="network-stat-label" style={{ fontSize: 12, opacity: 0.72 }}>
+              OCULTADOS
+            </div>
+            <div className="network-stat-value" style={{ fontSize: 34, fontWeight: 900 }}>
+              {hiddenUserIds.size}
+            </div>
+            <div className="network-stat-description" style={{ opacity: 0.8 }}>
+              Pausados ou bloqueados
+            </div>
+          </div>
+
+          <div className="network-stat-card-mobile network-stat-sort-card" style={statCardStyle()}>
+            <div className="network-stat-label" style={{ fontSize: 12, opacity: 0.72 }}>
+              ORDEM ATUAL
+            </div>
+            <div className="network-stat-value" style={{ fontSize: 20, fontWeight: 900 }}>
+              {currentSortLabel}
+            </div>
+            <div className="network-stat-description" style={{ opacity: 0.8 }}>
+              Critério ativo na descoberta
+            </div>
+          </div>
         </div>
       </section>
 
