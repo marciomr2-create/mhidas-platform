@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
 import ProfessionalConnectButton from "@/components/network/ProfessionalConnectButton";
+import ProfessionalFollowButton from "@/components/network/ProfessionalFollowButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -195,56 +196,77 @@ function heroKickerStyle(): CSSProperties {
   };
 }
 
-function modeButtonStyle(active: boolean): CSSProperties {
+function topNavigationButtonBaseStyle(): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "10px 16px",
+    minHeight: 38,
+    padding: "9px 15px",
     borderRadius: 14,
+    color: PRO_TEXT,
+    fontSize: 13,
+    fontWeight: 900,
+    lineHeight: 1.1,
+    letterSpacing: "-0.01em",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    transition: "all 0.2s ease",
+  };
+}
+
+function modeButtonStyle(active: boolean): CSSProperties {
+  return {
+    ...topNavigationButtonBaseStyle(),
     border: active
-      ? `1px solid ${PRO_BORDER_STRONG}`
+      ? "1px solid rgba(96,165,250,0.52)"
       : `1px solid ${PRO_BORDER}`,
     background: active
-      ? "linear-gradient(135deg, rgba(37,99,235,0.82), rgba(79,70,229,0.55))"
-      : "rgba(15,23,42,0.72)",
+      ? "linear-gradient(135deg, rgba(37,99,235,0.86), rgba(79,70,229,0.62))"
+      : "rgba(15,23,42,0.78)",
+    boxShadow: active
+      ? "0 0 0 1px rgba(59,130,246,0.10) inset, 0 12px 26px rgba(37,99,235,0.16)"
+      : "0 0 0 1px rgba(255,255,255,0.03) inset",
+  };
+}
+
+function professionalActionBaseStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 40,
+    padding: "10px 14px",
+    borderRadius: 14,
     color: PRO_TEXT,
-    fontWeight: 850,
     textDecoration: "none",
-    transition: "all 0.2s ease",
+    fontWeight: 900,
+    fontSize: 13,
+    lineHeight: 1.1,
+    letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "14px 18px",
-    borderRadius: 14,
-    border: "1px solid rgba(45,212,191,0.32)",
-    background: "linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)",
-    color: "#FFFFFF",
-    textDecoration: "none",
-    fontWeight: 900,
-    lineHeight: 1.2,
-    boxShadow: "0 14px 28px rgba(20,184,166,0.18)",
+    ...professionalActionBaseStyle(),
+    border: "1px solid rgba(96,165,250,0.48)",
+    background:
+      "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))",
+    color: "#F8FAFC",
+    boxShadow:
+      "0 0 0 1px rgba(59,130,246,0.10) inset, 0 14px 26px rgba(37,99,235,0.16)",
   };
 }
 
 function secondaryButtonStyle(): CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "14px 18px",
-    borderRadius: 14,
+    ...professionalActionBaseStyle(),
     border: `1px solid ${PRO_BORDER}`,
-    background: "rgba(15,23,42,0.78)",
+    background: "rgba(15,23,42,0.76)",
     color: PRO_TEXT,
-    textDecoration: "none",
-    fontWeight: 850,
-    lineHeight: 1.2,
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset",
   };
 }
 
@@ -410,18 +432,11 @@ function getSafeNetworkReturnPath(value: string | undefined): string | null {
 
 function networkReturnButtonStyle(): CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "10px 14px",
-    borderRadius: 999,
-    border: "1px solid rgba(45,212,191,0.30)",
-    background: "rgba(13,148,136,0.13)",
+    ...topNavigationButtonBaseStyle(),
+    border: "1px solid rgba(45,212,191,0.34)",
+    background: "linear-gradient(135deg, rgba(13,148,136,0.22), rgba(15,23,42,0.78))",
     color: "#A7F3D0",
-    fontSize: 13,
-    fontWeight: 900,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
+    boxShadow: "0 0 0 1px rgba(45,212,191,0.06) inset",
   };
 }
 
@@ -806,7 +821,17 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          {/* v4.5.1-unified-top-buttons */}
+          <ProfessionalFollowButton targetUserId={String(professionalProfile.user_id)} />
+
           {canConnect ? (
             <ProfessionalConnectButton targetUserId={String(professionalProfile.user_id)} />
           ) : null}

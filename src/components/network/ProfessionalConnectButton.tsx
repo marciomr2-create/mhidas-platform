@@ -1,6 +1,9 @@
 // src/components/network/ProfessionalConnectButton.tsx
+// v4.5.1-public-pro-follow-button
+// visual polish: unified professional action buttons
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 type ConnectionState =
@@ -25,6 +28,66 @@ type StatusResponse = {
 type Props = {
   targetUserId: string;
   className?: string;
+};
+
+const actionBaseStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 40,
+  padding: "10px 14px",
+  borderRadius: 14,
+  fontWeight: 900,
+  fontSize: 13,
+  lineHeight: 1.1,
+  letterSpacing: "-0.01em",
+  textDecoration: "none",
+  whiteSpace: "nowrap",
+  cursor: "pointer",
+  userSelect: "none",
+  WebkitTapHighlightColor: "transparent",
+  transition:
+    "transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, opacity 160ms ease",
+};
+
+const primaryStyle: CSSProperties = {
+  ...actionBaseStyle,
+  border: "1px solid rgba(96,165,250,0.48)",
+  background:
+    "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))",
+  color: "#F8FAFC",
+  boxShadow:
+    "0 0 0 1px rgba(59,130,246,0.10) inset, 0 14px 26px rgba(37,99,235,0.16)",
+};
+
+const secondaryStyle: CSSProperties = {
+  ...actionBaseStyle,
+  border: "1px solid rgba(148,163,184,0.28)",
+  background: "rgba(15,23,42,0.76)",
+  color: "#F8FAFC",
+  boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset",
+};
+
+const successStyle: CSSProperties = {
+  ...actionBaseStyle,
+  border: "1px solid rgba(45,212,191,0.36)",
+  background: "rgba(20,184,166,0.12)",
+  color: "#99F6E4",
+  cursor: "default",
+  boxShadow: "0 0 0 1px rgba(45,212,191,0.05) inset",
+};
+
+const disabledStyle: CSSProperties = {
+  ...secondaryStyle,
+  cursor: "not-allowed",
+  opacity: 0.6,
+};
+
+const actionGroupStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 10,
 };
 
 export default function ProfessionalConnectButton({
@@ -208,12 +271,8 @@ export default function ProfessionalConnectButton({
   if (state === "loading") {
     return (
       <div className={className}>
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
-        >
-          Verificando conexão...
+        <button type="button" disabled style={disabledStyle}>
+          Verificando
         </button>
       </div>
     );
@@ -221,18 +280,12 @@ export default function ProfessionalConnectButton({
 
   if (state === "self") {
     return (
-      <div className={`flex flex-wrap gap-2 ${className}`}>
-        <a
-          href="/dashboard/network"
-          className="inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
-        >
+      <div className={className} style={actionGroupStyle}>
+        <a href="/dashboard/network" style={primaryStyle}>
           Abrir conexões
         </a>
 
-        <a
-          href="/dashboard"
-          className="inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
-        >
+        <a href="/dashboard" style={secondaryStyle}>
           Abrir meu painel
         </a>
       </div>
@@ -242,10 +295,7 @@ export default function ProfessionalConnectButton({
   if (state === "unauthenticated") {
     return (
       <div className={className}>
-        <a
-          href={loginHref}
-          className="inline-flex rounded-xl bg-white px-4 py-2 text-sm font-medium text-black"
-        >
+        <a href={loginHref} style={primaryStyle}>
           Entrar para conectar
         </a>
       </div>
@@ -255,11 +305,7 @@ export default function ProfessionalConnectButton({
   if (state === "connected") {
     return (
       <div className={className}>
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300"
-        >
+        <button type="button" disabled style={successStyle}>
           Conexão confirmada
         </button>
       </div>
@@ -269,11 +315,7 @@ export default function ProfessionalConnectButton({
   if (state === "blocked") {
     return (
       <div className={className}>
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
-        >
+        <button type="button" disabled style={disabledStyle}>
           Conexão indisponível
         </button>
       </div>
@@ -283,12 +325,8 @@ export default function ProfessionalConnectButton({
   if (state === "suspended") {
     return (
       <div className={className}>
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/60"
-        >
-          Perfil suspenso para conexão
+        <button type="button" disabled style={disabledStyle}>
+          Perfil suspenso
         </button>
       </div>
     );
@@ -296,21 +334,21 @@ export default function ProfessionalConnectButton({
 
   if (state === "incoming_pending") {
     return (
-      <div className={`flex flex-wrap gap-2 ${className}`}>
+      <div className={className} style={actionGroupStyle}>
         <button
           type="button"
           onClick={() => handlePatch("accept")}
           disabled={submitting}
-          className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+          style={submitting ? disabledStyle : primaryStyle}
         >
-          {submitting ? "Processando..." : "Aceitar conexão"}
+          {submitting ? "Processando" : "Aceitar conexão"}
         </button>
 
         <button
           type="button"
           onClick={() => handlePatch("decline")}
           disabled={submitting}
-          className="rounded-xl border border-white/15 bg-transparent px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+          style={submitting ? disabledStyle : secondaryStyle}
         >
           Recusar
         </button>
@@ -320,12 +358,8 @@ export default function ProfessionalConnectButton({
 
   if (state === "outgoing_pending") {
     return (
-      <div className={`flex flex-wrap gap-2 ${className}`}>
-        <button
-          type="button"
-          disabled
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/70"
-        >
+      <div className={className} style={actionGroupStyle}>
+        <button type="button" disabled style={secondaryStyle}>
           Conexão enviada
         </button>
 
@@ -333,9 +367,9 @@ export default function ProfessionalConnectButton({
           type="button"
           onClick={() => handlePatch("cancel")}
           disabled={submitting}
-          className="rounded-xl border border-white/15 bg-transparent px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+          style={submitting ? disabledStyle : secondaryStyle}
         >
-          {submitting ? "Cancelando..." : "Cancelar"}
+          {submitting ? "Cancelando" : "Cancelar"}
         </button>
       </div>
     );
@@ -347,13 +381,13 @@ export default function ProfessionalConnectButton({
         type="button"
         onClick={handleCreateConnection}
         disabled={submitting}
-        className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+        style={submitting ? disabledStyle : primaryStyle}
       >
-        {submitting ? "Enviando..." : "Iniciar conexão profissional"}
+        {submitting ? "Enviando" : "Conectar"}
       </button>
 
       {message ? (
-        <p className="mt-2 text-xs text-red-300">{message}</p>
+        <p style={{ marginTop: 8, color: "#FCA5A5", fontSize: 12 }}>{message}</p>
       ) : null}
     </div>
   );
