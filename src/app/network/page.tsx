@@ -778,6 +778,29 @@ function getQuickBadges(item: NetworkProfileItem): string[] {
   return badges.slice(0, 4);
 }
 
+
+function buildNetworkReturnPath(
+  qRaw: string,
+  cityRaw: string,
+  industryRaw: string,
+  sort: SortOption
+): string {
+  const params = new URLSearchParams();
+
+  if (qRaw) params.set("q", qRaw);
+  if (cityRaw) params.set("city", cityRaw);
+  if (industryRaw) params.set("industry", industryRaw);
+
+  params.set("sort", sort);
+
+  const query = params.toString();
+  return query ? `/network?${query}` : "/network";
+}
+
+function buildProProfileHref(slug: string, returnPath: string): string {
+  return `/pro/${slug}?from=network&returnTo=${encodeURIComponent(returnPath)}`;
+}
+
 function getSecondaryChannels(item: NetworkProfileItem): Array<{ label: string; href: string }> {
   const channels: Array<{ label: string; href: string }> = [];
 
@@ -800,6 +823,7 @@ function getSecondaryChannels(item: NetworkProfileItem): Array<{ label: string; 
   return channels.slice(0, 3);
 }
 
+// v4.4.8-pro-profile-return-to-network
 export default async function NetworkPage({ searchParams }: PageProps) {
   const qp = searchParams ? await searchParams : undefined;
 
@@ -960,6 +984,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
   }));
 
   const currentSortLabel = sortLabel(sort);
+  const networkReturnPath = buildNetworkReturnPath(qRaw, cityRaw, industryRaw, sort);
 
   const uniqueCities = Array.from(
     new Set(items.map((item) => normalizeText(item.city)).filter(Boolean))
@@ -1479,7 +1504,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               return (
                 <Link
                   key={`carousel-${item.user_id}`}
-                  href={`/${item.slug}?mode=pro`}
+                  href={buildProProfileHref(item.slug, networkReturnPath)}
                   className="network-profile-carousel-card"
                   style={carouselCardStyle()}
                 >
@@ -1759,7 +1784,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                   </div>
 
                   <div className="network-primary-actions" style={actionGroupStyle()}>
-                    <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
+                    <Link href={buildProProfileHref(item.slug, networkReturnPath)} style={primaryButtonStyle()}>
                       Abrir perfil profissional
                     </Link>
 

@@ -11,6 +11,10 @@ import ProfessionalConnectButton from "@/components/network/ProfessionalConnectB
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{
+    from?: string;
+    returnTo?: string;
+  }>;
 };
 
 const RESERVED = new Set([
@@ -392,6 +396,35 @@ function limitText(value: string | null | undefined, max = 120): string {
   return `${text.slice(0, max).trim()}...`;
 }
 
+
+function getSafeNetworkReturnPath(value: string | undefined): string | null {
+  const candidate = normalizeText(value);
+
+  if (!candidate) return null;
+  if (!candidate.startsWith("/network")) return null;
+  if (candidate.startsWith("//")) return null;
+  if (candidate.includes("://")) return null;
+
+  return candidate;
+}
+
+function networkReturnButtonStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 14px",
+    borderRadius: 999,
+    border: "1px solid rgba(45,212,191,0.30)",
+    background: "rgba(13,148,136,0.13)",
+    color: "#A7F3D0",
+    fontSize: 13,
+    fontWeight: 900,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+  };
+}
+
 function titleCaseWords(value: string): string {
   return value
     .split(" ")
@@ -604,9 +637,16 @@ function getLinkHint(link: PublicSocialLink, index: number): string {
   return "Abrir canal";
 }
 
-export default async function ProPublicPage({ params }: PageProps) {
+// v4.4.8-pro-profile-return-to-network
+export default async function ProPublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const qp = searchParams ? await searchParams : undefined;
   const s = String(slug || "").trim().toLowerCase();
+  const networkReturnPath =
+    qp?.from === "network" ? getSafeNetworkReturnPath(qp.returnTo) : null;
+  const networkReturnQuery = networkReturnPath
+    ? `?from=network&returnTo=${encodeURIComponent(networkReturnPath)}`
+    : "";
 
   if (!s || RESERVED.has(s)) notFound();
 
@@ -635,7 +675,7 @@ export default async function ProPublicPage({ params }: PageProps) {
 
     if (!current?.slug || !current.is_published) notFound();
 
-    permanentRedirect(`/pro/${current.slug}`);
+    permanentRedirect(`/pro/${current.slug}${networkReturnQuery}`);
   }
 
   if (!card.is_published) notFound();
@@ -694,6 +734,12 @@ export default async function ProPublicPage({ params }: PageProps) {
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {networkReturnPath ? (
+              <Link href={networkReturnPath} style={networkReturnButtonStyle()}>
+                Voltar para resultados
+              </Link>
+            ) : null}
+
             <Link href={`/${card.slug}`} style={modeButtonStyle(false)}>
               Ver experiência Club
             </Link>
