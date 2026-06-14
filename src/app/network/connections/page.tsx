@@ -73,70 +73,81 @@ type ConnectionItem = {
   created_at: string;
 };
 
+function pageShellStyle(): CSSProperties {
+  return {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 86% 8%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #030712 46%, #050505 100%)",
+    color: "#F8FAFC",
+  };
+}
+
 function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1100,
+    width: "100%",
+    maxWidth: 780,
     margin: "0 auto",
-    padding: "16px 12px 44px",
-    color: "#F8FAFC",
+    padding: "18px 14px 54px",
+    boxSizing: "border-box",
   };
 }
 
 function heroStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.18)",
+    border: "1px solid rgba(96,165,250,0.26)",
     background:
-      "radial-gradient(circle at 18% 10%, rgba(37,99,235,0.20), transparent 34%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.18), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
+      "radial-gradient(circle at 12% 12%, rgba(37,99,235,0.30), transparent 32%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.22), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
     borderRadius: 28,
-    padding: "24px 18px",
+    padding: "22px 20px",
     display: "grid",
     gap: 18,
-    boxShadow: "0 24px 74px rgba(0,0,0,0.36)",
+    boxShadow: "0 26px 82px rgba(0,0,0,0.42)",
   };
 }
 
 function panelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.16)",
+    border: "1px solid rgba(148,163,184,0.18)",
     background:
-      "linear-gradient(135deg, rgba(15,23,42,0.74), rgba(255,255,255,0.025))",
-    borderRadius: 22,
-    padding: 18,
-    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
+      "linear-gradient(135deg, rgba(15,23,42,0.82), rgba(255,255,255,0.025))",
+    borderRadius: 24,
+    padding: 20,
+    boxShadow: "0 18px 48px rgba(0,0,0,0.30)",
   };
 }
 
 function cardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.16)",
+    border: "1px solid rgba(148,163,184,0.18)",
     background:
-      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
-    borderRadius: 22,
-    padding: 17,
+      "linear-gradient(135deg, rgba(15,23,42,0.86), rgba(255,255,255,0.025))",
+    borderRadius: 24,
+    padding: 18,
     display: "grid",
-    gap: 15,
-    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
+    gap: 16,
+    boxShadow: "0 18px 48px rgba(0,0,0,0.30)",
   };
 }
 
 function statGridStyle(): CSSProperties {
   return {
     display: "grid",
-    gap: 12,
-    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+    gap: 14,
+    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+    marginTop: 14,
   };
 }
 
 function statCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.16)",
+    border: "1px solid rgba(148,163,184,0.18)",
     background:
-      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
-    borderRadius: 20,
-    padding: 16,
+      "linear-gradient(135deg, rgba(15,23,42,0.78), rgba(255,255,255,0.025))",
+    borderRadius: 22,
+    padding: 18,
     display: "grid",
-    gap: 6,
-    boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
+    gap: 8,
+    boxShadow: "0 16px 38px rgba(0,0,0,0.24)",
   };
 }
 
@@ -145,36 +156,27 @@ function buttonStyle(): CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "11px 14px",
-    minHeight: 44,
-    borderRadius: 14,
-    border: "1px solid rgba(148,163,184,0.22)",
-    background: "rgba(15,23,42,0.72)",
+    minHeight: 48,
+    padding: "12px 16px",
+    borderRadius: 16,
+    border: "1px solid rgba(148,163,184,0.24)",
+    background: "rgba(15,23,42,0.78)",
     color: "#F8FAFC",
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: 900,
+    lineHeight: 1.15,
     cursor: "pointer",
     boxSizing: "border-box",
+    textAlign: "center",
   };
 }
 
 function primaryButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    border: "1px solid rgba(96,165,250,0.34)",
-    background:
-      "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
-    boxShadow: "0 14px 36px rgba(37,99,235,0.20)",
-  };
-}
-
-function badgeStyle(): CSSProperties {
-  return {
-    display: "inline-block",
-    color: "rgba(191,219,254,0.94)",
-    fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.02em",
+    border: "1px solid rgba(96,165,250,0.42)",
+    background: "linear-gradient(135deg, rgba(37,99,235,0.96), rgba(30,64,175,0.98))",
+    boxShadow: "0 14px 36px rgba(37,99,235,0.24)",
   };
 }
 
@@ -186,14 +188,71 @@ function actionGroupStyle(): CSSProperties {
   };
 }
 
+function eyebrowStyle(): CSSProperties {
+  return {
+    margin: 0,
+    color: "#93C5FD",
+    fontSize: 12,
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+  };
+}
+
 function sectionTitleStyle(): CSSProperties {
   return {
-    marginTop: 0,
-    marginBottom: 16,
+    margin: "0 0 16px",
     color: "#F8FAFC",
-    fontSize: 22,
-    fontWeight: 900,
-    letterSpacing: "-0.02em",
+    fontSize: "clamp(1.55rem, 5vw, 2.1rem)",
+    fontWeight: 950,
+    letterSpacing: "-0.035em",
+    lineHeight: 1.05,
+  };
+}
+
+function textMutedStyle(): CSSProperties {
+  return {
+    margin: 0,
+    color: "rgba(226,232,240,0.78)",
+    lineHeight: 1.65,
+  };
+}
+
+function photoStyle(): CSSProperties {
+  return {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    objectFit: "cover",
+    border: "1px solid rgba(148,163,184,0.24)",
+    background: "rgba(15,23,42,0.9)",
+    flexShrink: 0,
+  };
+}
+
+function emptyPhotoStyle(): CSSProperties {
+  return {
+    ...photoStyle(),
+    display: "grid",
+    placeItems: "center",
+    color: "#93C5FD",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+  };
+}
+
+function pillStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: 32,
+    padding: "6px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(96,165,250,0.26)",
+    background: "rgba(30,64,175,0.22)",
+    color: "rgba(219,234,254,0.96)",
+    fontSize: 13,
+    fontWeight: 850,
   };
 }
 
@@ -212,6 +271,27 @@ function getSummary(item: ConnectionItem): string {
   if (item.bio_text?.trim()) return item.bio_text.trim();
   if (item.services?.trim()) return item.services.trim();
   return "Perfil profissional disponível para contato.";
+}
+
+function normalizeExternalUrl(value: string | null): string | null {
+  const url = value?.trim();
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `https://${url}`;
+}
+
+function normalizeWhatsapp(value: string | null): string | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+
+  let digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+
+  if (!digits.startsWith("55") && digits.length >= 10) {
+    digits = `55${digits}`;
+  }
+
+  return `https://wa.me/${digits}`;
 }
 
 function buildConnectionItems(
@@ -254,7 +334,108 @@ function buildConnectionItems(
     .filter(Boolean) as ConnectionItem[];
 }
 
-function ConnectionGrid({
+function ConnectionCard({ item }: { item: ConnectionItem }) {
+  const whatsappUrl = item.accepts_professional_contact
+    ? normalizeWhatsapp(item.whatsapp_business)
+    : null;
+  const emailUrl = item.accepts_professional_contact && item.professional_email
+    ? `mailto:${item.professional_email}`
+    : null;
+  const linkedinUrl = normalizeExternalUrl(item.linkedin);
+  const websiteUrl = normalizeExternalUrl(item.website);
+  const portfolioUrl = normalizeExternalUrl(item.portfolio);
+  const title = item.profession || item.card_label || "Perfil profissional";
+
+  return (
+    <article style={cardStyle()}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        {item.pro_photo_url ? (
+          <img src={item.pro_photo_url} alt="Foto profissional" style={photoStyle()} />
+        ) : (
+          <div style={emptyPhotoStyle()}>PRO</div>
+        )}
+
+        <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+          <h3
+            style={{
+              margin: "0 0 6px",
+              fontSize: "clamp(1.45rem, 5.8vw, 1.95rem)",
+              lineHeight: 1.08,
+              fontWeight: 950,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            {title}
+          </h3>
+
+          {item.company_name ? (
+            <p style={{ margin: "0 0 8px", color: "rgba(226,232,240,0.88)", fontSize: 16 }}>
+              {item.company_name}
+            </p>
+          ) : null}
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {item.industry ? <span style={pillStyle()}>{item.industry}</span> : null}
+            {item.city ? <span style={pillStyle()}>{item.city}</span> : null}
+          </div>
+        </div>
+      </div>
+
+      <p style={{ margin: 0, color: "rgba(248,250,252,0.92)", lineHeight: 1.65, fontSize: 16 }}>
+        {getSummary(item)}
+      </p>
+
+      <p style={{ margin: 0, color: "rgba(147,197,253,0.90)", fontSize: 13, fontWeight: 750 }}>
+        Registro em: {formatDate(item.created_at)}
+      </p>
+
+      <div style={actionGroupStyle()}>
+        <Link href={`/pro/${item.slug}`} style={primaryButtonStyle()}>
+          Abrir perfil profissional
+        </Link>
+
+        {whatsappUrl ? (
+          <a href={whatsappUrl} target="_blank" rel="noreferrer" style={buttonStyle()}>
+            WhatsApp
+          </a>
+        ) : null}
+
+        {emailUrl ? (
+          <a href={emailUrl} style={buttonStyle()}>
+            E-mail
+          </a>
+        ) : null}
+
+        {linkedinUrl ? (
+          <a href={linkedinUrl} target="_blank" rel="noreferrer" style={buttonStyle()}>
+            LinkedIn
+          </a>
+        ) : null}
+
+        {websiteUrl ? (
+          <a href={websiteUrl} target="_blank" rel="noreferrer" style={buttonStyle()}>
+            Website
+          </a>
+        ) : null}
+
+        {!websiteUrl && portfolioUrl ? (
+          <a href={portfolioUrl} target="_blank" rel="noreferrer" style={buttonStyle()}>
+            Portfólio
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function ConnectionList({
   items,
   emptyTitle,
   emptyDescription,
@@ -266,167 +447,17 @@ function ConnectionGrid({
   if (items.length === 0) {
     return (
       <div style={panelStyle()}>
-        <div
-          style={{
-            color: "rgba(191,219,254,0.94)",
-            fontSize: 12,
-            fontWeight: 900,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          Área profissional
-        </div>
-
-        <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 900 }}>
-          {emptyTitle}
-        </h2>
-
-        <p
-          style={{
-            margin: "8px 0 0",
-            color: "rgba(203,213,225,0.82)",
-            lineHeight: 1.6,
-          }}
-        >
-          {emptyDescription}
-        </p>
+        <p style={eyebrowStyle()}>Área profissional</p>
+        <h3 style={{ ...sectionTitleStyle(), marginTop: 10 }}>{emptyTitle}</h3>
+        <p style={textMutedStyle()}>{emptyDescription}</p>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 18,
-        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-      }}
-    >
+    <div style={{ display: "grid", gap: 16 }}>
       {items.map((item) => (
-        <article key={`${item.user_id}-${item.created_at}`} style={cardStyle()}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            {item.pro_photo_url ? (
-              <img
-                src={item.pro_photo_url}
-                alt="Foto profissional"
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 18,
-                  objectFit: "cover",
-                  border: "1px solid rgba(148,163,184,0.22)",
-                  boxShadow: "0 14px 30px rgba(0,0,0,0.20)",
-                  flexShrink: 0,
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 18,
-                  border: "1px solid rgba(96,165,250,0.24)",
-                  background:
-                    "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(15,23,42,0.82))",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "rgba(191,219,254,0.92)",
-                  fontWeight: 900,
-                  letterSpacing: "0.06em",
-                  flexShrink: 0,
-                }}
-              >
-                PRO
-              </div>
-            )}
-
-            <div style={{ display: "grid", gap: 7, minWidth: 0 }}>
-              <div
-                style={{
-                  color: "#F8FAFC",
-                  fontSize: 20,
-                  fontWeight: 900,
-                  lineHeight: 1.15,
-                }}
-              >
-                {item.profession || item.card_label || "Perfil profissional"}
-              </div>
-
-              {item.company_name ? (
-                <div style={{ color: "rgba(203,213,225,0.88)", lineHeight: 1.35 }}>
-                  {item.company_name}
-                </div>
-              ) : null}
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {item.industry ? (
-                  <span style={badgeStyle()}>{item.industry}</span>
-                ) : null}
-                {item.city ? <span style={badgeStyle()}>{item.city}</span> : null}
-              </div>
-            </div>
-          </div>
-
-          <p
-            style={{
-              margin: 0,
-              color: "rgba(203,213,225,0.90)",
-              lineHeight: 1.6,
-            }}
-          >
-            {getSummary(item)}
-          </p>
-
-          <div style={{ color: "rgba(148,163,184,0.82)", fontSize: 13 }}>
-            Registro em: {formatDate(item.created_at)}
-          </div>
-
-          <div style={actionGroupStyle()}>
-            <Link href={`/${item.slug}?mode=pro`} style={primaryButtonStyle()}>
-              Abrir perfil profissional
-            </Link>
-
-            {item.accepts_professional_contact && item.whatsapp_business ? (
-              <a
-                href={item.whatsapp_business}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={buttonStyle()}
-              >
-                WhatsApp
-              </a>
-            ) : null}
-
-            {item.accepts_professional_contact && item.professional_email ? (
-              <a href={`mailto:${item.professional_email}`} style={buttonStyle()}>
-                E-mail
-              </a>
-            ) : null}
-
-            {item.linkedin ? (
-              <a
-                href={item.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={buttonStyle()}
-              >
-                LinkedIn
-              </a>
-            ) : null}
-
-            {item.website ? (
-              <a
-                href={item.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={buttonStyle()}
-              >
-                Website
-              </a>
-            ) : null}
-          </div>
-        </article>
+        <ConnectionCard key={`${item.user_id}-${item.created_at}`} item={item} />
       ))}
     </div>
   );
@@ -434,7 +465,6 @@ function ConnectionGrid({
 
 export default async function NetworkConnectionsPage() {
   const supabase = await createServerSupabaseClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -475,7 +505,6 @@ export default async function NetworkConnectionsPage() {
   const visibleIncomingConnections = incomingConnections.filter(
     (row) => !hiddenUserIds.has(row.requester_user_id)
   );
-
   const visibleOutgoingConnections = outgoingConnections.filter(
     (row) => !hiddenUserIds.has(row.target_user_id)
   );
@@ -523,7 +552,7 @@ export default async function NetworkConnectionsPage() {
       .eq("is_published", true);
 
     profiles = (profileRows ?? []) as ProfessionalProfileRow[];
-    cards = ((cardRows ?? []) as CardRow[]).filter((c) => c.slug);
+    cards = ((cardRows ?? []) as CardRow[]).filter((card) => card.slug);
   }
 
   const profileByUserId = new Map<string, ProfessionalProfileRow>();
@@ -544,7 +573,6 @@ export default async function NetworkConnectionsPage() {
     profileByUserId,
     cardByUserId
   );
-
   const outgoingItems = buildConnectionItems(
     visibleOutgoingConnections,
     "target_user_id",
@@ -553,120 +581,104 @@ export default async function NetworkConnectionsPage() {
   );
 
   return (
-    <main style={pageContainerStyle()}>
-      <section style={heroStyle()}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <main style={pageShellStyle()}>
+      <div style={pageContainerStyle()}>
+        <section style={heroStyle()}>
           <div
             style={{
-              color: "rgba(191,219,254,0.94)",
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
             }}
           >
-            Área profissional
+            <p style={eyebrowStyle()}>Área profissional</p>
+            <Link
+              href="/dashboard/network"
+              style={{
+                color: "#BFDBFE",
+                textDecoration: "none",
+                fontWeight: 900,
+                fontSize: 14,
+              }}
+            >
+              Voltar aos contatos
+            </Link>
           </div>
 
-          <Link
-            href="/dashboard/network"
-            style={{
-              color: "rgba(203,213,225,0.86)",
-              fontSize: 13,
-              fontWeight: 800,
-              textDecoration: "none",
-            }}
-          >
-            Voltar aos contatos
-          </Link>
-        </div>
+          <div style={{ display: "grid", gap: 12 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "clamp(2.15rem, 8.5vw, 3.35rem)",
+                lineHeight: 0.98,
+                fontWeight: 950,
+                letterSpacing: "-0.055em",
+              }}
+            >
+              Minhas conexões profissionais
+            </h1>
 
-        <div style={{ display: "grid", gap: 10 }}>
-          <h1
-            style={{
-              margin: 0,
-              color: "#F8FAFC",
-              fontSize: "clamp(30px, 7vw, 44px)",
-              fontWeight: 950,
-              letterSpacing: "-0.055em",
-              lineHeight: 1.02,
-            }}
-          >
-            Minhas conexões profissionais
-          </h1>
+            <p
+              style={{
+                margin: 0,
+                color: "rgba(226,232,240,0.86)",
+                fontSize: "clamp(1rem, 3.8vw, 1.12rem)",
+                lineHeight: 1.65,
+                maxWidth: 620,
+              }}
+            >
+              Acompanhe quem demonstrou interesse profissional em você e os contatos que você iniciou dentro da rede USECLUBBERS.
+            </p>
+          </div>
 
-          <p
-            style={{
-              margin: 0,
-              color: "rgba(203,213,225,0.86)",
-              maxWidth: 820,
-              lineHeight: 1.6,
-              fontSize: 15,
-            }}
-          >
-            Acompanhe quem já demonstrou interesse profissional em você e os
-            contatos que você iniciou dentro da rede USECLUBBERS.
-          </p>
-        </div>
+          <div style={actionGroupStyle()}>
+            <Link href="/network" style={primaryButtonStyle()}>
+              Descobrir profissionais
+            </Link>
+            <Link href="/dashboard/network" style={buttonStyle()}>
+              Voltar à central profissional
+            </Link>
+          </div>
+        </section>
 
-        <div style={actionGroupStyle()}>
-          <Link href="/network" style={primaryButtonStyle()}>
-            Descobrir profissionais
-          </Link>
-
-          <Link href="/dashboard/network" style={buttonStyle()}>
-            Voltar à central profissional
-          </Link>
-        </div>
-      </section>
-
-      <section style={{ marginTop: 18 }}>
-        <div style={statGridStyle()}>
+        <section style={statGridStyle()}>
           <div style={statCardStyle()}>
-            <div style={{ color: "rgba(203,213,225,0.72)", fontSize: 13 }}>
-              Conexões recebidas
-            </div>
-            <strong style={{ color: "#F8FAFC", fontSize: 28, lineHeight: 1 }}>
-              {incomingItems.length}
-            </strong>
-            <div style={{ color: "rgba(203,213,225,0.70)", fontSize: 13 }}>
+            <span style={{ color: "rgba(191,219,254,0.82)", fontSize: 14 }}>Conexões recebidas</span>
+            <strong style={{ fontSize: 34, lineHeight: 1 }}>{incomingItems.length}</strong>
+            <span style={{ color: "rgba(226,232,240,0.72)", lineHeight: 1.5 }}>
               Profissionais que chegaram até você
-            </div>
+            </span>
           </div>
 
           <div style={statCardStyle()}>
-            <div style={{ color: "rgba(203,213,225,0.72)", fontSize: 13 }}>
-              Conexões iniciadas
-            </div>
-            <strong style={{ color: "#F8FAFC", fontSize: 28, lineHeight: 1 }}>
-              {outgoingItems.length}
-            </strong>
-            <div style={{ color: "rgba(203,213,225,0.70)", fontSize: 13 }}>
+            <span style={{ color: "rgba(191,219,254,0.82)", fontSize: 14 }}>Conexões iniciadas</span>
+            <strong style={{ fontSize: 34, lineHeight: 1 }}>{outgoingItems.length}</strong>
+            <span style={{ color: "rgba(226,232,240,0.72)", lineHeight: 1.5 }}>
               Contatos que você começou
-            </div>
+            </span>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section style={{ marginTop: 26 }}>
-        <h2 style={sectionTitleStyle()}>Conectaram comigo</h2>
+        <section style={{ marginTop: 30 }}>
+          <h2 style={sectionTitleStyle()}>Conectaram comigo</h2>
+          <ConnectionList
+            items={incomingItems}
+            emptyTitle="Ainda não há conexões recebidas"
+            emptyDescription="Quando outros membros iniciarem contato profissional com você, eles aparecerão aqui."
+          />
+        </section>
 
-        <ConnectionGrid
-          items={incomingItems}
-          emptyTitle="Ainda não há conexões recebidas"
-          emptyDescription="Quando outros membros iniciarem contato profissional com você, eles aparecerão aqui."
-        />
-      </section>
-
-      <section style={{ marginTop: 32 }}>
-        <h2 style={sectionTitleStyle()}>Conectei com</h2>
-
-        <ConnectionGrid
-          items={outgoingItems}
-          emptyTitle="Você ainda não iniciou conexões"
-          emptyDescription="Quando você clicar em conectar nos perfis profissionais da rede, eles aparecerão aqui."
-        />
-      </section>
+        <section style={{ marginTop: 34 }}>
+          <h2 style={sectionTitleStyle()}>Conectei com</h2>
+          <ConnectionList
+            items={outgoingItems}
+            emptyTitle="Você ainda não iniciou conexões"
+            emptyDescription="Quando você abrir uma conexão profissional, o contato aparecerá aqui para continuar a conversa."
+          />
+        </section>
+      </div>
     </main>
   );
 }
