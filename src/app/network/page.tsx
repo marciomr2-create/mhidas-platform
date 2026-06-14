@@ -8,6 +8,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import ProfessionalConnectButton from "@/components/network/ProfessionalConnectButton";
+import { proVisualStandard } from "@/lib/proVisualStandard";
+
+const PRO_COLORS = proVisualStandard.colors;
+const PRO_RADIUS = proVisualStandard.radius;
+const PRO_SHADOW = proVisualStandard.shadow;
+const PRO_BUTTONS = proVisualStandard.buttons;
 
 type PageProps = {
   searchParams?: Promise<{
@@ -121,35 +127,36 @@ function sortLabel(sort: SortOption): string {
 
 function pageContainerStyle(): CSSProperties {
   return {
-    maxWidth: 1180,
+    maxWidth: 1120,
     margin: "0 auto",
-    padding: "16px 12px 44px",
-    color: "#F8FAFC",
+    padding: "14px 12px 44px",
+    color: PRO_COLORS.text,
   };
 }
 
 function panelStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.16)",
-    background:
-      "linear-gradient(135deg, rgba(15,23,42,0.74), rgba(255,255,255,0.025))",
-    borderRadius: 22,
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: PRO_COLORS.panelBackground,
+    borderRadius: PRO_RADIUS.card,
     padding: 18,
-    boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
+    boxShadow: PRO_SHADOW.soft,
   };
 }
 
 function heroStyle(): CSSProperties {
   return {
-    marginTop: 24,
-    border: "1px solid rgba(148,163,184,0.18)",
+    marginTop: 18,
+    border: `1px solid ${PRO_COLORS.borderStrong}`,
     background:
-      "radial-gradient(circle at 18% 10%, rgba(37,99,235,0.20), transparent 34%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.18), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))",
-    borderRadius: 28,
-    padding: "24px 18px",
+      "radial-gradient(circle at 18% 0%, rgba(59,130,246,0.24), transparent 34%), radial-gradient(circle at 88% 8%, rgba(34,211,238,0.16), transparent 32%), " +
+      PRO_COLORS.cardGradient,
+    borderRadius: PRO_RADIUS.hero,
+    padding: "22px 16px",
     display: "grid",
     gap: 18,
-    boxShadow: "0 24px 74px rgba(0,0,0,0.36)",
+    boxShadow: PRO_SHADOW.card,
+    overflow: "hidden",
   };
 }
 
@@ -166,10 +173,10 @@ function inputStyle(): CSSProperties {
     width: "100%",
     padding: "12px 14px",
     minHeight: 46,
-    borderRadius: 14,
-    border: "1px solid rgba(148,163,184,0.20)",
-    background: "rgba(15,23,42,0.72)",
-    color: "#F8FAFC",
+    borderRadius: PRO_BUTTONS.borderRadius,
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: PRO_COLORS.panelBackgroundStrong,
+    color: PRO_COLORS.text,
     outline: "none",
     boxSizing: "border-box",
   };
@@ -180,10 +187,10 @@ function selectStyle(): CSSProperties {
     width: "100%",
     padding: "12px 14px",
     minHeight: 46,
-    borderRadius: 14,
-    border: "1px solid rgba(148,163,184,0.20)",
-    background: "rgba(15,23,42,0.72)",
-    color: "#F8FAFC",
+    borderRadius: PRO_BUTTONS.borderRadius,
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: PRO_COLORS.panelBackgroundStrong,
+    color: PRO_COLORS.text,
     outline: "none",
     colorScheme: "dark",
     boxSizing: "border-box",
@@ -203,13 +210,13 @@ function buttonStyle(): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     padding: "11px 14px",
-    minHeight: 44,
-    borderRadius: 14,
-    border: "1px solid rgba(148,163,184,0.22)",
-    background: "rgba(15,23,42,0.72)",
-    color: "#F8FAFC",
+    minHeight: 42,
+    borderRadius: PRO_BUTTONS.borderRadius,
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: PRO_BUTTONS.secondaryBackground,
+    color: PRO_COLORS.text,
     textDecoration: "none",
-    fontWeight: 800,
+    fontWeight: PRO_BUTTONS.fontWeight,
     cursor: "pointer",
     boxSizing: "border-box",
   };
@@ -218,29 +225,28 @@ function buttonStyle(): CSSProperties {
 function primaryButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    border: "1px solid rgba(96,165,250,0.34)",
-    background:
-      "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
-    boxShadow: "0 14px 36px rgba(37,99,235,0.20)",
+    border: `1px solid ${PRO_COLORS.borderStrong}`,
+    background: PRO_BUTTONS.primaryGradient,
+    boxShadow: PRO_SHADOW.action,
   };
 }
 
 function badgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    color: "rgba(191,219,254,0.94)",
+    color: PRO_COLORS.accentBlue,
     fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.02em",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
   };
 }
 
 function quickBadgeStyle(): CSSProperties {
   return {
     display: "inline-block",
-    color: "rgba(203,213,225,0.86)",
+    color: PRO_COLORS.textSecondary,
     fontSize: 12,
-    fontWeight: 800,
+    fontWeight: 850,
     letterSpacing: "0.015em",
   };
 }
@@ -284,14 +290,13 @@ function cardStyle(isFeatured = false): CSSProperties {
 
 function statCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.16)",
-    background:
-      "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))",
-    borderRadius: 20,
-    padding: 16,
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: "rgba(15,23,42,0.64)",
+    borderRadius: 18,
+    padding: 14,
     display: "grid",
-    gap: 7,
-    boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
+    gap: 6,
+    boxShadow: "0 12px 28px rgba(2,6,23,0.22)",
   };
 }
 
@@ -305,10 +310,10 @@ function infoGridStyle(): CSSProperties {
 
 function infoCardStyle(): CSSProperties {
   return {
-    border: "1px solid rgba(148,163,184,0.14)",
-    background: "rgba(15,23,42,0.52)",
+    border: `1px solid ${PRO_COLORS.border}`,
+    background: "rgba(15,23,42,0.48)",
     borderRadius: 16,
-    padding: 14,
+    padding: 13,
     display: "grid",
     gap: 6,
   };
@@ -324,31 +329,31 @@ function actionGroupStyle(): CSSProperties {
 
 function carouselCardStyle(): CSSProperties {
   return {
-    minWidth: 174,
-    maxWidth: 174,
+    minWidth: 166,
+    maxWidth: 166,
     scrollSnapAlign: "start",
-    border: "1px solid rgba(96,165,250,0.18)",
+    border: `1px solid ${PRO_COLORS.border}`,
     background:
-      "linear-gradient(180deg, rgba(15,23,42,0.88), rgba(15,23,42,0.58))",
-    borderRadius: 16,
-    padding: 13,
+      "linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.68))",
+    borderRadius: 18,
+    padding: 12,
     display: "grid",
     justifyItems: "center",
-    gap: 9,
-    color: "#F8FAFC",
+    gap: 8,
+    color: PRO_COLORS.text,
     textDecoration: "none",
-    boxShadow: "0 14px 30px rgba(0,0,0,0.20)",
+    boxShadow: "0 14px 30px rgba(2,6,23,0.24)",
   };
 }
 
 function carouselPhotoStyle(): CSSProperties {
   return {
-    width: 78,
-    height: 78,
+    width: 76,
+    height: 76,
     borderRadius: 999,
     objectFit: "cover",
-    border: "2px solid rgba(96,165,250,0.38)",
-    boxShadow: "0 10px 22px rgba(37,99,235,0.18)",
+    border: `2px solid ${PRO_COLORS.borderStrong}`,
+    boxShadow: "0 10px 24px rgba(37,99,235,0.18)",
   };
 }
 
@@ -359,9 +364,9 @@ function carouselActionStyle(): CSSProperties {
     justifyContent: "center",
     width: "100%",
     minHeight: 32,
-    borderRadius: 10,
-    background: "linear-gradient(135deg, rgba(37,99,235,0.94), rgba(30,64,175,0.96))",
-    color: "#F8FAFC",
+    borderRadius: 12,
+    background: PRO_BUTTONS.primaryGradient,
+    color: PRO_COLORS.text,
     fontWeight: 900,
     fontSize: 12,
   };
@@ -454,7 +459,7 @@ function buildSummary(item: NetworkProfileItem): string {
   const lookingFor = normalizeText(item.looking_for);
   if (lookingFor) return `Busca atual: ${limitText(lookingFor, 150)}`;
 
-  return "Perfil profissional disponível para novas conexões.";
+  return "Perfil profissional disponível para conexão.";
 }
 
 function buildProfileName(label: string | null, profession: string | null): string {
@@ -817,13 +822,13 @@ function getSecondaryChannels(item: NetworkProfileItem): Array<{ label: string; 
   }
 
   if (item.business_instagram) {
-    channels.push({ label: "Instagram", href: item.business_instagram });
+    channels.push({ label: "Instagram profissional", href: item.business_instagram });
   }
 
   return channels.slice(0, 3);
 }
 
-// v4.4.8-pro-profile-return-to-network
+// v4.5.6-network-pro-visual-alignment
 export default async function NetworkPage({ searchParams }: PageProps) {
   const qp = searchParams ? await searchParams : undefined;
 
@@ -1037,64 +1042,57 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         }
 
         @media (max-width: 720px) {
-          .network-stats-section {
-            margin-top: 16px !important;
+          main {
+            max-width: 430px !important;
+            padding: 16px 14px 42px !important;
+          }
+
+          .network-top-header {
+            gap: 8px !important;
+          }
+
+          .network-page-title {
+            font-size: 26px !important;
+            line-height: 1.08 !important;
+          }
+
+          .network-page-description {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+          }
+
+          .network-hero-title {
+            font-size: 24px !important;
+            line-height: 1.08 !important;
+          }
+
+          .network-hero-description {
+            font-size: 14px !important;
+            line-height: 1.52 !important;
+          }
+
+          .network-hero-actions {
             display: grid !important;
-            gap: 9px !important;
             grid-template-columns: minmax(0, 1fr) !important;
+            gap: 8px !important;
           }
 
-          .network-mobile-sort-chip {
-            display: inline-flex !important;
+          .network-hero-actions a,
+          .network-hero-actions button {
+            width: 100% !important;
+            min-height: 42px !important;
           }
 
-          .network-stats-track {
-            display: flex !important;
-            gap: 9px !important;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-            padding: 1px 2px 9px !important;
-            scroll-snap-type: x proximity !important;
-            scrollbar-width: none !important;
-          }
-
-          .network-stats-track::-webkit-scrollbar {
+          .network-stats-section {
             display: none !important;
           }
 
-          .network-stat-card-mobile {
-            min-width: 132px !important;
-            max-width: 142px !important;
-            padding: 10px !important;
-            border-radius: 15px !important;
-            gap: 4px !important;
-            scroll-snap-align: start !important;
-            box-shadow: 0 10px 24px rgba(0,0,0,0.18) !important;
-          }
-
-          .network-stat-label {
-            font-size: 9.5px !important;
-            letter-spacing: 0.035em !important;
-            line-height: 1.1 !important;
-          }
-
-          .network-stat-value {
-            font-size: 24px !important;
-            line-height: 1 !important;
-          }
-
-          .network-stat-description {
-            font-size: 10.5px !important;
-            line-height: 1.28 !important;
-          }
-
-          .network-stat-sort-card {
+          .network-mobile-sort-chip {
             display: none !important;
           }
 
           .network-carousel-mobile-polish {
-            gap: 10px !important;
-            margin-top: 18px !important;
+            display: none !important;
           }
 
           .network-profile-carousel {
@@ -1158,7 +1156,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           .network-result-photo {
             width: 58px !important;
             height: 58px !important;
-            border-radius: 16px !important;
+            border-radius: 999px !important;
           }
 
           .network-result-copy {
@@ -1224,6 +1222,28 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             min-height: 38px !important;
             padding: 8px 11px !important;
           }
+
+          .network-result-badges {
+            display: none !important;
+          }
+
+          .network-keywords-box {
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+          }
+
+          .network-keywords-header {
+            display: none !important;
+          }
+
+          .network-info-grid {
+            display: none !important;
+          }
+
+          .network-result-summary {
+            font-size: 15px !important;
+          }
         }
 
         @media (max-width: 480px) {
@@ -1234,7 +1254,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
           .network-result-photo {
             width: 52px !important;
             height: 52px !important;
-            border-radius: 14px !important;
+            border-radius: 999px !important;
           }
 
           .network-result-card-title {
@@ -1243,34 +1263,32 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         }
       `}</style>
 
-      <header style={{ display: "grid", gap: 10 }}>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900 }}>
-          Descobrir profissionais
+      <header className="network-top-header" style={{ display: "grid", gap: 10 }}>
+        <h1 className="network-page-title" style={{ margin: 0, fontSize: 32, fontWeight: 950, lineHeight: 1.05 }}>
+          Rede profissional
         </h1>
 
-        <p style={{ margin: 0, opacity: 0.82, maxWidth: 900, lineHeight: 1.6 }}>
-          Encontre profissionais ativos na rede, filtre por atuação e abra
-          conversas com mais contexto.
+        <p className="network-page-description" style={{ margin: 0, color: PRO_COLORS.textSecondary, maxWidth: 900, lineHeight: 1.6 }}>
+          Encontre perfis Pro ativos, filtre por atuação e abra conversas com mais contexto.
         </p>
 
         <div style={{ marginTop: 8 }}>
           <Link href="/dashboard" style={{ color: "#BFDBFE", textDecoration: "none", fontWeight: 800 }}>
-            Voltar à central
+Voltar para minha central
           </Link>
         </div>
       </header>
 
       <section style={heroStyle()}>
         <div style={{ display: "grid", gap: 8 }}>
-          <span style={badgeStyle()}>Área profissional</span>
+          <span style={badgeStyle()}>USECLUBBERS PRO</span>
 
-          <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1 }}>
-            Profissionais disponíveis para novas conexões
+          <div className="network-hero-title" style={{ fontSize: 30, fontWeight: 950, lineHeight: 1.06 }}>
+            Encontre profissionais para conversar
           </div>
 
-          <p style={{ margin: 0, opacity: 0.88, lineHeight: 1.6, maxWidth: 860 }}>
-            Esta página mostra apenas perfis ativos na rede profissional. Contatos
-            pausados ou bloqueados por você não aparecem aqui.
+          <p className="network-hero-description" style={{ margin: 0, color: PRO_COLORS.textSecondary, lineHeight: 1.6, maxWidth: 860 }}>
+            Busque por atuação, empresa, cidade ou tema e abra perfis profissionais com mais contexto.
           </p>
         </div>
 
@@ -1280,7 +1298,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
               type="text"
               name="q"
               defaultValue={qRaw}
-              placeholder="Buscar por nome, atuação, empresa, cidade ou oferta"
+              placeholder="Buscar por nome, atuação, empresa, cidade ou tema"
               style={inputStyle()}
             />
 
@@ -1343,9 +1361,9 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             </select>
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div className="network-hero-actions" style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             <button type="submit" style={primaryButtonStyle()}>
-              Aplicar busca
+              Buscar profissionais
             </button>
 
             <Link href="/network" style={buttonStyle()}>
@@ -1353,7 +1371,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             </Link>
 
             <Link href="/network/connections" style={buttonStyle()}>
-              Ver minhas conexões
+              Minhas conexões
             </Link>
           </div>
         </form>
@@ -1456,12 +1474,12 @@ export default async function NetworkPage({ searchParams }: PageProps) {
             }}
           >
             <div style={{ display: "grid", gap: 5 }}>
-              <span style={badgeStyle()}>Descoberta rápida</span>
+              <span style={badgeStyle()}>Perfis encontrados</span>
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>
-                Profissionais disponíveis
+                Profissionais que combinam com a busca
               </h2>
               <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.5 }}>
-                Arraste para o lado e abra o perfil de quem combina com sua busca.
+                Toque em um perfil para conhecer melhor antes de conectar.
               </p>
             </div>
 
@@ -1623,7 +1641,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                         style={{
                           width: 82,
                           height: 82,
-                          borderRadius: 20,
+                          borderRadius: 999,
                           objectFit: "cover",
                           border: "1px solid rgba(148,163,184,0.18)",
                           flexShrink: 0,
@@ -1635,7 +1653,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
                         style={{
                           width: 82,
                           height: 82,
-                          borderRadius: 20,
+                          borderRadius: 999,
                           border: "1px solid rgba(148,163,184,0.18)",
                           background: "rgba(15,23,42,0.56)",
                           display: "grid",
@@ -1785,7 +1803,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
 
                   <div className="network-primary-actions" style={actionGroupStyle()}>
                     <Link href={buildProProfileHref(item.slug, networkReturnPath)} style={primaryButtonStyle()}>
-                      Abrir perfil profissional
+                      Ver perfil profissional
                     </Link>
 
                     <ProfessionalConnectButton targetUserId={item.user_id} />
