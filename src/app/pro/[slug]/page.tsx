@@ -1003,7 +1003,7 @@ function isWhatsAppSocialLink(link: PublicSocialLink): boolean {
   return key.includes("whatsapp") || key.includes("whats");
 }
 
-// v4.5.3-public-pro-follow-lists-preview-mobile-profile-card-polish
+// v4.5.4-hide-public-pro-social-counts-mobile-profile-card-polish
 export default async function ProPublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const qp = searchParams ? await searchParams : undefined;
@@ -1076,16 +1076,13 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
   const heroDescription = buildProDescription(professionalProfile, canConnect, professionalQuickAction);
   const heroHighlights = getHeroHighlights(professionalProfile, canConnect);
   const professionalKeywords = normalizeKeywordList(professionalProfile.search_keywords);
-  const socialCounts = await getProfessionalSocialCounts(supabase, userId);
-  const visibleSocialStats = [
-    { label: "seguidores", value: socialCounts.followersCount },
-    { label: "seguindo", value: socialCounts.followingCount },
-    { label: "conexões", value: socialCounts.connectionsCount },
-  ].filter((item) => item.value > 0);
-
-  const followPreview = await getProfessionalFollowPreview(supabase, userId);
-  const hasFollowPreview =
-    followPreview.followers.length > 0 || followPreview.following.length > 0;
+  // v4.5.4-hide-public-pro-social-counts
+  // O Perfil Pro publico deve funcionar como cartao profissional, nao como ranking social.
+  // Seguidores, seguindo e conexoes continuam no banco para ranking interno, dashboard e recomendacoes,
+  // mas nao ficam expostos no perfil publico para evitar efeito de baixa relevancia em uma rede nova.
+  const visibleSocialStats: Array<{ label: string; value: number }> = [];
+  const followPreview: ProfessionalFollowPreview = { followers: [], following: [] };
+  const hasFollowPreview = false;
 
   const profileFacts = [
     { label: "Atuação", value: professionalProfile.profession },
