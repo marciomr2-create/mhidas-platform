@@ -147,6 +147,47 @@ async function getProfessionalProfile(
   return (data as ProfessionalProfile | null) ?? null;
 }
 
+type ProfessionalSocialCounts = {
+  followersCount: number;
+  followingCount: number;
+  connectionsCount: number;
+};
+
+type ProfessionalPublicCountsRpcRow = {
+  followers_count: number | null;
+  following_count: number | null;
+  connections_count: number | null;
+};
+
+async function getProfessionalSocialCounts(
+  supabase: ReturnType<typeof createPublicClient>,
+  userId: string
+): Promise<ProfessionalSocialCounts> {
+  const fallback: ProfessionalSocialCounts = {
+    followersCount: 0,
+    followingCount: 0,
+    connectionsCount: 0,
+  };
+
+  try {
+    const { data, error } = await supabase
+      .rpc("get_professional_public_counts", { p_user_id: userId })
+      .maybeSingle();
+
+    if (error || !data) return fallback;
+
+    const row = data as ProfessionalPublicCountsRpcRow;
+
+    return {
+      followersCount: Number(row.followers_count ?? 0),
+      followingCount: Number(row.following_count ?? 0),
+      connectionsCount: Number(row.connections_count ?? 0),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 const PRO_BORDER = "rgba(148,163,184,0.22)";
 const PRO_BORDER_STRONG = "rgba(59,130,246,0.34)";
 const PRO_TEXT = "#F8FAFC";
@@ -389,6 +430,35 @@ function keywordChipStyle(): CSSProperties {
   };
 }
 
+function profileStatsRowStyle(): CSSProperties {
+  return {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    color: "#93C5FD",
+    fontSize: 12,
+    fontWeight: 850,
+    lineHeight: 1.2,
+  };
+}
+
+function profileStatTextStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "baseline",
+    gap: 4,
+  };
+}
+
+function profileStatNumberStyle(): CSSProperties {
+  return {
+    color: PRO_TEXT,
+    fontSize: 12,
+    fontWeight: 950,
+  };
+}
+
 function normalizeText(value: string | null | undefined): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
@@ -486,6 +556,13 @@ function formatClicks(count: number): string {
   if (count <= 0) return "Novo perfil";
   if (count === 1) return "1 interação registrada";
   return `${count} interações registradas`;
+}
+
+function formatStatCount(count: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    notation: count >= 10000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(Math.max(0, count));
 }
 
 function buildProHeadline(
@@ -652,7 +729,7 @@ function getLinkHint(link: PublicSocialLink, index: number): string {
   return "Abrir canal";
 }
 
-// v4.4.8-pro-profile-return-to-network
+// v4.5.2-public-pro-follow-counts
 export default async function ProPublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const qp = searchParams ? await searchParams : undefined;
@@ -730,6 +807,12 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
     professionalProfile.business_instagram
   );
   const professionalKeywords = normalizeKeywordList(professionalProfile.search_keywords);
+  const socialCounts = await getProfessionalSocialCounts(supabase, userId);
+  const visibleSocialStats = [
+    { label: "seguidores", value: socialCounts.followersCount },
+    { label: "seguindo", value: socialCounts.followingCount },
+    { label: "conexões", value: socialCounts.connectionsCount },
+  ].filter((item) => item.value > 0);
 
   const contactSummary =
     professionalProfile.whatsapp_business || professionalProfile.professional_email
@@ -746,6 +829,19 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
             <h1 style={{ fontSize: 32, lineHeight: 1.1, margin: 0 }}>
               {profileName}
             </h1>
+
+            {/* v4.5.2-public-pro-follow-counts-clean */}
+            {visibleSocialStats.length > 0 ? (
+              <div style={profileStatsRowStyle()} aria-label="Indicadores profissionais">
+                {visibleSocialStats.map((item, index) => (
+                  <span key={item.label} style={profileStatTextStyle()}>
+                    {index > 0 ? <span aria-hidden="true">•</span> : null}
+                    <strong style={profileStatNumberStyle()}>{formatStatCount(item.value)}</strong>
+                    {item.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
