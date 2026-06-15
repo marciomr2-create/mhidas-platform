@@ -1001,7 +1001,7 @@ function buildChannelLinks(
   return [...directChannels.filter(Boolean), ...socialChannels].slice(0, 8) as ChannelLink[];
 }
 
-// v4.5.9-public-pro-profile-mobile-first-visual-alignment
+// v4.6.2-pro-routes-and-links-fix
 export default async function ProPublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const qp = searchParams ? await searchParams : undefined;
@@ -1254,7 +1254,11 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
 
           <div className="pro-public-hero-actions" style={heroActionsStyle()}>
             {canConnect ? (
-              <ProfessionalConnectButton targetUserId={userId} />
+              <ProfessionalConnectButton
+                targetUserId={userId}
+                selfConnectionsHref="/network/connections"
+                selfDashboardHref={`/dashboard/cards/${card.card_id}/pro`}
+              />
             ) : null}
 
             <ProfessionalFollowButton targetUserId={userId} />

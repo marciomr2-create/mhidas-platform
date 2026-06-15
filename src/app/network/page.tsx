@@ -1,4 +1,4 @@
-// src/app/network/page.tsx
+﻿// src/app/network/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
@@ -1273,7 +1273,7 @@ export default async function NetworkPage({ searchParams }: PageProps) {
         </p>
 
         <div style={{ marginTop: 8 }}>
-          <Link href="/dashboard" style={{ color: "#BFDBFE", textDecoration: "none", fontWeight: 800 }}>
+          <Link href="/dashboard/network" style={{ color: "#BFDBFE", textDecoration: "none", fontWeight: 800 }}>
 Voltar para minha central
           </Link>
         </div>

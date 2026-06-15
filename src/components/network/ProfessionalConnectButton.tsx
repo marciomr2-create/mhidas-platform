@@ -1,10 +1,11 @@
 // src/components/network/ProfessionalConnectButton.tsx
-// v4.5.1-public-pro-follow-button
-// visual polish: unified professional action buttons
+// v4.6.2-pro-routes-and-links-fix
+// Corrige os direcionamentos do estado "self" no fluxo Pro público.
 "use client";
 
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type ConnectionState =
   | "loading"
@@ -28,6 +29,8 @@ type StatusResponse = {
 type Props = {
   targetUserId: string;
   className?: string;
+  selfConnectionsHref?: string;
+  selfDashboardHref?: string;
 };
 
 const actionBaseStyle: CSSProperties = {
@@ -53,8 +56,7 @@ const actionBaseStyle: CSSProperties = {
 const primaryStyle: CSSProperties = {
   ...actionBaseStyle,
   border: "1px solid rgba(96,165,250,0.48)",
-  background:
-    "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))",
+  background: "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))",
   color: "#F8FAFC",
   boxShadow:
     "0 0 0 1px rgba(59,130,246,0.10) inset, 0 14px 26px rgba(37,99,235,0.16)",
@@ -90,9 +92,19 @@ const actionGroupStyle: CSSProperties = {
   gap: 10,
 };
 
+const messageStyle: CSSProperties = {
+  width: "100%",
+  margin: 0,
+  color: "#CBD5E1",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
 export default function ProfessionalConnectButton({
   targetUserId,
   className = "",
+  selfConnectionsHref = "/network/connections",
+  selfDashboardHref = "/dashboard/network",
 }: Props) {
   const [state, setState] = useState<ConnectionState>("loading");
   const [submitting, setSubmitting] = useState(false);
@@ -264,16 +276,12 @@ export default function ProfessionalConnectButton({
   const loginHref =
     typeof window === "undefined"
       ? "/login"
-      : `/login?next=${encodeURIComponent(
-          `${window.location.pathname}${window.location.search}`
-        )}`;
+      : `/login?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`;
 
   if (state === "loading") {
     return (
-      <div className={className}>
-        <button type="button" disabled style={disabledStyle}>
-          Verificando
-        </button>
+      <div className={className} style={actionGroupStyle}>
+        <span style={disabledStyle}>Verificando</span>
       </div>
     );
   }
@@ -281,21 +289,20 @@ export default function ProfessionalConnectButton({
   if (state === "self") {
     return (
       <div className={className} style={actionGroupStyle}>
-        <a href="/dashboard/network" style={primaryStyle}>
+        <Link href={selfConnectionsHref} style={primaryStyle}>
           Abrir conexões
-        </a>
-
-        <a href="/dashboard" style={secondaryStyle}>
+        </Link>
+        <Link href={selfDashboardHref} style={secondaryStyle}>
           Abrir meu painel
-        </a>
+        </Link>
       </div>
     );
   }
 
   if (state === "unauthenticated") {
     return (
-      <div className={className}>
-        <a href={loginHref} style={primaryStyle}>
+      <div className={className} style={actionGroupStyle}>
+        <a href={loginHref} style={secondaryStyle}>
           Entrar para conectar
         </a>
       </div>
@@ -304,30 +311,24 @@ export default function ProfessionalConnectButton({
 
   if (state === "connected") {
     return (
-      <div className={className}>
-        <button type="button" disabled style={successStyle}>
-          Conexão confirmada
-        </button>
+      <div className={className} style={actionGroupStyle}>
+        <span style={successStyle}>Conexão confirmada</span>
       </div>
     );
   }
 
   if (state === "blocked") {
     return (
-      <div className={className}>
-        <button type="button" disabled style={disabledStyle}>
-          Conexão indisponível
-        </button>
+      <div className={className} style={actionGroupStyle}>
+        <span style={disabledStyle}>Conexão indisponível</span>
       </div>
     );
   }
 
   if (state === "suspended") {
     return (
-      <div className={className}>
-        <button type="button" disabled style={disabledStyle}>
-          Perfil suspenso
-        </button>
+      <div className={className} style={actionGroupStyle}>
+        <span style={disabledStyle}>Perfil suspenso</span>
       </div>
     );
   }
@@ -343,7 +344,6 @@ export default function ProfessionalConnectButton({
         >
           {submitting ? "Processando" : "Aceitar conexão"}
         </button>
-
         <button
           type="button"
           onClick={() => handlePatch("decline")}
@@ -352,6 +352,7 @@ export default function ProfessionalConnectButton({
         >
           Recusar
         </button>
+        {message ? <p style={messageStyle}>{message}</p> : null}
       </div>
     );
   }
@@ -359,10 +360,7 @@ export default function ProfessionalConnectButton({
   if (state === "outgoing_pending") {
     return (
       <div className={className} style={actionGroupStyle}>
-        <button type="button" disabled style={secondaryStyle}>
-          Conexão enviada
-        </button>
-
+        <span style={successStyle}>Conexão enviada</span>
         <button
           type="button"
           onClick={() => handlePatch("cancel")}
@@ -371,12 +369,13 @@ export default function ProfessionalConnectButton({
         >
           {submitting ? "Cancelando" : "Cancelar"}
         </button>
+        {message ? <p style={messageStyle}>{message}</p> : null}
       </div>
     );
   }
 
   return (
-    <div className={className}>
+    <div className={className} style={actionGroupStyle}>
       <button
         type="button"
         onClick={handleCreateConnection}
@@ -385,10 +384,7 @@ export default function ProfessionalConnectButton({
       >
         {submitting ? "Enviando" : "Conectar"}
       </button>
-
-      {message ? (
-        <p style={{ marginTop: 8, color: "#FCA5A5", fontSize: 12 }}>{message}</p>
-      ) : null}
+      {message ? <p style={messageStyle}>{message}</p> : null}
     </div>
   );
 }
