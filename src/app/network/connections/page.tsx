@@ -1,4 +1,4 @@
-// src/app/network/connections/page.tsx
+﻿// src/app/network/connections/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
@@ -344,7 +344,7 @@ function ConnectionCard({ item }: { item: ConnectionItem }) {
   const linkedinUrl = normalizeExternalUrl(item.linkedin);
   const websiteUrl = normalizeExternalUrl(item.website);
   const portfolioUrl = normalizeExternalUrl(item.portfolio);
-  const title = item.profession || item.card_label || "Perfil profissional";
+  const title = item.card_label || item.profession || "Perfil profissional";
 
   return (
     <article style={cardStyle()}>
