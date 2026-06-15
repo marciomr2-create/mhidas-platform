@@ -423,8 +423,8 @@ function buildPersonCardData(
   const card = cardByUserId.get(userId);
 
   const title =
-    profile?.profession?.trim() ||
     card?.label?.trim() ||
+    profile?.profession?.trim() ||
     "Profissional da rede";
 
   const subtitle =
