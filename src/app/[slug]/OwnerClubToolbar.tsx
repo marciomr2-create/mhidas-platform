@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -102,7 +102,7 @@ export default function OwnerClubToolbar({
             letterSpacing: -0.1,
           }}
         >
-          Você está editando seu Club
+          Você está editando UseClubbers
         </strong>
 
         <span
@@ -120,7 +120,7 @@ export default function OwnerClubToolbar({
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <Link href={`/dashboard/cards/${cardId}/club`} style={buttonStyle}>
-          Editar Club
+          Editar UseClubbers
         </Link>
 
 

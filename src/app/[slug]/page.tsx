@@ -1,4 +1,4 @@
-﻿// src/app/[slug]/page.tsx
+// src/app/[slug]/page.tsx
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -2119,7 +2119,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href={`/${card.slug}?mode=club`} style={modeButtonActive}>
-              Experiência Club
+              Experiência Clubbers
             </Link>
 
             <Link href={`/pro/${card.slug}`} style={modeButton}>
@@ -2156,7 +2156,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   fontWeight: 750,
                 }}
               >
-                Imagem Club em destaque
+                Imagem de Perfil Clubbers
               </div>
             )}
           </div>
@@ -3415,7 +3415,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
         {links.length > 0 ? (
           <section id="canais-club" className="uc-section" style={sectionBoxStyle()}>
-            <h2 style={sectionTitleStyle()}>Canais Club</h2>
+            <h2 style={sectionTitleStyle()}>Canais Clubbers</h2>
             <p style={sectionDescriptionStyle()}>
               Canais principais para continuar a conexão fora do perfil.
             </p>
