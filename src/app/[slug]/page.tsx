@@ -2097,7 +2097,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
         <header style={topBar}>
           <div>
-            <div style={{ ...pillStyle(), marginBottom: 10 }}>Identidade Clubber</div>
+            <div style={{ marginBottom: 10, fontSize: 12, fontWeight: 850, letterSpacing: 0.2, color: "rgba(255,255,255,0.66)" }}>Identidade Clubber</div>
 
             <h1
               className="uc-page-title"
