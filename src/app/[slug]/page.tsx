@@ -1953,11 +1953,11 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     position: "relative",
     overflow: "hidden",
     display: "grid",
-    gridTemplateColumns: "210px 1fr",
-    gap: 30,
+    gridTemplateColumns: "190px 1fr",
+    gap: 26,
     alignItems: "center",
-    padding: 22,
-    borderRadius: 32,
+    padding: 20,
+    borderRadius: 30,
     background:
       "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035))",
     border: "1px solid rgba(255,255,255,0.12)",
@@ -1989,13 +1989,13 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const photoWrap: CSSProperties = {
     position: "relative",
     zIndex: 2,
-    height: 280,
-    borderRadius: 26,
+    height: 250,
+    borderRadius: 28,
     overflow: "hidden",
     background:
       "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035))",
     border: "1px solid rgba(255,255,255,0.13)",
-    boxShadow: "0 16px 42px rgba(0,0,0,0.35)",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.42)",
   };
 
   const heroContent: CSSProperties = {
@@ -2009,9 +2009,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   const heroTitle: CSSProperties = {
     margin: 0,
-    fontSize: 27,
+    fontSize: 30,
     lineHeight: 1.12,
-    fontWeight: 720,
+    fontWeight: 850,
     letterSpacing: -0.8,
     maxWidth: 820,
   };
@@ -2061,7 +2061,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           }
 
           .uc-photo {
-            height: 230px !important;
+            height: 260px !important;
           }
 
           .uc-section {

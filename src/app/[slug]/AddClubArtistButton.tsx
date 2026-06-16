@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -269,7 +269,6 @@ export default function AddClubArtistButton({
           opacity: 0.88,
         }}
       >
-        <span style={{ fontSize: compact ? 13 : 15, lineHeight: 1, opacity: 0.9 }}>?</span>
         Adicionar artista
       </button>
 
