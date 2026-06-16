@@ -1522,7 +1522,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const soundcloudEmbed = getSoundCloudEmbed(streamingUrl);
   const finalEmbed = youtubeEmbed || spotifyEmbed || soundcloudEmbed;
 
-  const profileName = normalizeText(card.label) || "Perfil Club";
+  const profileName = normalizeText(card.label) || "Perfil UseClubbers";
 
   const tagline =
     normalizeText(clubProfile?.club_tagline) ||
@@ -2113,7 +2113,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             </h1>
 
             <p style={{ opacity: 0.74, margin: "8px 0 0 0" }}>
-              Perfil Club: {card.slug}
+              Perfil UseClubbers: {card.slug}
             </p>
           </div>
 
@@ -2588,7 +2588,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     Próximos eventos
                   </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Club</span>
+                    <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Clubbers</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
                       ownerUserId={card.user_id}
@@ -3021,7 +3021,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           <section className="uc-section" style={sectionBoxStyle()}>
             <h2 style={sectionTitleStyle()}>Conexões para o próximo evento</h2>
             <p style={sectionDescriptionStyle()}>
-              Veja o próximo rolê, combine carona, marque ponto de encontro e use os canais Club para facilitar a conexão antes da pista começar.
+              Veja o próximo rolê, combine carona, marque ponto de encontro e use os canais Clubbers para facilitar a conexão antes da pista começar.
             </p>
 
             <div className="uc-scroll" style={horizontalRailStyle()}>
@@ -3342,7 +3342,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <a href="#canais-club" style={primaryButtonStyle()}>
-                      Ver canais Club
+                      Ver canais Clubbers
                     </a>
 
                     <a
