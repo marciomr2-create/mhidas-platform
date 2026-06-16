@@ -498,8 +498,8 @@ function pillStyle(): CSSProperties {
     width: "fit-content",
     padding: "7px 11px",
     borderRadius: 999,
-    background: "rgba(255,255,255,0.10)",
-    border: "1px solid rgba(255,255,255,0.14)",
+    background: "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.16))",
+    border: "1px solid rgba(0,255,190,0.18)",
     fontSize: 12,
     fontWeight: 750,
     color: "#fff",
@@ -508,12 +508,12 @@ function pillStyle(): CSSProperties {
 
 function sectionBoxStyle(): CSSProperties {
   return {
-    background: "rgba(255,255,255,0.045)",
+    background: "linear-gradient(145deg, rgba(18,14,35,0.74), rgba(5,5,12,0.58))",
     borderRadius: 28,
     padding: 22,
     marginTop: 20,
-    border: "1px solid rgba(255,255,255,0.10)",
-    boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
+    border: "1px solid rgba(125,92,255,0.22)",
+    boxShadow: "0 24px 70px rgba(0,0,0,0.34), inset 0 0 32px rgba(0,255,190,0.018)",
   };
 }
 
@@ -521,8 +521,8 @@ function innerCardStyle(): CSSProperties {
   return {
     padding: 16,
     borderRadius: 20,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.045)",
+    border: "1px solid rgba(0,255,190,0.12)",
+    background: "linear-gradient(145deg, rgba(255,255,255,0.070), rgba(125,92,255,0.050))",
   };
 }
 
@@ -1908,7 +1908,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   const container: CSSProperties = {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top left, rgba(125,92,255,0.20), transparent 34%), radial-gradient(circle at top right, rgba(0,220,255,0.11), transparent 28%), #050505",
+      "radial-gradient(circle at 8% 0%, rgba(0,255,190,0.16), transparent 30%), radial-gradient(circle at 92% 6%, rgba(125,92,255,0.32), transparent 34%), radial-gradient(circle at 50% 100%, rgba(0,220,255,0.10), transparent 32%), linear-gradient(180deg, #030308 0%, #070712 44%, #020204 100%)",
     color: "#fff",
     padding: 18,
   };
@@ -1959,9 +1959,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     padding: 20,
     borderRadius: 30,
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
-    boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+      "linear-gradient(145deg, rgba(0,255,190,0.075), rgba(125,92,255,0.13) 42%, rgba(5,5,12,0.78))",
+    border: "1px solid rgba(0,255,190,0.14)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.42), inset 0 0 38px rgba(125,92,255,0.045)",
   };
 
   const heroBackgroundPhoto: CSSProperties = {
@@ -1993,9 +1993,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     borderRadius: 28,
     overflow: "hidden",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.13)",
-    boxShadow: "0 18px 50px rgba(0,0,0,0.42)",
+      "linear-gradient(145deg, rgba(0,255,190,0.055), rgba(125,92,255,0.13))",
+    border: "1px solid rgba(0,255,190,0.16)",
+    boxShadow: "0 18px 48px rgba(0,0,0,0.44), 0 0 26px rgba(125,92,255,0.10)",
   };
 
   const heroContent: CSSProperties = {
@@ -2051,22 +2051,28 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
         @media (max-width: 760px) {
           .uc-page-title {
-            font-size: 28px !important;
+            font-size: 27px !important;
           }
 
           .uc-hero {
+          .uc-hero-content {
+            order: 1;
+          }
+
             grid-template-columns: 1fr !important;
-            padding: 16px !important;
-            border-radius: 26px !important;
+            padding: 14px !important;
+            border-radius: 24px !important;
+            gap: 14px !important;
           }
 
           .uc-photo {
-            height: 260px !important;
+            order: 2;
+            height: 218px !important;
           }
 
           .uc-section {
-            padding: 16px !important;
-            border-radius: 24px !important;
+            padding: 14px !important;
+            border-radius: 22px !important;
           }
 
           .uc-wide-card {
@@ -2161,8 +2167,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             )}
           </div>
 
-          <div style={heroContent}>
-            <div style={pillStyle()}>USECLUBBERS</div>
+          <div className="uc-hero-content" style={heroContent}>
 
             <h2 style={heroTitle}>{tagline}</h2>
 

@@ -57,15 +57,15 @@ export default function OwnerClubToolbar({
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 38,
-    padding: "10px 13px",
-    borderRadius: 14,
+    minHeight: 34,
+    padding: "8px 11px",
+    borderRadius: 999,
     background: "rgba(255,255,255,0.08)",
     border: "1px solid rgba(255,255,255,0.12)",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 820,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 1.1,
     whiteSpace: "nowrap" as const,
   };
@@ -79,17 +79,17 @@ export default function OwnerClubToolbar({
   return (
     <div
       style={{
-        marginBottom: 16,
-        padding: 14,
-        borderRadius: 22,
+        marginBottom: 12,
+        padding: "10px 12px",
+        borderRadius: 18,
         background:
-          "linear-gradient(135deg, rgba(125,92,255,0.20), rgba(255,255,255,0.055))",
-        border: "1px solid rgba(255,255,255,0.14)",
-        boxShadow: "0 16px 42px rgba(0,0,0,0.24)",
+          "linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))",
+        border: "1px solid rgba(0,255,190,0.14)",
+        boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 12,
+        gap: 10,
         flexWrap: "wrap",
       }}
     >
@@ -97,7 +97,7 @@ export default function OwnerClubToolbar({
         <strong
           style={{
             display: "block",
-            fontSize: 14,
+            fontSize: 13,
             lineHeight: 1.25,
             letterSpacing: -0.1,
           }}
@@ -118,7 +118,7 @@ export default function OwnerClubToolbar({
         </span>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Link href={`/dashboard/cards/${cardId}/club`} style={buttonStyle}>
           Editar UseClubbers
         </Link>
