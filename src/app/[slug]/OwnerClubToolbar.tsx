@@ -11,7 +11,6 @@ type OwnerClubToolbarProps = {
 };
 
 export default function OwnerClubToolbar({
-  cardId,
   ownerUserId,
   slug,
 }: OwnerClubToolbarProps) {
@@ -102,7 +101,7 @@ export default function OwnerClubToolbar({
             letterSpacing: -0.1,
           }}
         >
-          Você está editando UseClubbers
+          Modo edição
         </strong>
 
         <span
@@ -114,25 +113,28 @@ export default function OwnerClubToolbar({
             lineHeight: 1.35,
           }}
         >
-          Esta barra aparece apenas para o dono do perfil logado.
+          Edite seu perfil Clubbers direto nesta página.
         </span>
       </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Link href={`/dashboard/cards/${cardId}/club`} style={buttonStyle}>
-          Editar UseClubbers
+        <Link href={`/${slug}?mode=club`} style={primaryButtonStyle}>
+          Editar perfil
         </Link>
 
-
-        <Link href={`/dashboard/cards/${cardId}`} style={primaryButtonStyle}>
-          Perfil, QR e NFC
+        <Link
+          href={`/api/qr/${slug}?mode=club`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={buttonStyle}
+        >
+          QR / NFC
         </Link>
 
         <Link href={`/${slug}?mode=club&view=public`} style={buttonStyle}>
-          Ver como público
+          Ver público
         </Link>
       </div>
     </div>
   );
 }
-
