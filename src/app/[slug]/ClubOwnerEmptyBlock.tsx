@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/utils/supabase/client";
@@ -85,15 +85,15 @@ export default function ClubOwnerEmptyBlock({
   const content = (
     <div
       style={{
-        padding: standalone ? 18 : 16,
-        borderRadius: standalone ? 24 : 20,
-        border: "1px dashed rgba(255,255,255,0.18)",
+        padding: standalone ? 16 : 14,
+        borderRadius: standalone ? 22 : 18,
+        border: "1px solid rgba(0,255,190,0.10)",
         background:
-          "linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.030))",
+          "linear-gradient(145deg, rgba(255,255,255,0.040), rgba(0,255,190,0.024))",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 14,
+        gap: 12,
         flexWrap: "wrap",
       }}
     >
@@ -102,7 +102,7 @@ export default function ClubOwnerEmptyBlock({
           style={{
             display: "block",
             color: "#fff",
-            fontSize: standalone ? 18 : 15,
+            fontSize: standalone ? 17 : 15,
             lineHeight: 1.25,
             letterSpacing: -0.2,
           }}
@@ -114,7 +114,7 @@ export default function ClubOwnerEmptyBlock({
           style={{
             display: "block",
             marginTop: 6,
-            color: "rgba(255,255,255,0.68)",
+            color: "rgba(255,255,255,0.72)",
             fontSize: 13,
             lineHeight: 1.45,
           }}
@@ -154,12 +154,12 @@ export default function ClubOwnerEmptyBlock({
     <section
       className="uc-section"
       style={{
-        background: "rgba(255,255,255,0.045)",
-        borderRadius: 28,
-        padding: 22,
+        background: "linear-gradient(145deg, rgba(14,12,28,0.58), rgba(3,4,10,0.42))",
+        borderRadius: 24,
+        padding: 20,
         marginTop: 20,
-        border: "1px solid rgba(255,255,255,0.10)",
-        boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
+        border: "1px solid rgba(125,92,255,0.16)",
+        boxShadow: "0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)",
       }}
     >
       {content}

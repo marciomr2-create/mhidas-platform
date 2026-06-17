@@ -508,21 +508,21 @@ function pillStyle(): CSSProperties {
 
 function sectionBoxStyle(): CSSProperties {
   return {
-    background: "linear-gradient(145deg, rgba(18,14,35,0.74), rgba(5,5,12,0.58))",
-    borderRadius: 28,
-    padding: 22,
+    background: "linear-gradient(145deg, rgba(14,12,28,0.58), rgba(3,4,10,0.42))",
+    borderRadius: 24,
+    padding: 20,
     marginTop: 20,
-    border: "1px solid rgba(125,92,255,0.22)",
-    boxShadow: "0 24px 70px rgba(0,0,0,0.34), inset 0 0 32px rgba(0,255,190,0.018)",
+    border: "1px solid rgba(125,92,255,0.16)",
+    boxShadow: "0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)",
   };
 }
 
 function innerCardStyle(): CSSProperties {
   return {
-    padding: 16,
-    borderRadius: 20,
-    border: "1px solid rgba(0,255,190,0.12)",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.070), rgba(125,92,255,0.050))",
+    padding: 14,
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.075)",
+    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(0,255,190,0.028))",
   };
 }
 
@@ -2071,8 +2071,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           }
 
           .uc-section {
-            padding: 14px !important;
-            border-radius: 22px !important;
+            padding: 13px !important;
+            border-radius: 20px !important;
           }
 
           .uc-wide-card {
