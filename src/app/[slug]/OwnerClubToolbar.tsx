@@ -128,7 +128,7 @@ export default function OwnerClubToolbar({
           Perfil, QR e NFC
         </Link>
 
-        <Link href={`/${slug}?mode=club`} style={buttonStyle}>
+        <Link href={`/${slug}?mode=club&view=public`} style={buttonStyle}>
           Ver como público
         </Link>
       </div>

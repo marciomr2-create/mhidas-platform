@@ -1434,6 +1434,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   }
 
   const mode: ProfileMode = sp?.mode === "pro" ? "pro" : "club";
+  const isPublicView = (sp as { view?: string } | undefined)?.view === "public";
 
   if (mode === "pro") {
     permanentRedirect(`/pro/${cleanSlug}`);
@@ -1471,6 +1472,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
     permanentRedirect(`/${current.slug}?mode=club`);
   }
+
+  const ownerControlsUserId = isPublicView ? "" : card.user_id;
 
   const { data: clubProfile } = await supabase
     .from("club_profiles")
@@ -2096,7 +2099,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       <div style={page}>
         <OwnerClubToolbar
           cardId={card.card_id}
-          ownerUserId={card.user_id}
+          ownerUserId={ownerControlsUserId}
           slug={card.slug}
         />
 
@@ -2290,7 +2293,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
               <AddClubArtistButton
                 cardId={card.card_id}
-                ownerUserId={card.user_id}
+                ownerUserId={ownerControlsUserId}
                 compact
               />
             </div>
@@ -2344,14 +2347,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                   <MoveClubArtistButton
                     cardId={card.card_id}
-                    ownerUserId={card.user_id}
+                    ownerUserId={ownerControlsUserId}
                     spotifyId={artist.spotify_id}
                     artistName={artist.name}
                   />
 
                   <RemoveClubArtistButton
                     cardId={card.card_id}
-                    ownerUserId={card.user_id}
+                    ownerUserId={ownerControlsUserId}
                     spotifyId={artist.spotify_id}
                     artistName={artist.name}
                   />
@@ -2362,7 +2365,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         ) : (
           <ClubOwnerEmptyBlock
             cardId={card.card_id}
-            ownerUserId={card.user_id}
+            ownerUserId={ownerControlsUserId}
             title="Artistas de referência"
             description="Adicione artistas para mostrar suas referências musicais principais."
             kind="artist"
@@ -2398,7 +2401,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
-                      ownerUserId={card.user_id}
+                      ownerUserId={ownerControlsUserId}
                       field="favorite_clubs"
                       type="club"
                       label="Adicionar club"
@@ -2433,7 +2436,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             ) : (
               <ClubOwnerEmptyBlock
                 cardId={card.card_id}
-                ownerUserId={card.user_id}
+                ownerUserId={ownerControlsUserId}
                 title="Clubes favoritos"
                 description="Adicione os clubs que representam sua presença na cena."
                 kind="token"
@@ -2464,7 +2467,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     <span style={{ fontSize: 12, opacity: 0.58 }}>Arraste para ver mais</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
-                      ownerUserId={card.user_id}
+                      ownerUserId={ownerControlsUserId}
                       field="favorite_events"
                       type="festival"
                       label="Adicionar festival"
@@ -2499,7 +2502,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             ) : (
               <ClubOwnerEmptyBlock
                 cardId={card.card_id}
-                ownerUserId={card.user_id}
+                ownerUserId={ownerControlsUserId}
                 title="Festivais e festas"
                 description="Adicione festivais, festas e experiências que fazem parte da sua identidade."
                 kind="token"
@@ -2530,7 +2533,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     <span style={{ fontSize: 12, opacity: 0.58 }}>Histórico recente</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
-                      ownerUserId={card.user_id}
+                      ownerUserId={ownerControlsUserId}
                       field="last_events"
                       type="event"
                       label="Adicionar último"
@@ -2565,7 +2568,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             ) : (
               <ClubOwnerEmptyBlock
                 cardId={card.card_id}
-                ownerUserId={card.user_id}
+                ownerUserId={ownerControlsUserId}
                 title="Últimos eventos"
                 description="Mostre eventos recentes que você viveu."
                 kind="token"
@@ -2596,7 +2599,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Clubbers</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
-                      ownerUserId={card.user_id}
+                      ownerUserId={ownerControlsUserId}
                       field="next_events"
                       type="event"
                       label="Adicionar próximo"
@@ -2720,7 +2723,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                             >
                               <CheckInEventButton
                                 cardId={card.card_id}
-                                ownerUserId={card.user_id}
+                                ownerUserId={ownerControlsUserId}
                                 eventName={featuredEvent.name}
                                 eventDate={featuredEvent.date}
                                 eventLink={finalEventLink}
@@ -2778,14 +2781,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         <CheckInStatusBadge status={checkInStatus} />
                         <MoveClubTokenButton
                           cardId={card.card_id}
-                          ownerUserId={card.user_id}
+                          ownerUserId={ownerControlsUserId}
                           field="next_events"
                           value={event.name}
                         />
 
                         <RemoveClubTokenButton
                           cardId={card.card_id}
-                          ownerUserId={card.user_id}
+                          ownerUserId={ownerControlsUserId}
                           field="next_events"
                           value={event.name}
                         />
@@ -2858,7 +2861,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                           <div style={{ display: "grid", gap: 9 }}>
                             <CheckInEventButton
                               cardId={card.card_id}
-                              ownerUserId={card.user_id}
+                              ownerUserId={ownerControlsUserId}
                               eventName={event.name}
                               eventDate={event.date}
                               eventLink={finalEventLink}
@@ -2923,14 +2926,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                         <MoveClubTokenButton
                           cardId={card.card_id}
-                          ownerUserId={card.user_id}
+                          ownerUserId={ownerControlsUserId}
                           field="next_events"
                           value={item.name}
                         />
 
                         <RemoveClubTokenButton
                           cardId={card.card_id}
-                          ownerUserId={card.user_id}
+                          ownerUserId={ownerControlsUserId}
                           field="next_events"
                           value={item.name}
                         />
@@ -3000,7 +3003,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             ) : (
               <ClubOwnerEmptyBlock
                 cardId={card.card_id}
-                ownerUserId={card.user_id}
+                ownerUserId={ownerControlsUserId}
                 title="Próximos eventos"
                 description="Adicione seu próximo rolê com data e link oficial, se tiver."
                 kind="token"
@@ -3017,7 +3020,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         ) : (
           <ClubOwnerEmptySceneSection
             cardId={card.card_id}
-            ownerUserId={card.user_id}
+            ownerUserId={ownerControlsUserId}
             cityBase={cityBase}
           />
         )}
