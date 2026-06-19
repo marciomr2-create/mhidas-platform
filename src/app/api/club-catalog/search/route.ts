@@ -274,21 +274,21 @@ function inferKnownLocationFromQuery(query: string): KnownLocation | null {
 
   if (normalized.includes("green valley") || normalized.includes("greenvalley")) {
     return {
-      city: "CamboriÃº",
+      city: "Camboriú",
       state: "SC",
     };
   }
 
   if (normalized.includes("surreal")) {
     return {
-      city: "CamboriÃº",
+      city: "Camboriú",
       state: "SC",
     };
   }
 
   if (normalized.includes("warung")) {
     return {
-      city: "ItajaÃ­",
+      city: "Itajaí",
       state: "SC",
     };
   }
@@ -301,13 +301,13 @@ function inferCityFromText(text: string, fallbackCity = ""): string {
 
   if (normalized.includes("valinhos")) return "Valinhos";
   if (normalized.includes("campinas")) return "Campinas";
-  if (normalized.includes("balneario camboriu")) return "BalneÃ¡rio CamboriÃº";
-  if (normalized.includes("camboriu")) return "CamboriÃº";
-  if (normalized.includes("itajai")) return "ItajaÃ­";
-  if (normalized.includes("sao paulo")) return "SÃ£o Paulo";
+  if (normalized.includes("balneario camboriu")) return "Balneário Camboriú";
+  if (normalized.includes("camboriu")) return "Camboriú";
+  if (normalized.includes("itajai")) return "Itajaí";
+  if (normalized.includes("sao paulo")) return "São Paulo";
   if (normalized.includes("rio de janeiro")) return "Rio de Janeiro";
   if (normalized.includes("curitiba")) return "Curitiba";
-  if (normalized.includes("florianopolis")) return "FlorianÃ³polis";
+  if (normalized.includes("florianopolis")) return "Florianópolis";
   if (normalized.includes("belo horizonte")) return "Belo Horizonte";
 
   return fallbackCity;
@@ -366,7 +366,7 @@ function inferStateFromText(text: string, fallbackState = ""): string {
 
 function cleanResultTitle(title: string): string {
   return normalizeText(title)
-    .replace(/\s*â€¢\s*Instagram photos and videos\s*$/i, "")
+    .replace(/\s*•\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s*-\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s*\|\s*Instagram photos and videos\s*$/i, "")
     .replace(/\s+/g, " ")
@@ -913,7 +913,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Erro interno ao buscar item do catÃ¡logo.",
+        error: "Erro interno ao buscar item do catálogo.",
         source: "error",
         suggestions: [],
       },
