@@ -2273,7 +2273,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         ) : null}
 
         {spotifyArtists.length > 0 ? (
-          <section className="uc-section" style={sectionBoxStyle()}>
+          <section id="artistas" className="uc-section" style={sectionBoxStyle()}>
             <div
               style={{
                 display: "flex",
@@ -2580,6 +2580,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 cityBase={cityBase}
               />
             )}
+
+            <div id="agenda-club" style={{ scrollMarginTop: 24 }} />
 
             {nextEventRowsWithCatalog.length > 0 ? (
               <div style={{ marginTop: 20 }}>
