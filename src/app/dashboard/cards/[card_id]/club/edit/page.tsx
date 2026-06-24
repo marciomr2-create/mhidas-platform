@@ -6,18 +6,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
-import QrBlock from "../../QrBlock";
 import SocialLinksManager from "../../SocialLinksManager";
-import ClubProfileManager from "../../ClubProfileManager";
+import ClubIdentityManager from "./ClubIdentityManager";
 
 type CardRow = {
   card_id: string;
   user_id: string;
-  status: string;
   label: string | null;
   slug: string | null;
   is_published: boolean;
-  published_at: string | null;
 };
 
 type PageProps = {
@@ -26,81 +23,43 @@ type PageProps = {
 
 function pageStyle() {
   return {
-    padding: 24,
-    maxWidth: 980,
+    width: "min(100%, 860px)",
     margin: "0 auto",
-  } as const;
-}
-
-function heroStyle() {
-  return {
-    marginTop: 18,
-    padding: 22,
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 22,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
-    display: "grid",
-    gap: 16,
+    padding: "24px 16px 56px",
+    color: "#fff",
   } as const;
 }
 
 function sectionStyle() {
   return {
-    marginTop: 24,
-    padding: 20,
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 18,
-    background: "rgba(255,255,255,0.03)",
+    marginTop: 18,
+    padding: 18,
+    borderRadius: 20,
+    border: "1px solid rgba(255,255,255,0.11)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.025) 100%)",
     display: "grid",
-    gap: 14,
+    gap: 16,
   } as const;
 }
 
-function infoGridStyle() {
+function actionStyle(primary = false) {
   return {
-    display: "grid",
-    gap: 14,
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  } as const;
-}
-
-function infoCardStyle() {
-  return {
-    padding: 16,
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
-    display: "grid",
-    gap: 8,
-  } as const;
-}
-
-function miniTagStyle() {
-  return {
-    display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
-    fontSize: 12,
-    fontWeight: 700,
-    width: "fit-content",
-  } as const;
-}
-
-function buttonStyle(primary = false) {
-  return {
-    padding: "11px 14px",
+    minHeight: 42,
+    padding: "10px 14px",
     borderRadius: 12,
     border: primary
-      ? "1px solid rgba(255,255,255,0.24)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: primary ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+      ? "1px solid rgba(124,92,255,0.55)"
+      : "1px solid rgba(255,255,255,0.14)",
+    background: primary
+      ? "linear-gradient(135deg, rgba(91,72,235,0.95), rgba(124,92,255,0.95))"
+      : "rgba(255,255,255,0.05)",
     color: "#fff",
     textDecoration: "none",
-    fontWeight: 800,
-    display: "inline-block",
+    fontWeight: 850,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   } as const;
 }
 
@@ -116,7 +75,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
 
   const { data: card } = await supabase
     .from("cards")
-    .select("card_id,user_id,status,label,slug,is_published,published_at")
+    .select("card_id,user_id,label,slug,is_published")
     .eq("card_id", cardId)
     .eq("user_id", user.id)
     .single();
@@ -131,147 +90,91 @@ export default async function CardClubEditPage({ params }: PageProps) {
     );
   }
 
-  const c = card as CardRow;
-  const slug = c.slug ?? "";
-  const hasPublicSlug = !!slug;
-
-  // 🔥 CORREÇÃO AQUI
-  const clubPublicHref = hasPublicSlug ? `/${slug}?mode=club` : "";
+  const currentCard = card as CardRow;
+  const publicHref = currentCard.slug
+    ? `/${currentCard.slug}?mode=club`
+    : "/dashboard/cards";
 
   return (
     <main style={pageStyle()}>
       <header style={{ display: "grid", gap: 10 }}>
-        <h1 style={{ fontWeight: 900, margin: 0 }}>Perfil Clubber</h1>
+        <Link
+          href={`/dashboard/cards/${currentCard.card_id}/club`}
+          style={{ color: "#d8d4ff", textDecoration: "none", fontWeight: 800 }}
+        >
+          ← Voltar ao meu perfil
+        </Link>
 
-        <p style={{ margin: 0, opacity: 0.82, lineHeight: 1.6, maxWidth: 760 }}>
-          Estruture a identidade cultural do perfil, organize artistas, eventos,
-          streaming e presença na cena eletrônica.
-        </p>
+        <div style={{ display: "grid", gap: 6 }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 900,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#a99cff",
+            }}
+          >
+            Perfil Clubber
+          </span>
+
+          <h1 style={{ margin: 0, fontSize: "clamp(30px, 7vw, 46px)", lineHeight: 1 }}>
+            Editar meu perfil
+          </h1>
+
+          <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.6, maxWidth: 680 }}>
+            Atualize sua identidade principal e os canais usados para manter contato.
+          </p>
+        </div>
       </header>
 
-      <section style={heroStyle()}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <span style={miniTagStyle()}>Perfil: {c.label ?? "Sem nome"}</span>
-          <span style={miniTagStyle()}>
-            {c.is_published ? "Perfil Clubber publicado" : "Perfil Clubber não publicado"}
-          </span>
-          {slug ? <span style={miniTagStyle()}>URL: {slug}</span> : null}
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gap: 14,
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          }}
-        >
-          <div style={infoCardStyle()}>
-            <strong>Identidade da cena</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Frase do perfil, cidade, vertentes e estética cultural do usuário.
-            </div>
-          </div>
-
-          <div style={infoCardStyle()}>
-            <strong>Artistas e eventos</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Últimos eventos, próximos eventos, artistas prediletos e clubs de afinidade.
-            </div>
-          </div>
-
-          <div style={infoCardStyle()}>
-            <strong>Streaming e presença</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Playlist principal, Spotify, SoundCloud, YouTube e links culturais.
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link href={`/dashboard/cards/${c.card_id}/club`} style={buttonStyle()}>
-            Voltar ao perfil
-          </Link>
-
-          {hasPublicSlug ? (
-            <Link href={clubPublicHref} target="_blank" style={buttonStyle(true)}>
-              Abrir Perfil Clubber público
-            </Link>
-          ) : null}
-        </div>
-      </section>
-
       <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <h2 style={{ margin: 0, fontWeight: 900 }}>Estrutura do Perfil Clubber</h2>
-          <p style={{ margin: 0, opacity: 0.8, lineHeight: 1.6 }}>
-            Preencha os blocos abaixo pensando no Perfil Clubber como uma identidade viva da
-            cena, não apenas como um perfil com links.
+        <div style={{ display: "grid", gap: 5 }}>
+          <h2 style={{ margin: 0, fontSize: 20 }}>Identidade principal</h2>
+          <p style={{ margin: 0, opacity: 0.68, lineHeight: 1.55 }}>
+            Foto, nome, cidade, frase de pertencimento e vertentes musicais.
           </p>
         </div>
 
-        <div style={infoGridStyle()}>
-          <div style={infoCardStyle()}>
-            <strong>1. Identidade</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Defina frase do Perfil Clubber, base cultural, vertentes e estilo visual.
-            </div>
-          </div>
-
-          <div style={infoCardStyle()}>
-            <strong>2. Artistas</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Liste nomes fortes da cena que realmente representam o perfil.
-            </div>
-          </div>
-
-          <div style={infoCardStyle()}>
-            <strong>3. Eventos</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Organize eventos favoritos, últimos eventos e próximos encontros.
-            </div>
-          </div>
-
-          <div style={infoCardStyle()}>
-            <strong>4. Streaming</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Priorize canais musicais e playlist principal antes dos demais links.
-            </div>
-          </div>
-        </div>
-
-        <ClubProfileManager
-          clubPublicHref={clubPublicHref}
-          hasPublicSlug={hasPublicSlug}
-          isPublished={c.is_published}
+        <ClubIdentityManager
+          cardId={currentCard.card_id}
+          initialLabel={currentCard.label ?? ""}
         />
       </section>
 
       <section style={sectionStyle()}>
-        <div style={{ display: "grid", gap: 6 }}>
-          <h2 style={{ margin: 0, fontWeight: 900 }}>QR e links do Perfil Clubber</h2>
-          <p style={{ margin: 0, opacity: 0.8, lineHeight: 1.6 }}>
-            Nesta área ficam os acessos que serão usados no fluxo do Perfil Clubber.
+        <div style={{ display: "grid", gap: 5 }}>
+          <h2 style={{ margin: 0, fontSize: 20 }}>Redes e contatos</h2>
+          <p style={{ margin: 0, opacity: 0.68, lineHeight: 1.55 }}>
+            Mantenha somente os canais que ajudam outras pessoas a falar com você.
           </p>
         </div>
 
-        <div style={infoGridStyle()}>
-          <div style={infoCardStyle()}>
-            <strong>QR Clubber</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Use este QR para acesso rápido ao perfil cultural.
-            </div>
-          </div>
+        <SocialLinksManager cardId={currentCard.card_id} scope="direct" />
+      </section>
 
-          <div style={infoCardStyle()}>
-            <strong>Links culturais</strong>
-            <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Organize primeiro streaming, depois redes e acessos principais da cena.
-            </div>
-          </div>
+      <section style={sectionStyle()}>
+        <div style={{ display: "grid", gap: 5 }}>
+          <h2 style={{ margin: 0, fontSize: 20 }}>Conteúdo da experiência Clubber</h2>
+          <p style={{ margin: 0, opacity: 0.68, lineHeight: 1.55 }}>
+            Artistas, eventos, streaming, caronas e encontros continuam preservados na edição completa.
+          </p>
         </div>
 
-        <QrBlock slug={slug} />
-        <SocialLinksManager cardId={c.card_id} />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link
+            href={`/dashboard/cards/${currentCard.card_id}/club/edit/advanced`}
+            style={actionStyle()}
+          >
+            Editar conteúdo completo
+          </Link>
+
+          {currentCard.slug ? (
+            <Link href={publicHref} target="_blank" style={actionStyle(true)}>
+              Abrir perfil público
+            </Link>
+          ) : null}
+        </div>
       </section>
     </main>
   );

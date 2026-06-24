@@ -23,6 +23,7 @@ type LinkDraft = {
 
 type Props = {
   cardId: string;
+  scope?: "all" | "direct";
 };
 
 type LinkGroup = {
@@ -335,7 +336,7 @@ function cardStyle(groupKey: LinkGroup["key"]) {
   } as const;
 }
 
-export default function SocialLinksManager({ cardId }: Props) {
+export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
   const supabase = useMemo(() => createBrowserClient(), []);
 
   const [loading, setLoading] = useState(true);
@@ -576,12 +577,14 @@ export default function SocialLinksManager({ cardId }: Props) {
     .filter((link) => !isDirectContact(link) && !isStreaming(link))
     .sort(sortDefault);
 
-  const groups: LinkGroup[] = [
+  const allGroups: LinkGroup[] = [
     {
       key: "direct",
-      title: "Contato direto entre usuários",
+      title: scope === "direct" ? "Canais de contato" : "Contato direto entre usuários",
       description:
-        "Estes são os canais prioritários de conexão humana no Club. Prioridade: Instagram, WhatsApp, Telegram e TikTok.",
+        scope === "direct"
+          ? "Defina os canais que outras pessoas podem usar para falar com você."
+          : "Estes são os canais prioritários de conexão humana no Perfil Clubber. Prioridade: Instagram, WhatsApp, Telegram e TikTok.",
       links: directContacts,
     },
     {
@@ -599,6 +602,9 @@ export default function SocialLinksManager({ cardId }: Props) {
       links: complementaryLinks,
     },
   ];
+
+  const groups = scope === "direct" ? allGroups.filter((group) => group.key === "direct") : allGroups;
+  const compactMode = scope === "direct";
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -725,17 +731,21 @@ export default function SocialLinksManager({ cardId }: Props) {
                                   ) : null}
                                 </div>
 
-                                <div style={{ fontSize: 12, opacity: 0.72 }}>
-                                  Plataforma: {getPlatformDisplayName(l.platform)}
-                                </div>
+                                {!compactMode ? (
+                                  <div style={{ fontSize: 12, opacity: 0.72 }}>
+                                    Plataforma: {getPlatformDisplayName(l.platform)}
+                                  </div>
+                                ) : null}
                               </div>
 
-                              <div style={{ textAlign: "right", minWidth: 90 }}>
-                                <div style={{ fontSize: 13, opacity: 0.8 }}>Cliques</div>
-                                <div style={{ fontSize: 18, fontWeight: 900 }}>
-                                  {Number(l.clicks_count ?? 0)}
+                              {!compactMode ? (
+                                <div style={{ textAlign: "right", minWidth: 90 }}>
+                                  <div style={{ fontSize: 13, opacity: 0.8 }}>Cliques</div>
+                                  <div style={{ fontSize: 18, fontWeight: 900 }}>
+                                    {Number(l.clicks_count ?? 0)}
+                                  </div>
                                 </div>
-                              </div>
+                              ) : null}
                             </div>
 
                             <div
@@ -775,9 +785,15 @@ export default function SocialLinksManager({ cardId }: Props) {
                                 alignItems: "center",
                               }}
                             >
-                              <div style={{ fontSize: 13, opacity: 0.75 }}>
-                                sort_order: {l.sort_order} | position: {l.position}
-                              </div>
+                              {!compactMode ? (
+                                <div style={{ fontSize: 13, opacity: 0.75 }}>
+                                  sort_order: {l.sort_order} | position: {l.position}
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: 13, opacity: 0.72 }}>
+                                  {l.is_active ? "Visível no perfil" : "Oculto no perfil"}
+                                </div>
+                              )}
 
                               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                                 <span style={badgeStyle(l.is_active)}>
@@ -790,7 +806,7 @@ export default function SocialLinksManager({ cardId }: Props) {
                                   disabled={isSaving}
                                   style={buttonStyle(isSaving)}
                                 >
-                                  {isSaving ? "Salvando..." : "Alternar"}
+                                  {isSaving ? "Salvando..." : l.is_active ? "Desativar" : "Ativar"}
                                 </button>
 
                                 <button
@@ -824,7 +840,9 @@ export default function SocialLinksManager({ cardId }: Props) {
                               </div>
                             </div>
 
-                            <div style={{ fontSize: 12, opacity: 0.6 }}>ID: {l.id}</div>
+                            {!compactMode ? (
+                              <div style={{ fontSize: 12, opacity: 0.6 }}>ID: {l.id}</div>
+                            ) : null}
                           </div>
                         );
                       })}
