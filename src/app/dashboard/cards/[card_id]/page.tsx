@@ -174,7 +174,7 @@ export default async function CardPage({ params }: PageProps) {
             }}
           >
             <div>
-              <strong style={{ fontSize: 18 }}>Club Mode</strong>
+              <strong style={{ fontSize: 18 }}>Perfil Clubber</strong>
               <p style={{ margin: "8px 0 0 0", opacity: 0.82, lineHeight: 1.55 }}>
                 Identidade cultural, artistas, eventos, playlists, streaming e presença na cena.
               </p>
@@ -185,7 +185,7 @@ export default async function CardPage({ params }: PageProps) {
                 href={`/dashboard/cards/${c.card_id}/club`}
                 style={buttonStyle(true)}
               >
-                Acessar Club Mode
+                Acessar Perfil Clubber
               </Link>
 
               {hasPublicSlug ? (
@@ -194,7 +194,7 @@ export default async function CardPage({ params }: PageProps) {
                   target="_blank"
                   style={buttonStyle()}
                 >
-                  Abrir Club público
+                  Abrir Perfil Clubber público
                 </Link>
               ) : null}
             </div>

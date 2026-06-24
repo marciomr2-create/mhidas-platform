@@ -141,7 +141,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
   return (
     <main style={pageStyle()}>
       <header style={{ display: "grid", gap: 10 }}>
-        <h1 style={{ fontWeight: 900, margin: 0 }}>Club Mode</h1>
+        <h1 style={{ fontWeight: 900, margin: 0 }}>Perfil Clubber</h1>
 
         <p style={{ margin: 0, opacity: 0.82, lineHeight: 1.6, maxWidth: 760 }}>
           Estruture a identidade cultural do perfil, organize artistas, eventos,
@@ -153,7 +153,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <span style={miniTagStyle()}>Perfil: {c.label ?? "Sem nome"}</span>
           <span style={miniTagStyle()}>
-            {c.is_published ? "Club publicado" : "Club não publicado"}
+            {c.is_published ? "Perfil Clubber publicado" : "Perfil Clubber não publicado"}
           </span>
           {slug ? <span style={miniTagStyle()}>URL: {slug}</span> : null}
         </div>
@@ -194,7 +194,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
 
           {hasPublicSlug ? (
             <Link href={clubPublicHref} target="_blank" style={buttonStyle(true)}>
-              Abrir Club público
+              Abrir Perfil Clubber público
             </Link>
           ) : null}
         </div>
@@ -202,9 +202,9 @@ export default async function CardClubEditPage({ params }: PageProps) {
 
       <section style={sectionStyle()}>
         <div style={{ display: "grid", gap: 6 }}>
-          <h2 style={{ margin: 0, fontWeight: 900 }}>Estrutura do Club</h2>
+          <h2 style={{ margin: 0, fontWeight: 900 }}>Estrutura do Perfil Clubber</h2>
           <p style={{ margin: 0, opacity: 0.8, lineHeight: 1.6 }}>
-            Preencha os blocos abaixo pensando no Club como uma identidade viva da
+            Preencha os blocos abaixo pensando no Perfil Clubber como uma identidade viva da
             cena, não apenas como um perfil com links.
           </p>
         </div>
@@ -213,7 +213,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
           <div style={infoCardStyle()}>
             <strong>1. Identidade</strong>
             <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
-              Defina frase do Club, base cultural, vertentes e estilo visual.
+              Defina frase do Perfil Clubber, base cultural, vertentes e estilo visual.
             </div>
           </div>
 
@@ -248,15 +248,15 @@ export default async function CardClubEditPage({ params }: PageProps) {
 
       <section style={sectionStyle()}>
         <div style={{ display: "grid", gap: 6 }}>
-          <h2 style={{ margin: 0, fontWeight: 900 }}>QR e links do Club</h2>
+          <h2 style={{ margin: 0, fontWeight: 900 }}>QR e links do Perfil Clubber</h2>
           <p style={{ margin: 0, opacity: 0.8, lineHeight: 1.6 }}>
-            Nesta área ficam os acessos que serão usados no fluxo do Club.
+            Nesta área ficam os acessos que serão usados no fluxo do Perfil Clubber.
           </p>
         </div>
 
         <div style={infoGridStyle()}>
           <div style={infoCardStyle()}>
-            <strong>QR Club</strong>
+            <strong>QR Clubber</strong>
             <div style={{ opacity: 0.84, lineHeight: 1.55 }}>
               Use este QR para acesso rápido ao perfil cultural.
             </div>

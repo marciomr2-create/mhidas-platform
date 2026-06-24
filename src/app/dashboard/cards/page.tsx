@@ -192,7 +192,7 @@ export default async function ProfileHubPage() {
         </h1>
 
         <p style={{ ...mutedTextStyle(), fontSize: 15, maxWidth: 620 }}>
-          Escolha um perfil para editar sua Experiência Club ou seu Perfil profissional.
+          Escolha um perfil para editar sua Experiência Clubber ou seu Perfil profissional.
         </p>
 
         <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255,255,255,0.70)", fontWeight: 800 }}>
@@ -209,7 +209,7 @@ export default async function ProfileHubPage() {
           </h2>
 
           <p style={mutedTextStyle()}>
-            Quando seu cartão, pulseira ou pingente USECLUBBERS estiver vinculado à sua conta, seus perfis Club e profissional aparecerão aqui.
+            Quando seu cartão, pulseira ou pingente USECLUBBERS estiver vinculado à sua conta, seus perfis Clubber e profissional aparecerão aqui.
           </p>
 
           <p style={mutedTextStyle()}>
@@ -252,7 +252,7 @@ export default async function ProfileHubPage() {
               <div style={gridStyle(260)}>
                 <div style={modePanelStyle("club")}>
                   <div>
-                    <strong style={{ fontSize: 19 }}>Experiência Club</strong>
+                    <strong style={{ fontSize: 19 }}>Experiência Clubber</strong>
                     <p style={{ ...mutedTextStyle(), marginTop: 6, fontSize: 13 }}>
                       Música, eventos, caronas, encontros, artistas e pertencimento na cena.
                     </p>
@@ -263,12 +263,12 @@ export default async function ProfileHubPage() {
                       href={`/dashboard/cards/${card.card_id}/club`}
                       style={buttonStyle(true)}
                     >
-                      Editar Club
+                      Gerenciar Clubber
                     </Link>
 
                     {hasSlug ? (
                       <Link href={`/${slug}?mode=club`} target="_blank" style={buttonStyle()}>
-                        Ver perfil Club
+                        Ver perfil Clubber
                       </Link>
                     ) : null}
                   </div>

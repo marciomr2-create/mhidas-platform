@@ -2128,7 +2128,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href={`/${card.slug}?mode=club`} style={modeButtonActive}>
-              Experiência Clubbers
+              Experiência Clubber
             </Link>
 
             <Link href={`/pro/${card.slug}`} style={modeButton}>
@@ -2145,7 +2145,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             {clubProfile?.club_photo_url ? (
               <img
                 src={clubProfile.club_photo_url}
-                alt="Foto Club"
+                alt="Foto Clubber"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -2165,7 +2165,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   fontWeight: 750,
                 }}
               >
-                Imagem de Perfil Clubbers
+                Imagem de perfil Clubber
               </div>
             )}
           </div>
@@ -2486,7 +2486,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       label={item.name}
                       catalog={item.catalog}
                       badge="Festival e festa"
-                      description="Referência de evento dentro da identidade Club."
+                      description="Referência de evento dentro da identidade Clubber."
                       width={245}
                       accent="cyan"
                       removeAction={{

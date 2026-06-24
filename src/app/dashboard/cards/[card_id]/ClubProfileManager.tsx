@@ -1069,7 +1069,7 @@ function AssistedClubCatalogSearch({
 
       await onUseSuggestion(confirmedItem, tokenName, fixedTargetKey);
 
-      const successMessage = `${tokenName || confirmedItem.name || item.name} foi salvo no catálogo e no Club Mode.`;
+      const successMessage = `${tokenName || confirmedItem.name || item.name} foi salvo no catálogo e no Perfil Clubber.`;
       setLocalMessage(successMessage);
       onMessage(successMessage);
     } catch (error) {
@@ -1317,7 +1317,7 @@ export default function ClubProfileManager({
       .maybeSingle();
 
     if (error) {
-      setMessage("Não foi possível carregar o Club Mode.");
+      setMessage("Não foi possível carregar o Perfil Clubber.");
       setLoading(false);
       return;
     }
@@ -1391,7 +1391,7 @@ export default function ClubProfileManager({
     } = await supabase.auth.getUser();
 
     if (!user) {
-      throw new Error("Faça login novamente para salvar no Club Mode.");
+      throw new Error("Faça login novamente para salvar no Perfil Clubber.");
     }
 
     const { data: updatedRows, error: updateError } = await supabase
@@ -1404,7 +1404,7 @@ export default function ClubProfileManager({
       .select("user_id");
 
     if (updateError) {
-      throw new Error(`Não foi possível salvar no Club Mode. ${updateError.message}`);
+      throw new Error(`Não foi possível salvar no Perfil Clubber. ${updateError.message}`);
     }
 
     if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
@@ -1421,7 +1421,7 @@ export default function ClubProfileManager({
         });
 
       if (insertError) {
-        throw new Error(`Não foi possível criar o Club Mode. ${insertError.message}`);
+        throw new Error(`Não foi possível criar o Perfil Clubber. ${insertError.message}`);
       }
     }
 
@@ -1458,7 +1458,7 @@ export default function ClubProfileManager({
 
     await saveTokenFieldImmediately(targetKey, nextItems);
 
-    setMessage(`${cleanName} foi salvo automaticamente no Club Mode.`);
+    setMessage(`${cleanName} foi salvo automaticamente no Perfil Clubber.`);
   }
 
   function applyGeneratedBelonging() {
@@ -1478,13 +1478,13 @@ export default function ClubProfileManager({
 
   async function copyClubLink() {
     if (!clubPublicHref) {
-      setMessage("Defina e publique um slug para liberar o link Club.");
+      setMessage("Defina e publique um slug para liberar o link do Perfil Clubber.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${clubPublicHref}`);
-      setMessage("Link do Club copiado com sucesso.");
+      setMessage("Link do Perfil Clubber copiado com sucesso.");
     } catch {
       setMessage("Não foi possível copiar o link agora.");
     }
@@ -1533,7 +1533,7 @@ export default function ClubProfileManager({
       setSelectedPhotoFile(selectedFile);
       setLocalPhotoPreview(preview);
       setPhotoTouched(true);
-      setMessage("Foto Club selecionada. Agora clique em Salvar.");
+      setMessage("Foto Clubber selecionada. Agora clique em Salvar.");
     } catch {
       setMessage("Não foi possível preparar a imagem.");
     }
@@ -1571,7 +1571,7 @@ export default function ClubProfileManager({
 
     if (uploadError) {
       throw new Error(
-        `Não foi possível enviar a foto do Club. Verifique se o bucket '${CLUB_BUCKET}' existe e se as permissões estão corretas.`
+        `Não foi possível enviar a foto do Perfil Clubber. Verifique se o bucket '${CLUB_BUCKET}' existe e se as permissões estão corretas.`
       );
     }
 
@@ -1673,13 +1673,13 @@ export default function ClubProfileManager({
       setLocalPhotoPreview("");
       setPhotoTouched(false);
       setSaving(false);
-      setMessage("Club Mode salvo com sucesso e playlist sincronizada corretamente.");
+      setMessage("Perfil Clubber salvo com sucesso e playlist sincronizada corretamente.");
 
       router.refresh();
     } catch (error) {
       setSaving(false);
       setMessage(
-        error instanceof Error ? error.message : "Não foi possível salvar o Club Mode."
+        error instanceof Error ? error.message : "Não foi possível salvar o Perfil Clubber."
       );
     }
   }
@@ -1718,14 +1718,14 @@ export default function ClubProfileManager({
   ].filter(Boolean);
 
   if (loading) {
-    return <p>Carregando Club Mode...</p>;
+    return <p>Carregando Perfil Clubber...</p>;
   }
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <section style={sectionStyle()}>
         <div style={{ display: "grid", gap: 6 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Estrutura cultural do Club</h3>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Estrutura cultural do Perfil Clubber</h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
             Aqui nasce a identidade do usuário na cena eletrônica.
           </p>
@@ -1733,7 +1733,7 @@ export default function ClubProfileManager({
 
         <div style={{ display: "grid", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <span>Completude do Club</span>
+            <span>Completude do Perfil Clubber</span>
             <strong>
               {completenessCount}/{completenessItems.length}
             </strong>
@@ -1773,13 +1773,13 @@ export default function ClubProfileManager({
           }}
         >
           {missingPriorityFields.length === 0
-            ? "Os campos prioritários do topo do Club estão preenchidos."
-            : `Faltam ${missingPriorityFields.length} campos-chave para o topo do Club ficar forte: ${missingPriorityFields.join(", ")}.`}
+            ? "Os campos prioritários do topo do Perfil Clubber estão preenchidos."
+            : `Faltam ${missingPriorityFields.length} campos-chave para o topo do Perfil Clubber ficar forte: ${missingPriorityFields.join(", ")}.`}
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button type="button" onClick={copyClubLink} style={buttonStyle()}>
-            Copiar link do Club
+            Copiar link do Perfil Clubber
           </button>
 
           {clubPublicHref ? (
@@ -1789,7 +1789,7 @@ export default function ClubProfileManager({
               rel="noopener noreferrer"
               style={buttonStyle()}
             >
-              Abrir preview Club
+              Abrir prévia do Perfil Clubber
             </a>
           ) : null}
         </div>
@@ -1801,7 +1801,7 @@ export default function ClubProfileManager({
             Preenchimento prioritário do topo público
           </h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Estes são os campos que formam a identidade principal do Club público.
+            Estes são os campos que formam a identidade principal do Perfil Clubber público.
           </p>
         </div>
 
@@ -2101,9 +2101,9 @@ export default function ClubProfileManager({
 
       <section style={sectionStyle()}>
         <div style={{ display: "grid", gap: 4 }}>
-          <h3 style={{ margin: 0, fontWeight: 900 }}>Foto Club e identidade visual</h3>
+          <h3 style={{ margin: 0, fontWeight: 900 }}>Foto Clubber e identidade visual</h3>
           <p style={{ margin: 0, opacity: 0.78 }}>
-            Adicione uma imagem forte para o topo do perfil público Club.
+            Adicione uma imagem forte para o topo do Perfil Clubber público.
           </p>
         </div>
 
@@ -2119,7 +2119,7 @@ export default function ClubProfileManager({
           {effectivePhotoPreview ? (
             <img
               src={effectivePhotoPreview}
-              alt="Prévia da foto Club"
+              alt="Prévia da foto Clubber"
               style={{
                 width: "100%",
                 maxHeight: 360,
@@ -2130,13 +2130,13 @@ export default function ClubProfileManager({
             />
           ) : (
             <div style={{ opacity: 0.74, fontSize: 13 }}>
-              Nenhuma foto Club selecionada.
+              Nenhuma foto Clubber selecionada.
             </div>
           )}
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={openPhotoPicker} style={buttonStyle()}>
-              Selecionar foto Club
+              Selecionar foto Clubber
             </button>
 
             {effectivePhotoPreview ? (
@@ -2186,11 +2186,11 @@ export default function ClubProfileManager({
         </div>
 
         <label>
-          <span style={labelTitleStyle()}>Prompt da foto Club</span>
+          <span style={labelTitleStyle()}>Prompt da foto Clubber</span>
           <textarea
             value={form.club_photo_prompt}
             onChange={(e) => updateField("club_photo_prompt", e.target.value)}
-            placeholder="Prompt usado para criar a imagem Club"
+            placeholder="Prompt usado para criar a imagem Clubber"
             style={textareaStyle()}
           />
         </label>
@@ -2395,7 +2395,7 @@ export default function ClubProfileManager({
           disabled={saving}
           style={buttonStyle(saving)}
         >
-          {saving ? "Salvando..." : "Salvar Club Mode"}
+          {saving ? "Salvando..." : "Salvar Perfil Clubber"}
         </button>
 
         {clubPublicHref ? (
@@ -2405,7 +2405,7 @@ export default function ClubProfileManager({
             rel="noopener noreferrer"
             style={buttonStyle()}
           >
-            Ver Club público
+            Ver Perfil Clubber público
           </a>
         ) : null}
       </div>

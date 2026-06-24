@@ -207,7 +207,7 @@ export default async function DashboardPage() {
               maxWidth: 650,
             }}
           >
-            Organize sua presença Club, acompanhe seus eventos e mantenha suas conexões em um só lugar.
+            Organize sua presença Clubber, acompanhe seus eventos e mantenha suas conexões em um só lugar.
           </p>
         </div>
 
@@ -218,7 +218,7 @@ export default async function DashboardPage() {
 
           {firstPublishedClubProfile?.slug ? (
             <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} style={buttonStyle()}>
-              Ver meu perfil Club
+              Ver meu perfil Clubber
             </Link>
           ) : null}
 
@@ -235,7 +235,7 @@ export default async function DashboardPage() {
           </span>
           <strong style={statNumberStyle()}>{profileCount}</strong>
           <p style={mutedTextStyle()}>
-            Suas identidades Club e Pro.
+            Suas identidades Clubber e Pro.
           </p>
         </article>
 
@@ -275,7 +275,7 @@ export default async function DashboardPage() {
           <span style={labelStyle()}>Próximo passo</span>
 
           <h2 style={{ margin: 0, fontSize: 24, letterSpacing: "-0.035em" }}>
-            {hasProfiles ? "Fortaleça sua presença Club" : "Prepare seu perfil Club"}
+            {hasProfiles ? "Fortaleça sua presença Clubber" : "Prepare seu perfil Clubber"}
           </h2>
 
           <p style={mutedTextStyle()}>
@@ -322,19 +322,19 @@ export default async function DashboardPage() {
 
       <section style={gridStyle(280)}>
         <article style={glassCardStyle()}>
-          <h2 style={{ margin: 0, fontSize: 22 }}>Experiência Club</h2>
+          <h2 style={{ margin: 0, fontSize: 22 }}>Experiência Clubber</h2>
           <p style={mutedTextStyle()}>
             Música, eventos, artistas, lugares favoritos e pertencimento na cena.
           </p>
           <Link href="/dashboard/cards" style={buttonStyle(true)}>
-            Gerenciar Club
+            Gerenciar Clubber
           </Link>
         </article>
 
         <article style={glassCardStyle()}>
           <h2 style={{ margin: 0, fontSize: 22 }}>Perfil profissional</h2>
           <p style={mutedTextStyle()}>
-            Área profissional separada da experiência Club, com conexões e oportunidades.
+            Área profissional separada da experiência Clubber, com conexões e oportunidades.
           </p>
           <Link href="/dashboard/network" style={buttonStyle()}>
             Gerenciar Pro
