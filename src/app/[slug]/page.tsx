@@ -31,6 +31,8 @@ type SpotifyArtist = {
   name: string;
   image_url: string | null;
   spotify_url: string | null;
+  sort_order: number | null;
+  is_active: boolean;
 };
 
 type CheckInLocationStatus =
@@ -1510,8 +1512,10 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   try {
     const { data } = await supabase
       .from("club_profile_artists")
-      .select("spotify_id, name, image_url, spotify_url")
+      .select("spotify_id, name, image_url, spotify_url, sort_order, is_active")
       .eq("user_id", card.user_id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
     spotifyArtists = (data || []) as SpotifyArtist[];
@@ -2021,21 +2025,23 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   const artistGrid: CSSProperties = {
     display: "flex",
-    gap: 14,
+    gap: 16,
     overflowX: "auto",
-    paddingBottom: 10,
+    padding: "2px 2px 12px",
     scrollSnapType: "x mandatory",
     WebkitOverflowScrolling: "touch",
   };
 
   const artistCard: CSSProperties = {
-    flex: "0 0 155px",
+    flex: "0 0 232px",
     position: "relative",
     scrollSnapAlign: "start",
-    background: "rgba(255,255,255,0.055)",
-    borderRadius: 20,
+    background:
+      "linear-gradient(180deg, rgba(22,22,40,0.98), rgba(11,11,22,0.98))",
+    borderRadius: 22,
     overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.11)",
+    border: "1px solid rgba(139,112,255,0.28)",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.30)",
     textDecoration: "none",
     color: "#fff",
   };
@@ -2287,7 +2293,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               <div>
                 <h2 style={sectionTitleStyle()}>Artistas de referência</h2>
                 <p style={{ ...sectionDescriptionStyle(), marginBottom: 0 }}>
-                  Referências musicais que ajudam a entender a identidade deste perfil na cena.
+                  Ranking pessoal das referências que representam a identidade musical deste Clubber.
                 </p>
               </div>
 
@@ -2299,51 +2305,94 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             </div>
 
             <div className="uc-scroll" style={artistGrid}>
-              {spotifyArtists.map((artist) => (
-                <div key={artist.spotify_id} style={artistCard}>
-                  <a
-                    href={artist.spotify_url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {spotifyArtists.map((artist, index) => (
+                <div
+                  key={artist.spotify_id}
+                  className="uc-artist-card"
+                  style={artistCard}
+                >
+                  {artist.image_url ? (
+                    <img
+                      src={artist.image_url}
+                      alt={artist.name}
+                      style={{
+                        width: "100%",
+                        height: 232,
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: 232,
+                        display: "grid",
+                        placeItems: "center",
+                        background:
+                          "linear-gradient(145deg, rgba(125,92,255,0.18), rgba(0,255,190,0.08))",
+                        fontWeight: 850,
+                      }}
+                    >
+                      Artista
+                    </div>
+                  )}
+
+                  <div
                     style={{
-                      display: "block",
-                      color: "#fff",
-                      textDecoration: "none",
+                      padding: ownerControlsUserId
+                        ? "14px 48px 70px 14px"
+                        : "14px",
+                      minHeight: ownerControlsUserId ? 118 : 68,
+                      background:
+                        "linear-gradient(180deg, rgba(12,12,24,0.92), rgba(8,8,17,0.98))",
                     }}
                   >
-                      {artist.image_url ? (
-                        <img
-                          src={artist.image_url}
-                          alt={artist.name}
-                          style={{
-                            width: "100%",
-                            height: 160,
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            height: 160,
-                            display: "grid",
-                            placeItems: "center",
-                            background: "rgba(255,255,255,0.06)",
-                            fontWeight: 850,
-                          }}
-                        >
-                          Spotify
-                        </div>
-                      )}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        aria-label={`Posição ${index + 1} no ranking`}
+                        style={{
+                          flex: "0 0 auto",
+                          minWidth: 34,
+                          height: 28,
+                          padding: "0 9px",
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: 999,
+                          background:
+                            "linear-gradient(135deg, rgba(122,92,255,0.98), rgba(78,217,255,0.92))",
+                          border: "1px solid rgba(255,255,255,0.34)",
+                          boxShadow: "0 8px 18px rgba(0,0,0,0.28)",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 950,
+                          letterSpacing: 0.6,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
 
-                      <div style={{ padding: "16px 44px 70px 16px", minHeight: 150 }}>
-                        <strong>{artist.name}</strong>
-                        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.72 }}>
-                          Spotify
-                        </div>
-                      </div>
-
-                  </a>
+                      <strong
+                        style={{
+                          display: "block",
+                          minWidth: 0,
+                          fontSize: 16,
+                          lineHeight: 1.25,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {artist.name}
+                      </strong>
+                    </div>
+                  </div>
 
                   <MoveClubArtistButton
                     cardId={card.card_id}

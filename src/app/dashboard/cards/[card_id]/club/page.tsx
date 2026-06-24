@@ -111,7 +111,8 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
       supabase
         .from("club_profile_artists")
         .select("spotify_id", { count: "exact", head: true })
-        .eq("user_id", user.id),
+        .eq("user_id", user.id)
+        .eq("is_active", true),
       supabase
         .from("social_links")
         .select("id", { count: "exact", head: true })
@@ -148,7 +149,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
   const overviewHref = "/dashboard/cards";
   const editHref = `/dashboard/cards/${card.card_id}/club/edit`;
   const publicHref = card.slug ? `/${card.slug}?mode=club` : overviewHref;
-  const artistsHref = card.slug ? `${publicHref}#artistas` : overviewHref;
+  const artistsHref = `/dashboard/cards/${card.card_id}/club/artists`;
   const eventsHref = card.slug ? `${publicHref}#agenda-club` : overviewHref;
   const socialHref = card.slug
     ? `/${card.slug}?mode=club#canais-club`
@@ -238,7 +239,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
           </div>
 
           <nav className="club-nav-list" aria-label="Resumo da experiência Clubber">
-            <Link href={artistsHref} target="_blank" className="club-nav-row">
+            <Link href={artistsHref} className="club-nav-row">
               <span className="club-nav-number">{artistCount}</span>
               <span className="club-nav-label">Artistas</span>
               <span className="club-nav-arrow" aria-hidden="true">
