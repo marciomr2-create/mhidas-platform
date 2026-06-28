@@ -1,4 +1,4 @@
-﻿// src/app/[slug]/CheckInEventButton.tsx
+// src/app/[slug]/CheckInEventButton.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -94,10 +94,9 @@ export default function CheckInEventButton({
   const visualState = useMemo(() => {
     if (locationStatus === "inside_radius") {
       return {
-        border: "1px solid rgba(0,255,190,0.72)",
-        background:
-          "linear-gradient(135deg, rgba(0,255,190,0.28), rgba(0,110,95,0.32))",
-        shadow: "0 0 28px rgba(0,255,190,0.32)",
+        border: "1px solid rgba(99,217,186,0.48)",
+        background: "rgba(36,122,106,0.22)",
+        shadow: "none",
         textColor: "#dffff6",
         helperOpacity: 0.9,
       };
@@ -105,10 +104,9 @@ export default function CheckInEventButton({
 
     if (locationStatus === "outside_radius") {
       return {
-        border: "1px solid rgba(255,205,90,0.72)",
-        background:
-          "linear-gradient(135deg, rgba(255,205,90,0.26), rgba(120,78,0,0.28))",
-        shadow: "0 0 28px rgba(255,205,90,0.22)",
+        border: "1px solid rgba(216,183,95,0.48)",
+        background: "rgba(120,88,30,0.20)",
+        shadow: "none",
         textColor: "#fff2cf",
         helperOpacity: 0.9,
       };
@@ -120,10 +118,9 @@ export default function CheckInEventButton({
       locationStatus === "pending_sync"
     ) {
       return {
-        border: "1px solid rgba(150,165,255,0.58)",
-        background:
-          "linear-gradient(135deg, rgba(125,92,255,0.25), rgba(0,255,190,0.12))",
-        shadow: "0 0 24px rgba(125,92,255,0.22)",
+        border: "1px solid rgba(157,145,231,0.44)",
+        background: "rgba(93,78,156,0.20)",
+        shadow: "none",
         textColor: "#eef0ff",
         helperOpacity: 0.86,
       };
@@ -131,10 +128,9 @@ export default function CheckInEventButton({
 
     if (locationStatus === "error") {
       return {
-        border: "1px solid rgba(255,110,110,0.66)",
-        background:
-          "linear-gradient(135deg, rgba(255,110,110,0.22), rgba(120,0,0,0.24))",
-        shadow: "0 0 22px rgba(255,110,110,0.18)",
+        border: "1px solid rgba(225,112,112,0.48)",
+        background: "rgba(132,45,45,0.20)",
+        shadow: "none",
         textColor: "#ffe4e4",
         helperOpacity: 0.9,
       };
@@ -142,14 +138,12 @@ export default function CheckInEventButton({
 
     return {
       border: done
-        ? "1px solid rgba(0,255,190,0.56)"
-        : "1px solid rgba(0,255,190,0.36)",
+        ? "1px solid rgba(99,217,186,0.46)"
+        : "1px solid rgba(95,190,174,0.38)",
       background: done
-        ? "linear-gradient(135deg, rgba(0,255,190,0.24), rgba(0,110,95,0.28))"
-        : "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.16))",
-      shadow: done
-        ? "0 0 24px rgba(0,255,190,0.25)"
-        : "0 12px 26px rgba(0,0,0,0.24)",
+        ? "rgba(36,122,106,0.22)"
+        : "rgba(38,92,96,0.22)",
+      shadow: "none",
       textColor: "#fff",
       helperOpacity: done ? 0.82 : 0.68,
     };
@@ -270,18 +264,18 @@ export default function CheckInEventButton({
         style={{
           width: "100%",
           minHeight: compact ? 38 : 42,
-          borderRadius: 999,
+          borderRadius: 13,
           border: visualState.border,
           background: visualState.background,
           color: visualState.textColor,
           padding: compact ? "0 13px" : "0 15px",
           fontSize: compact ? 12 : 13,
-          fontWeight: 950,
+          fontWeight: 850,
           cursor: loading || done ? "default" : "pointer",
           opacity: loading ? 0.68 : 1,
           boxShadow: visualState.shadow,
-          textTransform: "uppercase",
-          letterSpacing: 0.35,
+          textTransform: "none",
+          letterSpacing: 0,
         }}
       >
         {loading ? "Confirmando..." : done ? "Check-in ativo" : "Fazer check-in"}

@@ -9,6 +9,8 @@ type RemoveClubArtistButtonProps = {
   ownerUserId: string;
   spotifyId: string;
   artistName: string;
+  label?: string;
+  layout?: "overlay" | "footer";
 };
 
 export default function RemoveClubArtistButton({
@@ -16,6 +18,8 @@ export default function RemoveClubArtistButton({
   ownerUserId,
   spotifyId,
   artistName,
+  label = "Remover",
+  layout = "overlay",
 }: RemoveClubArtistButtonProps) {
   const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
@@ -28,7 +32,9 @@ export default function RemoveClubArtistButton({
     async function checkOwner() {
       try {
         const supabase = createBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (!mounted) return;
         setIsOwner(Boolean(user?.id && ownerUserId && user.id === ownerUserId));
@@ -53,7 +59,9 @@ export default function RemoveClubArtistButton({
 
     if (loading) return;
 
-    const confirmed = window.confirm(`Remover "${artistName}" dos seus artistas de refer?ncia?`);
+    const confirmed = window.confirm(
+      `Remover "${artistName}" dos seus artistas de referência?`
+    );
     if (!confirmed) return;
 
     setLoading(true);
@@ -68,7 +76,7 @@ export default function RemoveClubArtistButton({
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok) {
-        throw new Error(result?.message || "N?o foi poss?vel remover este artista.");
+        throw new Error(result?.message || "Não foi possível remover este artista.");
       }
 
       router.refresh();
@@ -81,37 +89,60 @@ export default function RemoveClubArtistButton({
 
   if (!checked || !isOwner) return null;
 
+  const isFooter = layout === "footer";
+
   return (
     <button
       type="button"
-      aria-label={`Remover artista: ${artistName}`}
-      title={`Remover artista: ${artistName}`}
+      aria-label={`${label}: ${artistName}`}
+      title={`${label}: ${artistName}`}
       onClick={handleRemove}
       disabled={loading}
-      style={{
-        position: "absolute",
-        right: 10,
-        top: 10,
-        zIndex: 8,
-        width: 30,
-        height: 30,
-        borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.14)",
-        background: loading ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.34)",
-        backdropFilter: "blur(10px)",
-        color: "#fff",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: loading ? "wait" : "pointer",
-        fontSize: 15,
-        fontWeight: 900,
-        lineHeight: 1,
-        boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
-        opacity: loading ? 0.45 : 0.58,
-      }}
+      style={
+        isFooter
+          ? {
+              position: "static",
+              width: "auto",
+              minHeight: 30,
+              border: "none",
+              borderRadius: 0,
+              background: "transparent",
+              color: "rgba(255,255,255,0.72)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: loading ? "wait" : "pointer",
+              fontSize: 12,
+              fontWeight: 850,
+              lineHeight: 1,
+              padding: 0,
+              opacity: loading ? 0.42 : 1,
+            }
+          : {
+              position: "absolute",
+              right: 10,
+              top: 10,
+              zIndex: 8,
+              width: 30,
+              height: 30,
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: loading ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.34)",
+              backdropFilter: "blur(10px)",
+              color: "#fff",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: loading ? "wait" : "pointer",
+              fontSize: 18,
+              fontWeight: 700,
+              lineHeight: 1,
+              boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
+              opacity: loading ? 0.45 : 0.72,
+            }
+      }
     >
-      ?
+      {isFooter ? label : "×"}
     </button>
   );
 }

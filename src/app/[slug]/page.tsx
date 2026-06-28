@@ -18,6 +18,7 @@ import MoveClubTokenButton from "./MoveClubTokenButton";
 import MoveClubArtistButton from "./MoveClubArtistButton";
 import ClubOwnerEmptyBlock from "./ClubOwnerEmptyBlock";
 import ClubOwnerEmptySceneSection from "./ClubOwnerEmptySceneSection";
+import ClubQuickAddMenu from "./ClubQuickAddMenu";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -60,6 +61,18 @@ type EventMiniMember = {
   slug: string;
   clubPhotoUrl: string;
   cityBase: string;
+};
+
+type NextEventCardData = {
+  name: string;
+  date: string;
+  link: string;
+  catalog?: ClubCatalogItem | null;
+  checkin_status?: string;
+  checkin_location_status?: CheckInLocationStatus;
+  event_heat_score?: EventHeatScore | null;
+  event_slug?: string;
+  event_members?: EventMiniMember[] | null;
 };
 
 type ClubCatalogItem = {
@@ -694,6 +707,89 @@ function detailRowStyle(): CSSProperties {
   };
 }
 
+function connectionCardStyle(): CSSProperties {
+  return {
+    flex: "0 0 270px",
+    scrollSnapAlign: "start",
+    minHeight: 360,
+    padding: 12,
+    borderRadius: 22,
+    background:
+      "linear-gradient(180deg, rgba(23,22,38,0.96), rgba(10,10,18,0.98))",
+    border: "1px solid rgba(145,125,255,0.18)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.24)",
+    color: "#fff",
+    textDecoration: "none",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    overflow: "hidden",
+  };
+}
+
+function connectionImageStyle(): CSSProperties {
+  return {
+    display: "block",
+    width: "100%",
+    height: 165,
+    objectFit: "cover",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.035)",
+  };
+}
+
+function connectionKickerStyle(): CSSProperties {
+  return {
+    display: "block",
+    color: "rgba(218,214,238,0.76)",
+    fontSize: 11,
+    fontWeight: 850,
+    letterSpacing: 0.55,
+    textTransform: "uppercase",
+  };
+}
+
+function connectionMetaStyle(): CSSProperties {
+  return {
+    margin: 0,
+    color: "rgba(232,230,242,0.72)",
+    fontSize: 13,
+    lineHeight: 1.45,
+  };
+}
+
+function connectionPrimaryActionStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 40,
+    padding: "11px 14px",
+    borderRadius: 13,
+    background:
+      "linear-gradient(135deg, rgba(0,198,164,0.20), rgba(82,88,255,0.12))",
+    border: "1px solid rgba(0,220,190,0.34)",
+    color: "#f7fffd",
+    textDecoration: "none",
+    fontWeight: 850,
+    lineHeight: 1.1,
+  };
+}
+
+function connectionSecondaryActionStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    width: "fit-content",
+    color: "rgba(235,232,245,0.82)",
+    textDecoration: "none",
+    fontSize: 13,
+    fontWeight: 780,
+    lineHeight: 1.35,
+  };
+}
+
 function buildEventRows(names: string[], dates: string[], links: string[]) {
   return names.map((name, index) => ({
     name,
@@ -985,7 +1081,7 @@ function CheckInStatusBadge({
             : "0 0 14px rgba(255,210,92,0.82)",
         }}
       />
-      {isActive ? "? CHECK-IN USECLUBBERS" : "? SINCRONIZANDO PRESEN?A"}
+      {isActive ? "CHECK-IN USECLUBBERS" : "SINCRONIZANDO PRESENÇA"}
     </div>
   );
 }
@@ -1010,8 +1106,8 @@ function CheckInPresenceText({
     : isValidated
       ? "Presença validada"
       : isOutsideRadius
-        ? "? FORA DO RAIO"
-        : "? CHECK-IN MANUAL";
+        ? "FORA DO RAIO"
+        : "CHECK-IN MANUAL";
 
   const border = isValidated
     ? "1px solid rgba(0,255,190,0.48)"
@@ -1071,7 +1167,7 @@ function EventHeatScoreBadge({
   const confirmedLabel =
     confirmedCount === 1
       ? "1 clubber vai"
-      : `${confirmedCount} clubbers v?o`;
+      : `${confirmedCount} clubbers vão`;
 
   const validatedLabel =
     validatedCount > 0
@@ -1125,7 +1221,7 @@ function EventStateBadge({
   if (status === "active") {
     label = "LIVE NOW";
   } else if (validatedCount >= 3) {
-    label = "PRESEN?A VALIDADA";
+    label = "PRESENÇA VALIDADA";
   } else if (confirmedCount >= 5) {
     label = "REDE USECLUBBERS ATIVA";
   } else if (membersCount >= 3) {
@@ -1244,13 +1340,247 @@ function EventMiniAvatarStack({
   );
 }
 
+
+function NextEventRailCard({
+  event,
+  cardId,
+  ownerUserId,
+  returnTo,
+}: {
+  event: NextEventCardData;
+  cardId: string;
+  ownerUserId: string;
+  returnTo: string;
+}) {
+  const imageUrl = getSafeClubCoverImage(event.name, event.catalog, "purple");
+  const catalogHref = getCatalogHref(event.catalog);
+  const finalEventLink = event.link || catalogHref;
+  const location = getCatalogLocation(event.catalog);
+  const checkInStatus = getEventCheckInStatus(event);
+  const locationStatus =
+    (normalizeText(event.checkin_location_status).toLowerCase() as CheckInLocationStatus) ||
+    "not_checked";
+  const confirmedCount = Number(event.event_heat_score?.confirmedCount || 0);
+
+  const statusParts: string[] = [];
+  let statusDot = "rgba(166,176,205,0.78)";
+
+  if (checkInStatus === "pending") {
+    statusParts.push("Sincronizando presença");
+    statusDot = "#d8b75f";
+  } else if (checkInStatus === "active" && locationStatus === "inside_radius") {
+    statusParts.push("Presença validada");
+    statusDot = "#63d9ba";
+  } else if (checkInStatus === "active" && locationStatus === "outside_radius") {
+    statusParts.push("Check-in ativo fora do raio");
+    statusDot = "#d8b75f";
+  } else if (checkInStatus === "active") {
+    statusParts.push("Check-in manual");
+    statusDot = "#9d91e7";
+  }
+
+  if (confirmedCount > 0) {
+    statusParts.push(
+      confirmedCount === 1 ? "1 Clubber vai" : `${confirmedCount} Clubbers vão`
+    );
+
+    if (checkInStatus === "none") {
+      statusDot = "#7aa9ce";
+    }
+  }
+
+  const metadata = [event.date, location].filter(Boolean).join(" · ");
+
+  return (
+    <article
+      className="uc-medium-card"
+      style={{
+        flex: "0 0 270px",
+        scrollSnapAlign: "start",
+        minHeight: ownerUserId ? 500 : undefined,
+        alignSelf: ownerUserId ? undefined : "flex-start",
+        padding: 12,
+        borderRadius: 24,
+        border: "1px solid rgba(166,154,210,0.20)",
+        background:
+          "linear-gradient(160deg, rgba(24,24,38,0.98), rgba(10,10,18,0.98))",
+        boxShadow: "0 18px 42px rgba(0,0,0,0.30)",
+        color: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          height: 165,
+          flex: "0 0 165px",
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.08)",
+          backgroundImage: `linear-gradient(180deg, rgba(4,4,12,0.02), rgba(4,4,12,0.20)), url("${imageUrl}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: ownerUserId ? 1 : "0 0 auto",
+          gap: 11,
+          padding: "14px 5px 0",
+          minWidth: 0,
+        }}
+      >
+        <strong
+          title={event.name}
+          style={{
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 3,
+            overflow: "hidden",
+            fontSize: 20,
+            lineHeight: 1.16,
+            letterSpacing: -0.35,
+          }}
+        >
+          {event.name}
+        </strong>
+
+        {metadata ? (
+          <span style={{ fontSize: 13, lineHeight: 1.42, color: "rgba(226,228,239,0.70)" }}>
+            {metadata}
+          </span>
+        ) : null}
+
+        {statusParts.length > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+              color: "rgba(233,235,244,0.78)",
+              fontSize: 12,
+              lineHeight: 1.45,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 7,
+                height: 7,
+                flex: "0 0 7px",
+                marginTop: 5,
+                borderRadius: 999,
+                background: statusDot,
+              }}
+            />
+            <span>{statusParts.join(" · ")}</span>
+          </div>
+        ) : null}
+
+        <EventMiniAvatarStack
+          members={event.event_members}
+          eventSlug={event.event_slug}
+          returnTo={returnTo}
+        />
+
+        <div
+          style={{
+            marginTop: ownerUserId ? "auto" : 2,
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          <CheckInEventButton
+            cardId={cardId}
+            ownerUserId={ownerUserId}
+            eventName={event.name}
+            eventDate={event.date}
+            eventLink={finalEventLink}
+            catalogId={event.catalog?.id || null}
+            initialStatus={checkInStatus}
+            compact
+          />
+
+          {finalEventLink ? (
+            <a
+              href={finalEventLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                width: "fit-content",
+                color: "rgba(215,220,240,0.82)",
+                textDecoration: "none",
+                fontSize: 12,
+                fontWeight: 820,
+                lineHeight: 1.35,
+              }}
+            >
+              Abrir evento oficial
+            </a>
+          ) : (
+            <a
+              href="#canais-club"
+              style={{
+                width: "fit-content",
+                color: "rgba(215,220,240,0.82)",
+                textDecoration: "none",
+                fontSize: 12,
+                fontWeight: 820,
+                lineHeight: 1.35,
+              }}
+            >
+              Combinar pelos canais
+            </a>
+          )}
+        </div>
+      </div>
+
+      {ownerUserId ? (
+        <div
+          style={{
+            marginTop: 13,
+            padding: "10px 5px 1px",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 14,
+          }}
+        >
+          <MoveClubTokenButton
+            cardId={cardId}
+            ownerUserId={ownerUserId}
+            field="next_events"
+            value={event.name}
+            layout="footer"
+          />
+
+          <RemoveClubTokenButton
+            cardId={cardId}
+            ownerUserId={ownerUserId}
+            field="next_events"
+            value={event.name}
+            layout="footer"
+          />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 function CatalogRailCard({
   label,
   catalog,
   badge,
   description,
   width = 245,
+  imageHeight = 118,
   accent = "purple",
+  hideBadge = false,
+  ownerActionsLayout = "overlay",
   removeAction,
 }: {
   label: string;
@@ -1258,7 +1588,10 @@ function CatalogRailCard({
   badge: string;
   description: string;
   width?: number;
+  imageHeight?: number;
   accent?: "purple" | "cyan" | "neutral";
+  hideBadge?: boolean;
+  ownerActionsLayout?: "overlay" | "footer";
   removeAction?: {
     cardId: string;
     ownerUserId: string;
@@ -1276,7 +1609,7 @@ function CatalogRailCard({
       {imageUrl ? (
         <div
           style={{
-            height: 118,
+            height: imageHeight,
             borderRadius: 17,
             backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.38)), url("${imageUrl}")`,
             backgroundSize: "cover",
@@ -1306,7 +1639,7 @@ function CatalogRailCard({
       )}
 
       <div style={{ position: "relative", zIndex: 2, display: "grid", gap: 10 }}>
-        <span style={microLabelStyle()}>{badge}</span>
+        {!hideBadge ? <span style={microLabelStyle()}>{badge}</span> : null}
 
         <div>
           <strong
@@ -1363,9 +1696,73 @@ function CatalogRailCard({
     </>
   );
 
+  const hasOwnerActions = Boolean(removeAction?.ownerUserId);
+  const useFooterActions = hasOwnerActions && ownerActionsLayout === "footer";
+
+  const ownerActions = hasOwnerActions ? (
+    useFooterActions ? (
+      <div
+        style={{
+          marginTop: "auto",
+          paddingTop: 12,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 14,
+        }}
+      >
+        <MoveClubTokenButton
+          cardId={removeAction!.cardId}
+          ownerUserId={removeAction!.ownerUserId}
+          field={removeAction!.field}
+          value={removeAction!.value}
+          layout="footer"
+        />
+
+        <RemoveClubTokenButton
+          cardId={removeAction!.cardId}
+          ownerUserId={removeAction!.ownerUserId}
+          field={removeAction!.field}
+          value={removeAction!.value}
+          layout="footer"
+        />
+      </div>
+    ) : (
+      <>
+        <MoveClubTokenButton
+          cardId={removeAction!.cardId}
+          ownerUserId={removeAction!.ownerUserId}
+          field={removeAction!.field}
+          value={removeAction!.value}
+        />
+
+        <RemoveClubTokenButton
+          cardId={removeAction!.cardId}
+          ownerUserId={removeAction!.ownerUserId}
+          field={removeAction!.field}
+          value={removeAction!.value}
+        />
+      </>
+    )
+  ) : null;
+
+  const cardStyle: CSSProperties = {
+    ...catalogCardStyle(width, imageUrl, accent),
+    ...(useFooterActions
+      ? {
+          display: "flex",
+          flexDirection: "column",
+          paddingBottom: 12,
+        }
+      : {
+          paddingBottom: hasOwnerActions ? 48 : undefined,
+        }),
+  };
+
   if (href) {
     return (
-      <div className="uc-small-card" style={{ ...catalogCardStyle(width, imageUrl, accent), paddingBottom: removeAction ? 48 : undefined }}>
+      <div className="uc-small-card" style={cardStyle}>
         <a
           href={href}
           target="_blank"
@@ -1374,53 +1771,24 @@ function CatalogRailCard({
             display: "block",
             color: "#fff",
             textDecoration: "none",
+            flex: useFooterActions ? "1 1 auto" : undefined,
           }}
         >
           {content}
         </a>
 
-        {removeAction ? (
-          <>
-<MoveClubTokenButton
-              cardId={removeAction.cardId}
-              ownerUserId={removeAction.ownerUserId}
-              field={removeAction.field}
-              value={removeAction.value}
-            />
-
-            <RemoveClubTokenButton
-              cardId={removeAction.cardId}
-              ownerUserId={removeAction.ownerUserId}
-              field={removeAction.field}
-              value={removeAction.value}
-            />
-          </>
-        ) : null}
+        {ownerActions}
       </div>
     );
   }
 
   return (
-    <div className="uc-small-card" style={{ ...catalogCardStyle(width, imageUrl, accent), paddingBottom: removeAction ? 48 : undefined }}>
-      {content}
+    <div className="uc-small-card" style={cardStyle}>
+      <div style={{ flex: useFooterActions ? "1 1 auto" : undefined }}>
+        {content}
+      </div>
 
-      {removeAction ? (
-        <>
-<MoveClubTokenButton
-            cardId={removeAction.cardId}
-            ownerUserId={removeAction.ownerUserId}
-            field={removeAction.field}
-            value={removeAction.value}
-          />
-
-          <RemoveClubTokenButton
-            cardId={removeAction.cardId}
-            ownerUserId={removeAction.ownerUserId}
-            field={removeAction.field}
-            value={removeAction.value}
-          />
-        </>
-      ) : null}
+      {ownerActions}
     </div>
   );
 }
@@ -1850,6 +2218,19 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     };
   });
 
+  const nextEventCards: NextEventCardData[] =
+    nextEventRowsWithCatalog.length > 0
+      ? nextEventRowsWithCatalog.map((event) => ({
+          ...event,
+          date: normalizeText(event.date),
+          link: normalizeUrl(event.link),
+        }))
+      : nextEventsWithCatalog.map((event) => ({
+          ...event,
+          date: "",
+          link: "",
+        }));
+
   const rideStatus = normalizeText(clubProfile?.ride_status);
   const rideEventName = normalizeText(clubProfile?.ride_event_name);
   const rideEventDate = normalizeText(clubProfile?.ride_event_date);
@@ -1910,6 +2291,25 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     : "";
 
   const primaryContactHref = links[0]?.id ? `/r/${links[0].id}` : "#canais-club";
+  const rideStatusKey = rideStatus.toLowerCase();
+  const rideStatusLabel =
+    rideStatusKey === "both"
+      ? "Oferece e procura carona"
+      : rideStatusKey === "offer" || rideStatusKey === "offering"
+        ? "Oferece carona"
+        : rideStatusKey === "need" ||
+            rideStatusKey === "request" ||
+            rideStatusKey === "looking"
+          ? "Procura carona"
+          : rideStatus;
+
+  const meetStatusKey = meetStatus.toLowerCase();
+  const meetStatusLabel =
+    meetStatusKey === "join"
+      ? "Quer participar"
+      : meetStatusKey === "host" || meetStatusKey === "organize"
+        ? "Organiza encontro"
+        : meetStatus;
   const hasEventConnections = Boolean(hasRide || hasMeet || primaryEventName);
 
   const container: CSSProperties = {
@@ -2111,35 +2511,61 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
 
         <header style={topBar}>
-          <div>
-            <div style={{ marginBottom: 10, fontSize: 12, fontWeight: 850, letterSpacing: 0.2, color: "rgba(255,255,255,0.66)" }}>Identidade Clubber</div>
-
-            <h1
-              className="uc-page-title"
+          <div style={{ width: "100%", display: "grid", gap: 16 }}>
+            <div
               style={{
-                margin: 0,
-                fontSize: 34,
-                lineHeight: 1.08,
-                fontWeight: 900,
-                letterSpacing: -0.8,
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 16,
               }}
             >
-              {profileName}
-            </h1>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ marginBottom: 10, fontSize: 12, fontWeight: 850, letterSpacing: 0.2, color: "rgba(255,255,255,0.66)" }}>Identidade Clubber</div>
 
-            <p style={{ opacity: 0.74, margin: "8px 0 0 0" }}>
-              Perfil UseClubbers: {card.slug}
-            </p>
-          </div>
+                <h1
+                  className="uc-page-title"
+                  style={{
+                    margin: 0,
+                    fontSize: 34,
+                    lineHeight: 1.08,
+                    fontWeight: 900,
+                    letterSpacing: -0.8,
+                  }}
+                >
+                  {profileName}
+                </h1>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href={`/${card.slug}?mode=club`} style={modeButtonActive}>
-              Experiência Clubber
-            </Link>
+                <p style={{ opacity: 0.74, margin: "8px 0 0 0" }}>
+                  Perfil UseClubbers: {card.slug}
+                </p>
+              </div>
 
-            <Link href={`/pro/${card.slug}`} style={modeButton}>
-              Perfil profissional
-            </Link>
+              <div style={{ flex: "0 0 auto" }}>
+                <ClubQuickAddMenu
+                  cardId={card.card_id}
+                  ownerUserId={card.user_id}
+                  cityBase={cityBase}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <Link href={`/${card.slug}?mode=club`} style={modeButtonActive}>
+                Experiência Clubber
+              </Link>
+
+              <Link href={`/pro/${card.slug}`} style={modeButton}>
+                Perfil profissional
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -2339,10 +2765,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
                   <div
                     style={{
-                      padding: ownerControlsUserId
-                        ? "14px 48px 70px 14px"
-                        : "14px",
-                      minHeight: ownerControlsUserId ? 118 : 68,
+                      padding: "14px",
+                      minHeight: ownerControlsUserId ? 112 : 68,
                       background:
                         "linear-gradient(180deg, rgba(12,12,24,0.92), rgba(8,8,17,0.98))",
                     }}
@@ -2359,20 +2783,12 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         aria-label={`Posição ${index + 1} no ranking`}
                         style={{
                           flex: "0 0 auto",
-                          minWidth: 34,
-                          height: 28,
-                          padding: "0 9px",
-                          display: "grid",
-                          placeItems: "center",
-                          borderRadius: 999,
-                          background:
-                            "linear-gradient(135deg, rgba(122,92,255,0.98), rgba(78,217,255,0.92))",
-                          border: "1px solid rgba(255,255,255,0.34)",
-                          boxShadow: "0 8px 18px rgba(0,0,0,0.28)",
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: 950,
-                          letterSpacing: 0.6,
+                          minWidth: 24,
+                          color: "rgba(151,212,255,0.92)",
+                          fontSize: 13,
+                          lineHeight: 1,
+                          fontWeight: 900,
+                          letterSpacing: 0.8,
                         }}
                       >
                         {String(index + 1).padStart(2, "0")}
@@ -2392,21 +2808,37 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         {artist.name}
                       </strong>
                     </div>
+
+                    {ownerControlsUserId ? (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          paddingTop: 10,
+                          borderTop: "1px solid rgba(255,255,255,0.08)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 14,
+                        }}
+                      >
+                        <MoveClubArtistButton
+                          cardId={card.card_id}
+                          ownerUserId={ownerControlsUserId}
+                          spotifyId={artist.spotify_id}
+                          artistName={artist.name}
+                          layout="footer"
+                        />
+
+                        <RemoveClubArtistButton
+                          cardId={card.card_id}
+                          ownerUserId={ownerControlsUserId}
+                          spotifyId={artist.spotify_id}
+                          artistName={artist.name}
+                          layout="footer"
+                        />
+                      </div>
+                    ) : null}
                   </div>
-
-                  <MoveClubArtistButton
-                    cardId={card.card_id}
-                    ownerUserId={ownerControlsUserId}
-                    spotifyId={artist.spotify_id}
-                    artistName={artist.name}
-                  />
-
-                  <RemoveClubArtistButton
-                    cardId={card.card_id}
-                    ownerUserId={ownerControlsUserId}
-                    spotifyId={artist.spotify_id}
-                    artistName={artist.name}
-                  />
                 </div>
               ))}
             </div>
@@ -2470,11 +2902,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       catalog={item.catalog}
                       badge="Clube favorito"
                       description="Presença na cena, pista e experiências ao vivo."
-                      width={245}
+                      width={270}
+                      imageHeight={165}
                       accent="purple"
+                      hideBadge
+                      ownerActionsLayout="footer"
                       removeAction={{
                         cardId: card.card_id,
-                        ownerUserId: card.user_id,
+                        ownerUserId: ownerControlsUserId,
                         field: "favorite_clubs",
                         value: item.name,
                       }}
@@ -2536,11 +2971,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       catalog={item.catalog}
                       badge="Festival e festa"
                       description="Referência de evento dentro da identidade Clubber."
-                      width={245}
+                      width={270}
+                      imageHeight={165}
                       accent="cyan"
+                      hideBadge
+                      ownerActionsLayout="footer"
                       removeAction={{
                         cardId: card.card_id,
-                        ownerUserId: card.user_id,
+                        ownerUserId: ownerControlsUserId,
                         field: "favorite_events",
                         value: item.name,
                       }}
@@ -2575,7 +3013,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                     marginBottom: 10,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em" }}>
+                  <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em" }}>
                     Últimos eventos
                   </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -2602,11 +3040,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                       catalog={item.catalog}
                       badge="Já viveu"
                       description="Memória de pista no perfil."
-                      width={235}
+                      width={270}
+                      imageHeight={165}
                       accent="neutral"
+                      hideBadge
+                      ownerActionsLayout="footer"
                       removeAction={{
                         cardId: card.card_id,
-                        ownerUserId: card.user_id,
+                        ownerUserId: ownerControlsUserId,
                         field: "last_events",
                         value: item.name,
                       }}
@@ -2632,7 +3073,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
             <div id="agenda-club" style={{ scrollMarginTop: 24 }} />
 
-            {nextEventRowsWithCatalog.length > 0 ? (
+            {nextEventCards.length > 0 ? (
               <div style={{ marginTop: 20 }}>
                 <div
                   style={{
@@ -2646,7 +3087,16 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>
                     Próximos eventos
                   </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                    }}
+                  >
                     <span style={{ fontSize: 12, opacity: 0.58 }}>Agenda Clubbers</span>
                     <AddClubTokenButton
                       cardId={card.card_id}
@@ -2663,392 +3113,16 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                   </div>
                 </div>
 
-                {nextEventRowsWithCatalog.length > 0 ? (
-                  <div
-                    style={{
-                      marginBottom: 22,
-                    }}
-                  >
-                    {(() => {
-                      const featuredEvent = nextEventRowsWithCatalog[0];
-
-                      const catalogImage = getSafeClubCoverImage(
-                        featuredEvent.name,
-                        featuredEvent.catalog,
-                        "purple"
-                      );
-
-                      const catalogHref = getCatalogHref(featuredEvent.catalog);
-
-                      const finalEventLink =
-                        featuredEvent.link || catalogHref;
-
-                      const checkInStatus =
-                        getEventCheckInStatus(featuredEvent);
-
-                      const checkInLocationStatus =
-                        (normalizeText(
-                          featuredEvent?.checkin_location_status
-                        ).toLowerCase() as CheckInLocationStatus) ||
-                        "not_checked";
-
-                      return (
-                        <div
-                          style={{
-                            ...getCheckInCardGlowStyle(checkInStatus),
-                            ...eventCardStyle(920, catalogImage),
-                            minHeight: 620,
-                            paddingBottom: 52,
-                          }}
-                        >
-                          <CheckInStatusBadge status={checkInStatus} />
-
-                          <div
-                            style={{
-                              position: "relative",
-                              zIndex: 2,
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "space-between",
-                              gap: 18,
-                              maxWidth: 760,
-                              height: "100%",
-                            }}
-                          >
-                            <span style={microLabelStyle()}>
-                              EVENTO PRINCIPAL
-                            </span>
-
-                            <strong
-                              style={{
-                                fontSize: 60,
-                                lineHeight: 0.92,
-                                letterSpacing: "-0.05em",
-                              }}
-                            >
-                              {featuredEvent.name}
-                            </strong>
-
-                            {featuredEvent.date ? (
-                              <span
-                                style={{
-                                  fontSize: 18,
-                                  opacity: 0.92,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {featuredEvent.date}
-                              </span>
-                            ) : null}
-
-                            {getCatalogLocation(featuredEvent.catalog) ? (
-                              <span
-                                style={{
-                                  fontSize: 15,
-                                  opacity: 0.72,
-                                }}
-                              >
-                                {getCatalogLocation(
-                                  featuredEvent.catalog
-                                )}
-                              </span>
-                            ) : null}
-
-                            <EventStateBadge
-                              status={checkInStatus}
-                              heatScore={featuredEvent.event_heat_score}
-                              members={featuredEvent.event_members}
-                            />
-
-                            <CheckInPresenceText
-                              status={checkInStatus}
-                              locationStatus={checkInLocationStatus}
-                            />
-
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 12,
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <CheckInEventButton
-                                cardId={card.card_id}
-                                ownerUserId={ownerControlsUserId}
-                                eventName={featuredEvent.name}
-                                eventDate={featuredEvent.date}
-                                eventLink={finalEventLink}
-                                catalogId={
-                                  featuredEvent.catalog?.id || null
-                                }
-                                initialStatus={checkInStatus}
-                                compact
-                              />
-
-                              {finalEventLink ? (
-                                <a
-                                  href={finalEventLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={primaryButtonStyle()}
-                                >
-                                  Abrir evento oficial
-                                </a>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : null}
-
                 <div className="uc-scroll" style={horizontalRailStyle()}>
-                  {nextEventRowsWithCatalog.slice(1).map((event, index) => {
-                    const catalogImage = getSafeClubCoverImage(
-                      event.name,
-                      event.catalog,
-                      "purple"
-                    );
-                    const catalogHref = getCatalogHref(event.catalog);
-                    const finalEventLink = event.link || catalogHref;
-                    const checkInStatus = getEventCheckInStatus(event);
-                    const checkInLocationStatus =
-                      (normalizeText(event?.checkin_location_status).toLowerCase() as CheckInLocationStatus) ||
-                      "not_checked";
-
-                    return (
-                      <div
-                        key={`${event.name}-${index}`}
-                        className={index === 0 ? "uc-featured-event-card" : "uc-medium-card"}
-                        style={{
-                          ...getCheckInCardGlowStyle(checkInStatus),
-                          ...eventCardStyle(285, catalogImage),
-                          ...getCheckInCardGlowStyle(checkInStatus),
-                          paddingBottom: 52,
-                          minHeight: index === 0 ? 420 : undefined,
-                        }}
-                      >
-                        <CheckInStatusBadge status={checkInStatus} />
-                        <MoveClubTokenButton
-                          cardId={card.card_id}
-                          ownerUserId={ownerControlsUserId}
-                          field="next_events"
-                          value={event.name}
-                        />
-
-                        <RemoveClubTokenButton
-                          cardId={card.card_id}
-                          ownerUserId={ownerControlsUserId}
-                          field="next_events"
-                          value={event.name}
-                        />
-                        {!catalogImage ? (
-                          <div
-                            style={{
-                              position: "absolute",
-                              right: -42,
-                              top: -42,
-                              width: 135,
-                              height: 135,
-                              borderRadius: 999,
-                              background: "rgba(125,92,255,0.24)",
-                              filter: "blur(6px)",
-                            }}
-                          />
-                        ) : null}
-
-                        <div
-                          style={{
-                            position: "relative",
-                            zIndex: 2,
-                            minHeight: "100%",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            gap: 22,
-                          }}
-                        >
-                          <div style={{ display: "grid", gap: 10 }}>
-                            <span style={microLabelStyle()}>Próximo rolê</span>
-
-                            <strong
-                              style={{
-                                display: "block",
-                                fontSize: 20,
-                                lineHeight: 1.16,
-                                letterSpacing: -0.35,
-                              }}
-                            >
-                              {event.name}
-                            </strong>
-
-                            {event.date ? (
-                              <span style={{ fontSize: 14, opacity: 0.78 }}>
-                                {event.date}
-                              </span>
-                            ) : null}
-
-                            {getCatalogLocation(event.catalog) ? (
-                              <span style={{ fontSize: 13, opacity: 0.72 }}>
-                                {getCatalogLocation(event.catalog)}
-                              </span>
-                            ) : null}
-
-                            <CheckInPresenceText
-                              status={checkInStatus}
-                              locationStatus={checkInLocationStatus}
-                            />
-
-                            <EventHeatScoreBadge heatScore={event.event_heat_score} />
-
-                            <EventMiniAvatarStack
-  members={event.event_members}
-  eventSlug={event.event_slug}
-  returnTo={`/${card.slug}?mode=club`}
-/>
-                          </div>
-
-                          <div style={{ display: "grid", gap: 9 }}>
-                            <CheckInEventButton
-                              cardId={card.card_id}
-                              ownerUserId={ownerControlsUserId}
-                              eventName={event.name}
-                              eventDate={event.date}
-                              eventLink={finalEventLink}
-                              catalogId={event.catalog?.id || null}
-                              initialStatus={checkInStatus}
-                              compact
-                            />
-
-                            {finalEventLink ? (
-                              <a
-                                href={finalEventLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={primaryButtonStyle()}
-                              >
-                                Abrir evento oficial
-                              </a>
-                            ) : (
-                              <a href="#canais-club" style={secondaryButtonStyle()}>
-                                Combinar pelos canais
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : nextEventsWithCatalog.length > 0 ? (
-              <div style={{ marginTop: 20 }}>
-                <h3 style={{ margin: "0 0 10px 0", fontSize: 16, fontWeight: 900 }}>
-                  Próximos eventos
-                </h3>
-
-                <div className="uc-scroll" style={horizontalRailStyle()}>
-                  {nextEventsWithCatalog.map((item, index) => {
-                    const catalogImage = getSafeClubCoverImage(
-                      item.name,
-                      item.catalog,
-                      "purple"
-                    );
-                    const catalogHref = getCatalogHref(item.catalog);
-                    const checkInStatus = getEventCheckInStatus(item);
-
-                    return (
-                      <div
-                        key={`${item.name}-${index}`}
-                        className="uc-medium-card"
-                        style={{
-                          ...getCheckInCardGlowStyle(checkInStatus),
-                          ...eventCardStyle(
-                            index === 0 ? 560 : 285,
-                            catalogImage
-                          ),
-                          paddingBottom: 52,
-                          transform: index === 0 ? "scale(1.02)" : "none",
-                          zIndex: index === 0 ? 3 : 1,
-                        }}
-                      >
-                        <CheckInStatusBadge status={checkInStatus} />
-
-                        <MoveClubTokenButton
-                          cardId={card.card_id}
-                          ownerUserId={ownerControlsUserId}
-                          field="next_events"
-                          value={item.name}
-                        />
-
-                        <RemoveClubTokenButton
-                          cardId={card.card_id}
-                          ownerUserId={ownerControlsUserId}
-                          field="next_events"
-                          value={item.name}
-                        />
-                        <span style={microLabelStyle()}>Próximo rolê</span>
-
-                        <strong
-                          style={{
-                            display: "block",
-                            marginTop: 12,
-                            fontSize: 20,
-                            lineHeight: 1.16,
-                            letterSpacing: -0.35,
-                            position: "relative",
-                            zIndex: 2,
-                          }}
-                        >
-                          {item.name}
-                        </strong>
-
-                        {getCatalogLocation(item.catalog) ? (
-                          <span
-                            style={{
-                              display: "block",
-                              marginTop: 8,
-                              fontSize: 13,
-                              opacity: 0.72,
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            {getCatalogLocation(item.catalog)}
-                          </span>
-                        ) : null}
-
-                        {catalogHref ? (
-                          <a
-                            href={catalogHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              ...primaryButtonStyle(),
-                              marginTop: 18,
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            Abrir evento oficial
-                          </a>
-                        ) : (
-                          <a
-                            href="#canais-club"
-                            style={{
-                              ...secondaryButtonStyle(),
-                              marginTop: 18,
-                              position: "relative",
-                              zIndex: 2,
-                            }}
-                          >
-                            Combinar pelos canais
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {nextEventCards.map((event, index) => (
+                    <NextEventRailCard
+                      key={`${event.name}-${index}`}
+                      event={event}
+                      cardId={card.card_id}
+                      ownerUserId={ownerControlsUserId}
+                      returnTo={`/${card.slug}?mode=club`}
+                    />
+                  ))}
                 </div>
               </div>
             ) : (
@@ -3080,172 +3154,154 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           <section className="uc-section" style={sectionBoxStyle()}>
             <h2 style={sectionTitleStyle()}>Conexões para o próximo evento</h2>
             <p style={sectionDescriptionStyle()}>
-              Veja o próximo rolê, combine carona, marque ponto de encontro e use os canais Clubbers para facilitar a conexão antes da pista começar.
+              Organize chegada, carona, encontro e contato em uma leitura simples antes da pista começar.
             </p>
 
-            <div className="uc-scroll" style={horizontalRailStyle()}>
+            <div className="uc-scroll" style={{ ...horizontalRailStyle(), gap: 16 }}>
               {primaryEventName ? (
-                <div className="uc-wide-card" style={eventCardStyle(330, primaryEventImage)}>
-                  {!primaryEventImage ? (
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: -50,
-                        top: -50,
-                        width: 150,
-                        height: 150,
-                        borderRadius: 999,
-                        background: "rgba(255,255,255,0.12)",
-                        filter: "blur(7px)",
-                      }}
+                <div className="uc-wide-card" style={connectionCardStyle()}>
+                  {primaryEventImage ? (
+                    <img
+                      src={primaryEventImage}
+                      alt={primaryEventName}
+                      style={connectionImageStyle()}
                     />
                   ) : null}
 
                   <div
                     style={{
-                      position: "relative",
-                      zIndex: 2,
-                      minHeight: "100%",
                       display: "flex",
+                      flex: 1,
                       flexDirection: "column",
-                      justifyContent: "space-between",
-                      gap: 16,
+                      gap: 10,
+                      padding: "2px 2px 0",
                     }}
                   >
-                    <div style={{ display: "grid", gap: 10 }}>
-                      <span style={microLabelStyle()}>Seu próximo rolê</span>
+                    <span style={connectionKickerStyle()}>Próximo rolê</span>
 
-                      <strong
-                        style={{
-                          display: "block",
-                          fontSize: 22,
-                          lineHeight: 1.12,
-                          letterSpacing: -0.4,
-                        }}
-                      >
-                        {primaryEventName}
-                      </strong>
+                    <strong
+                      style={{
+                        display: "block",
+                        fontSize: 20,
+                        lineHeight: 1.15,
+                        letterSpacing: -0.3,
+                      }}
+                    >
+                      {primaryEventName}
+                    </strong>
 
-                      {primaryEventDate ? (
-                        <span style={{ opacity: 0.75, fontSize: 14 }}>
-                          {primaryEventDate}
-                        </span>
-                      ) : null}
-
-                      {getCatalogLocation(primaryEventCatalog) ? (
-                        <span style={{ opacity: 0.74, fontSize: 13 }}>
-                          {getCatalogLocation(primaryEventCatalog)}
-                        </span>
-                      ) : null}
-
-                      <p style={{ margin: 0, opacity: 0.72, lineHeight: 1.52 }}>
-                        Use este perfil para combinar chegada, carona, ponto de encontro e contato rápido.
+                    {primaryEventDate || getCatalogLocation(primaryEventCatalog) ? (
+                      <p style={connectionMetaStyle()}>
+                        {[primaryEventDate, getCatalogLocation(primaryEventCatalog)]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
-                    </div>
+                    ) : null}
 
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <p style={{ ...connectionMetaStyle(), lineHeight: 1.52 }}>
+                      Combine chegada, carona, ponto de encontro e contato rápido antes do evento.
+                    </p>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 10,
+                        marginTop: "auto",
+                      }}
+                    >
+                      <a
+                        href={primaryContactHref}
+                        target={links[0]?.id ? "_blank" : undefined}
+                        rel={links[0]?.id ? "noopener noreferrer" : undefined}
+                        style={connectionPrimaryActionStyle()}
+                      >
+                        Combinar contato
+                      </a>
+
                       {primaryEventUrl || getCatalogHref(primaryEventCatalog) ? (
                         <a
                           href={primaryEventUrl || getCatalogHref(primaryEventCatalog)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={primaryButtonStyle()}
+                          style={connectionSecondaryActionStyle()}
                         >
                           Abrir evento oficial
                         </a>
                       ) : null}
-
-                      <a
-                        href={primaryContactHref}
-                        target={links[0]?.id ? "_blank" : undefined}
-                        rel={links[0]?.id ? "noopener noreferrer" : undefined}
-                        style={secondaryButtonStyle()}
-                      >
-                        Combinar contato
-                      </a>
                     </div>
                   </div>
                 </div>
               ) : null}
 
               {hasRide ? (
-                <div className="uc-wide-card" style={eventCardStyle(330)}>
+                <div className="uc-wide-card" style={connectionCardStyle()}>
                   <div
                     style={{
-                      position: "absolute",
-                      right: -48,
-                      bottom: -48,
-                      width: 150,
-                      height: 150,
-                      borderRadius: 999,
-                      background: "rgba(0,220,255,0.16)",
-                      filter: "blur(7px)",
+                      display: "flex",
+                      flex: 1,
+                      flexDirection: "column",
+                      gap: 12,
+                      padding: "4px 4px 0",
                     }}
-                  />
+                  >
+                    <span style={connectionKickerStyle()}>Carona</span>
 
-                  <div style={{ position: "relative", zIndex: 2 }}>
-                    <span style={microLabelStyle()}>Carona colaborativa</span>
-
-                    <h3
+                    <strong
                       style={{
-                        margin: "13px 0 10px 0",
-                        fontSize: 21,
+                        fontSize: 20,
                         lineHeight: 1.15,
-                        letterSpacing: -0.35,
+                        letterSpacing: -0.3,
                       }}
                     >
-                      Combine a ida com mais segurança
-                    </h3>
+                      {rideStatusLabel || "Carona colaborativa"}
+                    </strong>
 
-                    <div style={{ display: "grid", lineHeight: 1.45 }}>
-                      {rideStatus ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Status</span>
-                          <strong>{rideStatus}</strong>
-                        </div>
-                      ) : null}
+                    {rideOrigin || rideDestination ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 15,
+                          fontWeight: 820,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {[rideOrigin, rideDestination].filter(Boolean).join(" → ")}
+                      </p>
+                    ) : null}
 
-                      {rideEventName ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Evento</span>
-                          <strong>{rideEventName}</strong>
-                        </div>
-                      ) : null}
+                    {rideEventName ? (
+                      <p style={connectionMetaStyle()}>{rideEventName}</p>
+                    ) : null}
 
-                      {rideOrigin ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Origem</span>
-                          <strong>{rideOrigin}</strong>
-                        </div>
-                      ) : null}
+                    {rideSeats ? (
+                      <p style={connectionMetaStyle()}>{rideSeats} vagas disponíveis</p>
+                    ) : null}
 
-                      {rideDestination ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Destino</span>
-                          <strong>{rideDestination}</strong>
-                        </div>
-                      ) : null}
+                    {rideNotes ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "rgba(244,241,250,0.78)",
+                          fontSize: 14,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        “{rideNotes}”
+                      </p>
+                    ) : null}
 
-                      {rideSeats ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Vagas</span>
-                          <strong>{rideSeats}</strong>
-                        </div>
-                      ) : null}
-
-                      {rideNotes ? (
-                        <p style={{ margin: "12px 0 0 0", opacity: 0.78, lineHeight: 1.55 }}>
-                          {rideNotes}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 10,
+                        marginTop: "auto",
+                      }}
+                    >
                       <a
                         href={primaryContactHref}
                         target={links[0]?.id ? "_blank" : undefined}
                         rel={links[0]?.id ? "noopener noreferrer" : undefined}
-                        style={primaryButtonStyle()}
+                        style={connectionPrimaryActionStyle()}
                       >
                         Pedir carona
                       </a>
@@ -3255,7 +3311,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                           href={rideEventUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={secondaryButtonStyle()}
+                          style={connectionSecondaryActionStyle()}
                         >
                           Ver evento
                         </a>
@@ -3266,76 +3322,74 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               ) : null}
 
               {hasMeet ? (
-                <div className="uc-wide-card" style={eventCardStyle(330)}>
+                <div className="uc-wide-card" style={connectionCardStyle()}>
                   <div
                     style={{
-                      position: "absolute",
-                      right: -48,
-                      bottom: -48,
-                      width: 150,
-                      height: 150,
-                      borderRadius: 999,
-                      background: "rgba(125,92,255,0.22)",
-                      filter: "blur(7px)",
+                      display: "flex",
+                      flex: 1,
+                      flexDirection: "column",
+                      gap: 12,
+                      padding: "4px 4px 0",
                     }}
-                  />
+                  >
+                    <span style={connectionKickerStyle()}>Encontro</span>
 
-                  <div style={{ position: "relative", zIndex: 2 }}>
-                    <span style={microLabelStyle()}>Encontro na pista</span>
-
-                    <h3
+                    <strong
                       style={{
-                        margin: "13px 0 10px 0",
-                        fontSize: 21,
+                        fontSize: 20,
                         lineHeight: 1.15,
-                        letterSpacing: -0.35,
+                        letterSpacing: -0.3,
                       }}
                     >
                       Ponto combinado para se encontrar
-                    </h3>
+                    </strong>
 
-                    <div style={{ display: "grid", lineHeight: 1.45 }}>
-                      {meetStatus ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Status</span>
-                          <strong>{meetStatus}</strong>
-                        </div>
-                      ) : null}
+                    {meetMeetingPoint || meetTime ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 15,
+                          fontWeight: 820,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {[meetMeetingPoint, meetTime].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
 
-                      {meetEventName ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Evento</span>
-                          <strong>{meetEventName}</strong>
-                        </div>
-                      ) : null}
+                    {meetStatusLabel ? (
+                      <p style={connectionMetaStyle()}>{meetStatusLabel}</p>
+                    ) : null}
 
-                      {meetMeetingPoint ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Ponto</span>
-                          <strong>{meetMeetingPoint}</strong>
-                        </div>
-                      ) : null}
+                    {meetEventName ? (
+                      <p style={connectionMetaStyle()}>{meetEventName}</p>
+                    ) : null}
 
-                      {meetTime ? (
-                        <div style={detailRowStyle()}>
-                          <span style={{ fontSize: 12, opacity: 0.58 }}>Horário</span>
-                          <strong>{meetTime}</strong>
-                        </div>
-                      ) : null}
+                    {meetNotes ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "rgba(244,241,250,0.78)",
+                          fontSize: 14,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        “{meetNotes}”
+                      </p>
+                    ) : null}
 
-                      {meetNotes ? (
-                        <p style={{ margin: "12px 0 0 0", opacity: 0.78, lineHeight: 1.55 }}>
-                          {meetNotes}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 10,
+                        marginTop: "auto",
+                      }}
+                    >
                       <a
                         href={primaryContactHref}
                         target={links[0]?.id ? "_blank" : undefined}
                         rel={links[0]?.id ? "noopener noreferrer" : undefined}
-                        style={primaryButtonStyle()}
+                        style={connectionPrimaryActionStyle()}
                       >
                         Quero participar
                       </a>
@@ -3345,7 +3399,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                           href={meetEventUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={secondaryButtonStyle()}
+                          style={connectionSecondaryActionStyle()}
                         >
                           Ver evento
                         </a>
@@ -3355,58 +3409,46 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 </div>
               ) : null}
 
-              <div className="uc-wide-card" style={eventCardStyle(330)}>
+              <div className="uc-wide-card" style={connectionCardStyle()}>
                 <div
                   style={{
-                    position: "absolute",
-                    right: -48,
-                    top: -48,
-                    width: 150,
-                    height: 150,
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.10)",
-                    filter: "blur(7px)",
-                  }}
-                />
-
-                <div
-                  style={{
-                    position: "relative",
-                    zIndex: 2,
-                    minHeight: "100%",
                     display: "flex",
+                    flex: 1,
                     flexDirection: "column",
-                    justifyContent: "space-between",
-                    gap: 16,
+                    gap: 12,
+                    padding: "4px 4px 0",
                   }}
                 >
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <span style={microLabelStyle()}>Modo sem sinal</span>
+                  <span style={connectionKickerStyle()}>Modo sem sinal</span>
 
-                    <strong
-                      style={{
-                        display: "block",
-                        fontSize: 21,
-                        lineHeight: 1.15,
-                        letterSpacing: -0.35,
-                      }}
-                    >
-                      Tenha contato e ponto de encontro à mão
-                    </strong>
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      lineHeight: 1.15,
+                      letterSpacing: -0.3,
+                    }}
+                  >
+                    Tenha contato e ponto de encontro à mão
+                  </strong>
 
-                    <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55 }}>
-                      Ideal para festas e festivais com internet instável. Use os canais do perfil para salvar o contato antes do evento.
-                    </p>
-                  </div>
+                  <p style={{ ...connectionMetaStyle(), lineHeight: 1.55 }}>
+                    Salve contato, canais e ponto de encontro antes de sair. Assim o combinado continua acessível mesmo com internet instável.
+                  </p>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <a href="#canais-club" style={primaryButtonStyle()}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 10,
+                      marginTop: "auto",
+                    }}
+                  >
+                    <a href="#canais-club" style={connectionPrimaryActionStyle()}>
                       Ver canais Clubbers
                     </a>
 
                     <a
                       href={`/${card.slug}?mode=club`}
-                      style={secondaryButtonStyle()}
+                      style={connectionSecondaryActionStyle()}
                     >
                       Reabrir perfil
                     </a>
@@ -3414,58 +3456,42 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 </div>
               </div>
 
-              <div className="uc-wide-card" style={eventCardStyle(330)}>
+              <div className="uc-wide-card" style={connectionCardStyle()}>
                 <div
                   style={{
-                    position: "absolute",
-                    right: -48,
-                    bottom: -48,
-                    width: 150,
-                    height: 150,
-                    borderRadius: 999,
-                    background: "rgba(0,220,255,0.13)",
-                    filter: "blur(7px)",
-                  }}
-                />
-
-                <div
-                  style={{
-                    position: "relative",
-                    zIndex: 2,
-                    minHeight: "100%",
                     display: "flex",
+                    flex: 1,
                     flexDirection: "column",
-                    justifyContent: "space-between",
-                    gap: 16,
+                    gap: 12,
+                    padding: "4px 4px 0",
                   }}
                 >
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <span style={microLabelStyle()}>Grupo do evento</span>
+                  <span style={connectionKickerStyle()}>Comunidade do evento</span>
 
-                    <strong
-                      style={{
-                        display: "block",
-                        fontSize: 21,
-                        lineHeight: 1.15,
-                        letterSpacing: -0.35,
-                      }}
-                    >
-                      Conexões por cidade, evento e gosto musical
-                    </strong>
-
-                    <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55 }}>
-                      Combine com pessoas da cena, encontre na plataforma para o mesmo evento e facilite novas amizades antes do rolê.
-                    </p>
-                  </div>
-
-                  <a
-                    href={primaryContactHref}
-                    target={links[0]?.id ? "_blank" : undefined}
-                    rel={links[0]?.id ? "noopener noreferrer" : undefined}
-                    style={primaryButtonStyle()}
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      lineHeight: 1.15,
+                      letterSpacing: -0.3,
+                    }}
                   >
-                    Entrar em contato
-                  </a>
+                    Conexões por cidade, evento e gosto musical
+                  </strong>
+
+                  <p style={{ ...connectionMetaStyle(), lineHeight: 1.55 }}>
+                    Encontre pessoas da cena que irão ao mesmo evento e facilite novas conexões antes do rolê.
+                  </p>
+
+                  <div style={{ marginTop: "auto" }}>
+                    <a
+                      href={primaryContactHref}
+                      target={links[0]?.id ? "_blank" : undefined}
+                      rel={links[0]?.id ? "noopener noreferrer" : undefined}
+                      style={connectionPrimaryActionStyle()}
+                    >
+                      Entrar em contato
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

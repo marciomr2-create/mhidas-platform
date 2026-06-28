@@ -15,6 +15,9 @@ type AddClubArtistButtonProps = {
   cardId: string;
   ownerUserId: string;
   compact?: boolean;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 function normalizeText(value: any): string {
@@ -89,12 +92,26 @@ export default function AddClubArtistButton({
   cardId,
   ownerUserId,
   compact = false,
+  hideTrigger = false,
+  open,
+  onOpenChange,
 }: AddClubArtistButtonProps) {
   const router = useRouter();
 
   const [checked, setChecked] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const modalOpen = typeof open === "boolean" ? open : internalOpen;
+
+  function updateOpen(nextOpen: boolean) {
+    if (typeof open === "boolean") {
+      onOpenChange?.(nextOpen);
+      return;
+    }
+
+    setInternalOpen(nextOpen);
+  }
 
   const [query, setQuery] = useState("");
   const [artists, setArtists] = useState<SpotifyArtistSuggestion[]>([]);
@@ -227,7 +244,7 @@ export default function AddClubArtistButton({
         throw new Error(result?.message || "Não foi possível adicionar artista.");
       }
 
-      setOpen(false);
+      updateOpen(false);
       setQuery("");
       setArtists([]);
       router.refresh();
@@ -244,10 +261,11 @@ export default function AddClubArtistButton({
 
   return (
     <>
+      {!hideTrigger ? (
       <button
         type="button"
         onClick={() => {
-          setOpen(true);
+          updateOpen(true);
           setMessage("");
         }}
         style={{
@@ -271,8 +289,9 @@ export default function AddClubArtistButton({
       >
         Adicionar artista
       </button>
+      ) : null}
 
-      {open ? (
+      {modalOpen ? (
         <div
           role="dialog"
           aria-modal="true"
@@ -337,7 +356,7 @@ export default function AddClubArtistButton({
 
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => updateOpen(false)}
                 disabled={Boolean(savingId)}
                 style={{
                   width: 36,

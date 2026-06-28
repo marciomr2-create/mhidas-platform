@@ -9,6 +9,7 @@ type MoveClubArtistButtonProps = {
   ownerUserId: string;
   spotifyId: string;
   artistName: string;
+  layout?: "overlay" | "footer";
 };
 
 export default function MoveClubArtistButton({
@@ -16,6 +17,7 @@ export default function MoveClubArtistButton({
   ownerUserId,
   spotifyId,
   artistName,
+  layout = "overlay",
 }: MoveClubArtistButtonProps) {
   const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
@@ -28,7 +30,9 @@ export default function MoveClubArtistButton({
     async function checkOwner() {
       try {
         const supabase = createBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (!mounted) return;
         setIsOwner(Boolean(user?.id && ownerUserId && user.id === ownerUserId));
@@ -68,7 +72,7 @@ export default function MoveClubArtistButton({
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok) {
-        throw new Error(result?.message || "N?o foi poss?vel mover este artista.");
+        throw new Error(result?.message || "Não foi possível mover este artista.");
       }
 
       router.refresh();
@@ -81,36 +85,64 @@ export default function MoveClubArtistButton({
 
   if (!checked || !isOwner) return null;
 
-  const baseButton = {
-    width: 30,
-    height: 30,
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "rgba(0,0,0,0.34)",
-    backdropFilter: "blur(10px)",
-    color: "#fff",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: loadingDirection ? "wait" : "pointer",
-    fontSize: 17,
-    fontWeight: 900,
-    lineHeight: 1,
-    boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
-    opacity: loadingDirection ? 0.45 : 0.58,
-  } as const;
+  const isFooter = layout === "footer";
+
+  const baseButton = isFooter
+    ? ({
+        width: 34,
+        height: 30,
+        border: "none",
+        borderRadius: 0,
+        background: "transparent",
+        color: "rgba(255,255,255,0.82)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: loadingDirection ? "wait" : "pointer",
+        fontSize: 21,
+        fontWeight: 700,
+        lineHeight: 1,
+        padding: 0,
+        opacity: loadingDirection ? 0.42 : 1,
+      } as const)
+    : ({
+        width: 30,
+        height: 30,
+        borderRadius: 999,
+        border: "1px solid rgba(255,255,255,0.14)",
+        background: "rgba(0,0,0,0.34)",
+        backdropFilter: "blur(10px)",
+        color: "#fff",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: loadingDirection ? "wait" : "pointer",
+        fontSize: 17,
+        fontWeight: 900,
+        lineHeight: 1,
+        boxShadow: "0 10px 24px rgba(0,0,0,0.24)",
+        opacity: loadingDirection ? 0.45 : 0.72,
+      } as const);
 
   return (
     <div
-      style={{
-        position: "absolute",
-        left: 10,
-        top: 10,
-        zIndex: 8,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 7,
-      }}
+      style={
+        isFooter
+          ? {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 12,
+            }
+          : {
+              position: "absolute",
+              left: 10,
+              top: 10,
+              zIndex: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+            }
+      }
     >
       <button
         type="button"
@@ -120,7 +152,7 @@ export default function MoveClubArtistButton({
         disabled={Boolean(loadingDirection)}
         style={baseButton}
       >
-        ?
+        ←
       </button>
 
       <button
@@ -131,7 +163,7 @@ export default function MoveClubArtistButton({
         disabled={Boolean(loadingDirection)}
         style={baseButton}
       >
-        ?
+        →
       </button>
     </div>
   );

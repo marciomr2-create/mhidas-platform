@@ -40,6 +40,9 @@ type AddClubTokenButtonProps = {
   cityBase?: string;
   compact?: boolean;
   allowNextEventDetails?: boolean;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 function normalizeText(value: any): string {
@@ -104,12 +107,26 @@ export default function AddClubTokenButton({
   cityBase = "",
   compact = false,
   allowNextEventDetails = false,
+  hideTrigger = false,
+  open,
+  onOpenChange,
 }: AddClubTokenButtonProps) {
   const router = useRouter();
 
   const [checked, setChecked] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const modalOpen = typeof open === "boolean" ? open : internalOpen;
+
+  function updateOpen(nextOpen: boolean) {
+    if (typeof open === "boolean") {
+      onOpenChange?.(nextOpen);
+      return;
+    }
+
+    setInternalOpen(nextOpen);
+  }
 
   const [query, setQuery] = useState("");
   const [nextEventDate, setNextEventDate] = useState("");
@@ -121,6 +138,7 @@ export default function AddClubTokenButton({
   const [message, setMessage] = useState("");
 
   const canSearch = useMemo(() => normalizeText(query).length >= 2, [query]);
+  const manualOnlyClub = field === "favorite_clubs";
 
   useEffect(() => {
     let mounted = true;
@@ -152,6 +170,13 @@ export default function AddClubTokenButton({
       mounted = false;
     };
   }, [ownerUserId]);
+
+  useEffect(() => {
+    if (!modalOpen || !manualOnlyClub) return;
+
+    setSuggestions([]);
+    setSearching(false);
+  }, [manualOnlyClub, modalOpen]);
 
   async function searchCatalog(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -305,7 +330,7 @@ export default function AddClubTokenButton({
       await addToken(itemName);
 
       setMessage(`${itemName} foi adicionado ao seu Club.`);
-      setOpen(false);
+      updateOpen(false);
       setQuery("");
       setNextEventDate("");
       setNextEventLink("");
@@ -328,21 +353,23 @@ export default function AddClubTokenButton({
       const cleanQuery = normalizeText(query);
       let itemName = cleanQuery;
 
-      const automaticSuggestion = await resolveAutomaticSuggestion(cleanQuery);
+      if (!manualOnlyClub) {
+        const automaticSuggestion = await resolveAutomaticSuggestion(cleanQuery);
 
-      if (automaticSuggestion) {
-        try {
-          const savedItem = await saveSuggestionToCatalog(automaticSuggestion);
-          itemName = normalizeText(savedItem?.name || automaticSuggestion.name || cleanQuery);
-        } catch {
-          itemName = cleanQuery;
+        if (automaticSuggestion) {
+          try {
+            const savedItem = await saveSuggestionToCatalog(automaticSuggestion);
+            itemName = normalizeText(savedItem?.name || automaticSuggestion.name || cleanQuery);
+          } catch {
+            itemName = cleanQuery;
+          }
         }
       }
 
       await addToken(itemName);
 
       setMessage(`${itemName} foi adicionado ao seu Club.`);
-      setOpen(false);
+      updateOpen(false);
       setQuery("");
       setNextEventDate("");
       setNextEventLink("");
@@ -361,10 +388,11 @@ export default function AddClubTokenButton({
 
   return (
     <>
+      {!hideTrigger ? (
       <button
         type="button"
         onClick={() => {
-          setOpen(true);
+          updateOpen(true);
           setMessage("");
         }}
         style={{
@@ -388,8 +416,9 @@ export default function AddClubTokenButton({
       >
         {label}
       </button>
+      ) : null}
 
-      {open ? (
+      {modalOpen ? (
         <div
           role="dialog"
           aria-modal="true"
@@ -448,13 +477,15 @@ export default function AddClubTokenButton({
                     lineHeight: 1.4,
                   }}
                 >
-                  Busque no catálogo ou adicione manualmente ao seu Club.
+                  {manualOnlyClub
+                    ? "Digite o nome do club para adicionar ao seu perfil."
+                    : "Busque no catálogo ou adicione manualmente ao seu Club."}
                 </span>
               </div>
 
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => updateOpen(false)}
                 disabled={saving}
                 style={{
                   width: 36,
@@ -472,7 +503,18 @@ export default function AddClubTokenButton({
               </button>
             </div>
 
-            <form onSubmit={searchCatalog} style={{ marginTop: 18 }}>
+            <form
+              onSubmit={(event) => {
+                if (manualOnlyClub) {
+                  event.preventDefault();
+                  void handleManualAdd();
+                  return;
+                }
+
+                void searchCatalog(event);
+              }}
+              style={{ marginTop: 18 }}
+            >
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -547,46 +589,70 @@ export default function AddClubTokenButton({
                   marginTop: 12,
                 }}
               >
-                <button
-                  type="submit"
-                  disabled={!canSearch || searching || saving}
-                  style={{
-                    minHeight: 40,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.16)",
-                    background:
-                      !canSearch || searching || saving
+                {manualOnlyClub ? (
+                  <button
+                    type="submit"
+                    disabled={!canSearch || saving}
+                    style={{
+                      minHeight: 40,
+                      borderRadius: 999,
+                      border: "1px solid rgba(0,255,190,0.28)",
+                      background: !canSearch || saving
                         ? "rgba(255,255,255,0.08)"
-                        : "rgba(255,255,255,0.18)",
-                    color: "#fff",
-                    padding: "0 15px",
-                    fontWeight: 850,
-                    cursor:
-                      !canSearch || searching || saving ? "not-allowed" : "pointer",
-                    opacity: !canSearch || searching || saving ? 0.6 : 1,
-                  }}
-                >
-                  {searching ? "Buscando..." : "Buscar"}
-                </button>
+                        : "linear-gradient(135deg, rgba(0,210,190,0.30), rgba(125,92,255,0.24))",
+                      color: "#fff",
+                      padding: "0 17px",
+                      fontWeight: 850,
+                      cursor: !canSearch || saving ? "not-allowed" : "pointer",
+                      opacity: !canSearch || saving ? 0.6 : 1,
+                    }}
+                  >
+                    {saving ? "Salvando..." : "Adicionar club"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="submit"
+                      disabled={!canSearch || searching || saving}
+                      style={{
+                        minHeight: 40,
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        background:
+                          !canSearch || searching || saving
+                            ? "rgba(255,255,255,0.08)"
+                            : "rgba(255,255,255,0.18)",
+                        color: "#fff",
+                        padding: "0 15px",
+                        fontWeight: 850,
+                        cursor:
+                          !canSearch || searching || saving ? "not-allowed" : "pointer",
+                        opacity: !canSearch || searching || saving ? 0.6 : 1,
+                      }}
+                    >
+                      {searching ? "Buscando..." : "Buscar"}
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={handleManualAdd}
-                  disabled={!canSearch || saving}
-                  style={{
-                    minHeight: 40,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.08)",
-                    color: "#fff",
-                    padding: "0 15px",
-                    fontWeight: 800,
-                    cursor: !canSearch || saving ? "not-allowed" : "pointer",
-                    opacity: !canSearch || saving ? 0.6 : 1,
-                  }}
-                >
-                  {saving ? "Salvando..." : "Adicionar manualmente"}
-                </button>
+                    <button
+                      type="button"
+                      onClick={handleManualAdd}
+                      disabled={!canSearch || saving}
+                      style={{
+                        minHeight: 40,
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.08)",
+                        color: "#fff",
+                        padding: "0 15px",
+                        fontWeight: 800,
+                        cursor: !canSearch || saving ? "not-allowed" : "pointer",
+                        opacity: !canSearch || saving ? 0.6 : 1,
+                      }}
+                    >
+                      {saving ? "Salvando..." : "Adicionar manualmente"}
+                    </button>
+                  </>
+                )}
               </div>
             </form>
 
@@ -607,7 +673,7 @@ export default function AddClubTokenButton({
               </div>
             ) : null}
 
-            {suggestions.length > 0 ? (
+            {!manualOnlyClub && suggestions.length > 0 ? (
               <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
                 {suggestions.map((item, index) => (
                   <button

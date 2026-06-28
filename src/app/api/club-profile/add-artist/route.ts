@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
@@ -17,6 +17,20 @@ function normalizeUrl(value: any): string {
   if (text.startsWith("https://")) return text;
 
   return "";
+}
+
+function resolveNextSortOrder(rows: Array<{ sort_order: number | null }> | null): number {
+  const highestSortOrder = (rows || []).reduce((highest, row) => {
+    const value = Number(row?.sort_order);
+
+    if (!Number.isFinite(value)) {
+      return highest;
+    }
+
+    return Math.max(highest, value);
+  }, -1);
+
+  return highestSortOrder + 1;
 }
 
 export async function POST(request: NextRequest) {
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     const { data: existing, error: existingError } = await supabase
       .from("club_profile_artists")
-      .select("spotify_id")
+      .select("spotify_id, is_active")
       .eq("user_id", user.id)
       .eq("spotify_id", spotifyId)
       .maybeSingle();
@@ -94,13 +108,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: orderRows, error: orderError } = await supabase
+      .from("club_profile_artists")
+      .select("sort_order")
+      .eq("user_id", user.id)
+      .eq("is_active", true);
+
+    if (orderError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: `Não foi possível calcular a posição do artista. ${orderError.message}`,
+        },
+        { status: 500 }
+      );
+    }
+
+    const nextSortOrder = resolveNextSortOrder(orderRows);
+
     if (existing?.spotify_id) {
+      const shouldReactivate = existing.is_active !== true;
+
       const { error: updateError } = await supabase
         .from("club_profile_artists")
         .update({
           name,
           image_url: imageUrl || null,
           spotify_url: spotifyUrl || null,
+          ...(shouldReactivate
+            ? {
+                is_active: true,
+                sort_order: nextSortOrder,
+              }
+            : {}),
         })
         .eq("user_id", user.id)
         .eq("spotify_id", spotifyId);
@@ -117,8 +157,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         ok: true,
-        added: false,
-        message: "Este artista já estava no seu Club.",
+        added: shouldReactivate,
+        message: shouldReactivate
+          ? "Artista reativado no final do ranking."
+          : "Este artista já estava no seu Club.",
       });
     }
 
@@ -130,6 +172,8 @@ export async function POST(request: NextRequest) {
         name,
         image_url: imageUrl || null,
         spotify_url: spotifyUrl || null,
+        sort_order: nextSortOrder,
+        is_active: true,
       });
 
     if (insertError) {
@@ -145,7 +189,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       added: true,
-      message: "Artista adicionado ao Club.",
+      message: "Artista adicionado ao final do ranking.",
     });
   } catch (error: any) {
     return NextResponse.json(

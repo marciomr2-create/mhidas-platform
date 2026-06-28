@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
@@ -7,12 +7,23 @@ import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 type Direction = "left" | "right";
 
-function normalizeText(value: any): string {
+type ArtistOrderRow = {
+  spotify_id: string;
+  sort_order: number | null;
+  created_at: string | null;
+};
+
+function normalizeText(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-function normalizeDirection(value: any): Direction {
+function normalizeDirection(value: unknown): Direction {
   return normalizeText(value).toLowerCase() === "left" ? "left" : "right";
+}
+
+function readSortOrder(value: number | null): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -51,6 +62,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ownerUserId = user.id;
+
     const { data: card, error: cardError } = await supabase
       .from("cards")
       .select("card_id, user_id")
@@ -64,7 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (card.user_id !== user.id) {
+    if (card.user_id !== ownerUserId) {
       return NextResponse.json(
         { ok: false, message: "Você não tem permissão para alterar este perfil." },
         { status: 403 }
@@ -73,8 +86,10 @@ export async function POST(request: NextRequest) {
 
     const { data: artistsData, error: artistsError } = await supabase
       .from("club_profile_artists")
-      .select("spotify_id, created_at")
-      .eq("user_id", user.id)
+      .select("spotify_id, sort_order, created_at")
+      .eq("user_id", ownerUserId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true });
 
     if (artistsError) {
@@ -87,8 +102,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const artists = artistsData || [];
-    const currentIndex = artists.findIndex((artist) => artist.spotify_id === spotifyId);
+    const artists = (artistsData || []) as ArtistOrderRow[];
+    const currentIndex = artists.findIndex(
+      (artist) => artist.spotify_id === spotifyId
+    );
 
     if (currentIndex < 0) {
       return NextResponse.json(
@@ -109,43 +126,59 @@ export async function POST(request: NextRequest) {
 
     const currentArtist = artists[currentIndex];
     const targetArtist = artists[targetIndex];
+    const currentSortOrder = readSortOrder(currentArtist.sort_order);
+    const targetSortOrder = readSortOrder(targetArtist.sort_order);
 
-    const currentCreatedAt =
-      currentArtist.created_at || new Date(Date.now() + currentIndex).toISOString();
+    const finiteOrders = artists
+      .map((artist) => readSortOrder(artist.sort_order))
+      .filter((value): value is number => value !== null);
 
-    const targetCreatedAt =
-      targetArtist.created_at || new Date(Date.now() + targetIndex).toISOString();
+    const highestSortOrder = finiteOrders.length
+      ? Math.max(...finiteOrders)
+      : artists.length;
 
-    const { error: currentUpdateError } = await supabase
-      .from("club_profile_artists")
-      .update({ created_at: targetCreatedAt })
-      .eq("user_id", user.id)
-      .eq("spotify_id", currentArtist.spotify_id);
+    async function updateArtistOrder(targetSpotifyId: string, sortOrder: number) {
+      const { error } = await supabase
+        .from("club_profile_artists")
+        .update({ sort_order: sortOrder })
+        .eq("user_id", ownerUserId)
+        .eq("spotify_id", targetSpotifyId);
 
-    if (currentUpdateError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: `Não foi possível mover o artista. ${currentUpdateError.message}`,
-        },
-        { status: 500 }
-      );
+      if (error) {
+        throw new Error(error.message);
+      }
     }
 
-    const { error: targetUpdateError } = await supabase
-      .from("club_profile_artists")
-      .update({ created_at: currentCreatedAt })
-      .eq("user_id", user.id)
-      .eq("spotify_id", targetArtist.spotify_id);
+    if (
+      currentSortOrder !== null &&
+      targetSortOrder !== null &&
+      currentSortOrder !== targetSortOrder
+    ) {
+      const temporarySortOrder = highestSortOrder + artists.length + 1000;
 
-    if (targetUpdateError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: `Não foi possível concluir a ordenação. ${targetUpdateError.message}`,
-        },
-        { status: 500 }
-      );
+      await updateArtistOrder(currentArtist.spotify_id, temporarySortOrder);
+      await updateArtistOrder(targetArtist.spotify_id, currentSortOrder);
+      await updateArtistOrder(currentArtist.spotify_id, targetSortOrder);
+    } else {
+      const reorderedArtists = [...artists];
+
+      [reorderedArtists[currentIndex], reorderedArtists[targetIndex]] = [
+        reorderedArtists[targetIndex],
+        reorderedArtists[currentIndex],
+      ];
+
+      const temporaryBase = highestSortOrder + artists.length + 1000;
+
+      for (let index = 0; index < reorderedArtists.length; index += 1) {
+        await updateArtistOrder(
+          reorderedArtists[index].spotify_id,
+          temporaryBase + index
+        );
+      }
+
+      for (let index = 0; index < reorderedArtists.length; index += 1) {
+        await updateArtistOrder(reorderedArtists[index].spotify_id, index);
+      }
     }
 
     return NextResponse.json({
@@ -159,7 +192,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         ok: false,
-        message: error?.message || "Erro inesperado ao reordenar artista.",
+        message:
+          error?.message || "Erro inesperado ao reordenar artista.",
       },
       { status: 500 }
     );
