@@ -2705,7 +2705,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         ) : null}
 
         {spotifyArtists.length > 0 ? (
-          <section id="artistas" className="uc-section" style={sectionBoxStyle()}>
+          <section id="artistas" className="uc-section" style={{ ...sectionBoxStyle(), scrollMarginTop: 96 }}>
             <div
               style={{
                 display: "flex",
@@ -2865,7 +2865,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             </p>
 
             {clubsWithCatalog.length > 0 ? (
-              <div style={{ marginTop: 18 }}>
+              <div id="clubes" style={{ marginTop: 18, scrollMarginTop: 96 }}>
                 <div
                   style={{
                     display: "flex",
@@ -2934,7 +2934,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             )}
 
             {festivalsWithCatalog.length > 0 ? (
-              <div style={{ marginTop: 20 }}>
+              <div id="festivais" style={{ marginTop: 20, scrollMarginTop: 96 }}>
                 <div
                   style={{
                     display: "flex",
@@ -3003,7 +3003,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             )}
 
             {lastEventsWithCatalog.length > 0 ? (
-              <div style={{ marginTop: 20 }}>
+              <div id="ultimos-eventos" style={{ marginTop: 20, scrollMarginTop: 96 }}>
                 <div
                   style={{
                     display: "flex",
@@ -3074,7 +3074,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
             <div id="agenda-club" style={{ scrollMarginTop: 24 }} />
 
             {nextEventCards.length > 0 ? (
-              <div style={{ marginTop: 20 }}>
+              <div id="proximos-eventos" style={{ marginTop: 20, scrollMarginTop: 96 }}>
                 <div
                   style={{
                     display: "flex",
