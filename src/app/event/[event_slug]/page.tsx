@@ -1063,12 +1063,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const tribeMap = new Map<string, number>();
 
   for (const member of attendees) {
-    const tribeSources = [
-      ...((member.favorite_genres || []).map((item) => `Vertente: ${item}`)),
-      ...((member.favorite_clubs || []).map((item) => `Club: ${item}`)),
-      ...((member.favorite_events || []).map((item) => `Evento: ${item}`)),
-      hasContent(member.city_base) ? `Cidade: ${member.city_base}` : "",
-    ];
+    const tribeSources = member.favorite_genres || [];
 
     for (const source of tribeSources) {
       const tribe = normalizeText(source);
@@ -1278,6 +1273,83 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           line-height: 1;
           font-weight: 950;
           letter-spacing: -0.04em;
+        }
+
+        .event-hero__tribes {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: minmax(170px, 0.42fr) minmax(0, 1.58fr);
+          align-items: center;
+          gap: 22px;
+          padding: 16px clamp(24px, 3vw, 38px);
+          border-top: 1px solid rgba(255,255,255,0.10);
+          background:
+            linear-gradient(90deg, rgba(8,8,13,0.88), rgba(12,10,22,0.82));
+          backdrop-filter: blur(10px);
+        }
+
+        .event-hero__tribes-heading {
+          display: grid;
+          gap: 3px;
+          min-width: 0;
+        }
+
+        .event-hero__tribes-title {
+          color: #f7f7fb;
+          font-size: 12px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+        }
+
+        .event-hero__tribes-subtitle {
+          color: rgba(210,210,222,0.62);
+          font-size: 11px;
+          line-height: 1.35;
+        }
+
+        .event-hero__tribes-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          min-width: 0;
+        }
+
+        .event-hero__tribe {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: 7px minmax(0, 1fr);
+          gap: 2px 8px;
+          padding: 4px 12px;
+          border-left: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-hero__tribe-dot {
+          grid-row: 1 / span 2;
+          align-self: center;
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: #00e7b0;
+          box-shadow: 0 0 12px rgba(0,231,176,0.38);
+        }
+
+        .event-hero__tribe-name {
+          min-width: 0;
+          overflow: visible;
+          color: rgba(245,245,250,0.94);
+          font-size: 13px;
+          line-height: 1.25;
+          font-weight: 900;
+          text-overflow: clip;
+          white-space: normal;
+          overflow-wrap: anywhere;
+        }
+
+        .event-hero__tribe-count {
+          color: rgba(210,210,222,0.64);
+          font-size: 11px;
+          line-height: 1.25;
         }
 
         .event-quick-guide {
@@ -1517,6 +1589,38 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-hero__stat-value {
             font-size: 32px;
           }
+
+          .event-hero__tribes {
+            grid-column: auto;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 15px 18px 18px;
+          }
+
+          .event-hero__tribes-heading {
+            gap: 2px;
+          }
+
+          .event-hero__tribes-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .event-hero__tribe {
+            padding: 9px 10px 9px 0;
+            border-left: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+          }
+
+          .event-hero__tribe:nth-child(even) {
+            padding-left: 10px;
+            border-left: 1px solid rgba(255,255,255,0.07);
+          }
+
+          .event-hero__tribe-name {
+            overflow: visible;
+            text-overflow: clip;
+            white-space: normal;
+          }
         }
       `}</style>
       <section className="event-hero" style={heroStyle(heroImage)}>
@@ -1586,9 +1690,45 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             <strong className="event-hero__stat-value">{meetMembers.length}</strong>
           </div>
         </div>
+
+        {topTribes.length > 0 ? (
+          <div
+            className="event-hero__tribes"
+            aria-label="Tribos dominantes do evento"
+          >
+            <div className="event-hero__tribes-heading">
+              <strong className="event-hero__tribes-title">
+                Tribos dominantes
+              </strong>
+
+              <span className="event-hero__tribes-subtitle">
+                Afinidades mais presentes
+              </span>
+            </div>
+
+            <div className="event-hero__tribes-list">
+              {topTribes.map(([tribe, count]) => (
+                <div className="event-hero__tribe" key={tribe}>
+                  <span
+                    className="event-hero__tribe-dot"
+                    aria-hidden="true"
+                  />
+
+                  <strong className="event-hero__tribe-name">
+                    {tribe}
+                  </strong>
+
+                  <span className="event-hero__tribe-count">
+                    {count === 1 ? "1 Clubber" : `${count} Clubbers`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
- 
+
       <section
         className="event-quick-guide"
         style={sectionStyle("green")}
@@ -1701,40 +1841,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         </section>
       ) : (
         <>
-          {topTribes.length > 0 ? (
-            <section style={sectionStyle("purple")}>
-              <SectionTitle
-                icon="▣"
-                title="Tribos dominantes do evento"
-                subtitle="Vertentes mais presentes entre os Clubbers conectados a este evento."
-              />
-
-              <div style={{ display: "flex", gap: 10, overflowX: "auto", overflowY: "hidden", paddingBottom: 6, scrollSnapType: "x mandatory" }}>
-                {topTribes.map(([tribe, count]) => (
-                  <div
-                    key={tribe}
-                    style={{
-                      minWidth: 176,
-                      padding: "13px 14px",
-                      borderRadius: 18,
-                      border: "1px solid rgba(0,255,190,0.20)",
-                      background:
-                        "linear-gradient(135deg, rgba(0,255,190,0.11), rgba(125,92,255,0.13))",
-                      boxShadow: "0 12px 34px rgba(0,255,190,0.08)",
-                      display: "grid",
-                      gap: 6,
-                    }}
-                  >
-                    <strong style={{ fontSize: 12 }}>{tribe}</strong>
-                    <span style={{ fontSize: 17, opacity: 0.82 }}>
-                      {count === 1 ? "1 Clubber" : `${count} Clubbers`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
           <section style={sectionStyle("purple")}>
             <SectionTitle
               icon="●"
