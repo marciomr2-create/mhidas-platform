@@ -6,6 +6,7 @@ export const fetchCache = "force-no-store";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
 import TicketIntentButton from "./TicketIntentButton";
@@ -269,19 +270,15 @@ function shellStyle() {
 function heroStyle(heroImage: string) {
   return {
     marginTop: 8,
-    padding: 14,
-    borderRadius: 24,
-    border: "1px solid rgba(255,255,255,0.14)",
+    borderRadius: 28,
+    border: "1px solid rgba(255,255,255,0.12)",
     backgroundImage: heroImage
-      ? `linear-gradient(180deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.88) 100%), url(${heroImage})`
-      : "linear-gradient(135deg, rgba(125,92,255,0.20), rgba(0,255,190,0.05))",
+      ? `linear-gradient(90deg, rgba(5,5,8,0.96) 0%, rgba(5,5,8,0.84) 48%, rgba(5,5,8,0.34) 100%), linear-gradient(180deg, rgba(5,5,8,0.12) 0%, rgba(5,5,8,0.78) 100%), url(${heroImage})`
+      : "linear-gradient(135deg, rgba(17,17,24,0.98), rgba(36,28,68,0.84), rgba(0,78,70,0.54))",
     backgroundSize: "cover",
-    backgroundPosition: "center",
-    display: "grid",
-    gap: 10,
-    minHeight: 260,
-    alignContent: "end",
-    boxShadow: "0 22px 54px rgba(0,0,0,0.30)",
+    backgroundPosition: "center 34%",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.42)",
+    overflow: "hidden",
   } as const;
 }
 
@@ -831,6 +828,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const selectedRegion = normalizeText(sp?.region);
   const requestedClubReturnSlug = getRequestedClubReturnSlug(sp?.return_to);
 
+  const authSupabase = await createServerSupabaseClient();
+  const {
+    data: { user: authenticatedUser },
+  } = await authSupabase.auth.getUser();
+
   const supabase = createPublicClient();
 
   const { data: cardsData } = await supabase
@@ -846,12 +848,27 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           normalizeText(card.slug).toLowerCase() === requestedClubReturnSlug
       )
     : undefined;
+  const eventReturnQuery = new URLSearchParams();
+
+  if (selectedCity) eventReturnQuery.set("city", selectedCity);
+  if (selectedState) eventReturnQuery.set("state", selectedState);
+  if (selectedRegion) eventReturnQuery.set("region", selectedRegion);
+
+  const eventReturnSearch = eventReturnQuery.toString();
+  const eventReturnPath = `/event/${eventSlug}${
+    eventReturnSearch ? `?${eventReturnSearch}` : ""
+  }`;
+
   const heroReturnHref = returnCard
     ? `/${returnCard.slug}?mode=club`
-    : "/login";
+    : authenticatedUser
+      ? "/dashboard"
+      : `/login?next=${encodeURIComponent(eventReturnPath)}`;
   const heroReturnLabel = returnCard
     ? "Voltar ao perfil Club"
-    : "Entrar no USECLUBBERS";
+    : authenticatedUser
+      ? "Abrir minha central"
+      : "Entrar no USECLUBBERS";
   const userIds = dedupeStrings(cards.map((card) => card.user_id));
 
   const { data: eventCheckInsData } = await supabase
@@ -1100,34 +1117,253 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         body {
           background: #050505;
         }
+
+        .event-hero {
+          width: min(1120px, calc(100vw - 48px));
+          margin-left: 50%;
+          transform: translateX(-50%);
+          display: grid;
+          grid-template-columns: minmax(0, 1.16fr) minmax(300px, 0.84fr);
+          min-height: 430px;
+        }
+
+        .event-hero__content {
+          display: grid;
+          align-content: end;
+          gap: 18px;
+          padding: clamp(28px, 4.6vw, 58px);
+          min-width: 0;
+        }
+
+        .event-hero__meta {
+          margin: 0;
+          color: rgba(222, 222, 232, 0.76);
+          font-size: 12px;
+          font-weight: 850;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .event-hero__title {
+          margin: 0;
+          max-width: 720px;
+          color: #f7f7fb;
+          font-size: clamp(42px, 6vw, 72px);
+          line-height: 0.94;
+          letter-spacing: -0.055em;
+          font-weight: 950;
+        }
+
+        .event-hero__description {
+          margin: 0;
+          max-width: 640px;
+          color: rgba(224, 224, 232, 0.82);
+          font-size: clamp(16px, 1.7vw, 20px);
+          line-height: 1.58;
+        }
+
+        .event-hero__actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .event-hero__action-secondary,
+        .event-hero__action-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 46px;
+          padding: 0 18px;
+          border-radius: 14px;
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .event-hero__action-secondary {
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          background: rgba(15, 15, 22, 0.54);
+          backdrop-filter: blur(12px);
+        }
+
+        .event-hero__action-link {
+          min-height: 0;
+          padding: 10px 2px;
+          border-radius: 0;
+          gap: 8px;
+          color: rgba(232, 232, 240, 0.78);
+          transition: color 160ms ease;
+        }
+
+        .event-hero__action-link::after {
+          content: "→";
+          color: #18d8c0;
+          font-size: 16px;
+          font-weight: 800;
+          line-height: 1;
+          transition: transform 160ms ease;
+        }
+
+        .event-hero__action-link:hover {
+          color: #ffffff;
+        }
+
+        .event-hero__action-link:hover::after {
+          transform: translateX(3px);
+        }
+
+        .event-hero__ticket > section {
+          margin-top: 2px !important;
+          padding: 0 !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        .event-hero__ticket > section > div {
+          flex-direction: row !important;
+          align-items: center !important;
+        }
+
+        .event-hero__ticket button {
+          width: auto !important;
+          min-width: 250px !important;
+          border: 1px solid rgba(0, 255, 190, 0.32) !important;
+          border-radius: 14px !important;
+          background: linear-gradient(135deg, rgba(0, 184, 153, 0.98), rgba(92, 70, 190, 0.92)) !important;
+          color: #ffffff !important;
+          box-shadow: 0 14px 34px rgba(0, 184, 153, 0.18) !important;
+        }
+
+        .event-hero__stats {
+          align-self: stretch;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          border-left: 1px solid rgba(255,255,255,0.10);
+          background: linear-gradient(180deg, rgba(8,8,13,0.34), rgba(8,8,13,0.78));
+          backdrop-filter: blur(8px);
+        }
+
+        .event-hero__stat {
+          display: grid;
+          align-content: end;
+          gap: 8px;
+          min-height: 148px;
+          padding: 28px;
+          border-right: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-hero__stat:nth-child(2n) {
+          border-right: 0;
+        }
+
+        .event-hero__stat:nth-last-child(-n + 2) {
+          border-bottom: 0;
+        }
+
+        .event-hero__stat-label {
+          color: rgba(216, 216, 226, 0.68);
+          font-size: 13px;
+          line-height: 1.35;
+        }
+
+        .event-hero__stat-value {
+          color: #f8f8fb;
+          font-size: 38px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+        }
+
+        @media (max-width: 760px) {
+          .event-hero {
+            width: auto;
+            margin-left: 0;
+            transform: none;
+            grid-template-columns: 1fr;
+            min-height: 0;
+            background-position: center top;
+          }
+
+          .event-hero__content {
+            min-height: 470px;
+            padding: 24px 18px 22px;
+            gap: 15px;
+          }
+
+          .event-hero__title {
+            font-size: clamp(38px, 13vw, 54px);
+          }
+
+          .event-hero__description {
+            font-size: 16px;
+            line-height: 1.52;
+          }
+
+          .event-hero__actions {
+            align-items: stretch;
+          }
+
+          .event-hero__action-secondary {
+            width: 100%;
+          }
+
+          .event-hero__action-link {
+            width: fit-content;
+          }
+
+          .event-hero__ticket > section > div {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+
+          .event-hero__ticket button {
+            width: 100% !important;
+            min-width: 0 !important;
+          }
+
+          .event-hero__stats {
+            border-top: 1px solid rgba(255,255,255,0.10);
+            border-left: 0;
+          }
+
+          .event-hero__stat {
+            min-height: 112px;
+            padding: 18px;
+          }
+
+          .event-hero__stat-value {
+            font-size: 32px;
+          }
+        }
       `}</style>
-      <section style={heroStyle(heroImage)}>
-        <div style={{ display: "grid", gap: 18, maxWidth: 720 }}>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <span style={badgeStyle()}>PLATAFORMA MHIDAS do evento</span>
-            <span style={badgeStyle()}>{matchedMembers.length} participantes mapeados</span>
-          </div>
-
-          <h1 style={{ margin: 0, fontSize: 30, lineHeight: 0.96, fontWeight: 950 }}>
-            {heroTitle}
-          </h1>
-
-          <p style={{ margin: 0, opacity: 0.92, lineHeight: 1.7, maxWidth: 680, fontSize: 18 }}>
-            Este evento funciona como ponto de conexão entre perfis Club,
-            caronas e encontros já cadastrados no ecossistema USECLUBBERS.
+      <section className="event-hero" style={heroStyle(heroImage)}>
+        <div className="event-hero__content">
+          <p className="event-hero__meta">
+            {matchedMembers.length}{" "}
+            {matchedMembers.length === 1
+              ? "participante mapeado"
+              : "participantes mapeados"}
           </p>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+          <h1 className="event-hero__title">{heroTitle}</h1>
+
+          <p className="event-hero__description">
+            Conecte-se com Clubbers, caronas e encontros deste evento.
+          </p>
+
+          <div className="event-hero__actions">
             {hasContent(heroOfficialUrl) ? (
               <a
                 href={heroOfficialUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  ...actionButtonStyle(true),
-                  width: "fit-content",
-                  padding: "15px 20px",
-                }}
+                className="event-hero__action-secondary"
               >
                 Abrir evento oficial
               </a>
@@ -1135,40 +1371,42 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
             <Link
               href={heroReturnHref}
-              style={{
-                ...actionButtonStyle(),
-                width: "fit-content",
-                padding: "15px 20px",
-              }}
+              className="event-hero__action-link"
             >
               {heroReturnLabel}
             </Link>
           </div>
 
           {eventGroup?.group_id ? (
-            <TicketIntentButton eventGroupId={eventGroup.group_id} compact />
+            <div className="event-hero__ticket">
+              <TicketIntentButton eventGroupId={eventGroup.group_id} compact />
+            </div>
           ) : null}
         </div>
 
-        <div style={statsGridStyle()}>
-          <div style={statCardStyle("purple")}>
-            <span style={{ opacity: 0.84 }}>Perfis no evento</span>
-            <strong style={{ fontSize: 34 }}>{attendees.length}</strong>
+        <div className="event-hero__stats" aria-label="Resumo social do evento">
+          <div className="event-hero__stat">
+            <span className="event-hero__stat-label">Perfis no evento</span>
+            <strong className="event-hero__stat-value">{attendees.length}</strong>
           </div>
 
-          <div style={statCardStyle("green")}>
-            <span style={{ opacity: 0.84 }}>Oferta de carona</span>
-            <strong style={{ fontSize: 34 }}>{rideOfferMembers.length}</strong>
+          <div className="event-hero__stat">
+            <span className="event-hero__stat-label">Oferta de carona</span>
+            <strong className="event-hero__stat-value">
+              {rideOfferMembers.length}
+            </strong>
           </div>
 
-          <div style={statCardStyle("blue")}>
-            <span style={{ opacity: 0.84 }}>Busca por carona</span>
-            <strong style={{ fontSize: 34 }}>{rideNeedMembers.length}</strong>
+          <div className="event-hero__stat">
+            <span className="event-hero__stat-label">Busca por carona</span>
+            <strong className="event-hero__stat-value">
+              {rideNeedMembers.length}
+            </strong>
           </div>
 
-          <div style={statCardStyle("yellow")}>
-            <span style={{ opacity: 0.84 }}>Encontros ativos</span>
-            <strong style={{ fontSize: 34 }}>{meetMembers.length}</strong>
+          <div className="event-hero__stat">
+            <span className="event-hero__stat-label">Encontros ativos</span>
+            <strong className="event-hero__stat-value">{meetMembers.length}</strong>
           </div>
         </div>
       </section>
