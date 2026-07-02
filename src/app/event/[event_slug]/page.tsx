@@ -1280,6 +1280,183 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           letter-spacing: -0.04em;
         }
 
+        .event-quick-guide {
+          width: min(1120px, calc(100vw - 48px));
+          max-width: none;
+          box-sizing: border-box;
+          margin-left: 50%;
+          transform: translateX(-50%);
+          padding: clamp(18px, 2.4vw, 26px) !important;
+          gap: 18px !important;
+          border-color: rgba(0, 255, 190, 0.14) !important;
+          background:
+            linear-gradient(145deg, rgba(20, 20, 28, 0.96), rgba(8, 8, 13, 0.98)) !important;
+        }
+
+        .event-quick-guide__heading {
+          display: grid;
+          gap: 6px;
+        }
+
+        .event-quick-guide__title {
+          margin: 0;
+          color: #f7f7fb;
+          font-size: clamp(24px, 3vw, 32px);
+          line-height: 1.05;
+          letter-spacing: -0.035em;
+          font-weight: 950;
+        }
+
+        .event-quick-guide__subtitle {
+          margin: 0;
+          max-width: 680px;
+          color: rgba(220, 220, 230, 0.74);
+          font-size: 14px;
+          line-height: 1.55;
+        }
+
+        .event-quick-guide__subtitle strong {
+          color: rgba(247, 247, 251, 0.92);
+        }
+
+        .event-quick-guide__grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          border-top: 1px solid rgba(255, 255, 255, 0.10);
+        }
+
+        .event-quick-guide__item {
+          min-width: 0;
+          padding: 20px 22px 20px 0;
+          display: grid;
+          align-content: start;
+          gap: 7px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .event-quick-guide__item:nth-child(odd) {
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .event-quick-guide__item:nth-child(even) {
+          padding-left: 22px;
+        }
+
+        .event-quick-guide__label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: rgba(210, 210, 222, 0.64);
+          font-size: 11px;
+          line-height: 1.2;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .event-quick-guide__label::before {
+          content: "";
+          width: 6px;
+          height: 6px;
+          flex: 0 0 6px;
+          border-radius: 50%;
+          background: #00e7b0;
+          box-shadow: 0 0 14px rgba(0, 231, 176, 0.42);
+        }
+
+        .event-quick-guide__value {
+          color: #f7f7fb;
+          font-size: 18px;
+          line-height: 1.2;
+          font-weight: 900;
+        }
+
+        .event-quick-guide__detail {
+          margin: 0;
+          color: rgba(220, 220, 230, 0.78);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .event-quick-guide__note {
+          margin: 0;
+          color: rgba(196, 196, 208, 0.62);
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        @media (max-width: 760px) {
+          .event-quick-guide {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-left: 0;
+            margin-right: 0;
+            transform: none;
+            padding: 18px 16px !important;
+            gap: 16px !important;
+            overflow: hidden;
+          }
+
+          .event-quick-guide__heading,
+          .event-quick-guide__grid,
+          .event-quick-guide__item,
+          .event-quick-guide__title,
+          .event-quick-guide__subtitle,
+          .event-quick-guide__value,
+          .event-quick-guide__detail,
+          .event-quick-guide__note {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            white-space: normal;
+            overflow-wrap: anywhere;
+          }
+
+          .event-quick-guide__title {
+            font-size: 23px;
+            line-height: 1.12;
+          }
+
+          .event-quick-guide__subtitle {
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .event-quick-guide__grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
+          .event-quick-guide__item,
+          .event-quick-guide__item:nth-child(even) {
+            padding: 17px 0;
+          }
+
+          .event-quick-guide__item:nth-child(odd) {
+            border-right: 0;
+          }
+
+          .event-quick-guide__label {
+            font-size: 10px;
+          }
+
+          .event-quick-guide__value {
+            font-size: 17px;
+            line-height: 1.25;
+          }
+
+          .event-quick-guide__detail,
+          .event-quick-guide__note {
+            font-size: 13px;
+          }
+
+          .event-quick-guide__item:last-child {
+            border-bottom: 0;
+          }
+        }
+
         @media (max-width: 760px) {
           .event-hero {
             width: auto;
@@ -1413,158 +1590,94 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
  
       <section
-        style={{
-          ...sectionStyle("green"),
-          padding: 16,
-          background:
-            "linear-gradient(145deg, rgba(0,255,190,0.065), rgba(125,92,255,0.035), rgba(255,255,255,0.018))",
-        }}
+        className="event-quick-guide"
+        style={sectionStyle("green")}
       >
-        <div style={{ display: "grid", gap: 6 }}>
-          <span
-            style={{
-              width: "fit-content",
-              padding: "7px 10px",
-              borderRadius: 999,
-              border: "1px solid rgba(0,255,190,0.20)",
-              background: "rgba(0,255,190,0.07)",
-              fontSize: 12,
-              fontWeight: 900,
-              color: "#fff",
-            }}
-          >
+        <div className="event-quick-guide__heading">
+          <h2 className="event-quick-guide__title">
             Guia rápido do evento
-          </span>
-
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 22,
-              lineHeight: 1.08,
-              fontWeight: 950,
-            }}
-          >
-            Antes de sair de casa
           </h2>
 
-          <p style={{ margin: 0, opacity: 0.76, fontSize: 13, lineHeight: 1.45 }}>
+          <p className="event-quick-guide__subtitle">
+            <strong>Antes de sair de casa.</strong>{" "}
             Um resumo simples para chegar preparado, sem surpresa na entrada.
           </p>
         </div>
 
-        <div
-          style={{
-            padding: 14,
-            borderRadius: 20,
-            border: "1px solid rgba(255,255,255,0.09)",
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))",
-            display: "grid",
-            gap: 12,
-          }}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
-            <div>
-              <div style={{ fontSize: 11, opacity: 0.62, fontWeight: 850 }}>
-                Clima previsto
-              </div>
-              <strong style={{ display: "block", marginTop: 3, fontSize: 28, lineHeight: 1 }}>
-                {normalizeText(eventGroup?.weather_temperature) || "A confirmar"}
-              </strong>
-            </div>
+        <div className="event-quick-guide__grid">
+          <div className="event-quick-guide__item">
+            <span className="event-quick-guide__label">
+              Clima previsto
+            </span>
 
-            <div
-              style={{
-                padding: "8px 10px",
-                borderRadius: 999,
-                border: "1px solid rgba(0,255,190,0.18)",
-                background: "rgba(0,255,190,0.075)",
-                fontSize: 11,
-                fontWeight: 900,
-              }}
-            >
-              Clima
-            </div>
-          </div>
-
-          <div style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.86 }}>
-            {normalizeText(eventGroup?.weather_summary) || "Previsão ainda não cadastrada."}
-          </div>
-
-          <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.72 }}>
-            {normalizeText(eventGroup?.weather_rain_alert) || "Sem alerta de chuva cadastrado."}
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div
-            style={{
-              padding: 13,
-              borderRadius: 18,
-              border: "1px solid rgba(125,92,255,0.16)",
-              background:
-                "linear-gradient(145deg, rgba(125,92,255,0.12), rgba(255,255,255,0.025))",
-              display: "grid",
-              gap: 6,
-            }}
-          >
-            <div style={{ fontSize: 11, opacity: 0.64, fontWeight: 850 }}>
-              Ingresso
-            </div>
-
-            <strong style={{ fontSize: 14, lineHeight: 1.25 }}>
-              {matchedMembers.find((member) => hasContent(member.event_ticket_type))?.event_ticket_type ||
-                "A confirmar"}
+            <strong className="event-quick-guide__value">
+              {normalizeText(eventGroup?.weather_temperature) || "A confirmar"}
             </strong>
 
-            <span style={{ fontSize: 12, lineHeight: 1.4, opacity: 0.82 }}>
+            <p className="event-quick-guide__detail">
+              {normalizeText(eventGroup?.weather_summary) ||
+                "Previsão ainda não cadastrada."}
+            </p>
+
+            <p className="event-quick-guide__note">
+              {normalizeText(eventGroup?.weather_rain_alert) ||
+                "Sem alerta de chuva cadastrado."}
+            </p>
+          </div>
+
+          <div className="event-quick-guide__item">
+            <span className="event-quick-guide__label">
+              Ingresso
+            </span>
+
+            <strong className="event-quick-guide__value">
+              {matchedMembers.find((member) =>
+                hasContent(member.event_ticket_type)
+              )?.event_ticket_type || "A confirmar"}
+            </strong>
+
+            <p className="event-quick-guide__detail">
               {matchedMembers.some((member) => member.event_requires_food_kg)
                 ? "Leve 1 kg de alimento não perecível."
                 : "Confira o ingresso antes de sair."}
-            </span>
+            </p>
           </div>
 
-          <div
-            style={{
-              padding: 13,
-              borderRadius: 18,
-              border: "1px solid rgba(255,196,0,0.16)",
-              background:
-                "linear-gradient(145deg, rgba(255,196,0,0.10), rgba(255,255,255,0.025))",
-              display: "grid",
-              gap: 6,
-            }}
-          >
-            <div style={{ fontSize: 11, opacity: 0.64, fontWeight: 850 }}>
+          <div className="event-quick-guide__item">
+            <span className="event-quick-guide__label">
               Entrada
-            </div>
+            </span>
 
-            <strong style={{ fontSize: 14, lineHeight: 1.25 }}>
+            <strong className="event-quick-guide__value">
               Documento em mãos
             </strong>
 
-            <span style={{ fontSize: 12, lineHeight: 1.4, opacity: 0.82 }}>
-              {matchedMembers.some((member) => member.event_requires_student_document)
+            <p className="event-quick-guide__detail">
+              {matchedMembers.some(
+                (member) => member.event_requires_student_document
+              )
                 ? "Leve documento e comprovante de estudante."
                 : "Documento com foto sempre em mãos."}
-            </span>
+            </p>
           </div>
-        </div>
 
-        <div
-          style={{
-            padding: "11px 12px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.075)",
-            background: "rgba(0,0,0,0.18)",
-            fontSize: 12,
-            lineHeight: 1.5,
-            opacity: 0.82,
-          }}
-        >
-          {matchedMembers.find((member) => hasContent(member.event_preparation_notes))?.event_preparation_notes ||
-            normalizeText(eventGroup?.preparation_note) ||
-            "Confira ingresso, documento, rota, carona e ponto de encontro antes de sair."}
+          <div className="event-quick-guide__item">
+            <span className="event-quick-guide__label">
+              Antes de sair
+            </span>
+
+            <strong className="event-quick-guide__value">
+              Última conferência
+            </strong>
+
+            <p className="event-quick-guide__detail">
+              {matchedMembers.find((member) =>
+                hasContent(member.event_preparation_notes)
+              )?.event_preparation_notes ||
+                normalizeText(eventGroup?.preparation_note) ||
+                "Confira ingresso, documento, rota, carona e ponto de encontro antes de sair."}
+            </p>
+          </div>
         </div>
       </section>
 
