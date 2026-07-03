@@ -76,11 +76,16 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createBrowserClient(), []);
 
-  const safeNextPath = useMemo(
-    () => getSafeNextPath(searchParams.get("next")),
-    [searchParams]
-  );
-  const redirectPath = safeNextPath || "/dashboard";
+  const safeRedirectPath = useMemo(() => {
+    const safeNextPath = getSafeNextPath(searchParams.get("next"));
+
+    if (safeNextPath) {
+      return safeNextPath;
+    }
+
+    return getSafeNextPath(searchParams.get("return_to"));
+  }, [searchParams]);
+  const redirectPath = safeRedirectPath || "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

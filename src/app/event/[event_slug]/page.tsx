@@ -49,6 +49,7 @@ type ClubProfileRow = {
   ride_notes: string | null;
   meet_status: string | null;
   meet_event_name: string | null;
+  meet_event_date: string | null;
   meet_event_url: string | null;
   meet_meeting_point: string | null;
   meet_time: string | null;
@@ -103,6 +104,7 @@ type EventMember = {
   ride_notes: string;
   meet_status: string;
   meet_event_name: string;
+  meet_event_date: string;
   meet_event_url: string;
   meet_meeting_point: string;
   meet_time: string;
@@ -910,6 +912,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           ride_notes,
           meet_status,
           meet_event_name,
+          meet_event_date,
           meet_event_url,
           meet_meeting_point,
           meet_time,
@@ -976,6 +979,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ride_notes: normalizeText(profile.ride_notes),
       meet_status: normalizeText(profile.meet_status),
       meet_event_name: normalizeText(profile.meet_event_name),
+      meet_event_date: normalizeText(profile.meet_event_date),
       meet_event_url: normalizeText(profile.meet_event_url),
       meet_meeting_point: normalizeText(profile.meet_meeting_point),
       meet_time: normalizeText(profile.meet_time),
