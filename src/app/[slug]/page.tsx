@@ -22,7 +22,11 @@ import ClubQuickAddMenu from "./ClubQuickAddMenu";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ mode?: string }>;
+  searchParams?: Promise<{
+    mode?: string;
+    view?: string;
+    return_to?: string;
+  }>;
 };
 
 type ProfileMode = "club" | "pro";
@@ -107,6 +111,35 @@ const RESERVED = new Set([
 
 function normalizeText(value: any): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function getSafeEventReturnTo(value: unknown): string {
+  const candidate = normalizeText(value);
+
+  if (
+    !candidate ||
+    !candidate.startsWith("/event/") ||
+    candidate.startsWith("//") ||
+    candidate.includes("\\")
+  ) {
+    return "";
+  }
+
+  try {
+    const base = "https://useclubbers.local";
+    const parsed = new URL(candidate, base);
+
+    if (
+      parsed.origin !== base ||
+      !parsed.pathname.startsWith("/event/")
+    ) {
+      return "";
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "";
+  }
 }
 
 
@@ -1804,7 +1837,8 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   }
 
   const mode: ProfileMode = sp?.mode === "pro" ? "pro" : "club";
-  const isPublicView = (sp as { view?: string } | undefined)?.view === "public";
+  const isPublicView = sp?.view === "public";
+  const eventReturnTo = getSafeEventReturnTo(sp?.return_to);
 
   if (mode === "pro") {
     permanentRedirect(`/pro/${cleanSlug}`);
@@ -1840,7 +1874,19 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       notFound();
     }
 
-    permanentRedirect(`/${current.slug}?mode=club`);
+    const redirectSearch = new URLSearchParams({
+      mode: "club",
+    });
+
+    if (isPublicView) {
+      redirectSearch.set("view", "public");
+    }
+
+    if (eventReturnTo) {
+      redirectSearch.set("return_to", eventReturnTo);
+    }
+
+    permanentRedirect(`/${current.slug}?${redirectSearch.toString()}`);
   }
 
   const ownerControlsUserId = isPublicView ? "" : card.user_id;
@@ -2458,6 +2504,50 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           display: none;
         }
 
+        .uc-event-back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          width: fit-content;
+          color: rgba(255,255,255,0.76);
+          font-size: 13px;
+          line-height: 1.2;
+          font-weight: 850;
+          text-decoration: none;
+          transition:
+            color 160ms ease,
+            transform 160ms ease;
+        }
+
+        .uc-event-back-link__arrow {
+          color: #28e6c2;
+          font-size: 18px;
+          line-height: 1;
+          transition: transform 160ms ease;
+        }
+
+        @media (hover: hover) {
+          .uc-event-back-link:hover {
+            color: #fff;
+          }
+
+          .uc-event-back-link:hover .uc-event-back-link__arrow {
+            transform: translateX(-2px);
+          }
+        }
+
+        .uc-event-back-link:focus-visible {
+          color: #fff;
+          outline: none;
+          text-decoration: underline;
+          text-underline-offset: 4px;
+        }
+
+        .uc-event-back-link:active {
+          color: #28e6c2;
+          transform: translateY(1px);
+        }
+
         @media (max-width: 760px) {
           .uc-page-title {
             font-size: 27px !important;
@@ -2503,6 +2593,31 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
       `}</style>
 
       <div style={page}>
+        {eventReturnTo ? (
+          <nav
+            aria-label="Retorno ao evento"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+            }}
+          >
+            <Link
+              href={eventReturnTo}
+              className="uc-event-back-link"
+              aria-label="Voltar ao evento"
+            >
+              <span
+                className="uc-event-back-link__arrow"
+                aria-hidden="true"
+              >
+                ←
+              </span>
+              <span>Voltar ao evento</span>
+            </Link>
+          </nav>
+        ) : null}
+
         <OwnerClubToolbar
           cardId={card.card_id}
           ownerUserId={ownerControlsUserId}

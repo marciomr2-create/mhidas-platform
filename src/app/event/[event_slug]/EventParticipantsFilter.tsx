@@ -18,7 +18,10 @@ type EventParticipant = {
   compatibilityBadges?: string[];
 };
 
-type FilterMode = "all" | "hot" | "near" | "city" | "state" | "region" | "genre";
+type FilterMode =
+  "all" | "hot" | "near" | "city" | "state" | "region" | "genre";
+
+type RadarView = "for-you" | "hot" | "near" | "tribes";
 
 type FilterGroup = "none" | "cities" | "states" | "regions" | "genres";
 
@@ -141,7 +144,9 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
 ];
 
 function normalizeText(value: any): string {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isSandboxParticipant(member: EventParticipant): boolean {
@@ -149,6 +154,33 @@ function isSandboxParticipant(member: EventParticipant): boolean {
     normalizeText(member.user_id).startsWith("TEST_SANDBOX_") ||
     normalizeText(member.slug).startsWith("sandbox-")
   );
+}
+
+function getPublicClubberHref(
+  member: EventParticipant,
+  eventReturnTo: string,
+): string {
+  const slug = normalizeText(member.slug).toLowerCase();
+  const safeReturnTo = normalizeText(eventReturnTo);
+
+  if (!slug || isSandboxParticipant(member)) {
+    return "";
+  }
+
+  const search = new URLSearchParams({
+    mode: "club",
+    view: "public",
+  });
+
+  if (
+    safeReturnTo.startsWith("/event/") &&
+    !safeReturnTo.startsWith("//") &&
+    !safeReturnTo.includes("\\")
+  ) {
+    search.set("return_to", safeReturnTo);
+  }
+
+  return `/${encodeURIComponent(slug)}?${search.toString()}`;
 }
 
 function getStateFromCityBase(value: string): string {
@@ -175,7 +207,7 @@ function getRegionFromState(state: string): string {
 
 function getClubberTribe(genres: string[]): string {
   const normalizedGenres = genres.map((genre) =>
-    normalizeText(genre).toLowerCase()
+    normalizeText(genre).toLowerCase(),
   );
 
   if (normalizedGenres.some((genre) => genre.includes("hard techno"))) {
@@ -335,7 +367,8 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
     return {
       label: "Conexão quente",
       shortLabel: "Quente",
-      description: "Boa combinação de vertentes, localização e intenção social.",
+      description:
+        "Boa combinação de vertentes, localização e intenção social.",
       border: "1px solid rgba(255,188,88,0.34)",
       background:
         "linear-gradient(135deg, rgba(255,188,88,0.13), rgba(124,92,255,0.16), rgba(47,128,255,0.10))",
@@ -371,15 +404,19 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
 }
 
 function getSharedGenres(a: string[], b: string[]): string[] {
-  const left = a.map((item) => normalizeText(item).toLowerCase()).filter(Boolean);
-  const right = b.map((item) => normalizeText(item).toLowerCase()).filter(Boolean);
+  const left = a
+    .map((item) => normalizeText(item).toLowerCase())
+    .filter(Boolean);
+  const right = b
+    .map((item) => normalizeText(item).toLowerCase())
+    .filter(Boolean);
 
   return left.filter((genre) => right.includes(genre));
 }
 
 function buildProximityMatch(
   selfParticipant: EventParticipant,
-  candidate: EventParticipant
+  candidate: EventParticipant,
 ): ProximityMatch {
   const selfCity = normalizeText(selfParticipant.city_base);
   const candidateCity = normalizeText(candidate.city_base);
@@ -395,7 +432,7 @@ function buildProximityMatch(
 
   const sharedGenres = getSharedGenres(
     selfParticipant.favorite_genres || [],
-    candidate.favorite_genres || []
+    candidate.favorite_genres || [],
   );
 
   let score = 10;
@@ -444,77 +481,6 @@ function mapApiConnectionState(value: string): ConnectionUiState {
   if (normalized === "suspended") return "suspended";
 
   return "idle";
-}
-
-function getInitials(name: string): string {
-  const parts = normalizeText(name)
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2);
-
-  if (parts.length === 0) return "CL";
-
-  return parts
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
-function ProfileAvatar({
-  name,
-  photoUrl,
-  size = 52,
-  accent = PREMIUM.radar,
-}: {
-  name: string;
-  photoUrl?: string;
-  size?: number;
-  accent?: string;
-}) {
-  const photo = normalizeText(photoUrl);
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        minWidth: size,
-        borderRadius: "999px",
-        overflow: "hidden",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid rgba(255,255,255,0.14)",
-        background:
-          "linear-gradient(135deg, rgba(124,92,255,0.18), rgba(47,128,255,0.16), rgba(0,245,200,0.10))",
-        boxShadow: `0 0 18px ${accent === PREMIUM.radar ? "rgba(0,245,200,0.10)" : "rgba(124,92,255,0.10)"}`,
-        flexShrink: 0,
-      }}
-    >
-      {photo ? (
-        <img
-          src={photo}
-          alt={name}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      ) : (
-        <span
-          style={{
-            color: "#fff",
-            fontSize: Math.max(12, Math.round(size * 0.28)),
-            fontWeight: 900,
-            letterSpacing: 0.4,
-          }}
-        >
-          {getInitials(name)}
-        </span>
-      )}
-    </div>
-  );
 }
 
 function getConnectionLabel(state: ConnectionUiState): string {
@@ -604,7 +570,7 @@ function getSocialPathStatusLabel(state: ConnectionUiState): string {
 
 function getConnectionActionTitle(
   state: ConnectionUiState,
-  sandboxParticipant: boolean
+  sandboxParticipant: boolean,
 ): string {
   if (sandboxParticipant) return "Veja como a conexão funcionará";
   if (state === "connected") return "Caminhos sociais liberados";
@@ -640,59 +606,34 @@ function chipStyle(active = false): CSSProperties {
   };
 }
 
-function carouselStyle(): CSSProperties {
-  return {
-    display: "flex",
-    gap: 14,
-    overflowX: "auto",
-    paddingBottom: 8,
-    scrollSnapType: "x mandatory",
-  };
-}
-
-function profileCardStyle(): CSSProperties {
-  return {
-    minWidth: 292,
-    maxWidth: 292,
-    flex: "0 0 292px",
-    borderRadius: 24,
-    border: "1px solid rgba(255,255,255,0.11)",
-    background:
-      "linear-gradient(180deg, rgba(24,24,39,0.76), rgba(12,12,20,0.94))",
-    boxShadow: "0 18px 44px rgba(0,0,0,0.38)",
-    overflow: "hidden",
-    scrollSnapAlign: "start",
-    backdropFilter: "blur(14px)",
-  };
-}
-
 function actionButtonStyle(primary = false): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    padding: "11px 12px",
-    borderRadius: 14,
-    border: primary
-      ? "1px solid rgba(124,92,255,0.34)"
-      : "1px solid rgba(255,255,255,0.14)",
-    background: primary
-      ? "linear-gradient(135deg, rgba(124,92,255,0.18), rgba(47,128,255,0.12))"
-      : "rgba(255,255,255,0.055)",
-    color: "#fff",
+    width: "fit-content",
+    minHeight: 28,
+    padding: "2px 0",
+    border: 0,
+    borderRadius: 0,
+    background: "transparent",
+    color: primary ? PREMIUM.violet : "rgba(255,255,255,0.84)",
     textDecoration: "none",
     fontSize: 12,
+    lineHeight: 1.35,
     fontWeight: 850,
+    borderBottom: primary
+      ? "1px solid rgba(124,92,255,0.42)"
+      : "1px solid rgba(255,255,255,0.18)",
   };
 }
 
 function disabledActionButtonStyle(primary = false): CSSProperties {
   return {
     ...actionButtonStyle(primary),
-    opacity: 0.62,
+    opacity: 0.48,
     cursor: "not-allowed",
-    color: "rgba(255,255,255,0.72)",
+    borderBottomColor: "transparent",
+    color: "rgba(255,255,255,0.56)",
   };
 }
 
@@ -711,16 +652,16 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
       state === "outgoing_pending" || state === "connected"
         ? `1px solid ${PREMIUM.radarBorder}`
         : state === "error"
-        ? "1px solid rgba(255,85,118,0.42)"
-        : `1px solid ${PREMIUM.radarBorder}`,
+          ? "1px solid rgba(255,85,118,0.42)"
+          : `1px solid ${PREMIUM.radarBorder}`,
     background:
       state === "checking"
         ? "linear-gradient(135deg, rgba(124,92,255,0.12), rgba(47,128,255,0.10))"
         : state === "outgoing_pending" || state === "connected"
-        ? "linear-gradient(135deg, rgba(0,245,200,0.16), rgba(124,92,255,0.14))"
-        : state === "error"
-        ? "linear-gradient(135deg, rgba(255,85,118,0.16), rgba(255,255,255,0.04))"
-        : "linear-gradient(135deg, rgba(0,245,200,0.15), rgba(47,128,255,0.12), rgba(124,92,255,0.14))",
+          ? "linear-gradient(135deg, rgba(0,245,200,0.16), rgba(124,92,255,0.14))"
+          : state === "error"
+            ? "linear-gradient(135deg, rgba(255,85,118,0.16), rgba(255,255,255,0.04))"
+            : "linear-gradient(135deg, rgba(0,245,200,0.15), rgba(47,128,255,0.12), rgba(124,92,255,0.14))",
     color:
       state === "outgoing_pending" || state === "connected"
         ? PREMIUM.radar
@@ -741,35 +682,6 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
   };
 }
 
-function socialBadgeStyle(): CSSProperties {
-  return {
-    display: "inline-flex",
-    width: "fit-content",
-    padding: "6px 9px",
-    borderRadius: 999,
-    border: "1px solid rgba(124,92,255,0.22)",
-    background: "rgba(124,92,255,0.12)",
-    color: "rgba(255,255,255,0.88)",
-    fontSize: 11,
-    fontWeight: 850,
-  };
-}
-
-function sectionCardStyle(highlight = false): CSSProperties {
-  return {
-    display: "grid",
-    gap: 8,
-    padding: 12,
-    borderRadius: 16,
-    background: highlight
-      ? "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.05))"
-      : "rgba(255,255,255,0.035)",
-    border: highlight
-      ? "1px solid rgba(124,92,255,0.18)"
-      : "1px solid rgba(255,255,255,0.07)",
-  };
-}
-
 function sectionTitleStyle(): CSSProperties {
   return {
     fontSize: 11,
@@ -780,41 +692,21 @@ function sectionTitleStyle(): CSSProperties {
   };
 }
 
-function visualTileStyle(active = false): CSSProperties {
-  return {
-    display: "grid",
-    gap: 5,
-    padding: 10,
-    borderRadius: 16,
-    border: active
-      ? `1px solid ${PREMIUM.radarBorder}`
-      : "1px solid rgba(255,255,255,0.10)",
-    background: active
-      ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(124,92,255,0.10))"
-      : "rgba(255,255,255,0.045)",
-    minHeight: 74,
-  };
-}
-
 function VisualInteractionGuide() {
   const steps = [
     {
-      icon: "◎",
       title: "Encontrar",
       text: "afinidades",
     },
     {
-      icon: "↗",
       title: "Conectar",
       text: "com aceite",
     },
     {
-      icon: "✓",
       title: "Liberar",
       text: "contato",
     },
     {
-      icon: "◇",
       title: "Combinar",
       text: "grupo ou encontro",
     },
@@ -825,73 +717,74 @@ function VisualInteractionGuide() {
       style={{
         display: "grid",
         gap: 12,
-        marginBottom: 16,
-        padding: 14,
-        borderRadius: 22,
-        border: "1px solid rgba(124,92,255,0.24)",
-        background:
-          "linear-gradient(135deg, rgba(124,92,255,0.13), rgba(47,128,255,0.08), rgba(0,245,200,0.045))",
-        boxShadow: "0 0 28px rgba(124,92,255,0.10)",
+        marginBottom: 18,
+        padding: "14px 0",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}
     >
       <div style={{ display: "grid", gap: 4 }}>
         <strong
           style={{
             color: "#fff",
-            fontSize: 15,
+            fontSize: 14,
             lineHeight: 1.2,
           }}
         >
-          Como a conexão acontece
+          Como a conexão funciona
         </strong>
 
         <span
           style={{
             color: PREMIUM.textMuted,
-            fontSize: 12,
+            fontSize: 11,
             lineHeight: 1.45,
           }}
         >
-          Primeiro vem a afinidade. Depois vem o aceite. Só então os caminhos
-          sociais são liberados.
+          A afinidade aproxima. O aceite libera os caminhos sociais.
         </span>
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          alignItems: "stretch",
         }}
       >
-        {steps.map((step) => (
-          <div key={step.title} style={visualTileStyle(step.title === "Conectar")}>
+        {steps.map((step, index) => (
+          <div
+            key={step.title}
+            style={{
+              minWidth: 0,
+              display: "grid",
+              alignContent: "start",
+              gap: 3,
+              padding: index === 0 ? "0 9px 0 0" : "0 9px",
+              borderLeft:
+                index === 0 ? "0" : "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
             <span
               style={{
-                width: 30,
-                height: 30,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(0,0,0,0.26)",
                 color:
                   step.title === "Conectar"
                     ? PREMIUM.radar
-                    : "rgba(255,255,255,0.84)",
-                fontSize: 14,
+                    : "rgba(255,255,255,0.46)",
+                fontSize: 10,
+                lineHeight: 1,
                 fontWeight: 950,
               }}
             >
-              {step.icon}
+              {String(index + 1).padStart(2, "0")}
             </span>
 
             <strong
               style={{
                 color: "#fff",
-                fontSize: 12,
+                fontSize: 11,
                 lineHeight: 1.15,
+                overflowWrap: "anywhere",
               }}
             >
               {step.title}
@@ -899,10 +792,11 @@ function VisualInteractionGuide() {
 
             <span
               style={{
-                color: "rgba(255,255,255,0.66)",
-                fontSize: 10,
+                color: "rgba(255,255,255,0.58)",
+                fontSize: 9,
                 lineHeight: 1.25,
                 fontWeight: 750,
+                overflowWrap: "anywhere",
               }}
             >
               {step.text}
@@ -910,498 +804,6 @@ function VisualInteractionGuide() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function TribePill({
-  tribe,
-  compact = false,
-}: {
-  tribe: string;
-  compact?: boolean;
-}) {
-  const visual = getTribeVisual(tribe);
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
-        gap: compact ? 8 : 10,
-        alignItems: "center",
-        padding: compact ? "8px 10px" : "12px",
-        borderRadius: compact ? 16 : 18,
-        border: visual.border,
-        background: visual.gradient,
-        boxShadow: visual.glow,
-      }}
-    >
-      <span
-        style={{
-          width: compact ? 30 : 38,
-          height: compact ? 30 : 38,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 999,
-          background: "rgba(0,0,0,0.34)",
-          border: "1px solid rgba(255,255,255,0.16)",
-          fontSize: compact ? 15 : 18,
-          flexShrink: 0,
-        }}
-      >
-        {visual.icon}
-      </span>
-
-      <span
-        style={{
-          display: "grid",
-          gap: compact ? 1 : 3,
-          minWidth: 0,
-        }}
-      >
-        <strong
-          style={{
-            color: "#fff",
-            fontSize: compact ? 12 : 14,
-            lineHeight: 1.1,
-          }}
-        >
-          {visual.name}
-        </strong>
-
-        {!compact ? (
-          <span
-            style={{
-              color: "rgba(255,255,255,0.76)",
-              fontSize: 11,
-              lineHeight: 1.35,
-            }}
-          >
-            {visual.description}
-          </span>
-        ) : null}
-      </span>
-    </div>
-  );
-}
-
-function NearYouPanel({
-  selfParticipant,
-  matches,
-  onSelectNear,
-}: {
-  selfParticipant?: EventParticipant;
-  matches: ProximityMatch[];
-  onSelectNear: () => void;
-}) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gap: 11,
-        marginBottom: 16,
-        padding: 14,
-        borderRadius: 22,
-        border: "1px solid rgba(47,128,255,0.24)",
-        background:
-          "linear-gradient(135deg, rgba(47,128,255,0.11), rgba(124,92,255,0.11), rgba(0,245,200,0.045))",
-        boxShadow: "0 0 28px rgba(47,128,255,0.10)",
-      }}
-    >
-      <div
-        style={{
-          display: "grid",
-          gap: 4,
-        }}
-      >
-        <strong
-          style={{
-            color: "#fff",
-            fontSize: 15,
-            lineHeight: 1.2,
-          }}
-        >
-          Clubbers próximos de você
-        </strong>
-
-        <span
-          style={{
-            color: PREMIUM.textMuted,
-            fontSize: 12,
-            lineHeight: 1.45,
-          }}
-        >
-          {selfParticipant
-            ? `Radar baseado em ${selfParticipant.city_base || "sua presença no evento"}, tribo, região e som.`
-            : "Detectando seu perfil no evento para sugerir clubbers por cidade, região, tribo e afinidade musical."}
-        </span>
-      </div>
-
-      {selfParticipant && matches.length > 0 ? (
-        <>
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              overflowX: "auto",
-              paddingBottom: 4,
-              scrollSnapType: "x mandatory",
-            }}
-          >
-            {matches.map((match) => {
-              const member = match.member;
-              const tribe = getClubberTribe(member.favorite_genres || []);
-              const visual = getTribeVisual(tribe);
-              const sandbox = isSandboxParticipant(member);
-
-              return (
-                <button
-                  key={`near-you-${member.user_id}-${member.slug}`}
-                  type="button"
-                  onClick={onSelectNear}
-                  style={{
-                    minWidth: 224,
-                    maxWidth: 224,
-                    flex: "0 0 224px",
-                    display: "grid",
-                    gap: 10,
-                    textAlign: "left",
-                    padding: 12,
-                    borderRadius: 20,
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background:
-                      "linear-gradient(135deg, rgba(255,255,255,0.055), rgba(47,128,255,0.08), rgba(124,92,255,0.08))",
-                    color: "#fff",
-                    cursor: "pointer",
-                    scrollSnapAlign: "start",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "auto 1fr auto",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <ProfileAvatar
-                      name={member.label}
-                      photoUrl={member.club_photo_url}
-                      size={52}
-                      accent={visual.accent}
-                    />
-
-                    <span
-                      style={{
-                        display: "grid",
-                        gap: 4,
-                        minWidth: 0,
-                      }}
-                    >
-                      <strong
-                        style={{
-                          fontSize: 13,
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {member.label}
-                      </strong>
-
-                      <small
-                        style={{
-                          color: "rgba(255,255,255,0.62)",
-                          fontSize: 10,
-                          lineHeight: 1.25,
-                          fontWeight: 800,
-                        }}
-                      >
-                        {sandbox ? "Perfil demonstrativo" : "Perfil real"}
-                      </small>
-                    </span>
-
-                    <span
-                      style={{
-                        minWidth: 0,
-                        height: 28,
-                        padding: "0 10px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 999,
-                        background: "rgba(0,0,0,0.30)",
-                        border: "1px solid rgba(0,245,200,0.16)",
-                        color: PREMIUM.radar,
-                        fontSize: 11,
-                        fontWeight: 950,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {match.score}%
-                    </span>
-                  </div>
-
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.72)",
-                      fontSize: 11,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {member.city_base || "Mesmo evento"}
-                  </span>
-
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.70)",
-                      fontSize: 11,
-                      lineHeight: 1.35,
-                      fontWeight: 750,
-                    }}
-                  >
-                    {[visual.shortName, ...match.reasons.slice(0, 2)]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            type="button"
-            onClick={onSelectNear}
-            style={{
-              ...actionButtonStyle(true),
-              minHeight: 42,
-              width: "100%",
-            }}
-          >
-            Ver clubbers próximos no radar
-          </button>
-        </>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gap: 8,
-            padding: 12,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.09)",
-            background: "rgba(0,0,0,0.18)",
-          }}
-        >
-          <strong
-            style={{
-              color: "#fff",
-              fontSize: 13,
-              lineHeight: 1.25,
-            }}
-          >
-            {selfParticipant
-              ? "Ainda não há clubbers próximos suficientes neste evento"
-              : "Ative seu perfil Club neste evento"}
-          </strong>
-
-          <span
-            style={{
-              color: "rgba(255,255,255,0.66)",
-              fontSize: 11,
-              lineHeight: 1.45,
-            }}
-          >
-            {selfParticipant
-              ? "À medida que mais pessoas entrarem no radar, o sistema destacará quem combina com sua cidade, região, tribo e som."
-              : "Quando seu perfil for identificado no radar, o sistema poderá sugerir pessoas próximas por contexto social, sem usar GPS nesta fase."}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HotConnectionCard({
-  member,
-  onSelectHot,
-}: {
-  member: EventParticipant;
-  onSelectHot: () => void;
-}) {
-  const score = member.compatibilityScore || 0;
-  const meta = getHotConnectionMeta(score);
-  const tribe = getClubberTribe(member.favorite_genres || []);
-  const visual = getTribeVisual(tribe);
-  const sandboxParticipant = isSandboxParticipant(member);
-
-  return (
-    <button
-      type="button"
-      onClick={onSelectHot}
-      style={{
-        minWidth: 232,
-        maxWidth: 232,
-        flex: "0 0 232px",
-        display: "grid",
-        gap: 10,
-        textAlign: "left",
-        padding: 13,
-        borderRadius: 22,
-        border: meta.border,
-        background: meta.background,
-        boxShadow: meta.glow,
-        color: "#fff",
-        cursor: "pointer",
-        scrollSnapAlign: "start",
-      }}
-    >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "auto 1fr auto",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        <ProfileAvatar
-          name={member.label}
-          photoUrl={member.club_photo_url}
-          size={54}
-          accent={meta.color}
-        />
-
-        <div
-          style={{
-            display: "grid",
-            gap: 4,
-            minWidth: 0,
-          }}
-        >
-          <strong
-            style={{
-              fontSize: 14,
-              lineHeight: 1.2,
-            }}
-          >
-            {member.label}
-          </strong>
-
-          <span
-            style={{
-              color: "rgba(255,255,255,0.68)",
-              fontSize: 11,
-              lineHeight: 1.35,
-            }}
-          >
-            {sandboxParticipant ? "Perfil demonstrativo" : "Perfil real"}
-          </span>
-        </div>
-
-        <span
-          style={{
-            minWidth: 0,
-            height: 28,
-            padding: "0 10px",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 999,
-            background: "rgba(0,0,0,0.34)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            color: meta.color,
-            fontSize: 11,
-            fontWeight: 950,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {score}%
-        </span>
-      </div>
-
-      <span
-        style={{
-          color: "rgba(255,255,255,0.70)",
-          fontSize: 11,
-          lineHeight: 1.35,
-          fontWeight: 750,
-        }}
-      >
-        {meta.shortLabel} · {visual.shortName}
-      </span>
-
-      <span
-        style={{
-          color: "rgba(255,255,255,0.76)",
-          fontSize: 11,
-          lineHeight: 1.45,
-        }}
-      >
-        {meta.description}
-      </span>
-    </button>
-  );
-}
-
-function HotConnectionPanel({
-  score,
-}: {
-  score: number;
-}) {
-  const meta = getHotConnectionMeta(score);
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gap: 7,
-        padding: 12,
-        borderRadius: 16,
-        border: meta.border,
-        background: meta.background,
-        boxShadow: meta.glow,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 10,
-          alignItems: "center",
-        }}
-      >
-        <span style={sectionTitleStyle()}>Conexão no radar</span>
-
-        <strong
-          style={{
-            color: meta.color,
-            fontSize: 11,
-            fontWeight: 950,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {score}%
-        </strong>
-      </div>
-
-      <strong
-        style={{
-          color: "#fff",
-          fontSize: 13,
-          lineHeight: 1.2,
-        }}
-      >
-        {meta.label}
-      </strong>
-
-      <span
-        style={{
-          color: "rgba(255,255,255,0.74)",
-          fontSize: 11,
-          lineHeight: 1.45,
-        }}
-      >
-        {meta.description}
-      </span>
     </div>
   );
 }
@@ -1425,183 +827,152 @@ function ConnectionActionPanel({
   const socialPaths = [
     {
       title: "Conversa",
-      helper: unlocked ? "Contato liberado" : "Depois do aceite",
+      helper: unlocked ? "Contato liberado" : "Após conexão",
       symbol: "●",
-      color: PREMIUM.radar,
     },
     {
       title: "Grupo",
-      helper: unlocked ? "Pode combinar" : "Depois do aceite",
+      helper: unlocked ? "Pode combinar" : "Após conexão",
       symbol: "◇",
-      color: PREMIUM.blue,
     },
     {
       title: "Carona",
-      helper: unlocked ? "Organizar rota" : "Depois do aceite",
+      helper: unlocked ? "Organizar rota" : "Após conexão",
       symbol: "↗",
-      color: PREMIUM.amber,
     },
     {
       title: "Encontro",
-      helper: unlocked ? "Ponto no evento" : "Depois do aceite",
+      helper: unlocked ? "Ponto no evento" : "Após conexão",
       symbol: "◎",
-      color: PREMIUM.violet,
     },
   ];
 
   return (
-    <div
+    <section
       style={{
         display: "grid",
-        gap: 11,
-        padding: 12,
-        borderRadius: 18,
-        border: unlocked
-          ? `1px solid ${PREMIUM.radarBorder}`
-          : "1px solid rgba(124,92,255,0.22)",
-        background: unlocked
-          ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(47,128,255,0.08), rgba(124,92,255,0.10))"
-          : "linear-gradient(135deg, rgba(124,92,255,0.10), rgba(47,128,255,0.07), rgba(0,245,200,0.045))",
+        gap: 12,
+        paddingTop: 16,
+        borderTop: "1px solid rgba(255,255,255,0.09)",
       }}
     >
       <div
         style={{
-          display: "grid",
-          gap: 3,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 18,
+          flexWrap: "wrap",
         }}
       >
-        <span style={sectionTitleStyle()}>Caminhos sociais</span>
+        <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+          <span style={sectionTitleStyle()}>Caminhos sociais</span>
 
-        <strong
-          style={{
-            color: "#fff",
-            fontSize: 14,
-            lineHeight: 1.25,
-          }}
-        >
-          {getConnectionActionTitle(connectionState, sandboxParticipant)}
-        </strong>
+          <strong
+            style={{
+              color: "#fff",
+              fontSize: 14,
+              lineHeight: 1.25,
+            }}
+          >
+            {getConnectionActionTitle(connectionState, sandboxParticipant)}
+          </strong>
+
+          <span
+            style={{
+              color: "rgba(255,255,255,0.66)",
+              fontSize: 11,
+              lineHeight: 1.5,
+              maxWidth: 560,
+            }}
+          >
+            {sandboxParticipant
+              ? "Em perfis reais, o aceite libera conversa, grupo, carona e encontro."
+              : connectionFeedback}
+          </span>
+        </div>
+
+        {sandboxParticipant ? (
+          <span
+            aria-disabled="true"
+            title="Perfil demonstrativo: a solicitação não é enviada."
+            style={disabledActionButtonStyle(true)}
+          >
+            Perfil demonstrativo
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnect}
+            disabled={isConnectionButtonDisabled(connectionState)}
+            style={{
+              ...connectionButtonStyle(connectionState),
+              width: "auto",
+              minWidth: 156,
+              minHeight: 40,
+            }}
+          >
+            {getConnectionLabel(connectionState)}
+          </button>
+        )}
       </div>
-
-      {sandboxParticipant ? (
-        <span
-          aria-disabled="true"
-          title="Em perfis reais, este botão envia uma solicitação antes de liberar contato ou grupos."
-          style={{
-            ...disabledActionButtonStyle(true),
-            width: "100%",
-            minHeight: 46,
-            fontSize: 11,
-            fontWeight: 950,
-            whiteSpace: "nowrap",
-          }}
-        >
-          Exemplo de conexão
-        </span>
-      ) : (
-        <button
-          type="button"
-          onClick={onConnect}
-          disabled={isConnectionButtonDisabled(connectionState)}
-          style={connectionButtonStyle(connectionState)}
-        >
-          {getConnectionLabel(connectionState)}
-        </button>
-      )}
-
-      <span
-        style={{
-          color: "rgba(255,255,255,0.68)",
-          fontSize: 11,
-          lineHeight: 1.45,
-        }}
-      >
-        {sandboxParticipant
-          ? "Em perfis reais, o usuário envia uma solicitação. Após a conexão aceita, poderá combinar conversa, grupo, carona ou encontro."
-          : connectionFeedback}
-      </span>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "12px 22px",
+          flexWrap: "wrap",
         }}
       >
         {socialPaths.map((item) => (
           <div
             key={item.title}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "8px 9px",
-              borderRadius: 14,
-              border: unlocked
-                ? "1px solid rgba(0,245,200,0.18)"
-                : "1px solid rgba(255,255,255,0.09)",
-              background: unlocked
-                ? "rgba(0,245,200,0.055)"
-                : "rgba(0,0,0,0.20)",
-              opacity:
-                unlocked || connectionState === "self" || sandboxParticipant
-                  ? 1
-                  : 0.72,
+              minWidth: 112,
+              display: "grid",
+              gridTemplateColumns: "14px minmax(0, 1fr)",
+              gap: "2px 7px",
+              alignItems: "start",
             }}
           >
             <span
+              aria-hidden="true"
               style={{
-                width: 24,
-                height: 24,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 999,
-                background: "rgba(0,0,0,0.28)",
-                border: unlocked
-                  ? "1px solid rgba(0,245,200,0.20)"
-                  : "1px solid rgba(255,255,255,0.08)",
-                color: unlocked ? PREMIUM.radar : item.color,
-                fontSize: 11,
+                gridRow: "1 / span 2",
+                color: unlocked ? PREMIUM.radar : "rgba(255,255,255,0.48)",
+                fontSize: 12,
+                lineHeight: 1.2,
                 fontWeight: 950,
               }}
             >
               {item.symbol}
             </span>
 
-            <span
+            <strong
               style={{
-                display: "grid",
-                gap: 1,
+                color: "#fff",
+                fontSize: 11,
+                lineHeight: 1.2,
               }}
             >
-              <strong
-                style={{
-                  color: "#fff",
-                  fontSize: 11,
-                  lineHeight: 1.1,
-                }}
-              >
-                {item.title}
-              </strong>
+              {item.title}
+            </strong>
 
-              <small
-                style={{
-                  color: unlocked
-                    ? PREMIUM.radar
-                    : "rgba(255,255,255,0.54)",
-                  fontSize: 9,
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                }}
-              >
-                {unlocked ? item.helper : statusLabel}
-              </small>
-            </span>
+            <small
+              style={{
+                color: unlocked ? PREMIUM.radar : "rgba(255,255,255,0.48)",
+                fontSize: 9,
+                lineHeight: 1.25,
+                fontWeight: 800,
+              }}
+            >
+              {unlocked ? item.helper : statusLabel}
+            </small>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1620,14 +991,14 @@ function CompactAffinityGrid({
 }) {
   const visual = getTribeVisual(tribe);
   const mainGenre = genres[0] || visual.shortName;
-  const secondGenre = genres[1] || "";
+  const secondGenre = genres[1] || "Vertente principal";
   const mainBadge = badges[0] || "Mesmo evento";
 
   const items = [
     {
       label: "Tribo",
-      value: visual.shortName,
-      sub: visual.name,
+      value: visual.name,
+      sub: visual.shortName,
       accent: visual.accent,
     },
     {
@@ -1639,7 +1010,7 @@ function CompactAffinityGrid({
     {
       label: "Som",
       value: mainGenre,
-      sub: secondGenre || "Vertente principal",
+      sub: secondGenre,
       accent: PREMIUM.violet,
     },
     {
@@ -1651,91 +1022,401 @@ function CompactAffinityGrid({
   ];
 
   return (
-    <div
+    <section
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 8,
+        gap: 10,
+        paddingTop: 16,
+        borderTop: "1px solid rgba(255,255,255,0.09)",
       }}
     >
-      {items.map((item) => (
-        <div
-          key={`${item.label}-${item.value}`}
-          style={{
-            display: "grid",
-            gap: 5,
-            padding: 10,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.09)",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))",
-            minHeight: 78,
-          }}
-        >
-          <span
-            style={{
-              color: "rgba(255,255,255,0.52)",
-              fontSize: 10,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-            }}
-          >
-            {item.label}
-          </span>
+      <span style={sectionTitleStyle()}>Leitura da conexão</span>
 
-          <strong
+      <dl
+        style={{
+          margin: 0,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: "14px 28px",
+        }}
+      >
+        {items.map((item) => (
+          <div
+            key={`${item.label}-${item.value}`}
             style={{
-              color: item.accent,
-              fontSize: 12,
-              lineHeight: 1.15,
+              minWidth: 0,
+              display: "grid",
+              gap: 3,
             }}
           >
-            {item.value}
-          </strong>
+            <dt
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontSize: 9,
+                lineHeight: 1.25,
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: 0.55,
+              }}
+            >
+              {item.label}
+            </dt>
 
-          <span
-            style={{
-              color: "rgba(255,255,255,0.58)",
-              fontSize: 10,
-              lineHeight: 1.25,
-              fontWeight: 750,
-            }}
-          >
-            {item.sub}
-          </span>
-        </div>
-      ))}
-    </div>
+            <dd
+              style={{
+                margin: 0,
+                minWidth: 0,
+                color: item.accent,
+                fontSize: 12,
+                lineHeight: 1.3,
+                fontWeight: 900,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {item.value}
+            </dd>
+
+            <dd
+              style={{
+                margin: 0,
+                color: "rgba(255,255,255,0.54)",
+                fontSize: 9,
+                lineHeight: 1.3,
+                fontWeight: 750,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {item.sub}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
 function ParticipantCard({
   member,
-  officialEventUrl,
+  eventReturnTo,
+  selected,
+  onToggle,
   onSelfDetected,
 }: {
   member: EventParticipant;
+  eventReturnTo: string;
+  selected: boolean;
+  onToggle: () => void;
+  onSelfDetected?: (member: EventParticipant) => void;
+}) {
+  const photo = normalizeText(member.club_photo_url);
+  const genres = (member.favorite_genres || []).slice(0, 3);
+  const tribe = getClubberTribe(member.favorite_genres || []);
+  const tribeVisual = getTribeVisual(tribe);
+  const socialMode = getSocialModeLabel(member.event_social_mode);
+  const score = member.compatibilityScore || 0;
+  const hotMeta = getHotConnectionMeta(score);
+  const mainGenre = genres[0] || tribeVisual.shortName;
+  const publicProfileHref = getPublicClubberHref(member, eventReturnTo);
+  const affinityLabel =
+    score >= 85
+      ? "Afinidade muito alta"
+      : score >= 70
+        ? "Afinidade alta"
+        : score >= 50
+          ? "Boa afinidade"
+          : "Afinidade inicial";
+
+  useEffect(() => {
+    if (isSandboxParticipant(member) || !member.user_id) {
+      return;
+    }
+
+    let ignore = false;
+
+    async function detectSelfParticipant() {
+      try {
+        const response = await fetch(
+          `/api/network/connections/status?targetUserId=${encodeURIComponent(
+            member.user_id,
+          )}`,
+          {
+            method: "GET",
+          },
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (ignore || !data?.ok) {
+          return;
+        }
+
+        if (mapApiConnectionState(normalizeText(data?.state)) === "self") {
+          onSelfDetected?.(member);
+        }
+      } catch {
+        return;
+      }
+    }
+
+    detectSelfParticipant();
+
+    return () => {
+      ignore = true;
+    };
+  }, [member, member.user_id, onSelfDetected]);
+
+  return (
+    <article
+      className="event-radar-card"
+      data-selected={selected ? "true" : "false"}
+    >
+      {publicProfileHref ? (
+        <Link
+          href={publicProfileHref}
+          aria-label={`Abrir perfil público de ${member.label}`}
+          title={`Abrir perfil público de ${member.label}`}
+          className="event-radar-card__image"
+          style={{
+            display: "block",
+            background: photo
+              ? `url(${photo})`
+              : "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(47,128,255,0.14))",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            cursor: "pointer",
+          }}
+        />
+      ) : (
+        <div
+          role="img"
+          aria-label={`Imagem de ${member.label}`}
+          className="event-radar-card__image"
+          style={{
+            background: photo
+              ? `url(${photo})`
+              : "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(47,128,255,0.14))",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      )}
+
+      <div className="event-radar-card__body">
+        <header
+          style={{
+            display: "grid",
+            gap: 4,
+          }}
+        >
+          {publicProfileHref ? (
+            <Link
+              href={publicProfileHref}
+              title={`Abrir perfil público de ${member.label}`}
+              className="event-radar-card__profile-link"
+              style={{
+                width: "fit-content",
+                fontSize: 18,
+                lineHeight: 1.15,
+                fontWeight: 900,
+                textDecoration: "none",
+              }}
+            >
+              {member.label}
+            </Link>
+          ) : (
+            <strong
+              style={{
+                color: "#fff",
+                fontSize: 18,
+                lineHeight: 1.15,
+              }}
+            >
+              {member.label}
+            </strong>
+          )}
+
+          <span
+            style={{
+              color: "rgba(255,255,255,0.66)",
+              fontSize: 11,
+              lineHeight: 1.35,
+              fontWeight: 700,
+            }}
+          >
+            {member.city_base || "Presença confirmada no evento"}
+          </span>
+        </header>
+
+        <dl
+          style={{
+            margin: 0,
+            display: "grid",
+            gap: 9,
+            paddingTop: 13,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1.28fr)",
+              gap: 12,
+              alignItems: "baseline",
+            }}
+          >
+            <dt
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontSize: 10,
+                lineHeight: 1.3,
+                fontWeight: 850,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Vertente
+            </dt>
+
+            <dd
+              style={{
+                margin: 0,
+                minWidth: 0,
+                color: "rgba(255,255,255,0.90)",
+                fontSize: 11,
+                lineHeight: 1.35,
+                fontWeight: 850,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {mainGenre}
+            </dd>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1.28fr)",
+              gap: 12,
+              alignItems: "baseline",
+            }}
+          >
+            <dt
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontSize: 10,
+                lineHeight: 1.3,
+                fontWeight: 850,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Afinidade
+            </dt>
+
+            <dd
+              style={{
+                margin: 0,
+                minWidth: 0,
+                color: score >= 70 ? hotMeta.color : "rgba(255,255,255,0.82)",
+                fontSize: 11,
+                lineHeight: 1.35,
+                fontWeight: 900,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {score > 0 ? `${affinityLabel} · ${score}%` : affinityLabel}
+            </dd>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1.28fr)",
+              gap: 12,
+              alignItems: "baseline",
+            }}
+          >
+            <dt
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontSize: 10,
+                lineHeight: 1.3,
+                fontWeight: 850,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Intenção
+            </dt>
+
+            <dd
+              style={{
+                margin: 0,
+                minWidth: 0,
+                color: "rgba(255,255,255,0.82)",
+                fontSize: 11,
+                lineHeight: 1.35,
+                fontWeight: 800,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {socialMode}
+            </dd>
+          </div>
+        </dl>
+
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={selected}
+          className="event-radar-card__toggle"
+        >
+          <span>{selected ? "Fechar conexão" : "Ver conexão"}</span>
+
+          <span
+            aria-hidden="true"
+            style={{
+              color: selected ? PREMIUM.radar : "rgba(255,255,255,0.76)",
+              fontSize: 24,
+              lineHeight: 1,
+              fontWeight: 500,
+            }}
+          >
+            {selected ? "−" : "+"}
+          </span>
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function ParticipantConnectionDetails({
+  member,
+  eventReturnTo,
+  officialEventUrl,
+  onClose,
+  onSelfDetected,
+}: {
+  member: EventParticipant;
+  eventReturnTo: string;
   officialEventUrl?: string;
+  onClose: () => void;
   onSelfDetected?: (member: EventParticipant) => void;
 }) {
   const [connectionState, setConnectionState] =
     useState<ConnectionUiState>("idle");
   const [connectionFeedback, setConnectionFeedback] = useState(
-    getConnectionFeedback("idle")
+    getConnectionFeedback("idle"),
   );
 
-  const photo = normalizeText(member.club_photo_url);
   const genres = (member.favorite_genres || []).slice(0, 3);
   const tribe = getClubberTribe(member.favorite_genres || []);
-  const tribeVisual = getTribeVisual(tribe);
   const state = getStateFromCityBase(member.city_base);
   const region = getRegionFromState(state);
-  const socialMode = getSocialModeLabel(member.event_social_mode);
   const sandboxParticipant = isSandboxParticipant(member);
+  const publicProfileHref = getPublicClubberHref(member, eventReturnTo);
   const score = member.compatibilityScore || 0;
   const hotMeta = getHotConnectionMeta(score);
-
   const visibleAffinityBadges = (member.compatibilityBadges || [])
     .filter((badge) => {
       const normalized = normalizeText(badge).toLowerCase();
@@ -1762,11 +1443,11 @@ function ParticipantCard({
       try {
         const response = await fetch(
           `/api/network/connections/status?targetUserId=${encodeURIComponent(
-            member.user_id
+            member.user_id,
           )}`,
           {
             method: "GET",
-          }
+          },
         );
 
         const data = await response.json().catch(() => null);
@@ -1895,246 +1576,290 @@ function ParticipantCard({
   }
 
   return (
-    <article style={profileCardStyle()}>
-      <div
-        style={{
-          height: 232,
-          position: "relative",
-          background: photo
-            ? `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.84)), url(${photo})`
-            : "linear-gradient(135deg, rgba(124,92,255,0.26), rgba(47,128,255,0.16))",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 18% 12%, rgba(0,245,200,0.12), transparent 28%), radial-gradient(circle at 84% 18%, rgba(124,92,255,0.22), transparent 26%)",
-            pointerEvents: "none",
-          }}
-        />
+    <section
+      className="event-radar-detail"
+      aria-label={`Detalhes da conexão com ${member.label}`}
+    >
+      <header className="event-radar-detail__header">
+        <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+          <span style={sectionTitleStyle()}>Conexão selecionada</span>
 
-        <div
-          style={{
-            position: "absolute",
-            top: 14,
-            left: 14,
-            right: 14,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <span
-            style={{
-              padding: "7px 10px",
-              borderRadius: 999,
-              border: tribeVisual.border,
-              background: "rgba(0,0,0,0.52)",
-              color: "#fff",
-              fontSize: 11,
-              fontWeight: 900,
-              boxShadow: tribeVisual.glow,
-            }}
-          >
-            {tribeVisual.shortName}
-          </span>
-
-          {member.compatibilityScore ? (
-            <span
-              style={{
-                padding: "7px 10px",
-                borderRadius: 999,
-                border: hotMeta.border,
-                background: "rgba(0,0,0,0.55)",
-                color: hotMeta.color,
-                fontSize: 11,
-                fontWeight: 900,
-                boxShadow: hotMeta.glow,
-              }}
-            >
-              {hotMeta.shortLabel}
-            </span>
-          ) : null}
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            left: 16,
-            right: 16,
-            bottom: 16,
-            display: "grid",
-            gap: 7,
-            color: "#fff",
-          }}
-        >
           <strong
             style={{
+              color: "#fff",
               fontSize: 20,
-              lineHeight: 1.1,
+              lineHeight: 1.15,
             }}
           >
-            {member.label}
+            Conexão com {member.label}
           </strong>
-
-          {member.city_base ? (
-            <span
-              style={{
-                opacity: 0.88,
-                fontSize: 12,
-                fontWeight: 750,
-              }}
-            >
-              {member.city_base}
-            </span>
-          ) : null}
 
           <span
             style={{
-              width: "fit-content",
-              padding: "6px 9px",
-              borderRadius: 999,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(0,0,0,0.42)",
-              color: "rgba(255,255,255,0.88)",
+              color: "rgba(255,255,255,0.64)",
               fontSize: 11,
-              fontWeight: 850,
+              lineHeight: 1.45,
             }}
           >
-            {socialMode}
+            {member.city_base || "Presença confirmada no evento"}
+            {score > 0 ? ` · ${score}% de afinidade` : ""}
           </span>
         </div>
-      </div>
 
-      <div
+        <button
+          type="button"
+          onClick={onClose}
+          className="event-radar-detail__close"
+        >
+          Fechar detalhes
+          <span aria-hidden="true">−</span>
+        </button>
+      </header>
+
+      <section
         style={{
-          padding: 16,
           display: "grid",
-          gap: 13,
+          gap: 6,
+          paddingTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.09)",
         }}
       >
-        {score > 0 ? <HotConnectionPanel score={score} /> : null}
+        <span style={sectionTitleStyle()}>Por que combina</span>
 
-        <ConnectionActionPanel
-          sandboxParticipant={sandboxParticipant}
-          connectionState={connectionState}
-          connectionFeedback={connectionFeedback}
-          onConnect={handleConnectionRequest}
-        />
+        <strong
+          style={{
+            color: "#fff",
+            fontSize: 14,
+            lineHeight: 1.25,
+          }}
+        >
+          {hotMeta.label}
+        </strong>
 
-        <CompactAffinityGrid
-          tribe={tribe}
-          city={member.city_base}
-          region={region}
-          genres={genres}
-          badges={visibleAffinityBadges}
-        />
+        <p
+          style={{
+            margin: 0,
+            color: "rgba(255,255,255,0.68)",
+            fontSize: 11,
+            lineHeight: 1.55,
+            maxWidth: 760,
+          }}
+        >
+          {member.club_tagline || hotMeta.description}
+        </p>
+      </section>
 
-        {member.club_tagline ? (
+      <ConnectionActionPanel
+        sandboxParticipant={sandboxParticipant}
+        connectionState={connectionState}
+        connectionFeedback={connectionFeedback}
+        onConnect={handleConnectionRequest}
+      />
+
+      <CompactAffinityGrid
+        tribe={tribe}
+        city={member.city_base}
+        region={region}
+        genres={genres}
+        badges={visibleAffinityBadges}
+      />
+
+      {genres.length > 0 ? (
+        <section
+          style={{
+            display: "grid",
+            gap: 7,
+            paddingTop: 16,
+            borderTop: "1px solid rgba(255,255,255,0.09)",
+          }}
+        >
+          <span style={sectionTitleStyle()}>Vertentes</span>
+
           <p
             style={{
               margin: 0,
+              color: "rgba(255,255,255,0.78)",
+              fontSize: 11,
               lineHeight: 1.55,
-              opacity: 0.82,
-              fontSize: 13,
+              fontWeight: 800,
             }}
           >
-            {member.club_tagline}
+            {genres.join(" · ")}
           </p>
-        ) : null}
+        </section>
+      ) : null}
 
-        <div style={sectionCardStyle(true)}>
-          <div style={sectionTitleStyle()}>Tribo dominante</div>
-
-          <TribePill tribe={tribe} compact />
-        </div>
-
-        {genres.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              gap: 7,
-              flexWrap: "wrap",
-            }}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px 22px",
+          flexWrap: "wrap",
+          paddingTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.09)",
+        }}
+      >
+        {!publicProfileHref ? (
+          <span
+            aria-disabled="true"
+            title="Perfil público ainda não disponível"
+            style={disabledActionButtonStyle(true)}
           >
-            {genres.map((genre) => (
-              <span key={genre} style={socialBadgeStyle()}>
-                {genre}
-              </span>
-            ))}
-          </div>
-        ) : null}
+            Perfil indisponível
+          </span>
+        ) : (
+          <Link
+            href={publicProfileHref}
+            style={actionButtonStyle(true)}
+          >
+            Ver perfil público
+          </Link>
+        )}
 
-        <div
+        {officialEventUrl ? (
+          <a
+            href={officialEventUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={actionButtonStyle()}
+          >
+            Abrir evento
+          </a>
+        ) : (
+          <span
+            aria-disabled="true"
+            title="Link oficial do evento não informado"
+            style={disabledActionButtonStyle()}
+          >
+            Evento indisponível
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ParticipantResults({
+  members,
+  eventReturnTo,
+  officialEventUrl,
+  expandedParticipantKey,
+  onToggleParticipant,
+  onSelfDetected,
+  emptyTitle,
+  emptyText,
+}: {
+  members: EventParticipant[];
+  eventReturnTo: string;
+  officialEventUrl?: string;
+  expandedParticipantKey: string;
+  onToggleParticipant: (key: string) => void;
+  onSelfDetected?: (member: EventParticipant) => void;
+  emptyTitle: string;
+  emptyText: string;
+}) {
+  if (members.length === 0) {
+    return (
+      <div
+        style={{
+          display: "grid",
+          gap: 5,
+          padding: "16px 0",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <strong
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
-            marginTop: 2,
+            color: "#fff",
+            fontSize: 13,
+            lineHeight: 1.3,
           }}
         >
-          {sandboxParticipant ? (
-            <span
-              aria-disabled="true"
-              title="Perfil demonstrativo sem página pública cadastrada"
-              style={disabledActionButtonStyle(true)}
-            >
-              Perfil demo
-            </span>
-          ) : (
-            <Link
-              href={`/${member.slug}?mode=club`}
-              style={actionButtonStyle(true)}
-            >
-              Ver perfil
-            </Link>
-          )}
+          {emptyTitle}
+        </strong>
 
-          {officialEventUrl ? (
-            <a
-              href={officialEventUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={actionButtonStyle()}
-            >
-              Evento
-            </a>
-          ) : (
-            <span
-              aria-disabled="true"
-              title="Link oficial do evento não informado"
-              style={disabledActionButtonStyle()}
-            >
-              Evento
-            </span>
-          )}
+        <span
+          style={{
+            color: "rgba(255,255,255,0.62)",
+            fontSize: 11,
+            lineHeight: 1.45,
+          }}
+        >
+          {emptyText}
+        </span>
+      </div>
+    );
+  }
+
+  const selectedMember =
+    members.find(
+      (member) =>
+        `${member.user_id}-${member.slug}` === expandedParticipantKey,
+    ) || null;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <div className="event-radar-results-shell">
+        <div className="event-radar-results">
+          {members.map((member) => {
+            const key = `${member.user_id}-${member.slug}`;
+
+            return (
+              <ParticipantCard
+                key={`participant-card-${key}`}
+                member={member}
+                eventReturnTo={eventReturnTo}
+                selected={expandedParticipantKey === key}
+                onToggle={() => onToggleParticipant(key)}
+                onSelfDetected={onSelfDetected}
+              />
+            );
+          })}
         </div>
       </div>
-    </article>
+
+      {selectedMember ? (
+        <ParticipantConnectionDetails
+          key={`participant-details-${expandedParticipantKey}`}
+          member={selectedMember}
+          eventReturnTo={eventReturnTo}
+          officialEventUrl={officialEventUrl}
+          onClose={() => onToggleParticipant(expandedParticipantKey)}
+          onSelfDetected={onSelfDetected}
+        />
+      ) : null}
+    </div>
   );
 }
 
 export default function EventParticipantsFilter({
   attendees,
+  eventReturnTo,
   officialEventUrl,
 }: {
   attendees: EventParticipant[];
+  eventReturnTo: string;
   officialEventUrl?: string;
 }) {
+  const [radarView, setRadarView] = useState<RadarView>("for-you");
   const [mode, setMode] = useState<FilterMode>("all");
   const [value, setValue] = useState("");
   const [activeGroup, setActiveGroup] = useState<FilterGroup>("none");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selfUserId, setSelfUserId] = useState("");
+  const [expandedParticipantKey, setExpandedParticipantKey] = useState("");
+  const [selectedTribe, setSelectedTribe] = useState("");
 
   const socialParticipants: EventParticipant[] = useMemo(
     () =>
       DEV_SOCIAL_SANDBOX ? [...attendees, ...MOCK_PARTICIPANTS] : attendees,
-    [attendees]
+    [attendees],
   );
 
   const handleSelfDetected = useCallback((member: EventParticipant) => {
@@ -2150,12 +1875,12 @@ export default function EventParticipantsFilter({
         new Set(
           socialParticipants
             .map((member) => normalizeText(member.city_base))
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 40),
-    [socialParticipants]
+    [socialParticipants],
   );
 
   const states = useMemo(
@@ -2164,24 +1889,24 @@ export default function EventParticipantsFilter({
         new Set(
           socialParticipants
             .map((member) => getStateFromCityBase(member.city_base))
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 27),
-    [socialParticipants]
+    [socialParticipants],
   );
 
   const regions = useMemo(
     () =>
       Array.from(
         new Set(
-          states.map((state) => getRegionFromState(state)).filter(Boolean)
-        )
+          states.map((state) => getRegionFromState(state)).filter(Boolean),
+        ),
       )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 5),
-    [states]
+    [states],
   );
 
   const genres = useMemo(
@@ -2191,18 +1916,18 @@ export default function EventParticipantsFilter({
           socialParticipants
             .flatMap((member) => member.favorite_genres || [])
             .map((item) => normalizeText(item))
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       )
         .sort((a, b) => a.localeCompare(b, "pt-BR"))
         .slice(0, 40),
-    [socialParticipants]
+    [socialParticipants],
   );
 
   const enrichedAttendees = useMemo(() => {
     return socialParticipants.map((member) => {
       const memberGenres = (member.favorite_genres || []).map((item) =>
-        normalizeText(item)
+        normalizeText(item),
       );
 
       let score = member.compatibilityScore || 0;
@@ -2243,7 +1968,7 @@ export default function EventParticipantsFilter({
 
   const selfParticipant = useMemo(
     () => enrichedAttendees.find((member) => member.user_id === selfUserId),
-    [enrichedAttendees, selfUserId]
+    [enrichedAttendees, selfUserId],
   );
 
   const nearYouMatches = useMemo(() => {
@@ -2259,7 +1984,7 @@ export default function EventParticipantsFilter({
 
   const nearYouIds = useMemo(
     () => new Set(nearYouMatches.map((match) => match.member.user_id)),
-    [nearYouMatches]
+    [nearYouMatches],
   );
 
   const topTribes = useMemo(() => {
@@ -2287,6 +2012,29 @@ export default function EventParticipantsFilter({
       .slice(0, 6);
   }, [enrichedAttendees]);
 
+  const nearResults = useMemo(
+    () =>
+      nearYouMatches.map((match) => ({
+        ...match.member,
+        compatibilityScore: match.score,
+        compatibilityBadges: match.reasons,
+      })),
+    [nearYouMatches],
+  );
+
+  const activeTribe = selectedTribe || topTribes[0]?.tribe || "";
+
+  const tribeResults = useMemo(
+    () =>
+      activeTribe
+        ? enrichedAttendees.filter(
+            (member) =>
+              getClubberTribe(member.favorite_genres || []) === activeTribe,
+          )
+        : [],
+    [activeTribe, enrichedAttendees],
+  );
+
   const filtered = useMemo(() => {
     return enrichedAttendees
       .filter((member) => {
@@ -2294,7 +2042,7 @@ export default function EventParticipantsFilter({
         const state = getStateFromCityBase(member.city_base);
         const region = getRegionFromState(state);
         const memberGenres = (member.favorite_genres || []).map((item) =>
-          normalizeText(item)
+          normalizeText(item),
         );
 
         if (mode === "hot") return (member.compatibilityScore || 0) >= 70;
@@ -2312,8 +2060,12 @@ export default function EventParticipantsFilter({
 
         if (scoreA !== scoreB) return scoreB - scoreA;
 
-        const networkingA = normalizeText(a.event_social_mode).includes("network");
-        const networkingB = normalizeText(b.event_social_mode).includes("network");
+        const networkingA = normalizeText(a.event_social_mode).includes(
+          "network",
+        );
+        const networkingB = normalizeText(b.event_social_mode).includes(
+          "network",
+        );
 
         if (networkingA !== networkingB) return networkingB ? 1 : -1;
 
@@ -2325,48 +2077,483 @@ export default function EventParticipantsFilter({
   }, [enrichedAttendees, mode, nearYouIds, value]);
 
   function selectFilter(nextMode: FilterMode, nextValue = "") {
+    setExpandedParticipantKey("");
+    setRadarView("for-you");
     setMode(nextMode);
     setValue(nextValue);
 
     if (nextMode === "all" || nextMode === "hot" || nextMode === "near") {
       setActiveGroup("none");
+      setFiltersOpen(false);
     }
   }
 
-  function selectAll() {
-    setMode("all");
+  function selectRadarTab(nextView: RadarView) {
+    setExpandedParticipantKey("");
+    setRadarView(nextView);
     setValue("");
     setActiveGroup("none");
+    setFiltersOpen(false);
+
+    if (nextView === "hot") {
+      setMode("hot");
+      return;
+    }
+
+    if (nextView === "near") {
+      setMode("near");
+      return;
+    }
+
+    setMode("all");
   }
 
   function toggleGroup(group: FilterGroup) {
+    setExpandedParticipantKey("");
+    setRadarView("for-you");
+    setFiltersOpen(true);
     setActiveGroup((current) => (current === group ? "none" : group));
+  }
+
+  function toggleParticipant(key: string) {
+    setExpandedParticipantKey((current) => (current === key ? "" : key));
   }
 
   return (
     <>
+      <style jsx global>{`
+        .event-radar-results-shell {
+          position: relative;
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
+          overflow: hidden;
+        }
+
+        .event-radar-results {
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
+          display: flex;
+          align-items: stretch;
+          gap: 14px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 2px 0 8px;
+          scroll-snap-type: x proximity;
+          overscroll-behavior-inline: contain;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .event-radar-results::-webkit-scrollbar,
+        .event-tribe-selector-list::-webkit-scrollbar {
+          display: none;
+        }
+
+        .event-radar-card {
+          min-width: 0;
+          flex: 0 0 260px;
+          width: 260px;
+          max-width: calc(100vw - 64px);
+          display: flex;
+          flex-direction: column;
+          border-radius: 22px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: linear-gradient(
+            180deg,
+            rgba(22, 22, 34, 0.82),
+            rgba(10, 10, 17, 0.96)
+          );
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+          scroll-snap-align: start;
+        }
+
+        .event-radar-card[data-selected="true"] {
+          border-color: rgba(0, 245, 200, 0.3);
+          box-shadow:
+            0 16px 36px rgba(0, 0, 0, 0.32),
+            0 0 24px rgba(0, 245, 200, 0.08);
+        }
+
+        .event-radar-card__image {
+          min-height: 168px;
+          flex: 0 0 168px;
+        }
+
+        .event-radar-card__profile-link {
+          color: #fff;
+          transition:
+            color 160ms ease,
+            text-shadow 160ms ease;
+        }
+
+        @media (hover: hover) {
+          .event-radar-card__profile-link:hover {
+            color: #28e6c2;
+            text-shadow: 0 0 18px rgba(40, 230, 194, 0.18);
+          }
+        }
+
+        .event-radar-card__profile-link:focus-visible {
+          color: #28e6c2;
+          outline: none;
+          text-decoration: underline;
+          text-decoration-thickness: 1px;
+          text-underline-offset: 4px;
+        }
+
+        .event-radar-card__profile-link:active {
+          color: #28e6c2;
+        }
+
+        .event-radar-card__body {
+          min-height: 272px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          padding: 16px;
+        }
+
+        .event-radar-card__toggle {
+          min-height: 50px;
+          width: 100%;
+          margin-top: auto;
+          display: inline-flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 12px 14px;
+          border-radius: 13px;
+          border: 1px solid rgba(255,255,255,0.13);
+          background: rgba(255,255,255,0.025);
+          color: #fff;
+          font-size: 13px;
+          line-height: 1.2;
+          font-weight: 950;
+          cursor: pointer;
+        }
+
+        .event-radar-card[data-selected="true"] .event-radar-card__toggle {
+          border-color: rgba(0,245,200,0.26);
+          background:
+            linear-gradient(
+              135deg,
+              rgba(0,245,200,0.08),
+              rgba(124,92,255,0.08)
+            );
+        }
+
+        .event-radar-detail {
+          display: grid;
+          gap: 16px;
+          padding: 22px 0 6px;
+          border-top: 1px solid rgba(0,245,200,0.18);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-radar-detail__header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          flex-wrap: wrap;
+        }
+
+        .event-radar-detail__close {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 2px 0;
+          border: 0;
+          border-bottom: 1px solid rgba(0,245,200,0.34);
+          background: transparent;
+          color: rgba(255,255,255,0.82);
+          font-size: 11px;
+          line-height: 1.3;
+          font-weight: 850;
+          cursor: pointer;
+        }
+
+        .event-tribe-selector-list {
+          display: flex;
+          align-items: stretch;
+          gap: 22px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding-bottom: 2px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .event-tribe-selector {
+          flex: 0 0 auto;
+          min-width: 150px;
+          display: grid;
+          grid-template-columns: 8px minmax(0, 1fr);
+          gap: 4px 9px;
+          align-items: center;
+          padding: 10px 0 11px;
+          border: 0;
+          border-bottom: 2px solid transparent;
+          background: transparent;
+          color: rgba(255,255,255,0.62);
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .event-tribe-selector[data-active="true"] {
+          color: #fff;
+          border-bottom-color: #00f5c8;
+        }
+
+        .event-tribe-selector__dot {
+          grid-row: 1 / span 2;
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.22);
+        }
+
+        .event-tribe-selector[data-active="true"]
+        .event-tribe-selector__dot {
+          background: #00f5c8;
+          box-shadow: 0 0 12px rgba(0,245,200,0.34);
+        }
+
+        .event-tribe-selector__name {
+          color: inherit;
+          font-size: 12px;
+          line-height: 1.25;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .event-tribe-selector__count {
+          color: rgba(255,255,255,0.48);
+          font-size: 10px;
+          line-height: 1.25;
+          font-weight: 750;
+        }
+
+        .event-tribe-selector[data-active="true"]
+        .event-tribe-selector__count {
+          color: rgba(0,245,200,0.82);
+        }
+
+        @media (max-width: 760px) {
+          .event-radar-results {
+            gap: 12px;
+            padding-bottom: 6px;
+            scroll-snap-type: x mandatory;
+          }
+
+          .event-radar-card {
+            flex: 0 0 min(84vw, 310px);
+            width: min(84vw, 310px);
+            max-width: min(84vw, 310px);
+          }
+
+          .event-radar-card__body {
+            min-height: 286px;
+          }
+
+          .event-radar-detail {
+            padding-top: 18px;
+          }
+
+          .event-radar-detail__header {
+            display: grid;
+          }
+
+          .event-tribe-selector-list {
+            gap: 18px;
+            scroll-snap-type: x proximity;
+          }
+
+          .event-tribe-selector {
+            min-width: 148px;
+            scroll-snap-align: start;
+          }
+        }
+      `}</style>
+
       <VisualInteractionGuide />
 
-      <NearYouPanel
-        selfParticipant={selfParticipant}
-        matches={nearYouMatches}
-        onSelectNear={() => selectFilter("near")}
-      />
+      <div
+        style={{
+          display: "grid",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "grid", gap: 4 }}>
+          <strong
+            style={{
+              color: "#fff",
+              fontSize: 15,
+              lineHeight: 1.2,
+            }}
+          >
+            Radar social do evento
+          </strong>
 
-      {hotConnections.length > 0 ? (
+          <span
+            style={{
+              color: "rgba(255,255,255,0.66)",
+              fontSize: 11,
+              lineHeight: 1.45,
+            }}
+          >
+            Escolha uma visão. O radar mostra somente um grupo de resultados por
+            vez.
+          </span>
+        </div>
+
         <div
+          role="tablist"
+          aria-label="Visões do radar social"
           style={{
             display: "grid",
-            gap: 10,
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          {(
+            [
+              {
+                key: "for-you",
+                label: "Para você",
+                count: socialParticipants.length,
+              },
+              {
+                key: "hot",
+                label: "Conexões quentes",
+                count: hotConnections.length,
+              },
+              {
+                key: "near",
+                label: "Próximos",
+                count: nearYouMatches.length,
+              },
+              {
+                key: "tribes",
+                label: "Tribos",
+                count: topTribes.length,
+              },
+            ] as const
+          ).map((tab, index) => {
+            const active = radarView === tab.key;
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => selectRadarTab(tab.key)}
+                style={{
+                  minWidth: 0,
+                  minHeight: 46,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "10px 11px",
+                  border: 0,
+                  borderRight:
+                    index % 2 === 0 ? "1px solid rgba(255,255,255,0.08)" : "0",
+                  borderBottom:
+                    index < 2 ? "1px solid rgba(255,255,255,0.08)" : "0",
+                  background: active
+                    ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(124,92,255,0.08))"
+                    : "transparent",
+                  boxShadow: active
+                    ? "inset 0 -2px 0 rgba(0,245,200,0.82)"
+                    : "none",
+                  color: active ? "#fff" : "rgba(255,255,255,0.62)",
+                  fontSize: 11,
+                  lineHeight: 1.2,
+                  fontWeight: active ? 950 : 800,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span>{tab.label}</span>
+
+                <span
+                  style={{
+                    color: active ? PREMIUM.radar : "rgba(255,255,255,0.40)",
+                    fontSize: 10,
+                    fontWeight: 950,
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {radarView === "near" ? (
+        <section
+          style={{
+            display: "grid",
+            gap: 12,
             marginBottom: 16,
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gap: 4,
-            }}
-          >
+          <div style={{ display: "grid", gap: 4 }}>
+            <strong
+              style={{
+                color: "#fff",
+                fontSize: 15,
+                lineHeight: 1.2,
+              }}
+            >
+              Clubbers próximos de você
+            </strong>
+
+            <span
+              style={{
+                color: PREMIUM.textMuted,
+                fontSize: 11,
+                lineHeight: 1.45,
+              }}
+            >
+              {selfParticipant
+                ? `Radar baseado em ${selfParticipant.city_base || "sua presença no evento"}, região, tribo e som.`
+                : "Identificando seu perfil no evento para calcular proximidade cultural."}
+            </span>
+          </div>
+
+          <ParticipantResults
+            eventReturnTo={eventReturnTo}
+            members={nearResults}
+            officialEventUrl={officialEventUrl}
+            expandedParticipantKey={expandedParticipantKey}
+            onToggleParticipant={toggleParticipant}
+            onSelfDetected={handleSelfDetected}
+            emptyTitle="Ainda não há clubbers próximos suficientes"
+            emptyText="À medida que mais pessoas entrarem no radar, o sistema destacará afinidades por cidade, região, tribo e som."
+          />
+        </section>
+      ) : null}
+
+      {radarView === "hot" ? (
+        <section
+          style={{
+            display: "grid",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ display: "grid", gap: 4 }}>
             <strong
               style={{
                 color: "#fff",
@@ -2379,8 +2566,8 @@ export default function EventParticipantsFilter({
 
             <span
               style={{
-                color: "rgba(255,255,255,0.68)",
-                fontSize: 12,
+                color: PREMIUM.textMuted,
+                fontSize: 11,
                 lineHeight: 1.45,
               }}
             >
@@ -2388,40 +2575,28 @@ export default function EventParticipantsFilter({
             </span>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              overflowX: "auto",
-              paddingBottom: 4,
-              scrollSnapType: "x mandatory",
-            }}
-          >
-            {hotConnections.map((member) => (
-              <HotConnectionCard
-                key={`hot-connection-${member.user_id}-${member.slug}`}
-                member={member}
-                onSelectHot={() => selectFilter("hot")}
-              />
-            ))}
-          </div>
-        </div>
+          <ParticipantResults
+            eventReturnTo={eventReturnTo}
+            members={hotConnections}
+            officialEventUrl={officialEventUrl}
+            expandedParticipantKey={expandedParticipantKey}
+            onToggleParticipant={toggleParticipant}
+            onSelfDetected={handleSelfDetected}
+            emptyTitle="Ainda não há conexões quentes suficientes"
+            emptyText="O radar destacará novas conexões conforme os sinais de afinidade forem aumentando."
+          />
+        </section>
       ) : null}
 
-      {topTribes.length > 0 ? (
-        <div
+      {radarView === "tribes" ? (
+        <section
           style={{
             display: "grid",
-            gap: 10,
+            gap: 14,
             marginBottom: 16,
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gap: 4,
-            }}
-          >
+          <div style={{ display: "grid", gap: 4 }}>
             <strong
               style={{
                 color: "#fff",
@@ -2434,274 +2609,291 @@ export default function EventParticipantsFilter({
 
             <span
               style={{
-                color: "rgba(255,255,255,0.68)",
-                fontSize: 12,
+                color: PREMIUM.textMuted,
+                fontSize: 11,
                 lineHeight: 1.45,
               }}
             >
-              Encontre clubbers por afinidade musical, região e presença social.
+              Escolha uma tribo para ver os Clubbers relacionados.
             </span>
           </div>
 
           <div
-            style={{
-              display: "flex",
-              gap: 10,
-              overflowX: "auto",
-              paddingBottom: 4,
-              scrollSnapType: "x mandatory",
-            }}
+            className="event-tribe-selector-list"
+            aria-label="Seleção de tribos em destaque"
           >
-            {topTribes.map(({ tribe, count, visual }) => (
-              <button
-                key={`tribe-highlight-${tribe}`}
-                type="button"
-                onClick={() => {
-                  setMode("all");
-                  setValue("");
-                  setActiveGroup("genres");
-                }}
-                style={{
-                  minWidth: 210,
-                  maxWidth: 210,
-                  flex: "0 0 210px",
-                  display: "grid",
-                  gap: 10,
-                  textAlign: "left",
-                  padding: 12,
-                  borderRadius: 20,
-                  border: visual.border,
-                  background: visual.gradient,
-                  boxShadow: visual.glow,
-                  color: "#fff",
-                  cursor: "pointer",
-                  scrollSnapAlign: "start",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
+            {topTribes.map(({ tribe, count, visual }) => {
+              const active = activeTribe === tribe;
+
+              return (
+                <button
+                  key={`tribe-selector-${tribe}`}
+                  type="button"
+                  className="event-tribe-selector"
+                  data-active={active ? "true" : "false"}
+                  onClick={() => {
+                    setExpandedParticipantKey("");
+                    setSelectedTribe(tribe);
                   }}
                 >
                   <span
-                    style={{
-                      width: 36,
-                      height: 36,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: 999,
-                      background: "rgba(0,0,0,0.34)",
-                      border: "1px solid rgba(255,255,255,0.16)",
-                      fontSize: 17,
-                    }}
-                  >
-                    {visual.icon}
-                  </span>
+                    className="event-tribe-selector__dot"
+                    aria-hidden="true"
+                  />
 
-                  <span
-                    style={{
-                      padding: "6px 8px",
-                      borderRadius: 999,
-                      background: "rgba(0,0,0,0.30)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      color: visual.accent,
-                      fontSize: 11,
-                      fontWeight: 900,
-                    }}
-                  >
-                    {count} {count === 1 ? "clubber" : "clubbers"}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gap: 4,
-                  }}
-                >
-                  <strong
-                    style={{
-                      fontSize: 14,
-                      lineHeight: 1.2,
-                    }}
-                  >
+                  <strong className="event-tribe-selector__name">
                     {visual.name}
                   </strong>
 
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.74)",
-                      fontSize: 11,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {visual.description}
+                  <span className="event-tribe-selector__count">
+                    {count === 1 ? "1 Clubber" : `${count} Clubbers`}
                   </span>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
-        </div>
+
+          <ParticipantResults
+            eventReturnTo={eventReturnTo}
+            members={tribeResults}
+            officialEventUrl={officialEventUrl}
+            expandedParticipantKey={expandedParticipantKey}
+            onToggleParticipant={toggleParticipant}
+            onSelfDetected={handleSelfDetected}
+            emptyTitle="Nenhum Clubber nesta tribo"
+            emptyText="Selecione outra tribo para continuar explorando o radar."
+          />
+        </section>
       ) : null}
 
-      <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={selectAll} style={chipStyle(mode === "all")}>
-            Todos
-          </button>
-
-          <button type="button" onClick={() => selectFilter("hot")} style={chipStyle(mode === "hot")}>
-            Conexões quentes
-          </button>
-
-          <button type="button" onClick={() => selectFilter("near")} style={chipStyle(mode === "near")}>
-            Clubbers próximos
-          </button>
-
-          <button type="button" onClick={() => toggleGroup("cities")} style={chipStyle(activeGroup === "cities")}>
-            Cidades
-          </button>
-
-          <button type="button" onClick={() => toggleGroup("states")} style={chipStyle(activeGroup === "states")}>
-            Estados
-          </button>
-
-          <button type="button" onClick={() => toggleGroup("regions")} style={chipStyle(activeGroup === "regions")}>
-            Regiões
-          </button>
-
-          <button type="button" onClick={() => toggleGroup("genres")} style={chipStyle(activeGroup === "genres")}>
-            Vertentes
-          </button>
-        </div>
-
-        {activeGroup !== "none" ? (
+      {radarView === "for-you" ? (
+        <>
           <div
             style={{
               display: "grid",
-              gap: 9,
-              padding: 12,
-              borderRadius: 18,
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(255,255,255,0.035)",
+              gap: 10,
+              marginBottom: 14,
             }}
           >
-            <div
+            <button
+              type="button"
+              onClick={() => {
+                setFiltersOpen((current) => {
+                  const next = !current;
+
+                  if (!next) {
+                    setActiveGroup("none");
+                  }
+
+                  return next;
+                });
+              }}
+              aria-expanded={filtersOpen}
               style={{
+                width: "fit-content",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: 0,
+                border: 0,
+                background: "transparent",
+                color: filtersOpen ? PREMIUM.radar : "rgba(255,255,255,0.76)",
                 fontSize: 11,
+                lineHeight: 1.2,
                 fontWeight: 900,
-                opacity: 0.66,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
+                cursor: "pointer",
               }}
             >
-              {activeGroup === "cities"
-                ? "Cidades"
-                : activeGroup === "states"
-                ? "Estados"
-                : activeGroup === "regions"
-                ? "Regiões"
-                : "Vertentes"}
-            </div>
+              Filtrar resultados
+              <span aria-hidden="true">{filtersOpen ? "−" : "+"}</span>
+            </button>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {activeGroup === "cities"
-                ? cities.map((city) => (
-                    <button
-                      key={`filter-city-${city}`}
-                      type="button"
-                      onClick={() => selectFilter("city", city)}
-                      style={chipStyle(mode === "city" && value === city)}
-                    >
-                      {city}
-                    </button>
-                  ))
-                : null}
+            {filtersOpen ? (
+              <div
+                style={{
+                  display: "grid",
+                  gap: 10,
+                  paddingTop: 12,
+                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup("cities")}
+                    style={chipStyle(activeGroup === "cities")}
+                  >
+                    Cidades
+                  </button>
 
-              {activeGroup === "states"
-                ? states.map((state) => (
-                    <button
-                      key={`filter-state-${state}`}
-                      type="button"
-                      onClick={() => selectFilter("state", state)}
-                      style={chipStyle(mode === "state" && value === state)}
-                    >
-                      {state}
-                    </button>
-                  ))
-                : null}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup("states")}
+                    style={chipStyle(activeGroup === "states")}
+                  >
+                    Estados
+                  </button>
 
-              {activeGroup === "regions"
-                ? regions.map((region) => (
-                    <button
-                      key={`filter-region-${region}`}
-                      type="button"
-                      onClick={() => selectFilter("region", region)}
-                      style={chipStyle(mode === "region" && value === region)}
-                    >
-                      {region}
-                    </button>
-                  ))
-                : null}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup("regions")}
+                    style={chipStyle(activeGroup === "regions")}
+                  >
+                    Regiões
+                  </button>
 
-              {activeGroup === "genres"
-                ? genres.map((genre) => (
-                    <button
-                      key={`filter-genre-${genre}`}
-                      type="button"
-                      onClick={() => selectFilter("genre", genre)}
-                      style={chipStyle(mode === "genre" && value === genre)}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup("genres")}
+                    style={chipStyle(activeGroup === "genres")}
+                  >
+                    Vertentes
+                  </button>
+                </div>
+
+                {activeGroup !== "none" ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 9,
+                      paddingTop: 10,
+                      borderTop: "1px solid rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 900,
+                        opacity: 0.62,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.6,
+                      }}
                     >
-                      {genre}
-                    </button>
-                  ))
-                : null}
-            </div>
+                      {activeGroup === "cities"
+                        ? "Cidades"
+                        : activeGroup === "states"
+                          ? "Estados"
+                          : activeGroup === "regions"
+                            ? "Regiões"
+                            : "Vertentes"}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {activeGroup === "cities"
+                        ? cities.map((city) => (
+                            <button
+                              key={`filter-city-${city}`}
+                              type="button"
+                              onClick={() => selectFilter("city", city)}
+                              style={chipStyle(
+                                mode === "city" && value === city,
+                              )}
+                            >
+                              {city}
+                            </button>
+                          ))
+                        : null}
+
+                      {activeGroup === "states"
+                        ? states.map((state) => (
+                            <button
+                              key={`filter-state-${state}`}
+                              type="button"
+                              onClick={() => selectFilter("state", state)}
+                              style={chipStyle(
+                                mode === "state" && value === state,
+                              )}
+                            >
+                              {state}
+                            </button>
+                          ))
+                        : null}
+
+                      {activeGroup === "regions"
+                        ? regions.map((region) => (
+                            <button
+                              key={`filter-region-${region}`}
+                              type="button"
+                              onClick={() => selectFilter("region", region)}
+                              style={chipStyle(
+                                mode === "region" && value === region,
+                              )}
+                            >
+                              {region}
+                            </button>
+                          ))
+                        : null}
+
+                      {activeGroup === "genres"
+                        ? genres.map((genre) => (
+                            <button
+                              key={`filter-genre-${genre}`}
+                              type="button"
+                              onClick={() => selectFilter("genre", genre)}
+                              style={chipStyle(
+                                mode === "genre" && value === genre,
+                              )}
+                            >
+                              {genre}
+                            </button>
+                          ))
+                        : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
 
-      <div
-        style={{
-          marginBottom: 10,
-          fontSize: 12,
-          opacity: 0.82,
-          fontWeight: 750,
-        }}
-      >
-        {mode === "hot"
-          ? filtered.length === 1
-            ? "1 conexão quente no radar"
-            : `${filtered.length} conexões quentes no radar`
-          : mode === "near"
-          ? filtered.length === 1
-            ? "1 clubber próximo de você"
-            : `${filtered.length} clubbers próximos de você`
-          : mode === "genre" && value
-          ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} conectados pela vertente ${value}`
-          : mode === "city" && value
-          ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} da cidade ${value}`
-          : mode === "state" && value
-          ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} do estado ${value}`
-          : mode === "region" && value
-          ? `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} da região ${value}`
-          : `${filtered.length} Clubber${filtered.length === 1 ? "" : "s"} conectados a este evento`}
-      </div>
+          <div
+            style={{
+              marginBottom: 10,
+              fontSize: 12,
+              opacity: 0.82,
+              fontWeight: 750,
+            }}
+          >
+            {mode === "hot"
+              ? filtered.length === 1
+                ? "1 conexão quente no radar"
+                : `${filtered.length} conexões quentes no radar`
+              : mode === "near"
+                ? filtered.length === 1
+                  ? "1 clubber próximo de você"
+                  : `${filtered.length} clubbers próximos de você`
+                : mode === "genre" && value
+                  ? `${filtered.length} Clubber${
+                      filtered.length === 1 ? "" : "s"
+                    } conectados pela vertente ${value}`
+                  : mode === "city" && value
+                    ? `${filtered.length} Clubber${
+                        filtered.length === 1 ? "" : "s"
+                      } da cidade ${value}`
+                    : mode === "state" && value
+                      ? `${filtered.length} Clubber${
+                          filtered.length === 1 ? "" : "s"
+                        } do estado ${value}`
+                      : mode === "region" && value
+                        ? `${filtered.length} Clubber${
+                            filtered.length === 1 ? "" : "s"
+                          } da região ${value}`
+                        : `${filtered.length} Clubber${
+                            filtered.length === 1 ? "" : "s"
+                          } conectados a este evento`}
+          </div>
 
-      <div style={carouselStyle()}>
-        {filtered.map((member) => (
-          <ParticipantCard
-            key={`attendee-${member.user_id}-${member.slug}`}
-            member={member}
+          <ParticipantResults
+            eventReturnTo={eventReturnTo}
+            members={filtered}
             officialEventUrl={officialEventUrl}
+            expandedParticipantKey={expandedParticipantKey}
+            onToggleParticipant={toggleParticipant}
             onSelfDetected={handleSelfDetected}
+            emptyTitle="Nenhum Clubber encontrado"
+            emptyText="Ajuste os filtros ou volte para a visão geral do radar."
           />
-        ))}
-      </div>
+        </>
+      ) : null}
     </>
   );
 }

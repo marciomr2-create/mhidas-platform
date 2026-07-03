@@ -1352,6 +1352,16 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           line-height: 1.25;
         }
 
+        .event-social-radar {
+          width: min(1120px, calc(100vw - 48px));
+          max-width: none;
+          box-sizing: border-box;
+          margin-left: 50%;
+          transform: translateX(-50%);
+          padding: clamp(18px, 2.4vw, 26px) !important;
+          gap: 18px !important;
+        }
+
         .event-quick-guide {
           width: min(1120px, calc(100vw - 48px));
           max-width: none;
@@ -1458,6 +1468,17 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         @media (max-width: 760px) {
+          .event-social-radar {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin-left: 0;
+            margin-right: 0;
+            transform: none;
+            overflow: hidden;
+          }
+
           .event-quick-guide {
             width: 100%;
             min-width: 0;
@@ -1841,16 +1862,20 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         </section>
       ) : (
         <>
-          <section style={sectionStyle("purple")}>
+          <section
+            className="event-social-radar"
+            style={sectionStyle("purple")}
+          >
             <SectionTitle
               icon="●"
               title="Quem vai para este evento"
-              subtitle="Perfis Club que já se conectaram a este evento."
+              subtitle="Encontre Clubbers por afinidade musical, localização e intenção de conexão."
               actionLabel=""
             />
 
             <EventParticipantsFilter
               attendees={attendees}
+              eventReturnTo={eventReturnPath}
               officialEventUrl={heroOfficialUrl}
             />
           </section>
