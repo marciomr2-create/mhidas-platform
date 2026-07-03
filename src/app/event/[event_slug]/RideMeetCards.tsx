@@ -1,5 +1,8 @@
 // src/app/event/[event_slug]/RideMeetCards.tsx
+"use client";
+
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export type RideMeetEventMember = {
@@ -28,7 +31,37 @@ export type RideMeetEventMember = {
 type RideMeetCardsProps = {
   rideMembers: RideMeetEventMember[];
   meetMembers: RideMeetEventMember[];
+  eventReturnTo: string;
   officialEventUrl?: string;
+};
+
+type ConnectionUiState =
+  | "idle"
+  | "checking"
+  | "sending"
+  | "outgoing_pending"
+  | "incoming_pending"
+  | "connected"
+  | "unauthorized"
+  | "blocked"
+  | "suspended"
+  | "self"
+  | "error";
+
+const EVENT_PALETTE = {
+  surface: "rgba(12,12,20,0.94)",
+  surfaceStrong: "rgba(18,18,29,0.92)",
+  violet: "#7C5CFF",
+  violetSoft: "rgba(124,92,255,0.16)",
+  indigoBorder: "rgba(124,92,255,0.24)",
+  teal: "#00F5C8",
+  tealSoft: "rgba(0,245,200,0.12)",
+  tealBorder: "rgba(0,245,200,0.28)",
+  amber: "#FFBC58",
+  border: "rgba(255,255,255,0.10)",
+  borderStrong: "rgba(255,255,255,0.15)",
+  textMuted: "rgba(255,255,255,0.66)",
+  textSoft: "rgba(255,255,255,0.80)",
 };
 
 function normalizeText(value: unknown): string {
@@ -37,6 +70,163 @@ function normalizeText(value: unknown): string {
 
 function hasContent(value: unknown): boolean {
   return normalizeText(value).length > 0;
+}
+
+function isSandboxMember(
+  member: RideMeetEventMember,
+): boolean {
+  return (
+    normalizeText(member.user_id).startsWith("TEST_SANDBOX_") ||
+    normalizeText(member.slug).startsWith("sandbox-")
+  );
+}
+
+function mapApiConnectionState(
+  value: unknown,
+): ConnectionUiState {
+  const normalized = normalizeText(value).toLowerCase();
+
+  if (normalized === "self") return "self";
+  if (normalized === "outgoing_pending") {
+    return "outgoing_pending";
+  }
+  if (normalized === "incoming_pending") {
+    return "incoming_pending";
+  }
+  if (normalized === "connected") return "connected";
+  if (normalized === "blocked") return "blocked";
+  if (normalized === "suspended") return "suspended";
+
+  return "idle";
+}
+
+function getRideConnectionLabel(
+  state: ConnectionUiState,
+): string {
+  if (state === "checking") return "Verificando conexão...";
+  if (state === "sending") return "Enviando solicitação...";
+  if (state === "outgoing_pending") {
+    return "Solicitação enviada";
+  }
+  if (state === "incoming_pending") {
+    return "Solicitação recebida";
+  }
+  if (state === "connected") {
+    return "Conectados — combinar carona";
+  }
+  if (state === "unauthorized") {
+    return "Entrar para conectar";
+  }
+  if (state === "blocked") return "Conexão bloqueada";
+  if (state === "suspended") return "Conexão suspensa";
+  if (state === "self") return "Sua carona";
+  if (state === "error") return "Tentar novamente";
+
+  return "Conectar para combinar";
+}
+
+function getRideConnectionFeedback(
+  state: ConnectionUiState,
+): string {
+  if (state === "checking") {
+    return "Consultando o relacionamento entre vocês.";
+  }
+
+  if (state === "sending") {
+    return "Enviando a solicitação com segurança.";
+  }
+
+  if (state === "outgoing_pending") {
+    return "Pedido enviado. O contato será liberado após o aceite.";
+  }
+
+  if (state === "incoming_pending") {
+    return "Você recebeu uma solicitação desta pessoa. Revise em Conexões.";
+  }
+
+  if (state === "connected") {
+    return "Conexão aprovada. Use o perfil Club para combinar os detalhes.";
+  }
+
+  if (state === "unauthorized") {
+    return "Entre na sua conta para solicitar conexão.";
+  }
+
+  if (state === "blocked") {
+    return "Não é possível conectar devido a um bloqueio.";
+  }
+
+  if (state === "suspended") {
+    return "Esta conexão está suspensa no momento.";
+  }
+
+  if (state === "self") {
+    return "Este anúncio de carona pertence ao seu perfil.";
+  }
+
+  if (state === "error") {
+    return "Não foi possível concluir agora. Tente novamente.";
+  }
+
+  return "A conexão libera os caminhos sociais após o aceite.";
+}
+
+function isConnectionActionDisabled(
+  state: ConnectionUiState,
+): boolean {
+  return [
+    "checking",
+    "sending",
+    "outgoing_pending",
+    "incoming_pending",
+    "connected",
+    "blocked",
+    "suspended",
+    "self",
+  ].includes(state);
+}
+
+function getPublicClubberHref(
+  member: RideMeetEventMember,
+  eventReturnTo: string,
+): string {
+  const slug = normalizeText(member.slug).toLowerCase();
+  const safeReturnTo = normalizeText(eventReturnTo);
+
+  if (!slug || isSandboxMember(member)) {
+    return "";
+  }
+
+  const search = new URLSearchParams({
+    mode: "club",
+    view: "public",
+  });
+
+  if (
+    safeReturnTo.startsWith("/event/") &&
+    !safeReturnTo.startsWith("//") &&
+    !safeReturnTo.includes("\\")
+  ) {
+    search.set("return_to", safeReturnTo);
+  }
+
+  return `/${encodeURIComponent(slug)}?${search.toString()}`;
+}
+
+function getLoginHref(eventReturnTo: string): string {
+  const safeReturnTo = normalizeText(eventReturnTo);
+
+  if (
+    safeReturnTo.startsWith("/event/") &&
+    !safeReturnTo.startsWith("//") &&
+    !safeReturnTo.includes("\\")
+  ) {
+    return `/login?return_to=${encodeURIComponent(
+      safeReturnTo,
+    )}`;
+  }
+
+  return "/login";
 }
 
 function getInitials(name: string): string {
@@ -74,19 +264,22 @@ function sectionStyle(kind: "ride" | "meet"): CSSProperties {
   const isRide = kind === "ride";
 
   return {
+    width: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
     display: "grid",
-    gap: 12,
-    padding: 14,
+    gap: isRide ? 18 : 14,
+    padding: "clamp(18px, 2.4vw, 26px)",
     borderRadius: 24,
-    border: isRide
-      ? "1px solid rgba(0,255,190,0.22)"
-      : "1px solid rgba(255,196,0,0.22)",
-    background: isRide
-      ? "linear-gradient(180deg, rgba(0,255,190,0.055), rgba(255,255,255,0.025))"
-      : "linear-gradient(180deg, rgba(255,196,0,0.055), rgba(255,255,255,0.025))",
-    boxShadow: isRide
-      ? "0 18px 46px rgba(0,255,190,0.06)"
-      : "0 18px 46px rgba(255,196,0,0.06)",
+    border: `1px solid ${
+      isRide
+        ? EVENT_PALETTE.indigoBorder
+        : EVENT_PALETTE.border
+    }`,
+    background:
+      "linear-gradient(145deg, rgba(15,15,24,0.96), rgba(7,8,13,0.99))",
+    boxShadow: "0 18px 46px rgba(0,0,0,0.24)",
+    overflow: "hidden",
   };
 }
 
@@ -144,6 +337,96 @@ function carouselStyle(): CSSProperties {
   };
 }
 
+function rideCardStyle(): CSSProperties {
+  return {
+    minWidth: "100%",
+    maxWidth: "100%",
+    flex: "0 0 100%",
+    display: "grid",
+    padding: 0,
+    scrollSnapAlign: "start",
+    boxSizing: "border-box",
+  };
+}
+
+function rideDetailsStyle(): CSSProperties {
+  return {
+    display: "grid",
+    minWidth: 0,
+  };
+}
+
+function rideDetailRowStyle(last = false): CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateColumns: "74px minmax(0, 1fr)",
+    gap: 12,
+    alignItems: "start",
+    padding: "10px 0",
+    borderBottom: last
+      ? "none"
+      : "1px solid rgba(255,255,255,0.065)",
+  };
+}
+
+function rideProfileActionStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    width: "fit-content",
+    minHeight: 28,
+    padding: "2px 0",
+    borderBottom: "1px solid rgba(124,92,255,0.42)",
+    color: EVENT_PALETTE.violet,
+    textDecoration: "none",
+    fontWeight: 850,
+    fontSize: 12,
+  };
+}
+
+function rideConnectionButtonStyle(
+  state: ConnectionUiState,
+): CSSProperties {
+  const completed =
+    state === "outgoing_pending" ||
+    state === "connected";
+  const error = state === "error";
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 44,
+    padding: "11px 14px",
+    borderRadius: 14,
+    border: error
+      ? "1px solid rgba(255,85,118,0.42)"
+      : completed
+        ? `1px solid ${EVENT_PALETTE.tealBorder}`
+        : `1px solid ${EVENT_PALETTE.indigoBorder}`,
+    background: error
+      ? "linear-gradient(135deg, rgba(255,85,118,0.15), rgba(255,255,255,0.04))"
+      : completed
+        ? "linear-gradient(135deg, rgba(0,245,200,0.14), rgba(124,92,255,0.14))"
+        : "linear-gradient(135deg, rgba(47,128,255,0.15), rgba(124,92,255,0.18))",
+    color: completed ? EVENT_PALETTE.teal : "#fff",
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: 12,
+    lineHeight: 1.25,
+    textAlign: "center",
+    cursor: isConnectionActionDisabled(state)
+      ? "not-allowed"
+      : "pointer",
+    opacity:
+      isConnectionActionDisabled(state) &&
+      !completed
+        ? 0.68
+        : 1,
+  };
+}
+
 function avatarStyle(kind: "ride" | "meet"): CSSProperties {
   const isRide = kind === "ride";
 
@@ -156,15 +439,14 @@ function avatarStyle(kind: "ride" | "meet"): CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    border: isRide
-      ? "1px solid rgba(0,255,190,0.22)"
-      : "1px solid rgba(255,196,0,0.24)",
-    background: isRide
-      ? "linear-gradient(135deg, rgba(0,255,190,0.16), rgba(125,92,255,0.18))"
-      : "linear-gradient(135deg, rgba(255,196,0,0.18), rgba(125,92,255,0.18))",
-    boxShadow: isRide
-      ? "0 0 22px rgba(0,255,190,0.10)"
-      : "0 0 22px rgba(255,196,0,0.10)",
+    border: `1px solid ${
+      isRide
+        ? EVENT_PALETTE.tealBorder
+        : EVENT_PALETTE.indigoBorder
+    }`,
+    background:
+      "linear-gradient(135deg, rgba(47,128,255,0.14), rgba(124,92,255,0.18))",
+    boxShadow: "0 0 22px rgba(124,92,255,0.10)",
   };
 }
 
@@ -237,19 +519,14 @@ function statusBadgeStyle(kind: "ride" | "meet"): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
-    justifyContent: "center",
     width: "auto",
-    minHeight: 34,
-    padding: "8px 11px",
-    borderRadius: 999,
-    border: isRide
-      ? "1px solid rgba(0,255,190,0.14)"
-      : "1px solid rgba(255,196,0,0.16)",
-    background: isRide
-      ? "rgba(0,255,190,0.055)"
-      : "rgba(255,196,0,0.06)",
-    color: isRide ? "rgba(0,255,190,0.86)" : "rgba(255,196,0,0.90)",
+    minHeight: 24,
+    paddingTop: 2,
+    color: isRide
+      ? EVENT_PALETTE.teal
+      : EVENT_PALETTE.amber,
     fontSize: 11,
+    lineHeight: 1.35,
     fontWeight: 850,
     whiteSpace: "nowrap",
   };
@@ -345,6 +622,113 @@ function NotesBox({ value }: { value: unknown }) {
     </div>
   );
 }
+function RideDetailRow({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: unknown;
+  last?: boolean;
+}) {
+  if (!hasContent(value)) return null;
+
+  return (
+    <div style={rideDetailRowStyle(last)}>
+      <span
+        style={{
+          color: "rgba(255,255,255,0.46)",
+          fontSize: 10,
+          lineHeight: 1.35,
+          fontWeight: 900,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </span>
+
+      <strong
+        style={{
+          color: "#fff",
+          fontSize: 12,
+          lineHeight: 1.4,
+          overflowWrap: "anywhere",
+        }}
+      >
+        {String(value)}
+      </strong>
+    </div>
+  );
+}
+
+function RideNotesLine({ value }: { value: unknown }) {
+  if (!hasContent(value)) return null;
+
+  return (
+    <p
+      style={{
+        margin: 0,
+        color: "rgba(255,255,255,0.72)",
+        fontSize: 12,
+        lineHeight: 1.5,
+      }}
+    >
+      <strong
+        style={{
+          color: "rgba(255,255,255,0.48)",
+          fontSize: 10,
+          fontWeight: 900,
+          letterSpacing: 0.45,
+          textTransform: "uppercase",
+        }}
+      >
+        {"Observações"}
+      </strong>
+      <span aria-hidden="true"> · </span>
+      {String(value)}
+    </p>
+  );
+}
+
+function RideEventOfficialAction({ href }: { href: string }) {
+  const normalizedHref = normalizeText(href);
+
+  if (!normalizedHref) {
+    return (
+      <span
+        aria-disabled="true"
+        title="Link oficial do evento ainda não confirmado"
+        style={{
+          color: "rgba(255,255,255,0.38)",
+          fontSize: 12,
+          lineHeight: 1.4,
+          fontWeight: 800,
+        }}
+      >
+        {"Evento indisponível"}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={normalizedHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        color: "rgba(0,255,190,0.88)",
+        fontSize: 12,
+        lineHeight: 1.4,
+        fontWeight: 850,
+        textDecoration: "none",
+      }}
+    >
+      Abrir evento oficial ↗
+    </a>
+  );
+}
+
 function EventOfficialAction({ href }: { href: string }) {
   const normalizedHref = normalizeText(href);
 
@@ -373,74 +757,360 @@ function EventOfficialAction({ href }: { href: string }) {
 }
 function RideCard({
   member,
+  eventReturnTo,
   officialEventUrl,
 }: {
   member: RideMeetEventMember;
+  eventReturnTo: string;
   officialEventUrl?: string;
 }) {
+  const [connectionState, setConnectionState] =
+    useState<ConnectionUiState>("idle");
+
   const rideLabel = getRideStatusLabel(member.ride_status);
   const seatsLabel = hasContent(member.ride_seats)
     ? String(member.ride_seats) + " vagas"
     : "";
-  const officialHref = normalizeText(officialEventUrl);
+  const officialHref = normalizeText(
+    officialEventUrl || member.ride_event_url,
+  );
+  const sandboxMember = isSandboxMember(member);
+  const publicProfileHref = getPublicClubberHref(
+    member,
+    eventReturnTo,
+  );
+
+  const detailItems = [
+    {
+      label: "Evento",
+      value: member.ride_event_name,
+    },
+    {
+      label: "Origem",
+      value: member.ride_origin,
+    },
+    {
+      label: "Destino",
+      value: member.ride_destination,
+    },
+  ].filter((item) => hasContent(item.value));
+
+  useEffect(() => {
+    if (sandboxMember || !normalizeText(member.user_id)) {
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadConnectionStatus() {
+      setConnectionState("checking");
+
+      try {
+        const response = await fetch(
+          `/api/network/connections/status?targetUserId=${encodeURIComponent(
+            member.user_id,
+          )}`,
+          {
+            method: "GET",
+          },
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (ignore) {
+          return;
+        }
+
+        const code = normalizeText(data?.code);
+        const apiState = normalizeText(data?.state);
+
+        if (
+          response.status === 401 ||
+          code === "UNAUTHORIZED"
+        ) {
+          setConnectionState("unauthorized");
+          return;
+        }
+
+        if (data?.ok) {
+          setConnectionState(
+            mapApiConnectionState(apiState),
+          );
+          return;
+        }
+
+        setConnectionState("idle");
+      } catch {
+        if (!ignore) {
+          setConnectionState("idle");
+        }
+      }
+    }
+
+    loadConnectionStatus();
+
+    return () => {
+      ignore = true;
+    };
+  }, [member.user_id, sandboxMember]);
+
+  async function handleConnectionRequest() {
+    if (
+      sandboxMember ||
+      isConnectionActionDisabled(connectionState)
+    ) {
+      return;
+    }
+
+    setConnectionState("sending");
+
+    try {
+      const response = await fetch(
+        "/api/network/connections",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            targetUserId: member.user_id,
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+      const code = normalizeText(data?.code);
+      const apiState = normalizeText(data?.state);
+
+      if (
+        response.status === 401 ||
+        code === "UNAUTHORIZED"
+      ) {
+        setConnectionState("unauthorized");
+        return;
+      }
+
+      if (
+        data?.ok &&
+        apiState === "outgoing_pending"
+      ) {
+        setConnectionState("outgoing_pending");
+        return;
+      }
+
+      if (code === "ALREADY_CONNECTED") {
+        setConnectionState("connected");
+        return;
+      }
+
+      if (code === "REQUEST_ALREADY_SENT") {
+        setConnectionState("outgoing_pending");
+        return;
+      }
+
+      if (code === "INCOMING_REQUEST_EXISTS") {
+        setConnectionState("incoming_pending");
+        return;
+      }
+
+      if (code === "RELATIONSHIP_BLOCKED") {
+        setConnectionState("blocked");
+        return;
+      }
+
+      if (code === "RELATIONSHIP_SUSPENDED") {
+        setConnectionState("suspended");
+        return;
+      }
+
+      if (code === "INVALID_TARGET") {
+        setConnectionState("self");
+        return;
+      }
+
+      setConnectionState("error");
+    } catch {
+      setConnectionState("error");
+    }
+  }
+
+  const connectionLabel = sandboxMember
+    ? "Perfil demonstrativo"
+    : getRideConnectionLabel(connectionState);
+
+  const connectionFeedback = sandboxMember
+    ? "Este perfil demonstrativo não envia solicitações reais."
+    : getRideConnectionFeedback(connectionState);
+
   return (
-    <article style={wideCardStyle()}>
-      <div style={{ padding: 15, display: "grid", gap: 13 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "auto 1fr",
-            gap: 12,
-            alignItems: "center",
-          }}
-        >
-          <ProfileAvatar member={member} kind="ride" />
+    <article
+      className="event-ride-card"
+      style={rideCardStyle()}
+    >
+      <div className="event-ride-card__identity">
+        <ProfileAvatar member={member} kind="ride" />
 
-          <div style={{ display: "grid", gap: 5, minWidth: 0 }}>
-            <strong style={{ fontSize: 19, lineHeight: 1.12 }}>
-              {member.label}
-            </strong>
+        <div style={{ display: "grid", gap: 5, minWidth: 0 }}>
+          <strong
+            style={{
+              color: "#fff",
+              fontSize: 19,
+              lineHeight: 1.12,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {member.label}
+          </strong>
 
-            {hasContent(member.city_base) ? (
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.70)",
-                  fontSize: 12,
-                  lineHeight: 1.35,
-                  fontWeight: 750,
-                }}
-              >
-                {member.city_base}
-              </span>
-            ) : null}
-
+          {hasContent(member.city_base) ? (
             <span
               style={{
-                color: "rgba(0,255,190,0.92)",
-                fontSize: 11,
+                color: EVENT_PALETTE.textMuted,
+                fontSize: 12,
+                lineHeight: 1.35,
+                fontWeight: 750,
+              }}
+            >
+              {member.city_base}
+            </span>
+          ) : null}
+
+          <span
+            style={{
+              color: EVENT_PALETTE.teal,
+              fontSize: 11,
+              lineHeight: 1.35,
+              fontWeight: 850,
+            }}
+          >
+            {[rideLabel, seatsLabel].filter(Boolean).join(" · ")}
+          </span>
+        </div>
+      </div>
+
+      {detailItems.length > 0 ? (
+        <div
+          className="event-ride-card__details"
+          style={rideDetailsStyle()}
+        >
+          {detailItems.map((item, index) => (
+            <RideDetailRow
+              key={`ride-detail-${item.label}`}
+              label={item.label}
+              value={item.value}
+              last={index === detailItems.length - 1}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          className="event-ride-card__details"
+          aria-hidden="true"
+        />
+      )}
+
+      <div className="event-ride-card__footer">
+        <RideNotesLine value={member.ride_notes} />
+
+        <div className="event-ride-card__connection">
+          {connectionState === "self" ? (
+            <div
+              aria-label="Sua carona"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 9,
+                width: "fit-content",
+                color: EVENT_PALETTE.textSoft,
+                fontSize: 12,
                 lineHeight: 1.35,
                 fontWeight: 850,
               }}
             >
-              {[rideLabel, seatsLabel].filter(Boolean).join(" - ")}
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 7,
+                  height: 7,
+                  flex: "0 0 7px",
+                  borderRadius: 999,
+                  background: EVENT_PALETTE.teal,
+                  boxShadow:
+                    "0 0 14px rgba(0,245,200,0.34)",
+                }}
+              />
+              <span>Sua carona</span>
+            </div>
+          ) : connectionState === "unauthorized" ? (
+            <Link
+              href={getLoginHref(eventReturnTo)}
+              style={rideConnectionButtonStyle(
+                connectionState,
+              )}
+            >
+              {connectionLabel}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleConnectionRequest}
+              disabled={
+                sandboxMember ||
+                isConnectionActionDisabled(
+                  connectionState,
+                )
+              }
+              style={rideConnectionButtonStyle(
+                connectionState,
+              )}
+            >
+              {connectionLabel}
+            </button>
+          )}
+
+          <p
+            style={{
+              margin: 0,
+              color: EVENT_PALETTE.textMuted,
+              fontSize: 11,
+              lineHeight: 1.45,
+            }}
+          >
+            {connectionFeedback}
+          </p>
+
+          {connectionState === "incoming_pending" ? (
+            <Link
+              href="/network/connections"
+              className="event-ride-card__review-link"
+            >
+              Revisar solicitação
+            </Link>
+          ) : null}
+        </div>
+
+        <div className="event-ride-card__secondary-actions">
+          {publicProfileHref ? (
+            <Link
+              href={publicProfileHref}
+              style={rideProfileActionStyle()}
+            >
+              Ver perfil Club
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              style={{
+                color: "rgba(255,255,255,0.38)",
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              Perfil indisponível
             </span>
-          </div>
-        </div>
+          )}
 
-        <div style={detailGridStyle()}>
-          <DetailBox label="Evento" value={member.ride_event_name} />
-          <DetailBox label="Origem" value={member.ride_origin} />
-          <DetailBox label="Destino" value={member.ride_destination} />
-        </div>
-
-        <NotesBox value={member.ride_notes} />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
-            Ver perfil Club
-          </Link>
-
-          <EventOfficialAction href={officialHref} />
+          <RideEventOfficialAction href={officialHref} />
         </div>
       </div>
     </article>
@@ -449,13 +1119,22 @@ function RideCard({
 
 function MeetCard({
   member,
+  eventReturnTo,
   officialEventUrl,
 }: {
   member: RideMeetEventMember;
+  eventReturnTo: string;
   officialEventUrl?: string;
 }) {
   const meetLabel = getMeetStatusLabel(member.meet_status);
-  const officialHref = normalizeText(officialEventUrl);
+  const officialHref = normalizeText(
+    officialEventUrl || member.meet_event_url,
+  );
+  const publicProfileHref = getPublicClubberHref(
+    member,
+    eventReturnTo,
+  );
+
   return (
     <article style={wideCardStyle()}>
       <div style={{ padding: 15, display: "grid", gap: 13 }}>
@@ -477,7 +1156,7 @@ function MeetCard({
             {hasContent(member.city_base) ? (
               <span
                 style={{
-                  color: "rgba(255,255,255,0.70)",
+                  color: EVENT_PALETTE.textMuted,
                   fontSize: 12,
                   lineHeight: 1.35,
                   fontWeight: 750,
@@ -489,7 +1168,7 @@ function MeetCard({
 
             <span
               style={{
-                color: "rgba(255,196,0,0.92)",
+                color: EVENT_PALETTE.amber,
                 fontSize: 11,
                 lineHeight: 1.35,
                 fontWeight: 850,
@@ -503,15 +1182,30 @@ function MeetCard({
         <div style={detailGridStyle()}>
           <DetailBox label="Evento" value={member.meet_event_name} />
           <DetailBox label="Ponto" value={member.meet_meeting_point} />
-          <DetailBox label={"Hor\u00e1rio"} value={member.meet_time} />
+          <DetailBox label={"Horário"} value={member.meet_time} />
         </div>
 
         <NotesBox value={member.meet_notes} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <Link href={`/${member.slug}?mode=club`} style={actionButtonStyle(true)}>
-            Ver perfil Club
-          </Link>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          {publicProfileHref ? (
+            <Link
+              href={publicProfileHref}
+              style={actionButtonStyle(true)}
+            >
+              Ver perfil Club
+            </Link>
+          ) : (
+            <span style={disabledEventButtonStyle()}>
+              Perfil indisponível
+            </span>
+          )}
 
           <EventOfficialAction href={officialHref} />
         </div>
@@ -523,10 +1217,114 @@ function MeetCard({
 export default function RideMeetCards({
   rideMembers,
   meetMembers,
+  eventReturnTo,
   officialEventUrl,
 }: RideMeetCardsProps) {
   return (
-    <>
+    <div className="event-ride-meet-stack">
+      <style>{`
+        .event-ride-meet-stack {
+          width: min(1120px, calc(100vw - 48px));
+          min-width: 0;
+          margin: 18px 0 0 50%;
+          transform: translateX(-50%);
+          display: grid;
+          gap: 18px;
+          box-sizing: border-box;
+        }
+
+        .event-ride-card {
+          grid-template-columns:
+            minmax(240px, 0.92fr)
+            minmax(300px, 1.16fr)
+            minmax(210px, 0.72fr);
+          align-items: stretch;
+          gap: 0;
+        }
+
+        .event-ride-card__identity {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 14px;
+          align-items: center;
+          padding-right: 24px;
+        }
+
+        .event-ride-card__details {
+          padding: 0 24px;
+          border-left: 1px solid rgba(255,255,255,0.08);
+          border-right: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-ride-card__footer {
+          min-width: 0;
+          display: grid;
+          align-content: center;
+          gap: 14px;
+          padding-left: 24px;
+        }
+
+        .event-ride-card__connection {
+          display: grid;
+          gap: 8px;
+        }
+
+        .event-ride-card__review-link {
+          width: fit-content;
+          color: ${"#7C5CFF"};
+          font-size: 11px;
+          line-height: 1.35;
+          font-weight: 850;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(124,92,255,0.40);
+        }
+
+        .event-ride-card__secondary-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        @media (max-width: 760px) {
+          .event-ride-meet-stack {
+            width: 100%;
+            max-width: 100%;
+            margin: 14px 0 0;
+            transform: none;
+            gap: 16px;
+          }
+
+          .event-ride-card {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+          }
+
+          .event-ride-card__identity {
+            padding-right: 0;
+          }
+
+          .event-ride-card__details {
+            padding: 0;
+            border-left: 0;
+            border-right: 0;
+            border-top: 1px solid rgba(255,255,255,0.09);
+            border-bottom: 1px solid rgba(255,255,255,0.09);
+          }
+
+          .event-ride-card__footer {
+            gap: 13px;
+            padding-left: 0;
+          }
+
+          .event-ride-card__secondary-actions {
+            justify-content: space-between;
+          }
+        }
+      `}</style>
+
       <section style={sectionStyle("ride")}>
         <div style={sectionHeaderStyle()}>
           <div style={{ display: "grid", gap: 4 }}>
@@ -536,12 +1334,14 @@ export default function RideMeetCards({
             </p>
           </div>
 
-          <span style={statusBadgeStyle("ride")}>Radar ativo</span>
+          <span style={statusBadgeStyle("ride")}>
+            Radar ativo
+          </span>
         </div>
 
         {rideMembers.length === 0 ? (
           <div style={emptyCardStyle()}>
-            {"Ainda n\u00e3o h\u00e1 caronas mapeadas para este evento."}
+            {"Ainda não há caronas mapeadas para este evento."}
           </div>
         ) : (
           <div style={carouselStyle()}>
@@ -549,6 +1349,7 @@ export default function RideMeetCards({
               <RideCard
                 key={`ride-card-${member.user_id}-${member.slug}`}
                 member={member}
+                eventReturnTo={eventReturnTo}
                 officialEventUrl={officialEventUrl}
               />
             ))}
@@ -561,7 +1362,7 @@ export default function RideMeetCards({
           <div style={{ display: "grid", gap: 4 }}>
             <h2 style={sectionTitleStyle()}>Encontros combinados</h2>
             <p style={sectionSubtitleStyle()}>
-              {"Pontos de encontro e hor\u00e1rios que j\u00e1 foram marcados para este evento."}
+              {"Pontos de encontro e horários que já foram marcados para este evento."}
             </p>
           </div>
 
@@ -570,7 +1371,7 @@ export default function RideMeetCards({
 
         {meetMembers.length === 0 ? (
           <div style={emptyCardStyle()}>
-            {"Ainda n\u00e3o h\u00e1 encontros ativos mapeados para este evento."}
+            {"Ainda não há encontros ativos mapeados para este evento."}
           </div>
         ) : (
           <div style={carouselStyle()}>
@@ -578,12 +1379,13 @@ export default function RideMeetCards({
               <MeetCard
                 key={`meet-card-${member.user_id}-${member.slug}`}
                 member={member}
+                eventReturnTo={eventReturnTo}
                 officialEventUrl={officialEventUrl}
               />
             ))}
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

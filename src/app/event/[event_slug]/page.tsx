@@ -1883,6 +1883,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           <RideMeetCards
             rideMembers={rideMembers}
             meetMembers={meetMembers}
+            eventReturnTo={eventReturnPath}
             officialEventUrl={heroOfficialUrl}
           />
         </>
