@@ -8,6 +8,7 @@ import { createBrowserClient } from "@/utils/supabase/client";
 
 const RESERVED_NEXT_SLUGS = new Set([
   "api",
+  "clubbers",
   "dashboard",
   "event",
   "invalid",
@@ -50,6 +51,10 @@ function getSafeNextPath(value: string | null): string {
     return "/dashboard/cards";
   }
 
+  if (pathname === "/clubbers") {
+    return "/clubbers";
+  }
+
   if (/^\/event\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
     return `${pathname}${search}`;
   }
@@ -71,6 +76,18 @@ function getSafeNextPath(value: string | null): string {
   return "";
 }
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "15px 16px",
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.045)",
+  color: "#ffffff",
+  outline: "none",
+  fontSize: 16,
+};
+
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,6 +102,7 @@ export default function LoginClient() {
 
     return getSafeNextPath(searchParams.get("return_to"));
   }, [searchParams]);
+
   const redirectPath = safeRedirectPath || "/dashboard";
 
   const [email, setEmail] = useState("");
@@ -142,8 +160,8 @@ export default function LoginClient() {
 
       router.push(redirectPath);
       router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err?.message ?? "Falha ao entrar.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha ao entrar.");
     } finally {
       setLoading(false);
     }
@@ -151,10 +169,11 @@ export default function LoginClient() {
 
   if (isCheckingSession) {
     return (
-      <main style={{ padding: 24, maxWidth: 520 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Login</h1>
-        <p style={{ marginTop: 10, opacity: 0.85 }}>Verificando acesso...</p>
-      </main>
+      <div style={{ padding: "14px 0 2px" }}>
+        <p style={{ margin: 0, color: "rgba(255,255,255,0.72)" }}>
+          Verificando acesso...
+        </p>
+      </div>
     );
   }
 
@@ -162,20 +181,21 @@ export default function LoginClient() {
     <form
       onSubmit={handleLogin}
       style={{
-        maxWidth: 660,
+        width: "100%",
         display: "grid",
         gap: 18,
-        marginTop: 24,
+        marginTop: 28,
       }}
     >
       {errorMsg ? (
         <div
+          role="alert"
           style={{
-            padding: 12,
-            borderRadius: 12,
+            padding: 13,
+            borderRadius: 14,
             border: "1px solid rgba(255,80,80,0.35)",
             background: "rgba(255,80,80,0.08)",
-            color: "#fff",
+            color: "#ffffff",
           }}
         >
           {errorMsg}
@@ -183,42 +203,26 @@ export default function LoginClient() {
       ) : null}
 
       <label style={{ display: "grid", gap: 8 }}>
-        <span>E-mail</span>
+        <span style={{ fontWeight: 700 }}>E-mail</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
-          style={{
-            width: "100%",
-            padding: "14px 16px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(255,255,255,0.04)",
-            color: "#fff",
-            outline: "none",
-          }}
+          style={inputStyle}
         />
       </label>
 
       <label style={{ display: "grid", gap: 8 }}>
-        <span>Senha</span>
+        <span style={{ fontWeight: 700 }}>Senha</span>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          style={{
-            width: "100%",
-            padding: "14px 16px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.14)",
-            background: "rgba(255,255,255,0.04)",
-            color: "#fff",
-            outline: "none",
-          }}
+          style={inputStyle}
         />
       </label>
 
@@ -227,22 +231,35 @@ export default function LoginClient() {
         disabled={loading}
         style={{
           width: "100%",
+          boxSizing: "border-box",
           padding: "16px 18px",
           borderRadius: 18,
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: "rgba(255,255,255,0.06)",
-          color: "#fff",
-          fontWeight: 800,
-          fontSize: 18,
+          border: "1px solid rgba(45,212,191,0.48)",
+          background: loading
+            ? "rgba(45,212,191,0.22)"
+            : "linear-gradient(135deg, #14b8a6 0%, #10b981 100%)",
+          color: "#ffffff",
+          fontWeight: 850,
+          fontSize: 17,
           cursor: loading ? "not-allowed" : "pointer",
+          boxShadow: loading ? "none" : "0 18px 45px rgba(20,184,166,0.18)",
         }}
       >
         {loading ? "Entrando..." : "Entrar"}
       </button>
 
-      <p style={{ margin: 0, opacity: 0.75 }}>
-        Após autenticar, você será redirecionado para:{" "}
-        <strong>{redirectPath}</strong>
+      <p
+        style={{
+          margin: 0,
+          color: "rgba(255,255,255,0.68)",
+          fontSize: 14,
+          lineHeight: 1.55,
+        }}
+      >
+        Depois de entrar, você volta para: {" "}
+        <strong style={{ color: "rgba(255,255,255,0.94)" }}>
+          {redirectPath}
+        </strong>
       </p>
     </form>
   );

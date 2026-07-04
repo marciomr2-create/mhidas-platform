@@ -65,7 +65,7 @@ type ProximityMatch = {
   reasons: string[];
 };
 
-const DEV_SOCIAL_SANDBOX = true;
+const DEV_SOCIAL_SANDBOX = process.env.NODE_ENV === "development";
 
 const PREMIUM = {
   bg: "#05050A",

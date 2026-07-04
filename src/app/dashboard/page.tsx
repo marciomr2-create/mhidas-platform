@@ -309,7 +309,11 @@ export default async function DashboardPage() {
           </p>
 
           <div style={actionGridStyle(180)}>
-            <Link href="/event/ame-club" style={buttonStyle(true)}>
+            <Link href="/clubbers" style={buttonStyle(true)}>
+              Descobrir Clubbers
+            </Link>
+
+            <Link href="/event/ame-club" style={buttonStyle()}>
               Eventos no radar
             </Link>
 
