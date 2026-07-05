@@ -53,6 +53,7 @@ export type OfficialEventSearchInput = {
 };
 
 export type OfficialEventCandidate = {
+  source_id?: string | null;
   provider: OfficialEventProvider;
   provider_event_id: string | null;
   provider_url: string | null;
@@ -96,6 +97,7 @@ export type OfficialEventCandidate = {
 };
 
 export type OfficialEventResolverResponseCandidate = {
+  source_id?: string | null;
   provider: OfficialEventProvider;
   provider_event_id: string | null;
   provider_url: string | null;

@@ -6,6 +6,7 @@ import {
 } from "./resolverTypes";
 
 export type OfficialEventCandidatePersistenceRow = {
+  source_id: string | null;
   provider: OfficialEventCandidate["provider"];
   provider_event_id: string | null;
   provider_url: string | null;
@@ -99,6 +100,7 @@ export function prepareOfficialEventCandidateForPersistence(
   candidate: OfficialEventCandidate
 ): OfficialEventCandidatePersistenceRow {
   return {
+    source_id: normalizeNullableString(candidate.source_id),
     provider: candidate.provider,
     provider_event_id: normalizeNullableString(candidate.provider_event_id),
     provider_url: normalizeNullableString(candidate.provider_url),
