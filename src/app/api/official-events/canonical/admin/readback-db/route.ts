@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ROUTE_VERSION = "v4.8.59-event-canonical-admin-readback-db-audit";
+const ROUTE_VERSION = "v4.8.62-event-canonical-readback-db-post-write-fix";
 
 const TABLES = {
   canonicalEvents: "canonical_events",
@@ -14,16 +14,16 @@ const TABLES = {
 } as const;
 
 const CANONICAL_EVENT_SELECT =
-  "id,slug,event_name,normalized_event_name,starts_at,ends_at,event_date_key,venue_name,city,state,country,official_url,ticket_url,primary_provider_key,primary_external_event_id,validation_status";
+  "id,slug,event_name,normalized_event_name,starts_at,ends_at,event_date_key,venue_name,city,state,country,official_url,ticket_url,primary_provider_key,primary_external_event_id,validation_status,validation_method,is_100_percent_validated,source_confidence_score,updated_at";
 
 const SOURCE_SELECT =
   "id,canonical_event_id,source_key,source_kind,provider_key,external_event_id,source_url,authority_score,ingestion_mode,integration_status,last_seen_at";
 
 const SEARCH_DOCUMENT_SELECT =
-  "id,canonical_event_id,search_title,normalized_title,event_date_key,canonical_slug,venue_name,city,state,country,search_rank_score,is_publicly_searchable";
+  "id,canonical_event_id,search_title,normalized_title,event_date_key,canonical_slug,venue_name,city,state,country,search_rank_score,is_publicly_searchable,updated_at";
 
 const FEATURE_FEED_SELECT =
-  "id,canonical_event_id,feature_key,is_enabled,is_publicly_visible";
+  "id,canonical_event_id,feature_key,enabled,feed_policy,starts_at,ends_at,created_by,updated_by,updated_at";
 
 type ReadbackDbRequest = {
   eventSlug?: unknown;
@@ -42,6 +42,7 @@ type NormalizedInput = {
 type DbAuditResult = {
   db_read_performed: boolean;
   db_read_error: string | null;
+  db_read_error_details: Record<string, unknown> | null;
   lookup_strategy: string[];
   matched_canonical_event_ids: string[];
   matched_count: {
@@ -129,6 +130,14 @@ function createAdminSupabaseClient() {
   });
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
 function asRecordArray(value: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(value)) return [];
 
@@ -181,10 +190,53 @@ function uniqueRecordsById(
   return output;
 }
 
+function describeError(error: unknown): {
+  message: string;
+  details: Record<string, unknown> | null;
+} {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      details: {
+        name: error.name,
+        stack: error.stack ?? null,
+      },
+    };
+  }
+
+  const record = asRecord(error);
+
+  if (record) {
+    const message =
+      asString(record.message) ||
+      asString(record.error_description) ||
+      asString(record.error) ||
+      "Unknown readback DB audit error.";
+
+    return {
+      message,
+      details: record,
+    };
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return {
+      message: error.trim(),
+      details: null,
+    };
+  }
+
+  return {
+    message: "Unknown readback DB audit error.",
+    details: null,
+  };
+}
+
 function emptyAudit(): DbAuditResult {
   return {
     db_read_performed: false,
     db_read_error: null,
+    db_read_error_details: null,
     lookup_strategy: [],
     matched_canonical_event_ids: [],
     matched_count: {
@@ -257,7 +309,9 @@ async function runDbAudit(input: NormalizedInput): Promise<DbAuditResult> {
 
       if (canonicalResponse.error) throw canonicalResponse.error;
 
-      canonicalEventMatches.push(...asRecordArray(canonicalResponse.data as unknown));
+      canonicalEventMatches.push(
+        ...asRecordArray(canonicalResponse.data as unknown)
+      );
 
       audit.lookup_strategy.push("canonical_event_sources.provider_external_id");
 
@@ -363,7 +417,8 @@ async function runDbAudit(input: NormalizedInput): Promise<DbAuditResult> {
 
     audit.canonical_events = canonicalEvents;
     audit.canonical_event_sources = canonicalEventSources;
-    audit.canonical_event_search_documents = uniqueRecordsById(relatedSearchDocuments);
+    audit.canonical_event_search_documents =
+      uniqueRecordsById(relatedSearchDocuments);
     audit.canonical_event_feature_feeds = uniqueRecordsById(relatedFeatureFeeds);
     audit.matched_canonical_event_ids = matchedCanonicalEventIds;
     audit.matched_count = {
@@ -376,8 +431,10 @@ async function runDbAudit(input: NormalizedInput): Promise<DbAuditResult> {
 
     return audit;
   } catch (error) {
-    audit.db_read_error =
-      error instanceof Error ? error.message : "Unknown readback DB audit error.";
+    const describedError = describeError(error);
+
+    audit.db_read_error = describedError.message;
+    audit.db_read_error_details = describedError.details;
 
     return audit;
   }
@@ -423,7 +480,8 @@ function buildJsonResponse(params: {
         "This route performs read-only Supabase SELECT operations.",
         "This route does not call the canonical write route.",
         "This route does not insert, update, delete, or upsert any record.",
-        "This route is isolated from the v4.8.58 readback route.",
+        "This route now uses the feature feed columns produced by the write service.",
+        "This route exposes structured Supabase read errors when a SELECT fails.",
       ],
     },
     db_audit: params.dbAudit,
