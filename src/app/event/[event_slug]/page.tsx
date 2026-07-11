@@ -10,6 +10,7 @@ import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
 import TicketIntentButton from "./TicketIntentButton";
+import { readCanonicalPublicEventBySlug } from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
@@ -821,10 +822,19 @@ function MeetCard({
   );
 }
 
+
+async function readCanonicalEventShadow(eventSlug: string): Promise<void> {
+  try {
+    await readCanonicalPublicEventBySlug(eventSlug);
+  } catch {
+    // Shadow read must never affect public event page rendering.
+  }
+}
 export default async function EventPage({ params, searchParams }: PageProps) {
   const { event_slug } = await params;
   const sp = searchParams ? await searchParams : undefined;
   const eventSlug = normalizeText(event_slug).toLowerCase();
+  await readCanonicalEventShadow(eventSlug);
   const selectedCity = normalizeText(sp?.city);
   const selectedState = normalizeText(sp?.state).toUpperCase();
   const selectedRegion = normalizeText(sp?.region);
