@@ -826,6 +826,46 @@ function MeetCard({
 }
 
 
+function formatCanonicalEventDate(
+  eventDateKey: string | null | undefined,
+  startsAt: string | null | undefined
+): string {
+  const normalizedDateKey = normalizeText(eventDateKey);
+  const dateSource = /^\d{4}-\d{2}-\d{2}$/.test(normalizedDateKey)
+    ? `${normalizedDateKey}T12:00:00.000Z`
+    : normalizeText(startsAt);
+
+  if (!dateSource) return "";
+
+  const date = new Date(dateSource);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  })
+    .format(date)
+    .replace(/\./g, "");
+}
+
+function buildCanonicalEventLocation(
+  venueName: string | null | undefined,
+  city: string | null | undefined,
+  state: string | null | undefined
+): string {
+  const venue = normalizeText(venueName);
+  const cityState = [
+    normalizeText(city),
+    normalizeText(state).toUpperCase(),
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return dedupeStrings([venue, cityState]).join(" · ");
+}
+
 async function readCanonicalEventSafe(
   eventSlug: string
 ): Promise<CanonicalPublicEventReadResult | null> {
@@ -1054,6 +1094,30 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     normalizeText(eventGroup?.event_name) ||
     normalizeText(eventGroup?.title) ||
     eventTitle;
+
+  const canonicalEventDate = formatCanonicalEventDate(
+    canonicalEvent?.event_date_key,
+    canonicalEvent?.starts_at
+  );
+
+  const canonicalEventLocation = buildCanonicalEventLocation(
+    canonicalEvent?.venue_name,
+    canonicalEvent?.city,
+    canonicalEvent?.state
+  );
+
+  const canonicalHeroDetails = dedupeStrings([
+    canonicalEventDate,
+    canonicalEventLocation,
+  ]).join(" · ");
+
+  const heroMeta =
+    canonicalHeroDetails ||
+    `${matchedMembers.length} ${
+      matchedMembers.length === 1
+        ? "participante mapeado"
+        : "participantes mapeados"
+    }`;
 
   const heroImage =
     normalizeText(eventGroup?.event_image_url) ||
@@ -1683,12 +1747,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       `}</style>
       <section className="event-hero" style={heroStyle(heroImage)}>
         <div className="event-hero__content">
-          <p className="event-hero__meta">
-            {matchedMembers.length}{" "}
-            {matchedMembers.length === 1
-              ? "participante mapeado"
-              : "participantes mapeados"}
-          </p>
+          <p className="event-hero__meta">{heroMeta}</p>
 
           <h1 className="event-hero__title">{heroTitle}</h1>
 
