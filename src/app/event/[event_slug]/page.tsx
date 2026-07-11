@@ -10,7 +10,10 @@ import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
 import TicketIntentButton from "./TicketIntentButton";
-import { readCanonicalPublicEventBySlug } from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
+import {
+  readCanonicalPublicEventBySlug,
+  type CanonicalPublicEventReadResult,
+} from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
@@ -823,18 +826,31 @@ function MeetCard({
 }
 
 
-async function readCanonicalEventShadow(eventSlug: string): Promise<void> {
+async function readCanonicalEventSafe(
+  eventSlug: string
+): Promise<CanonicalPublicEventReadResult | null> {
   try {
-    await readCanonicalPublicEventBySlug(eventSlug);
+    return await readCanonicalPublicEventBySlug(eventSlug);
   } catch {
-    // Shadow read must never affect public event page rendering.
+    // Canonical read must never affect public event page rendering.
+    return null;
   }
 }
 export default async function EventPage({ params, searchParams }: PageProps) {
   const { event_slug } = await params;
   const sp = searchParams ? await searchParams : undefined;
   const eventSlug = normalizeText(event_slug).toLowerCase();
-  await readCanonicalEventShadow(eventSlug);
+  const canonicalReadResult = await readCanonicalEventSafe(eventSlug);
+  const canonicalEventCandidate = canonicalReadResult?.canonical_event ?? null;
+  const canonicalEvent =
+    canonicalReadResult?.ok &&
+    canonicalReadResult.found &&
+    canonicalEventCandidate?.is_100_percent_validated === true &&
+    ["validated", "published"].includes(
+      normalizeText(canonicalEventCandidate.validation_status).toLowerCase()
+    )
+      ? canonicalEventCandidate
+      : null;
   const selectedCity = normalizeText(sp?.city);
   const selectedState = normalizeText(sp?.state).toUpperCase();
   const selectedRegion = normalizeText(sp?.region);
@@ -1031,7 +1047,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const eventGroup =
     ((eventGroupsData ?? [])[0] as EventGroupRow | undefined) || null;
 
+  const canonicalHeroTitle = normalizeText(canonicalEvent?.event_name);
+
   const heroTitle =
+    canonicalHeroTitle ||
     normalizeText(eventGroup?.event_name) ||
     normalizeText(eventGroup?.title) ||
     eventTitle;
@@ -1046,7 +1065,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ? normalizeText(eventGroup?.official_url)
       : "";
 
-  const heroOfficialUrl = confirmedOfficialUrl;
+  const canonicalOfficialUrl = isHttpUrl(canonicalEvent?.official_url)
+    ? normalizeText(canonicalEvent?.official_url)
+    : "";
+
+  const heroOfficialUrl = canonicalOfficialUrl || confirmedOfficialUrl;
 
   const attendees = matchedMembers;
 
