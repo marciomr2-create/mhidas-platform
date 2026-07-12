@@ -45,6 +45,7 @@ export type EventCanonicalAdminWriteServiceEventInput = {
   country?: string | null;
   official_url?: string | null;
   ticket_url?: string | null;
+  image_url?: string | null;
   primary_provider_key?: string | null;
   primary_external_event_id?: string | null;
   metadata?: Record<string, unknown> | null;
@@ -94,6 +95,9 @@ export type EventCanonicalAdminWriteServiceResult = {
 export const EVENT_CANONICAL_ADMIN_WRITE_SERVICE_VERSION =
   "v4.8.55-event-canonical-admin-write-service" as const;
 
+export const EVENT_CANONICAL_AUTO_IMAGE_CAPTURE_VERSION =
+  "v4.8.74-event-canonical-image-auto-capture-safe" as const;
+
 export const EVENT_CANONICAL_ADMIN_WRITE_SERVICE_TABLES = {
   canonicalEvents: "canonical_events",
   canonicalEventSources: "canonical_event_sources",
@@ -123,6 +127,108 @@ function normalizeNullableText(value: unknown): string | null {
 function normalizeCountry(value: unknown): string {
   const text = normalizeText(value).toUpperCase();
   return text || "BR";
+}
+
+function isPrivateOrLocalHostname(hostname: string): boolean {
+  const host = hostname.trim().toLowerCase();
+
+  if (
+    host === "localhost" ||
+    host === "::1" ||
+    host.endsWith(".local") ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host)
+  ) {
+    return true;
+  }
+
+  const private172 = host.match(/^172\.(\d{1,3})\./);
+  if (!private172) return false;
+
+  const secondOctet = Number(private172[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+function normalizePublicHttpsUrl(value: unknown): string | null {
+  const text = normalizeText(value);
+  if (!text) return null;
+
+  try {
+    const url = new URL(text);
+
+    if (url.protocol !== "https:") return null;
+    if (!url.hostname || isPrivateOrLocalHostname(url.hostname)) return null;
+    if (url.username || url.password) return null;
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function getPreservableOfficialImage(
+  value: unknown
+): Record<string, unknown> | null {
+  if (!isPlainObject(value)) return null;
+
+  const imageUrl = normalizePublicHttpsUrl(value.image_url);
+  const usageScope = normalizeText(value.usage_scope);
+  const captureMode = normalizeText(value.capture_mode);
+  const provenanceStatus = normalizeText(value.provenance_status);
+  const authorizationStatus = normalizeText(value.authorization_status);
+
+  const isValidatedSourceCapture =
+    captureMode === "validated_source_auto_capture" &&
+    provenanceStatus === "validated_source";
+
+  const isLegacyAuthorizedRegistration =
+    authorizationStatus === "authorized";
+
+  if (
+    !imageUrl ||
+    usageScope !== "event_page_hero" ||
+    (!isValidatedSourceCapture && !isLegacyAuthorizedRegistration)
+  ) {
+    return null;
+  }
+
+  return {
+    ...value,
+    image_url: imageUrl,
+  };
+}
+
+function getSafeMetadataForCanonicalWrite(
+  metadata: Record<string, unknown> | null | undefined
+): {
+  safeMetadata: Record<string, unknown>;
+  preservedOfficialImage: Record<string, unknown> | null;
+} {
+  if (!metadata) {
+    return {
+      safeMetadata: {},
+      preservedOfficialImage: null,
+    };
+  }
+
+  const safeMetadata = { ...metadata };
+  const preservedOfficialImage = getPreservableOfficialImage(
+    safeMetadata.official_image
+  );
+
+  delete safeMetadata.official_image;
+  delete safeMetadata.official_image_admin;
+
+  return {
+    safeMetadata,
+    preservedOfficialImage,
+  };
 }
 
 function normalizeForSearch(value: unknown): string {
@@ -216,6 +322,47 @@ function mapValidationMethod(
   if (evidence.length >= 2) return "multi_source_review";
 
   return "manual_admin";
+}
+
+function buildValidatedSourceOfficialImage(params: {
+  request: EventCanonicalAdminWriteServiceRequest;
+  validationMethod: EventCanonicalAdminWriteServiceValidationMethod;
+  confidenceScore: number;
+  capturedAt: string;
+}): Record<string, unknown> | null {
+  const imageUrl = normalizePublicHttpsUrl(params.request.event.image_url);
+  const primaryEvidence = getPrimaryEvidence(params.request.sourceEvidence);
+
+  if (!imageUrl || !primaryEvidence) return null;
+
+  const primaryEvidenceIsValidated =
+    primaryEvidence.is_official_source === true &&
+    primaryEvidence.supports_event_identity === true &&
+    primaryEvidence.authority_score >= 80;
+
+  if (!primaryEvidenceIsValidated) return null;
+
+  return {
+    image_url: imageUrl,
+    original_image_url: imageUrl,
+    alt_text: normalizeText(params.request.event.event_name) || null,
+    source_label:
+      normalizeNullableText(primaryEvidence.provider_key) ??
+      normalizeNullableText(primaryEvidence.source_key),
+    usage_scope: "event_page_hero",
+    capture_mode: "validated_source_auto_capture",
+    provenance_status: "validated_source",
+    provider_key: normalizeNullableText(primaryEvidence.provider_key),
+    external_event_id: normalizeNullableText(primaryEvidence.external_event_id),
+    source_key: normalizeText(primaryEvidence.source_key),
+    source_kind: primaryEvidence.source_kind,
+    source_url: normalizePublicHttpsUrl(primaryEvidence.source_url),
+    captured_at: params.capturedAt,
+    validation_method: params.validationMethod,
+    source_confidence_score: params.confidenceScore,
+    source_authority_score: clampScore(primaryEvidence.authority_score, 0),
+    capture_version: EVENT_CANONICAL_AUTO_IMAGE_CAPTURE_VERSION,
+  };
 }
 
 function buildSearchTokens(params: {
@@ -349,6 +496,18 @@ function buildCanonicalEventPayload(params: {
 }): Record<string, unknown> {
   const now = new Date().toISOString();
   const primaryEvidence = getPrimaryEvidence(params.request.sourceEvidence);
+  const officialImage = buildValidatedSourceOfficialImage({
+    request: params.request,
+    validationMethod: params.validationMethod,
+    confidenceScore: params.confidenceScore,
+    capturedAt: now,
+  });
+  const {
+    safeMetadata,
+    preservedOfficialImage,
+  } = getSafeMetadataForCanonicalWrite(params.request.event.metadata);
+  const officialImageForWrite =
+    officialImage ?? preservedOfficialImage;
 
   return {
     slug: params.canonicalSlug,
@@ -397,8 +556,12 @@ function buildCanonicalEventPayload(params: {
       social_features_require_canonical_event_id: true,
     },
     metadata: {
-      ...(params.request.event.metadata ?? {}),
+      ...safeMetadata,
+      ...(officialImageForWrite
+        ? { official_image: officialImageForWrite }
+        : {}),
       write_service_version: EVENT_CANONICAL_ADMIN_WRITE_SERVICE_VERSION,
+      auto_image_capture_version: EVENT_CANONICAL_AUTO_IMAGE_CAPTURE_VERSION,
       generated_at: now,
     },
     updated_by: normalizeNullableText(params.request.adminUserId),

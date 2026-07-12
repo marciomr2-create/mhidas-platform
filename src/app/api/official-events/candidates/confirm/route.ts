@@ -25,6 +25,7 @@ type CandidateRecord = {
   country: string | null;
   official_url: string | null;
   ticket_url: string | null;
+  image_url: string | null;
   source_name: string | null;
   source_type: string | null;
   candidate_status: string;
@@ -69,6 +70,8 @@ type ConfirmationPreview = {
   official_status: "confirmed";
   official_confidence: number;
   official_notes: string;
+  event_image_url: string | null;
+  image_capture_mode: "validated_candidate_auto_capture" | null;
 };
 
 type ConfirmationAdminSummary = {
@@ -104,6 +107,8 @@ type ConfirmationAdminSummary = {
     official_url: string | null;
     source_name: string | null;
     source_type: string | null;
+    event_image_url: string | null;
+    image_capture_mode: "validated_candidate_auto_capture" | null;
   };
 };
 
@@ -179,6 +184,45 @@ function isValidHttpUrl(value: unknown): boolean {
     return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
+  }
+}
+
+function isPrivateOrLocalHostname(hostname: string): boolean {
+  const host = hostname.trim().toLowerCase();
+
+  if (
+    host === "localhost" ||
+    host === "::1" ||
+    host.endsWith(".local") ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host)
+  ) {
+    return true;
+  }
+
+  const private172 = host.match(/^172\.(\d{1,3})\./);
+  if (!private172) return false;
+
+  const secondOctet = Number(private172[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+function normalizePublicHttpsUrl(value: unknown): string | null {
+  const text = normalizeText(value);
+  if (!text) return null;
+
+  try {
+    const url = new URL(text);
+
+    if (url.protocol !== "https:") return null;
+    if (!url.hostname || isPrivateOrLocalHostname(url.hostname)) return null;
+    if (url.username || url.password) return null;
+
+    return url.toString();
+  } catch {
+    return null;
   }
 }
 
@@ -370,6 +414,8 @@ function buildConfirmationAdminSummary(params: {
       official_url: params.preview?.official_url || null,
       source_name: params.preview?.official_source_name || null,
       source_type: params.preview?.official_source_type || null,
+      event_image_url: params.preview?.event_image_url || null,
+      image_capture_mode: params.preview?.image_capture_mode || null,
     },
   };
 }
@@ -404,6 +450,7 @@ async function getCandidate(params: {
         "country",
         "official_url",
         "ticket_url",
+        "image_url",
         "source_name",
         "source_type",
         "candidate_status",
@@ -620,6 +667,7 @@ export async function POST(request: NextRequest) {
     eventGroup,
     note,
   });
+  const eventImageUrl = normalizePublicHttpsUrl(candidate.image_url);
 
   const preview: ConfirmationPreview = {
     official_url: officialUrl || null,
@@ -629,6 +677,10 @@ export async function POST(request: NextRequest) {
     official_status: "confirmed",
     official_confidence: Math.max(0, Math.min(100, Number(candidate.confidence || 0))),
     official_notes: confirmationNotes,
+    event_image_url: eventImageUrl,
+    image_capture_mode: eventImageUrl
+      ? "validated_candidate_auto_capture"
+      : null,
   };
 
   if (dryRun || !safety.canConfirm) {
@@ -665,18 +717,24 @@ export async function POST(request: NextRequest) {
 
   const now = new Date().toISOString();
 
+  const eventGroupUpdatePayload: Record<string, unknown> = {
+    official_url: preview.official_url,
+    official_source_name: preview.official_source_name,
+    official_source_url: preview.official_source_url,
+    official_source_type: preview.official_source_type,
+    official_status: "confirmed",
+    official_confidence: preview.official_confidence,
+    official_checked_at: now,
+    official_notes: preview.official_notes,
+  };
+
+  if (preview.event_image_url) {
+    eventGroupUpdatePayload.event_image_url = preview.event_image_url;
+  }
+
   const { error: eventGroupUpdateError } = await supabase
     .from("event_groups")
-    .update({
-      official_url: preview.official_url,
-      official_source_name: preview.official_source_name,
-      official_source_url: preview.official_source_url,
-      official_source_type: preview.official_source_type,
-      official_status: "confirmed",
-      official_confidence: preview.official_confidence,
-      official_checked_at: now,
-      official_notes: preview.official_notes,
-    })
+    .update(eventGroupUpdatePayload)
     .eq("group_id", eventGroup.group_id);
 
   if (eventGroupUpdateError) {
@@ -757,6 +815,8 @@ export async function POST(request: NextRequest) {
     event_group_id: eventGroup.group_id,
     official_url: preview.official_url,
     official_status: "confirmed",
+    event_image_url: preview.event_image_url,
+    image_capture_mode: preview.image_capture_mode,
     wroteChanges: true,
     admin_summary: buildConfirmationAdminSummary({
       candidate: {

@@ -5,7 +5,7 @@ export const CANONICAL_PUBLIC_EVENT_READ_FOUNDATION_VERSION =
   "v4.8.64-event-canonical-public-event-read-foundation";
 
 export const CANONICAL_PUBLIC_EVENT_OFFICIAL_IMAGE_READ_VERSION =
-  "v4.8.73-event-canonical-official-image-public-read";
+  "v4.8.74-event-canonical-image-provenance-public-read";
 
 const TABLES = {
   canonicalEvents: "canonical_events",
@@ -36,7 +36,17 @@ export type CanonicalPublicEventOfficialImage = {
   alt_text: string | null;
   source_label: string | null;
   usage_scope: "event_page_hero";
-  authorization_status: "authorized";
+  capture_mode:
+    | "validated_source_auto_capture"
+    | "legacy_authorized_registration";
+  provenance_status: "validated_source" | "legacy_authorized";
+  provider_key: string | null;
+  external_event_id: string | null;
+  source_url: string | null;
+  captured_at: string | null;
+  validation_method: string | null;
+  source_confidence_score: number | null;
+  authorization_status: "authorized" | null;
   authorization_type: string | null;
   authorized_at: string | null;
   registered_at: string | null;
@@ -284,15 +294,27 @@ function mapOfficialImage(
 
   const imageUrl = normalizePublicHttpsUrl(officialImage.image_url);
   const usageScope = getRecordString(officialImage, "usage_scope");
+  const captureMode = getRecordString(officialImage, "capture_mode");
+  const provenanceStatus = getRecordString(
+    officialImage,
+    "provenance_status"
+  );
   const authorizationStatus = getRecordString(
     officialImage,
     "authorization_status"
   );
 
+  const isValidatedSourceCapture =
+    captureMode === "validated_source_auto_capture" &&
+    provenanceStatus === "validated_source";
+
+  const isLegacyAuthorizedRegistration =
+    authorizationStatus === "authorized";
+
   if (
     !imageUrl ||
     usageScope !== "event_page_hero" ||
-    authorizationStatus !== "authorized"
+    (!isValidatedSourceCapture && !isLegacyAuthorizedRegistration)
   ) {
     return null;
   }
@@ -302,7 +324,30 @@ function mapOfficialImage(
     alt_text: getRecordString(officialImage, "alt_text"),
     source_label: getRecordString(officialImage, "source_label"),
     usage_scope: "event_page_hero",
-    authorization_status: "authorized",
+    capture_mode: isValidatedSourceCapture
+      ? "validated_source_auto_capture"
+      : "legacy_authorized_registration",
+    provenance_status: isValidatedSourceCapture
+      ? "validated_source"
+      : "legacy_authorized",
+    provider_key: getRecordString(officialImage, "provider_key"),
+    external_event_id: getRecordString(
+      officialImage,
+      "external_event_id"
+    ),
+    source_url: normalizePublicHttpsUrl(officialImage.source_url),
+    captured_at: getRecordString(officialImage, "captured_at"),
+    validation_method: getRecordString(
+      officialImage,
+      "validation_method"
+    ),
+    source_confidence_score: getRecordNumber(
+      officialImage,
+      "source_confidence_score"
+    ),
+    authorization_status: isLegacyAuthorizedRegistration
+      ? "authorized"
+      : null,
     authorization_type: getRecordString(
       officialImage,
       "authorization_type"
