@@ -5,7 +5,7 @@ export const CANONICAL_PUBLIC_EVENT_READ_FOUNDATION_VERSION =
   "v4.8.64-event-canonical-public-event-read-foundation";
 
 export const CANONICAL_PUBLIC_EVENT_OFFICIAL_IMAGE_READ_VERSION =
-  "v4.8.74-event-canonical-image-provenance-public-read";
+  "v4.8.76-event-canonical-image-source-recapture-public-read";
 
 const TABLES = {
   canonicalEvents: "canonical_events",
@@ -38,6 +38,7 @@ export type CanonicalPublicEventOfficialImage = {
   usage_scope: "event_page_hero";
   capture_mode:
     | "validated_source_auto_capture"
+    | "validated_source_page_recapture"
     | "legacy_authorized_registration";
   provenance_status: "validated_source" | "legacy_authorized";
   provider_key: string | null;
@@ -305,7 +306,8 @@ function mapOfficialImage(
   );
 
   const isValidatedSourceCapture =
-    captureMode === "validated_source_auto_capture" &&
+    (captureMode === "validated_source_auto_capture" ||
+      captureMode === "validated_source_page_recapture") &&
     provenanceStatus === "validated_source";
 
   const isLegacyAuthorizedRegistration =
@@ -325,7 +327,9 @@ function mapOfficialImage(
     source_label: getRecordString(officialImage, "source_label"),
     usage_scope: "event_page_hero",
     capture_mode: isValidatedSourceCapture
-      ? "validated_source_auto_capture"
+      ? captureMode === "validated_source_page_recapture"
+        ? "validated_source_page_recapture"
+        : "validated_source_auto_capture"
       : "legacy_authorized_registration",
     provenance_status: isValidatedSourceCapture
       ? "validated_source"

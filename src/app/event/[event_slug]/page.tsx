@@ -454,16 +454,29 @@ function shellStyle() {
   } as const;
 }
 
-function heroStyle(heroImage: string) {
+function heroStyle(
+  heroImage: string,
+  heroImageSource: "canonical" | "event_group" | "fallback"
+) {
+  const usesBalancedCanonicalImage = heroImageSource === "canonical";
+
   return {
     marginTop: 8,
     borderRadius: 28,
     border: "1px solid rgba(255,255,255,0.12)",
+    backgroundColor: "#07070b",
     backgroundImage: heroImage
-      ? `linear-gradient(90deg, rgba(5,5,8,0.96) 0%, rgba(5,5,8,0.84) 48%, rgba(5,5,8,0.34) 100%), linear-gradient(180deg, rgba(5,5,8,0.12) 0%, rgba(5,5,8,0.78) 100%), url(${heroImage})`
+      ? usesBalancedCanonicalImage
+        ? `linear-gradient(90deg, rgba(5,5,8,0.78) 0%, rgba(5,5,8,0.54) 42%, rgba(5,5,8,0.14) 70%, rgba(5,5,8,0.03) 100%), linear-gradient(180deg, rgba(5,5,8,0.01) 0%, rgba(5,5,8,0.20) 100%), url(${heroImage})`
+        : `linear-gradient(90deg, rgba(5,5,8,0.96) 0%, rgba(5,5,8,0.84) 48%, rgba(5,5,8,0.34) 100%), linear-gradient(180deg, rgba(5,5,8,0.12) 0%, rgba(5,5,8,0.78) 100%), url(${heroImage})`
       : "linear-gradient(135deg, rgba(17,17,24,0.98), rgba(36,28,68,0.84), rgba(0,78,70,0.54))",
-    backgroundSize: "cover",
-    backgroundPosition: "center 34%",
+    backgroundSize: usesBalancedCanonicalImage
+      ? "100% 100%, 100% 100%, auto 100%"
+      : "cover",
+    backgroundPosition: usesBalancedCanonicalImage
+      ? "center, center, right 3% center"
+      : "center 34%",
+    backgroundRepeat: "no-repeat",
     boxShadow: "0 28px 80px rgba(0,0,0,0.42)",
     overflow: "hidden",
   } as const;
@@ -1612,6 +1625,20 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           backdrop-filter: blur(8px);
         }
 
+        .event-hero[data-event-image-source="canonical"] .event-hero__content {
+          text-shadow: 0 2px 22px rgba(0,0,0,0.92);
+        }
+
+        .event-hero[data-event-image-source="canonical"] .event-hero__stats {
+          background:
+            linear-gradient(180deg, rgba(8,8,13,0.16), rgba(8,8,13,0.48));
+          backdrop-filter: none;
+        }
+
+        .event-hero[data-event-image-source="canonical"] .event-hero__stat {
+          background: rgba(7,7,11,0.08);
+        }
+
         .event-hero__stat {
           display: grid;
           align-content: end;
@@ -2030,7 +2057,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       <section
         className="event-hero"
         data-event-image-source={heroImageSource}
-        style={heroStyle(heroImage)}
+        data-event-image-layout={
+          heroImageSource === "canonical" ? "sharp_right_poster" : "cover"
+        }
+        style={heroStyle(heroImage, heroImageSource)}
       >
         <div className="event-hero__content">
           <p className="event-hero__meta">{heroMeta}</p>
