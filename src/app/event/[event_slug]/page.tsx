@@ -197,6 +197,40 @@ function isHttpUrl(value: string | null | undefined): boolean {
   return /^https?:\/\//i.test(normalizeText(value));
 }
 
+const BLOCKED_TICKET_SALES_HOSTS = [
+  "ingresse.com",
+  "sympla.com.br",
+  "eventim.com.br",
+  "ticketmaster.com",
+  "ticketmaster.com.br",
+  "shotgun.live",
+  "meaple.com.br",
+  "bilheteriadigital.com",
+  "uhuu.com",
+  "zig.tickets",
+  "ingressolive.com",
+  "byma.com.br",
+  "guicheweb.com.br",
+];
+
+function isTicketSalesUrl(value: string | null | undefined): boolean {
+  const normalizedUrl = normalizeText(value);
+  if (!isHttpUrl(normalizedUrl)) return false;
+
+  try {
+    const hostname = new URL(normalizedUrl).hostname
+      .toLowerCase()
+      .replace(/^www\./, "");
+
+    return BLOCKED_TICKET_SALES_HOSTS.some(
+      (blockedHost) =>
+        hostname === blockedHost || hostname.endsWith(`.${blockedHost}`)
+    );
+  } catch {
+    return true;
+  }
+}
+
 const RESERVED_RETURN_SLUGS = new Set([
   "api",
   "dashboard",
@@ -866,6 +900,22 @@ function buildCanonicalEventLocation(
   return dedupeStrings([venue, cityState]).join(" · ");
 }
 
+function getCanonicalValidationLabel(
+  validationStatus: string | null | undefined
+): string {
+  const status = normalizeText(validationStatus).toLowerCase();
+
+  if (status === "published") {
+    return "Evento oficial publicado e validado";
+  }
+
+  if (status === "validated") {
+    return "Evento oficial validado";
+  }
+
+  return "";
+}
+
 async function readCanonicalEventSafe(
   eventSlug: string
 ): Promise<CanonicalPublicEventReadResult | null> {
@@ -1133,7 +1183,62 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     ? normalizeText(canonicalEvent?.official_url)
     : "";
 
-  const heroOfficialUrl = canonicalOfficialUrl || confirmedOfficialUrl;
+  const canonicalTicketReferenceUrl = isHttpUrl(canonicalEvent?.ticket_url)
+    ? normalizeText(canonicalEvent?.ticket_url)
+    : "";
+
+  const canonicalOfficialIsCommercial =
+    hasContent(canonicalOfficialUrl) &&
+    (
+      isTicketSalesUrl(canonicalOfficialUrl) ||
+      (
+        hasContent(canonicalTicketReferenceUrl) &&
+        canonicalOfficialUrl === canonicalTicketReferenceUrl
+      )
+    );
+
+  const confirmedOfficialIsCommercial =
+    hasContent(confirmedOfficialUrl) &&
+    isTicketSalesUrl(confirmedOfficialUrl);
+
+  const safeCanonicalOfficialUrl = canonicalOfficialIsCommercial
+    ? ""
+    : canonicalOfficialUrl;
+
+  const safeConfirmedOfficialUrl = confirmedOfficialIsCommercial
+    ? ""
+    : confirmedOfficialUrl;
+
+  const heroOfficialUrl =
+    safeCanonicalOfficialUrl || safeConfirmedOfficialUrl;
+
+  const commercialOfficialLinkBlocked =
+    canonicalOfficialIsCommercial || confirmedOfficialIsCommercial;
+
+  const canonicalValidationLabel = canonicalEvent
+    ? getCanonicalValidationLabel(canonicalEvent.validation_status)
+    : "";
+
+  const memberTicketType =
+    matchedMembers.find((member) => hasContent(member.event_ticket_type))
+      ?.event_ticket_type || "";
+
+  // Links comerciais de ingresso exigem autorização específica do evento
+  // e da ticketeira. Até essa autorização existir, o guia direciona apenas
+  // para o canal oficial do evento e nunca ativa ticket_url automaticamente.
+  const ticketGuideValue = heroOfficialUrl
+    ? "Consulte no evento oficial"
+    : commercialOfficialLinkBlocked
+      ? "Canal de vendas a confirmar"
+      : memberTicketType || "A confirmar";
+
+  const ticketGuideDetail = heroOfficialUrl
+    ? "Confirme ingresso, regras e disponibilidade no canal oficial do evento."
+    : commercialOfficialLinkBlocked
+      ? "Aguardando o envio de um link autorizado pelo evento ou pela ticketeira."
+      : matchedMembers.some((member) => member.event_requires_food_kg)
+        ? "Leve 1 kg de alimento não perecível."
+        : "Confira o ingresso antes de sair.";
 
   const attendees = matchedMembers;
 
@@ -1568,6 +1673,19 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           line-height: 1.5;
         }
 
+        .event-quick-guide__link {
+          width: fit-content;
+          color: #38e8c5;
+          font-size: 12px;
+          line-height: 1.4;
+          font-weight: 900;
+          text-decoration: none;
+        }
+
+        .event-quick-guide__link:hover {
+          text-decoration: underline;
+        }
+
         @media (max-width: 760px) {
           .event-social-radar {
             width: 100%;
@@ -1600,7 +1718,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-quick-guide__subtitle,
           .event-quick-guide__value,
           .event-quick-guide__detail,
-          .event-quick-guide__note {
+          .event-quick-guide__note,
+          .event-quick-guide__link {
             width: 100%;
             min-width: 0;
             max-width: 100%;
@@ -1888,16 +2007,29 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             </span>
 
             <strong className="event-quick-guide__value">
-              {matchedMembers.find((member) =>
-                hasContent(member.event_ticket_type)
-              )?.event_ticket_type || "A confirmar"}
+              {ticketGuideValue}
             </strong>
 
             <p className="event-quick-guide__detail">
-              {matchedMembers.some((member) => member.event_requires_food_kg)
-                ? "Leve 1 kg de alimento não perecível."
-                : "Confira o ingresso antes de sair."}
+              {ticketGuideDetail}
             </p>
+
+            {heroOfficialUrl ? (
+              <a
+                href={heroOfficialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="event-quick-guide__link"
+              >
+                Abrir evento oficial
+              </a>
+            ) : null}
+
+            {canonicalValidationLabel ? (
+              <p className="event-quick-guide__note">
+                {canonicalValidationLabel}
+              </p>
+            ) : null}
           </div>
 
           <div className="event-quick-guide__item">
