@@ -4,6 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 export const CANONICAL_PUBLIC_EVENT_READ_FOUNDATION_VERSION =
   "v4.8.64-event-canonical-public-event-read-foundation";
 
+export const CANONICAL_PUBLIC_EVENT_OFFICIAL_IMAGE_READ_VERSION =
+  "v4.8.73-event-canonical-official-image-public-read";
+
 const TABLES = {
   canonicalEvents: "canonical_events",
   canonicalEventSources: "canonical_event_sources",
@@ -12,7 +15,7 @@ const TABLES = {
 } as const;
 
 const CANONICAL_EVENT_SELECT =
-  "id,slug,event_name,normalized_event_name,starts_at,ends_at,event_date_key,venue_name,city,state,country,official_url,ticket_url,primary_provider_key,primary_external_event_id,validation_status,validation_method,is_100_percent_validated,source_confidence_score,updated_at";
+  "id,slug,event_name,normalized_event_name,starts_at,ends_at,event_date_key,venue_name,city,state,country,official_url,ticket_url,primary_provider_key,primary_external_event_id,validation_status,validation_method,is_100_percent_validated,source_confidence_score,metadata,updated_at";
 
 const SOURCE_SELECT =
   "id,canonical_event_id,source_key,source_kind,provider_key,external_event_id,source_url,authority_score,ingestion_mode,integration_status,last_seen_at";
@@ -26,6 +29,17 @@ const FEATURE_FEED_SELECT =
 export type CanonicalPublicEventReadInput = {
   eventSlug?: string | null;
   canonicalEventId?: string | null;
+};
+
+export type CanonicalPublicEventOfficialImage = {
+  image_url: string;
+  alt_text: string | null;
+  source_label: string | null;
+  usage_scope: "event_page_hero";
+  authorization_status: "authorized";
+  authorization_type: string | null;
+  authorized_at: string | null;
+  registered_at: string | null;
 };
 
 export type CanonicalPublicEventRecord = {
@@ -48,6 +62,7 @@ export type CanonicalPublicEventRecord = {
   validation_method: string | null;
   is_100_percent_validated: boolean | null;
   source_confidence_score: number | null;
+  official_image: CanonicalPublicEventOfficialImage | null;
   updated_at: string | null;
 };
 
@@ -219,6 +234,84 @@ function getRecordObject(
   return asRecord(record[key]);
 }
 
+function isPrivateOrLocalHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  if (
+    host === "localhost" ||
+    host === "::1" ||
+    host.endsWith(".local") ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host)
+  ) {
+    return true;
+  }
+
+  const private172 = host.match(/^172\.(\d{1,3})\./);
+  if (!private172) return false;
+
+  const secondOctet = Number(private172[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+function normalizePublicHttpsUrl(value: unknown): string | null {
+  const normalized = asString(value);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+
+    if (url.protocol !== "https:") return null;
+    if (!url.hostname || isPrivateOrLocalHostname(url.hostname)) return null;
+    if (url.username || url.password) return null;
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function mapOfficialImage(
+  metadata: Record<string, unknown> | null
+): CanonicalPublicEventOfficialImage | null {
+  const officialImage = metadata
+    ? getRecordObject(metadata, "official_image")
+    : null;
+
+  if (!officialImage) return null;
+
+  const imageUrl = normalizePublicHttpsUrl(officialImage.image_url);
+  const usageScope = getRecordString(officialImage, "usage_scope");
+  const authorizationStatus = getRecordString(
+    officialImage,
+    "authorization_status"
+  );
+
+  if (
+    !imageUrl ||
+    usageScope !== "event_page_hero" ||
+    authorizationStatus !== "authorized"
+  ) {
+    return null;
+  }
+
+  return {
+    image_url: imageUrl,
+    alt_text: getRecordString(officialImage, "alt_text"),
+    source_label: getRecordString(officialImage, "source_label"),
+    usage_scope: "event_page_hero",
+    authorization_status: "authorized",
+    authorization_type: getRecordString(
+      officialImage,
+      "authorization_type"
+    ),
+    authorized_at: getRecordString(officialImage, "authorized_at"),
+    registered_at: getRecordString(officialImage, "registered_at"),
+  };
+}
+
 function mapCanonicalEventRecord(
   record: Record<string, unknown>
 ): CanonicalPublicEventRecord | null {
@@ -254,6 +347,7 @@ function mapCanonicalEventRecord(
       "is_100_percent_validated"
     ),
     source_confidence_score: getRecordNumber(record, "source_confidence_score"),
+    official_image: mapOfficialImage(getRecordObject(record, "metadata")),
     updated_at: getRecordString(record, "updated_at"),
   };
 }
