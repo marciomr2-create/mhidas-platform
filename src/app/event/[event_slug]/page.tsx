@@ -231,6 +231,153 @@ function isTicketSalesUrl(value: string | null | undefined): boolean {
   }
 }
 
+const CANONICAL_IMAGE_KEYS = new Set([
+  "event_image_url",
+  "primary_image_url",
+  "official_image_url",
+  "cover_image_url",
+  "banner_image_url",
+  "poster_image_url",
+  "poster_url",
+  "image_url",
+  "thumbnail_url",
+  "image",
+  "images",
+  "cover",
+  "banner",
+  "poster",
+  "thumbnail",
+  "artwork",
+]);
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isPrivateOrLocalImageHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  if (
+    host === "localhost" ||
+    host === "::1" ||
+    host.endsWith(".local") ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^169\.254\./.test(host)
+  ) {
+    return true;
+  }
+
+  const private172 = host.match(/^172\.(\d{1,3})\./);
+  if (!private172) return false;
+
+  const secondOctet = Number(private172[1]);
+  return secondOctet >= 16 && secondOctet <= 31;
+}
+
+function normalizeCanonicalImageUrl(value: unknown): string {
+  if (typeof value !== "string") return "";
+
+  const normalized = normalizeText(value);
+  if (!normalized) return "";
+
+  try {
+    const url = new URL(normalized);
+
+    if (url.protocol !== "https:") return "";
+    if (!url.hostname || isPrivateOrLocalImageHost(url.hostname)) return "";
+    if (url.username || url.password) return "";
+
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function findCanonicalImageUrl(
+  value: unknown,
+  depth = 0,
+  imageContext = false
+): string {
+  if (depth > 6 || value === null || value === undefined) return "";
+
+  if (typeof value === "string") {
+    const normalized = normalizeText(value);
+
+    if (
+      (normalized.startsWith("{") || normalized.startsWith("[")) &&
+      depth < 6
+    ) {
+      try {
+        const parsedResult = findCanonicalImageUrl(
+          JSON.parse(normalized),
+          depth + 1,
+          imageContext
+        );
+
+        if (parsedResult) return parsedResult;
+      } catch {
+        // Non-JSON strings are evaluated only as image URLs below.
+      }
+    }
+
+    return imageContext ? normalizeCanonicalImageUrl(normalized) : "";
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value.slice(0, 40)) {
+      const result = findCanonicalImageUrl(
+        item,
+        depth + 1,
+        imageContext
+      );
+
+      if (result) return result;
+    }
+
+    return "";
+  }
+
+  if (!isPlainRecord(value)) return "";
+
+  if (imageContext) {
+    const directUrl = normalizeCanonicalImageUrl(
+      value.secure_url ?? value.url ?? value.src ?? value.href
+    );
+
+    if (directUrl) return directUrl;
+  }
+
+  const entries = Object.entries(value).slice(0, 60);
+
+  for (const [key, nestedValue] of entries) {
+    if (!CANONICAL_IMAGE_KEYS.has(key.toLowerCase())) continue;
+
+    const result = findCanonicalImageUrl(
+      nestedValue,
+      depth + 1,
+      true
+    );
+
+    if (result) return result;
+  }
+
+  for (const [key, nestedValue] of entries) {
+    if (CANONICAL_IMAGE_KEYS.has(key.toLowerCase())) continue;
+
+    const result = findCanonicalImageUrl(
+      nestedValue,
+      depth + 1,
+      false
+    );
+
+    if (result) return result;
+  }
+
+  return "";
+}
+
 const RESERVED_RETURN_SLUGS = new Set([
   "api",
   "dashboard",
@@ -1169,9 +1316,25 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         : "participantes mapeados"
     }`;
 
-  const heroImage =
-    normalizeText(eventGroup?.event_image_url) ||
+  const canonicalHeroImage = canonicalEvent
+    ? findCanonicalImageUrl(canonicalReadResult)
+    : "";
+
+  const eventGroupHeroImage = isHttpUrl(eventGroup?.event_image_url)
+    ? normalizeText(eventGroup?.event_image_url)
+    : "";
+
+  const fallbackHeroImage =
     "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1800&auto=format&fit=crop";
+
+  const heroImage =
+    canonicalHeroImage || eventGroupHeroImage || fallbackHeroImage;
+
+  const heroImageSource = canonicalHeroImage
+    ? "canonical"
+    : eventGroupHeroImage
+      ? "event_group"
+      : "fallback";
 
   const eventGroupOfficialStatus = normalizeText(eventGroup?.official_status);
   const confirmedOfficialUrl =
@@ -1864,7 +2027,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
         }
       `}</style>
-      <section className="event-hero" style={heroStyle(heroImage)}>
+      <section
+        className="event-hero"
+        data-event-image-source={heroImageSource}
+        style={heroStyle(heroImage)}
+      >
         <div className="event-hero__content">
           <p className="event-hero__meta">{heroMeta}</p>
 
