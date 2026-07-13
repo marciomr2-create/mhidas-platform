@@ -20,6 +20,8 @@ const CANONICAL_IMAGE_PREVIEW_VERSION =
   "v4.8.78-event-canonical-image-admin-preview-panel-safe" as const;
 const CANONICAL_IMAGE_PROVENANCE_AUDIT_VERSION =
   "v4.8.79-event-canonical-image-provenance-audit-panel-safe" as const;
+const CANONICAL_IMAGE_CHECKSUM_AUDIT_VERSION =
+  "v4.8.83-event-canonical-image-checksum-audit-details-safe" as const;
 const OFFICIAL_EVENTS_ADMIN_LOCALE = "pt-BR" as const;
 const CANONICAL_IMAGE_SOURCE_AUTHORITY_MINIMUM = 80;
 const CANONICAL_IMAGE_SCAN_LIMIT = 200;
@@ -194,11 +196,23 @@ type CanonicalImageProvenanceItem = {
     authorizedAt: string | null;
     registeredAt: string | null;
     checksumSha256: string | null;
+    checksumAlgorithm: string | null;
+    checksumBytes: number | null;
+    checksumContentType: string | null;
+    checksumCalculatedAt: string | null;
+    checksumSourceImageUrl: string | null;
+    checksumSourceFinalUrl: string | null;
+    checksumPreflightVersion: string | null;
+    checksumRegisteredAt: string | null;
+    checksumWriteVersion: string | null;
+    checksumConfirmationDigestSha256: string | null;
   };
   completeness: {
     complete: boolean;
     warnings: string[];
     checksumAvailable: boolean;
+    checksumAuditComplete: boolean;
+    checksumAuditWarnings: string[];
   };
 };
 
@@ -214,6 +228,8 @@ type CanonicalImageProvenanceAuditData = {
     validatedSource: number;
     legacyAuthorized: number;
     checksumAvailable: number;
+    checksumAuditComplete: number;
+    checksumAuditIncomplete: number;
     returned: number;
     resultTruncated: boolean;
   };
@@ -482,6 +498,8 @@ function emptyCanonicalImageProvenanceAudit(
       validatedSource: 0,
       legacyAuthorized: 0,
       checksumAvailable: 0,
+      checksumAuditComplete: 0,
+      checksumAuditIncomplete: 0,
       returned: 0,
       resultTruncated: false,
     },
@@ -550,7 +568,48 @@ function buildCanonicalImageProvenanceItem(params: {
     "sha256",
     "checksum",
   ]);
+  const checksumAlgorithm = getMetadataString(
+    params.officialImage,
+    "checksum_algorithm"
+  );
+  const checksumBytes = getMetadataNumber(
+    params.officialImage,
+    "checksum_bytes"
+  );
+  const checksumContentType = getMetadataString(
+    params.officialImage,
+    "checksum_content_type"
+  );
+  const checksumCalculatedAt = getMetadataString(
+    params.officialImage,
+    "checksum_calculated_at"
+  );
+  const checksumSourceImageUrl = getMetadataString(
+    params.officialImage,
+    "checksum_source_image_url"
+  );
+  const checksumSourceFinalUrl = getMetadataString(
+    params.officialImage,
+    "checksum_source_final_url"
+  );
+  const checksumPreflightVersion = getMetadataString(
+    params.officialImage,
+    "checksum_preflight_version"
+  );
+  const checksumRegisteredAt = getMetadataString(
+    params.officialImage,
+    "checksum_registered_at"
+  );
+  const checksumWriteVersion = getMetadataString(
+    params.officialImage,
+    "checksum_write_version"
+  );
+  const checksumConfirmationDigestSha256 = getMetadataString(
+    params.officialImage,
+    "checksum_confirmation_digest_sha256"
+  );
   const warnings: string[] = [];
+  const checksumAuditWarnings: string[] = [];
   const validatedSourceCapture =
     captureMode === "validated_source_auto_capture" ||
     captureMode === "validated_source_page_recapture";
@@ -635,6 +694,74 @@ function buildCanonicalImageProvenanceItem(params: {
     warnings.push("capture_mode_not_supported");
   }
 
+  if (checksumSha256) {
+    if (!/^[a-f0-9]{64}$/i.test(checksumSha256)) {
+      checksumAuditWarnings.push("checksum_sha256_invalid");
+    }
+
+    if (checksumAlgorithm !== "sha256") {
+      checksumAuditWarnings.push("checksum_algorithm_sha256_required");
+    }
+
+    if (
+      checksumBytes === null ||
+      !Number.isFinite(checksumBytes) ||
+      checksumBytes <= 0
+    ) {
+      checksumAuditWarnings.push("checksum_bytes_required");
+    }
+
+    if (
+      !checksumContentType ||
+      !checksumContentType.toLowerCase().startsWith("image/")
+    ) {
+      checksumAuditWarnings.push("checksum_content_type_image_required");
+    }
+
+    if (!checksumCalculatedAt) {
+      checksumAuditWarnings.push("checksum_calculated_at_required");
+    }
+
+    if (!checksumRegisteredAt) {
+      checksumAuditWarnings.push("checksum_registered_at_required");
+    }
+
+    if (!normalizePublicHttpsUrl(checksumSourceImageUrl)) {
+      checksumAuditWarnings.push("checksum_source_image_url_required");
+    }
+
+    if (!normalizePublicHttpsUrl(checksumSourceFinalUrl)) {
+      checksumAuditWarnings.push("checksum_source_final_url_required");
+    }
+
+    if (
+      checksumSourceImageUrl &&
+      rawImageUrl &&
+      checksumSourceImageUrl !== rawImageUrl
+    ) {
+      checksumAuditWarnings.push("checksum_source_image_url_mismatch");
+    }
+
+    if (!checksumPreflightVersion) {
+      checksumAuditWarnings.push("checksum_preflight_version_required");
+    }
+
+    if (!checksumWriteVersion) {
+      checksumAuditWarnings.push("checksum_write_version_required");
+    }
+
+    if (
+      !checksumConfirmationDigestSha256 ||
+      !/^[a-f0-9]{64}$/i.test(checksumConfirmationDigestSha256)
+    ) {
+      checksumAuditWarnings.push(
+        "checksum_confirmation_digest_sha256_required"
+      );
+    }
+  } else {
+    checksumAuditWarnings.push("checksum_not_registered");
+  }
+
   return {
     canonicalEvent: {
       id: params.event.id,
@@ -706,11 +833,24 @@ function buildCanonicalImageProvenanceItem(params: {
         "registered_at"
       ),
       checksumSha256,
+      checksumAlgorithm,
+      checksumBytes,
+      checksumContentType,
+      checksumCalculatedAt,
+      checksumSourceImageUrl,
+      checksumSourceFinalUrl,
+      checksumPreflightVersion,
+      checksumRegisteredAt,
+      checksumWriteVersion,
+      checksumConfirmationDigestSha256,
     },
     completeness: {
       complete: warnings.length === 0,
       warnings,
       checksumAvailable: Boolean(checksumSha256),
+      checksumAuditComplete:
+        Boolean(checksumSha256) && checksumAuditWarnings.length === 0,
+      checksumAuditWarnings,
     },
   };
 }
@@ -790,6 +930,14 @@ async function loadCanonicalImageProvenanceAudit(
   const checksumAvailable = allItems.filter(
     (item) => item.completeness.checksumAvailable
   ).length;
+  const checksumAuditComplete = allItems.filter(
+    (item) => item.completeness.checksumAuditComplete
+  ).length;
+  const checksumAuditIncomplete = allItems.filter(
+    (item) =>
+      item.completeness.checksumAvailable &&
+      !item.completeness.checksumAuditComplete
+  ).length;
 
   return {
     ok: true,
@@ -803,6 +951,8 @@ async function loadCanonicalImageProvenanceAudit(
       validatedSource,
       legacyAuthorized,
       checksumAvailable,
+      checksumAuditComplete,
+      checksumAuditIncomplete,
       returned: returnedItems.length,
       resultTruncated: orderedItems.length > returnedItems.length,
     },
@@ -1597,6 +1747,30 @@ function provenanceWarningLabel(reason: string): string {
     legacy_registered_at_required:
       "Data do registro obrigatória no registro legado",
     capture_mode_not_supported: "Modo de captura não reconhecido",
+    checksum_not_registered: "Checksum ainda não registrado",
+    checksum_sha256_invalid: "Checksum SHA-256 inválido",
+    checksum_algorithm_sha256_required:
+      "Algoritmo SHA-256 obrigatório",
+    checksum_bytes_required:
+      "Tamanho da imagem usado no checksum obrigatório",
+    checksum_content_type_image_required:
+      "Tipo de conteúdo de imagem obrigatório no checksum",
+    checksum_calculated_at_required:
+      "Data do cálculo do checksum obrigatória",
+    checksum_registered_at_required:
+      "Data do registro do checksum obrigatória",
+    checksum_source_image_url_required:
+      "URL HTTPS da imagem usada no checksum obrigatória",
+    checksum_source_final_url_required:
+      "URL final HTTPS usada no checksum obrigatória",
+    checksum_source_image_url_mismatch:
+      "URL usada no checksum difere da imagem oficial atual",
+    checksum_preflight_version_required:
+      "Versão do preflight do checksum obrigatória",
+    checksum_write_version_required:
+      "Versão da escrita do checksum obrigatória",
+    checksum_confirmation_digest_sha256_required:
+      "Digest SHA-256 da confirmação obrigatório",
   };
 
   return labels[reason] || reason;
@@ -1649,6 +1823,10 @@ function CanonicalImageProvenanceAuditPanel({
         OFFICIAL_EVENTS_ADMIN_LOCALE
       }
       data-canonical-image-provenance-audit-read-only="true"
+      data-canonical-image-checksum-audit-version={
+        CANONICAL_IMAGE_CHECKSUM_AUDIT_VERSION
+      }
+      data-canonical-image-checksum-audit-read-only="true"
     >
       <div style={heroStyle()}>
         <span style={badgeStyle()}>
@@ -1659,8 +1837,8 @@ function CanonicalImageProvenanceAuditPanel({
         </h2>
         <p style={mutedTextStyle()}>
           Confere os dados técnicos já persistidos para cada imagem oficial:
-          provider, ID externo, origem, captura, validação, autoridade e
-          checksum quando disponível.
+          provider, ID externo, origem, captura, validação, autoridade,
+          checksum e detalhes da escrita controlada quando disponíveis.
         </p>
         <div
           style={panelStyle()}
@@ -1699,6 +1877,14 @@ function CanonicalImageProvenanceAuditPanel({
         <StatCard
           label="COM CHECKSUM"
           value={audit.summary.checksumAvailable}
+        />
+        <StatCard
+          label="CHECKSUM COMPLETO"
+          value={audit.summary.checksumAuditComplete}
+        />
+        <StatCard
+          label="CHECKSUM INCOMPLETO"
+          value={audit.summary.checksumAuditIncomplete}
         />
       </div>
 
@@ -1751,6 +1937,13 @@ function CanonicalImageProvenanceAuditPanel({
                   {item.completeness.checksumAvailable
                     ? "disponível"
                     : "não registrado"}
+                </span>
+                <span style={badgeStyle()}>
+                  {item.completeness.checksumAuditComplete
+                    ? "auditoria do checksum completa"
+                    : item.completeness.checksumAvailable
+                      ? "auditoria do checksum incompleta"
+                      : "auditoria do checksum pendente"}
                 </span>
               </div>
 
@@ -1815,7 +2008,71 @@ function CanonicalImageProvenanceAuditPanel({
                   value={item.image.checksumSha256}
                   monospace
                 />
+                <ProvenanceDetail
+                  label="Algoritmo do checksum"
+                  value={item.image.checksumAlgorithm}
+                  monospace
+                />
+                <ProvenanceDetail
+                  label="Tamanho usado no checksum"
+                  value={
+                    item.image.checksumBytes === null
+                      ? null
+                      : `${item.image.checksumBytes} bytes`
+                  }
+                />
+                <ProvenanceDetail
+                  label="Tipo de conteúdo do checksum"
+                  value={item.image.checksumContentType}
+                  monospace
+                />
+                <ProvenanceDetail
+                  label="Checksum calculado em"
+                  value={formatDateTime(item.image.checksumCalculatedAt)}
+                />
+                <ProvenanceDetail
+                  label="Checksum registrado em"
+                  value={formatDateTime(item.image.checksumRegisteredAt)}
+                />
+                <ProvenanceDetail
+                  label="Versão do preflight"
+                  value={item.image.checksumPreflightVersion}
+                  monospace
+                />
+                <ProvenanceDetail
+                  label="Versão da escrita"
+                  value={item.image.checksumWriteVersion}
+                  monospace
+                />
               </div>
+
+              {item.completeness.checksumAvailable ? (
+                <>
+                  <div style={panelStyle()}>
+                    <ProvenanceDetail
+                      label="URL da imagem usada no checksum"
+                      value={item.image.checksumSourceImageUrl}
+                      monospace
+                    />
+                  </div>
+
+                  <div style={panelStyle()}>
+                    <ProvenanceDetail
+                      label="URL final usada no checksum"
+                      value={item.image.checksumSourceFinalUrl}
+                      monospace
+                    />
+                  </div>
+
+                  <div style={panelStyle()}>
+                    <ProvenanceDetail
+                      label="Digest de confirmação da escrita"
+                      value={item.image.checksumConfirmationDigestSha256}
+                      monospace
+                    />
+                  </div>
+                </>
+              ) : null}
 
               <div style={panelStyle()}>
                 <ProvenanceDetail
@@ -1857,6 +2114,31 @@ function CanonicalImageProvenanceAuditPanel({
                   </p>
                 </div>
               ) : null}
+
+              {item.completeness.checksumAuditWarnings.length > 0 ? (
+                <div
+                  style={panelStyle()}
+                  data-canonical-image-checksum-audit-warning="true"
+                >
+                  <strong>Alertas da auditoria do checksum</strong>
+                  <p style={mutedTextStyle()}>
+                    {item.completeness.checksumAuditWarnings
+                      .map(provenanceWarningLabel)
+                      .join(" · ")}
+                  </p>
+                </div>
+              ) : (
+                <div
+                  style={panelStyle()}
+                  data-canonical-image-checksum-audit-complete="true"
+                >
+                  <strong>Auditoria do checksum completa</strong>
+                  <p style={mutedTextStyle()}>
+                    O checksum e todos os dados técnicos da primeira escrita
+                    controlada estão registrados.
+                  </p>
+                </div>
+              )}
             </article>
           ))}
         </div>
