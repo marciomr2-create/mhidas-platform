@@ -18,10 +18,13 @@ type CandidateStatus = "probable" | "review" | "confirmed" | "rejected" | "expir
 
 const CANONICAL_IMAGE_PREVIEW_VERSION =
   "v4.8.78-event-canonical-image-admin-preview-panel-safe" as const;
+const CANONICAL_IMAGE_PROVENANCE_AUDIT_VERSION =
+  "v4.8.79-event-canonical-image-provenance-audit-panel-safe" as const;
 const OFFICIAL_EVENTS_ADMIN_LOCALE = "pt-BR" as const;
 const CANONICAL_IMAGE_SOURCE_AUTHORITY_MINIMUM = 80;
 const CANONICAL_IMAGE_SCAN_LIMIT = 200;
 const CANONICAL_IMAGE_RESULT_LIMIT = 25;
+const CANONICAL_IMAGE_PROVENANCE_RESULT_LIMIT = 50;
 
 const SUPPORTED_CANONICAL_IMAGE_PROVIDER_HOSTS: Record<
   string,
@@ -155,6 +158,74 @@ type CanonicalImagePreviewData = {
   };
 };
 
+type CanonicalImageProvenanceItem = {
+  canonicalEvent: {
+    id: string;
+    slug: string;
+    eventName: string;
+    startsAt: string | null;
+    eventDateKey: string | null;
+    venueName: string | null;
+    city: string | null;
+    state: string | null;
+  };
+  image: {
+    imageUrl: string | null;
+    altText: string | null;
+    sourceLabel: string | null;
+    usageScope: string | null;
+    captureMode: string | null;
+    provenanceStatus: string | null;
+    providerKey: string | null;
+    externalEventId: string | null;
+    sourceKey: string | null;
+    sourceKind: string | null;
+    sourceUrl: string | null;
+    sourcePageFinalUrl: string | null;
+    sourcePageTitle: string | null;
+    extractionMethod: string | null;
+    capturedAt: string | null;
+    validationMethod: string | null;
+    sourceConfidenceScore: number | null;
+    sourceAuthorityScore: number | null;
+    captureVersion: string | null;
+    authorizationStatus: string | null;
+    authorizationType: string | null;
+    authorizedAt: string | null;
+    registeredAt: string | null;
+    checksumSha256: string | null;
+  };
+  completeness: {
+    complete: boolean;
+    warnings: string[];
+    checksumAvailable: boolean;
+  };
+};
+
+type CanonicalImageProvenanceAuditData = {
+  ok: boolean;
+  message: string;
+  items: CanonicalImageProvenanceItem[];
+  summary: {
+    scannedValidatedEvents: number;
+    withOfficialImageMetadata: number;
+    completeProvenance: number;
+    incompleteProvenance: number;
+    validatedSource: number;
+    legacyAuthorized: number;
+    checksumAvailable: number;
+    returned: number;
+    resultTruncated: boolean;
+  };
+  safety: {
+    readOnly: true;
+    externalFetchEnabled: false;
+    databaseWriteEnabled: false;
+    ticketPolicyChanged: false;
+    migrationRequired: false;
+  };
+};
+
 type AdminData = {
   ok: boolean;
   message: string;
@@ -171,6 +242,7 @@ type AdminData = {
     withValidOfficialUrlCount: number;
   };
   imagePreview: CanonicalImagePreviewData;
+  imageProvenance: CanonicalImageProvenanceAuditData;
 };
 
 function pageStyle(): CSSProperties {
@@ -348,6 +420,400 @@ function getExistingOfficialImage(metadata: JsonObject | null): JsonObject | nul
   if (!image) return null;
 
   return normalizePublicHttpsUrl(image.image_url) ? image : null;
+}
+
+function getOfficialImageMetadata(
+  metadata: JsonObject | null
+): JsonObject | null {
+  if (!metadata) return null;
+  return asPlainObject(metadata.official_image);
+}
+
+function getMetadataString(
+  record: JsonObject,
+  key: string
+): string | null {
+  const value = normalizeText(record[key]);
+  return value || null;
+}
+
+function getFirstMetadataString(
+  record: JsonObject,
+  keys: readonly string[]
+): string | null {
+  for (const key of keys) {
+    const value = getMetadataString(record, key);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+function getMetadataNumber(
+  record: JsonObject,
+  key: string
+): number | null {
+  const rawValue = record[key];
+
+  if (
+    rawValue === null ||
+    rawValue === undefined ||
+    normalizeText(rawValue) === ""
+  ) {
+    return null;
+  }
+
+  const number = Number(rawValue);
+  return Number.isFinite(number) ? number : null;
+}
+
+function emptyCanonicalImageProvenanceAudit(
+  message: string
+): CanonicalImageProvenanceAuditData {
+  return {
+    ok: false,
+    message,
+    items: [],
+    summary: {
+      scannedValidatedEvents: 0,
+      withOfficialImageMetadata: 0,
+      completeProvenance: 0,
+      incompleteProvenance: 0,
+      validatedSource: 0,
+      legacyAuthorized: 0,
+      checksumAvailable: 0,
+      returned: 0,
+      resultTruncated: false,
+    },
+    safety: {
+      readOnly: true,
+      externalFetchEnabled: false,
+      databaseWriteEnabled: false,
+      ticketPolicyChanged: false,
+      migrationRequired: false,
+    },
+  };
+}
+
+function buildCanonicalImageProvenanceItem(params: {
+  event: CanonicalEventRow;
+  officialImage: JsonObject;
+}): CanonicalImageProvenanceItem {
+  const rawCaptureMode = getMetadataString(
+    params.officialImage,
+    "capture_mode"
+  );
+  const authorizationStatus = getMetadataString(
+    params.officialImage,
+    "authorization_status"
+  );
+  const captureMode =
+    rawCaptureMode ||
+    (authorizationStatus === "authorized"
+      ? "legacy_authorized_registration"
+      : null);
+  const provenanceStatus =
+    getMetadataString(params.officialImage, "provenance_status") ||
+    (authorizationStatus === "authorized" ? "legacy_authorized" : null);
+  const rawImageUrl = getMetadataString(
+    params.officialImage,
+    "image_url"
+  );
+  const imageUrl = normalizePublicHttpsUrl(rawImageUrl);
+  const sourceUrl = getMetadataString(
+    params.officialImage,
+    "source_url"
+  );
+  const sourcePageFinalUrl = getMetadataString(
+    params.officialImage,
+    "source_page_final_url"
+  );
+  const capturedAt = getMetadataString(
+    params.officialImage,
+    "captured_at"
+  );
+  const validationMethod = getMetadataString(
+    params.officialImage,
+    "validation_method"
+  );
+  const sourceConfidenceScore = getMetadataNumber(
+    params.officialImage,
+    "source_confidence_score"
+  );
+  const sourceAuthorityScore = getMetadataNumber(
+    params.officialImage,
+    "source_authority_score"
+  );
+  const checksumSha256 = getFirstMetadataString(params.officialImage, [
+    "checksum_sha256",
+    "image_checksum_sha256",
+    "sha256",
+    "checksum",
+  ]);
+  const warnings: string[] = [];
+  const validatedSourceCapture =
+    captureMode === "validated_source_auto_capture" ||
+    captureMode === "validated_source_page_recapture";
+  const legacyAuthorizedCapture =
+    captureMode === "legacy_authorized_registration";
+
+  if (!imageUrl) {
+    warnings.push("image_public_https_url_required");
+  }
+
+  if (
+    getMetadataString(params.officialImage, "usage_scope") !==
+    "event_page_hero"
+  ) {
+    warnings.push("usage_scope_event_page_hero_required");
+  }
+
+  if (!captureMode) {
+    warnings.push("capture_mode_required");
+  }
+
+  if (validatedSourceCapture) {
+    if (provenanceStatus !== "validated_source") {
+      warnings.push("validated_source_provenance_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "provider_key")) {
+      warnings.push("provider_key_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "external_event_id")) {
+      warnings.push("external_event_id_required");
+    }
+
+    if (!normalizePublicHttpsUrl(sourceUrl)) {
+      warnings.push("source_public_https_url_required");
+    }
+
+    if (!capturedAt) {
+      warnings.push("captured_at_required");
+    }
+
+    if (!validationMethod) {
+      warnings.push("validation_method_required");
+    }
+
+    if (sourceConfidenceScore === null) {
+      warnings.push("source_confidence_score_required");
+    }
+
+    if (sourceAuthorityScore === null) {
+      warnings.push("source_authority_score_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "capture_version")) {
+      warnings.push("capture_version_required");
+    }
+
+    if (
+      captureMode === "validated_source_page_recapture" &&
+      !getMetadataString(params.officialImage, "extraction_method")
+    ) {
+      warnings.push("extraction_method_required_for_recapture");
+    }
+  } else if (legacyAuthorizedCapture) {
+    if (authorizationStatus !== "authorized") {
+      warnings.push("legacy_authorization_status_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "authorization_type")) {
+      warnings.push("legacy_authorization_type_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "authorized_at")) {
+      warnings.push("legacy_authorized_at_required");
+    }
+
+    if (!getMetadataString(params.officialImage, "registered_at")) {
+      warnings.push("legacy_registered_at_required");
+    }
+  } else if (captureMode) {
+    warnings.push("capture_mode_not_supported");
+  }
+
+  return {
+    canonicalEvent: {
+      id: params.event.id,
+      slug: params.event.slug,
+      eventName: params.event.event_name,
+      startsAt: params.event.starts_at,
+      eventDateKey: params.event.event_date_key,
+      venueName: params.event.venue_name,
+      city: params.event.city,
+      state: params.event.state,
+    },
+    image: {
+      imageUrl: rawImageUrl,
+      altText: getMetadataString(params.officialImage, "alt_text"),
+      sourceLabel: getMetadataString(
+        params.officialImage,
+        "source_label"
+      ),
+      usageScope: getMetadataString(
+        params.officialImage,
+        "usage_scope"
+      ),
+      captureMode,
+      provenanceStatus,
+      providerKey: getMetadataString(
+        params.officialImage,
+        "provider_key"
+      ),
+      externalEventId: getMetadataString(
+        params.officialImage,
+        "external_event_id"
+      ),
+      sourceKey: getMetadataString(
+        params.officialImage,
+        "source_key"
+      ),
+      sourceKind: getMetadataString(
+        params.officialImage,
+        "source_kind"
+      ),
+      sourceUrl,
+      sourcePageFinalUrl,
+      sourcePageTitle: getMetadataString(
+        params.officialImage,
+        "source_page_title"
+      ),
+      extractionMethod: getMetadataString(
+        params.officialImage,
+        "extraction_method"
+      ),
+      capturedAt,
+      validationMethod,
+      sourceConfidenceScore,
+      sourceAuthorityScore,
+      captureVersion:
+        getMetadataString(params.officialImage, "capture_version") ||
+        getMetadataString(params.officialImage, "route_version"),
+      authorizationStatus,
+      authorizationType: getMetadataString(
+        params.officialImage,
+        "authorization_type"
+      ),
+      authorizedAt: getMetadataString(
+        params.officialImage,
+        "authorized_at"
+      ),
+      registeredAt: getMetadataString(
+        params.officialImage,
+        "registered_at"
+      ),
+      checksumSha256,
+    },
+    completeness: {
+      complete: warnings.length === 0,
+      warnings,
+      checksumAvailable: Boolean(checksumSha256),
+    },
+  };
+}
+
+async function loadCanonicalImageProvenanceAudit(
+  adminClient: AdminClient
+): Promise<CanonicalImageProvenanceAuditData> {
+  const { data, error } = await adminClient
+    .from("canonical_events")
+    .select(
+      [
+        "id",
+        "slug",
+        "event_name",
+        "starts_at",
+        "event_date_key",
+        "venue_name",
+        "city",
+        "state",
+        "primary_provider_key",
+        "primary_external_event_id",
+        "validation_status",
+        "validation_method",
+        "is_100_percent_validated",
+        "source_confidence_score",
+        "metadata",
+        "updated_at",
+      ].join(",")
+    )
+    .eq("is_100_percent_validated", true)
+    .order("starts_at", { ascending: true })
+    .limit(CANONICAL_IMAGE_SCAN_LIMIT);
+
+  if (error) {
+    return emptyCanonicalImageProvenanceAudit(
+      error.message ||
+        "Não foi possível carregar a auditoria de procedência das imagens."
+    );
+  }
+
+  const canonicalEvents = Array.isArray(data)
+    ? (data as unknown as CanonicalEventRow[])
+    : [];
+  const allItems = canonicalEvents.flatMap((event) => {
+    const officialImage = getOfficialImageMetadata(event.metadata);
+
+    return officialImage
+      ? [buildCanonicalImageProvenanceItem({ event, officialImage })]
+      : [];
+  });
+  const orderedItems = [...allItems].sort((left, right) => {
+    if (left.completeness.complete !== right.completeness.complete) {
+      return left.completeness.complete ? 1 : -1;
+    }
+
+    return left.canonicalEvent.eventName.localeCompare(
+      right.canonicalEvent.eventName,
+      OFFICIAL_EVENTS_ADMIN_LOCALE
+    );
+  });
+  const returnedItems = orderedItems.slice(
+    0,
+    CANONICAL_IMAGE_PROVENANCE_RESULT_LIMIT
+  );
+  const completeProvenance = allItems.filter(
+    (item) => item.completeness.complete
+  ).length;
+  const validatedSource = allItems.filter(
+    (item) =>
+      item.image.captureMode === "validated_source_auto_capture" ||
+      item.image.captureMode === "validated_source_page_recapture"
+  ).length;
+  const legacyAuthorized = allItems.filter(
+    (item) =>
+      item.image.captureMode === "legacy_authorized_registration"
+  ).length;
+  const checksumAvailable = allItems.filter(
+    (item) => item.completeness.checksumAvailable
+  ).length;
+
+  return {
+    ok: true,
+    message: "Auditoria de procedência das imagens carregada.",
+    items: returnedItems,
+    summary: {
+      scannedValidatedEvents: canonicalEvents.length,
+      withOfficialImageMetadata: allItems.length,
+      completeProvenance,
+      incompleteProvenance: allItems.length - completeProvenance,
+      validatedSource,
+      legacyAuthorized,
+      checksumAvailable,
+      returned: returnedItems.length,
+      resultTruncated: orderedItems.length > returnedItems.length,
+    },
+    safety: {
+      readOnly: true,
+      externalFetchEnabled: false,
+      databaseWriteEnabled: false,
+      ticketPolicyChanged: false,
+      migrationRequired: false,
+    },
+  };
 }
 
 function providerSupportsCanonicalImageSource(
@@ -721,10 +1187,16 @@ async function loadAdminData(): Promise<AdminData> {
       imagePreview: emptyCanonicalImagePreview(
         "A chave service role do Supabase não está configurada."
       ),
+      imageProvenance: emptyCanonicalImageProvenanceAudit(
+        "A chave service role do Supabase não está configurada."
+      ),
     };
   }
 
-  const imagePreview = await loadCanonicalImagePreview(adminClient);
+  const [imagePreview, imageProvenance] = await Promise.all([
+    loadCanonicalImagePreview(adminClient),
+    loadCanonicalImageProvenanceAudit(adminClient),
+  ]);
 
   const { data, error } = await adminClient
     .from("official_event_candidates")
@@ -762,6 +1234,7 @@ async function loadAdminData(): Promise<AdminData> {
       candidates: [],
       summary: emptySummary(),
       imagePreview,
+      imageProvenance,
     };
   }
 
@@ -823,6 +1296,7 @@ async function loadAdminData(): Promise<AdminData> {
     candidates: enriched,
     summary: summarize(enriched),
     imagePreview,
+    imageProvenance,
   };
 }
 
@@ -1072,6 +1546,335 @@ function CanonicalImagePreviewPanel({
   );
 }
 
+function captureModeLabel(value: string | null): string {
+  const labels: Record<string, string> = {
+    validated_source_auto_capture: "captura automática da fonte validada",
+    validated_source_page_recapture:
+      "recaptura da página-fonte validada",
+    legacy_authorized_registration: "registro autorizado legado",
+  };
+
+  return value ? labels[value] || value : "não informado";
+}
+
+function provenanceStatusLabel(value: string | null): string {
+  const labels: Record<string, string> = {
+    validated_source: "fonte validada",
+    legacy_authorized: "autorização legada",
+  };
+
+  return value ? labels[value] || value : "não informado";
+}
+
+function provenanceWarningLabel(reason: string): string {
+  const labels: Record<string, string> = {
+    image_public_https_url_required:
+      "URL pública HTTPS da imagem obrigatória",
+    usage_scope_event_page_hero_required:
+      "Escopo de uso event_page_hero obrigatório",
+    capture_mode_required: "Modo de captura obrigatório",
+    validated_source_provenance_required:
+      "Status de procedência fonte validada obrigatório",
+    provider_key_required: "Provider obrigatório",
+    external_event_id_required: "ID externo do evento obrigatório",
+    source_public_https_url_required:
+      "URL pública HTTPS da página-fonte obrigatória",
+    captured_at_required: "Data da captura obrigatória",
+    validation_method_required: "Método de validação obrigatório",
+    source_confidence_score_required:
+      "Confiança da fonte obrigatória",
+    source_authority_score_required:
+      "Autoridade da fonte obrigatória",
+    capture_version_required: "Versão da captura obrigatória",
+    extraction_method_required_for_recapture:
+      "Método de extração obrigatório para recaptura",
+    legacy_authorization_status_required:
+      "Status autorizado obrigatório no registro legado",
+    legacy_authorization_type_required:
+      "Tipo de autorização obrigatório no registro legado",
+    legacy_authorized_at_required:
+      "Data da autorização obrigatória no registro legado",
+    legacy_registered_at_required:
+      "Data do registro obrigatória no registro legado",
+    capture_mode_not_supported: "Modo de captura não reconhecido",
+  };
+
+  return labels[reason] || reason;
+}
+
+function ProvenanceDetail({
+  label,
+  value,
+  monospace = false,
+}: {
+  label: string;
+  value: string | number | null;
+  monospace?: boolean;
+}) {
+  const text =
+    value === null || value === "" ? "Não disponível" : String(value);
+
+  return (
+    <div>
+      <strong>{label}</strong>
+      <p
+        style={{
+          ...mutedTextStyle(),
+          overflowWrap: "anywhere",
+          fontFamily: monospace
+            ? "ui-monospace, SFMono-Regular, Menlo, monospace"
+            : undefined,
+          fontSize: monospace ? 12 : undefined,
+        }}
+      >
+        {text}
+      </p>
+    </div>
+  );
+}
+
+function CanonicalImageProvenanceAuditPanel({
+  audit,
+}: {
+  audit: CanonicalImageProvenanceAuditData;
+}) {
+  return (
+    <section
+      style={{ display: "grid", gap: 14 }}
+      data-canonical-image-provenance-audit-panel="true"
+      data-canonical-image-provenance-audit-version={
+        CANONICAL_IMAGE_PROVENANCE_AUDIT_VERSION
+      }
+      data-canonical-image-provenance-audit-locale={
+        OFFICIAL_EVENTS_ADMIN_LOCALE
+      }
+      data-canonical-image-provenance-audit-read-only="true"
+    >
+      <div style={heroStyle()}>
+        <span style={badgeStyle()}>
+          Auditoria interna · somente leitura
+        </span>
+        <h2 style={{ margin: 0 }}>
+          Auditoria de procedência das imagens canônicas
+        </h2>
+        <p style={mutedTextStyle()}>
+          Confere os dados técnicos já persistidos para cada imagem oficial:
+          provider, ID externo, origem, captura, validação, autoridade e
+          checksum quando disponível.
+        </p>
+        <div
+          style={panelStyle()}
+          data-canonical-image-provenance-safety="read-only"
+        >
+          <strong>Garantias desta auditoria</strong>
+          <p style={mutedTextStyle()}>
+            Nenhum site externo é acessado, nenhuma imagem é recapturada,
+            nenhum dado é gravado e a política de ingressos permanece
+            inalterada.
+          </p>
+        </div>
+      </div>
+
+      <div style={gridStyle()}>
+        <StatCard
+          label="COM IMAGEM"
+          value={audit.summary.withOfficialImageMetadata}
+        />
+        <StatCard
+          label="PROCEDÊNCIA COMPLETA"
+          value={audit.summary.completeProvenance}
+        />
+        <StatCard
+          label="PROCEDÊNCIA INCOMPLETA"
+          value={audit.summary.incompleteProvenance}
+        />
+        <StatCard
+          label="FONTE VALIDADA"
+          value={audit.summary.validatedSource}
+        />
+        <StatCard
+          label="REGISTRO LEGADO"
+          value={audit.summary.legacyAuthorized}
+        />
+        <StatCard
+          label="COM CHECKSUM"
+          value={audit.summary.checksumAvailable}
+        />
+      </div>
+
+      {!audit.ok ? (
+        <div style={panelStyle()}>
+          <h3 style={{ marginTop: 0 }}>
+            Não foi possível carregar a auditoria de procedência
+          </h3>
+          <p style={mutedTextStyle()}>{audit.message}</p>
+        </div>
+      ) : null}
+
+      {audit.ok && audit.items.length === 0 ? (
+        <div style={panelStyle()}>
+          <strong>Nenhuma imagem canônica registrada</strong>
+          <p style={mutedTextStyle()}>
+            Não existem imagens oficiais persistidas nos eventos canônicos
+            validados desta amostra.
+          </p>
+        </div>
+      ) : null}
+
+      {audit.ok && audit.items.length > 0 ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          {audit.items.map((item) => (
+            <article
+              key={item.canonicalEvent.id}
+              style={cardStyle()}
+              data-canonical-image-provenance-item={
+                item.canonicalEvent.id
+              }
+              data-canonical-image-provenance-complete={
+                item.completeness.complete ? "true" : "false"
+              }
+            >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <span style={badgeStyle()}>
+                  {item.completeness.complete
+                    ? "procedência completa"
+                    : "procedência incompleta"}
+                </span>
+                <span style={badgeStyle()}>
+                  {captureModeLabel(item.image.captureMode)}
+                </span>
+                <span style={badgeStyle()}>
+                  {provenanceStatusLabel(item.image.provenanceStatus)}
+                </span>
+                <span style={badgeStyle()}>
+                  checksum{" "}
+                  {item.completeness.checksumAvailable
+                    ? "disponível"
+                    : "não registrado"}
+                </span>
+              </div>
+
+              <div>
+                <h3 style={{ margin: 0, fontSize: 20 }}>
+                  {item.canonicalEvent.eventName}
+                </h3>
+                <p style={mutedTextStyle()}>
+                  {[
+                    item.canonicalEvent.venueName,
+                    item.canonicalEvent.city,
+                    item.canonicalEvent.state,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "Local não disponível"}
+                </p>
+                <p style={mutedTextStyle()}>
+                  {formatDate(
+                    item.canonicalEvent.startsAt ||
+                      item.canonicalEvent.eventDateKey
+                  )}
+                </p>
+              </div>
+
+              <div style={gridStyle()}>
+                <ProvenanceDetail
+                  label="Provider"
+                  value={item.image.providerKey}
+                />
+                <ProvenanceDetail
+                  label="ID externo do evento"
+                  value={item.image.externalEventId}
+                  monospace
+                />
+                <ProvenanceDetail
+                  label="Método de validação"
+                  value={item.image.validationMethod}
+                />
+                <ProvenanceDetail
+                  label="Confiança da fonte"
+                  value={item.image.sourceConfidenceScore}
+                />
+                <ProvenanceDetail
+                  label="Autoridade da fonte"
+                  value={item.image.sourceAuthorityScore}
+                />
+                <ProvenanceDetail
+                  label="Capturada em"
+                  value={formatDateTime(item.image.capturedAt)}
+                />
+                <ProvenanceDetail
+                  label="Método de extração"
+                  value={item.image.extractionMethod}
+                />
+                <ProvenanceDetail
+                  label="Versão da captura"
+                  value={item.image.captureVersion}
+                  monospace
+                />
+                <ProvenanceDetail
+                  label="Checksum SHA-256"
+                  value={item.image.checksumSha256}
+                  monospace
+                />
+              </div>
+
+              <div style={panelStyle()}>
+                <ProvenanceDetail
+                  label="URL original da imagem"
+                  value={item.image.imageUrl}
+                  monospace
+                />
+              </div>
+
+              <div style={panelStyle()}>
+                <ProvenanceDetail
+                  label="URL da página-fonte"
+                  value={item.image.sourceUrl}
+                  monospace
+                />
+              </div>
+
+              {item.image.sourcePageFinalUrl &&
+              item.image.sourcePageFinalUrl !== item.image.sourceUrl ? (
+                <div style={panelStyle()}>
+                  <ProvenanceDetail
+                    label="URL final da página-fonte"
+                    value={item.image.sourcePageFinalUrl}
+                    monospace
+                  />
+                </div>
+              ) : null}
+
+              {!item.completeness.complete ? (
+                <div
+                  style={panelStyle()}
+                  data-canonical-image-provenance-warning="true"
+                >
+                  <strong>Alertas de procedência</strong>
+                  <p style={mutedTextStyle()}>
+                    {item.completeness.warnings
+                      .map(provenanceWarningLabel)
+                      .join(" · ")}
+                  </p>
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {audit.summary.resultTruncated ? (
+        <div style={panelStyle()}>
+          <p style={mutedTextStyle()}>
+            Resultado limitado a{" "}
+            {CANONICAL_IMAGE_PROVENANCE_RESULT_LIMIT} imagens. Os totais
+            consideram todo o conjunto analisado.
+          </p>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function CandidateCard({ candidate }: { candidate: CandidateView }) {
   return (
     <article style={cardStyle()}>
@@ -1226,6 +2029,10 @@ export default async function OfficialEventsAdminPage() {
       </section>
 
       <CanonicalImagePreviewPanel preview={data.imagePreview} />
+
+      <CanonicalImageProvenanceAuditPanel
+        audit={data.imageProvenance}
+      />
 
       <section style={{ display: "grid", gap: 14 }}>
         <div style={panelStyle()}>
