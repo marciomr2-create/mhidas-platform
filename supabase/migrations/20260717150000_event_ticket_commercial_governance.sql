@@ -2887,6 +2887,7 @@ revoke all on function public.mhidas_admin_prepare_event_ticket_legacy_backfill_
 do $mhidas_function_acl_reset$
 declare v_proc record; v_role record;
 begin
+  if exists (select 1 from public.event_ticket_commercial_channels c where c.channel_status='active' and public.mhidas_ticket_verify_commercial_destination_envelope_v2(c.destination_url_ciphertext,c.destination_envelope_key_id,c.destination_envelope_mac,c.destination_envelope_hash,c.destination_url_hash,c.destination_hostname) is distinct from true) then raise exception 'V4_8_120_ACTIVE_CHANNEL_ENVELOPE_DRIFT'; end if;
   for v_proc in
     select p.oid::regprocedure as signature
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
@@ -2925,7 +2926,6 @@ begin
   select count(*) into v_count from public.event_ticket_retention_executor_contracts where contract_status='active';
   if v_count<>7 then raise exception 'V4_8_120_RETENTION_EXECUTOR_CONTRACT_COUNT_INVALID'; end if;
   if to_regclass('public.event_ticket_legacy_backfill_runs') is null or to_regclass('public.event_ticket_legacy_cutover_checkpoints') is null then raise exception 'V4_8_120_LEGACY_BACKFILL_CONTRACTS_MISSING'; end if;
-  if exists (select 1 from public.event_ticket_commercial_channels c where c.channel_status='active' and public.mhidas_ticket_verify_commercial_destination_envelope_v2(c.destination_url_ciphertext,c.destination_envelope_key_id,c.destination_envelope_mac,c.destination_envelope_hash,c.destination_url_hash,c.destination_hostname) is distinct from true) then raise exception 'V4_8_120_ACTIVE_CHANNEL_ENVELOPE_DRIFT'; end if;
   if exists (
     select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a on true
