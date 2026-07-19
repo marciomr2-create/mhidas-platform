@@ -2878,6 +2878,8 @@ revoke all on function public.mhidas_ticket_url_proof_is_fresh_v9(uuid,text,text
 revoke all on function public.mhidas_ticket_official_source_proof_is_fresh_v2(uuid,text,text,text,text,text,text,text,text,text,text,integer,text,timestamptz,timestamptz,uuid) from PUBLIC,anon,authenticated,service_role;
 revoke all on function public.mhidas_resolve_public_event_ticket_action_v10(uuid) from PUBLIC,anon,authenticated,service_role;
 
+revoke all on function public.mhidas_ticket_signal_family_lock_key_v1(uuid,uuid) from PUBLIC,anon,authenticated,service_role;
+revoke all on function public.mhidas_ticket_try_uuid_v1(text) from PUBLIC,anon,authenticated,service_role;
 revoke all on function public.mhidas_ticket_required_scope_for_signal_v1(text) from PUBLIC,anon,authenticated,service_role;
 revoke all on function public.mhidas_ticket_purchase_signal_request_hash_v1(uuid,uuid,uuid,uuid,uuid,text,text,text,text,jsonb,uuid,uuid) from PUBLIC,anon,authenticated,service_role;
 revoke all on function public.mhidas_ticket_verify_commercial_destination_envelope_v2(text,text,text,text,text,text) from PUBLIC,anon,authenticated,service_role;
