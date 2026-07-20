@@ -2289,6 +2289,12 @@ export default async function OfficialEventsAdminPage() {
           <Link href="/dashboard/cards" style={linkButtonStyle()}>
             Meus cards
           </Link>
+          <Link
+            href="/dashboard/admin/official-events/ticket-links"
+            style={linkButtonStyle()}
+          >
+            Monetizacao de ingressos
+          </Link>
         </div>
       </section>
 

@@ -85,7 +85,21 @@ type EventGroupRow = {
   weather_temperature: string | null;
   weather_rain_alert: string | null;
   preparation_note: string | null;
+  partner_ticket_url: string | null;
+  partner_ticket_status: string | null;
+  partner_ticket_partner_name: string | null;
+  partner_ticket_button_label: string | null;
+  partner_ticket_expires_at: string | null;
 };
+
+type PartnerTicketRow = Pick<
+  EventGroupRow,
+  | "partner_ticket_url"
+  | "partner_ticket_status"
+  | "partner_ticket_partner_name"
+  | "partner_ticket_button_label"
+  | "partner_ticket_expires_at"
+>;
 
 type EventMember = {
   user_id: string;
@@ -229,6 +243,68 @@ function isTicketSalesUrl(value: string | null | undefined): boolean {
   } catch {
     return true;
   }
+}
+
+function normalizePublicHttpsTicketUrl(
+  value: string | null | undefined
+): string {
+  const text = normalizeText(value);
+  if (!text) return "";
+
+  try {
+    const url = new URL(text);
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+    if (url.protocol !== "https:") return "";
+    if (!host || url.username || url.password) return "";
+
+    if (
+      host === "localhost" ||
+      host === "::1" ||
+      host.endsWith(".local") ||
+      /^0\./.test(host) ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^169\.254\./.test(host)
+    ) {
+      return "";
+    }
+
+    const private172 = host.match(/^172\.(\d{1,3})\./);
+
+    if (private172) {
+      const secondOctet = Number(private172[1]);
+
+      if (secondOctet >= 16 && secondOctet <= 31) {
+        return "";
+      }
+    }
+
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function isActivePartnerTicket(
+  status: string | null | undefined,
+  url: string,
+  expiresAt: string | null | undefined
+): boolean {
+  if (normalizeText(status).toLowerCase() !== "active" || !url) {
+    return false;
+  }
+
+  const expiration = normalizeText(expiresAt);
+  if (!expiration) return true;
+
+  const expirationDate = new Date(expiration);
+
+  return (
+    !Number.isNaN(expirationDate.getTime()) &&
+    expirationDate.getTime() > Date.now()
+  );
 }
 
 const CANONICAL_IMAGE_KEYS = new Set([
@@ -1297,6 +1373,21 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const eventGroup =
     ((eventGroupsData ?? [])[0] as EventGroupRow | undefined) || null;
 
+  let partnerTicket: PartnerTicketRow | null = null;
+
+  if (eventGroup?.group_id) {
+    const { data: partnerTicketData } = await supabase
+      .from("event_groups")
+      .select(
+        "partner_ticket_url,partner_ticket_status,partner_ticket_partner_name,partner_ticket_button_label,partner_ticket_expires_at"
+      )
+      .eq("group_id", eventGroup.group_id)
+      .limit(1);
+
+    partnerTicket =
+      ((partnerTicketData ?? [])[0] as PartnerTicketRow | undefined) || null;
+  }
+
   const canonicalHeroTitle = normalizeText(canonicalEvent?.event_name);
 
   const heroTitle =
@@ -1390,6 +1481,22 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
   const commercialOfficialLinkBlocked =
     canonicalOfficialIsCommercial || confirmedOfficialIsCommercial;
+
+  const normalizedPartnerTicketUrl = normalizePublicHttpsTicketUrl(
+    partnerTicket?.partner_ticket_url
+  );
+
+  const activePartnerTicketUrl = isActivePartnerTicket(
+    partnerTicket?.partner_ticket_status,
+    normalizedPartnerTicketUrl,
+    partnerTicket?.partner_ticket_expires_at
+  )
+    ? normalizedPartnerTicketUrl
+    : "";
+
+  const activePartnerTicketLabel =
+    normalizeText(partnerTicket?.partner_ticket_button_label) ||
+    "Comprar ingresso";
 
   const canonicalValidationLabel = canonicalEvent
     ? getCanonicalValidationLabel(canonicalEvent.validation_status)
@@ -1546,6 +1653,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           flex-wrap: wrap;
         }
 
+        .event-hero__action-primary,
         .event-hero__action-secondary,
         .event-hero__action-link {
           display: inline-flex;
@@ -1558,6 +1666,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           text-decoration: none;
           font-size: 13px;
           font-weight: 900;
+        }
+
+        .event-hero__action-primary {
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          background:
+            linear-gradient(135deg, rgba(125, 34, 255, 1), rgba(125, 92, 255, 0.76));
+          box-shadow: 0 16px 38px rgba(125, 34, 255, 0.28);
         }
 
         .event-hero__action-secondary {
@@ -1989,6 +2104,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             align-items: stretch;
           }
 
+          .event-hero__action-primary,
           .event-hero__action-secondary {
             width: 100%;
           }
@@ -2072,6 +2188,17 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           </p>
 
           <div className="event-hero__actions">
+            {hasContent(activePartnerTicketUrl) ? (
+              <a
+                href={activePartnerTicketUrl}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="event-hero__action-primary"
+              >
+                {activePartnerTicketLabel}
+              </a>
+            ) : null}
+
             {hasContent(heroOfficialUrl) ? (
               <a
                 href={heroOfficialUrl}
@@ -2079,7 +2206,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
                 rel="noopener noreferrer"
                 className="event-hero__action-secondary"
               >
-                Abrir evento oficial
+                Ver evento oficial
               </a>
             ) : null}
 
