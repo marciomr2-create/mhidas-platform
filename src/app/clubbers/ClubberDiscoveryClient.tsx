@@ -526,32 +526,47 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
                 />
 
                 <div className="clubber-discovery-card__name">
+                  <span className="clubber-discovery-card__eyebrow">
+                    Perfil Clubber
+                  </span>
                   <h3>{item.label}</h3>
-                  <span>{item.city_base || "Cidade não informada"}</span>
+                  <span className="clubber-discovery-card__location">
+                    {item.city_base || "Cidade não informada"}
+                  </span>
                 </div>
               </div>
 
-              {item.club_tagline ? (
-                <p className="clubber-discovery-card__tagline">
-                  {item.club_tagline}
-                </p>
-              ) : null}
+              <div className="clubber-discovery-card__content">
+                {item.club_tagline ? (
+                  <p className="clubber-discovery-card__tagline">
+                    {item.club_tagline}
+                  </p>
+                ) : null}
 
-              {item.favorite_genres.length > 0 ? (
-                <div className="clubber-discovery-genres">
-                  {item.favorite_genres.slice(0, 4).map((genre) => (
-                    <span key={`${item.user_id}-${genre}`}>{genre}</span>
-                  ))}
+                {item.favorite_genres.length > 0 ? (
+                  <div
+                    className="clubber-discovery-genres"
+                    aria-label="Vertentes musicais"
+                  >
+                    <span className="clubber-discovery-genres__label">
+                      Vertentes
+                    </span>
+                    <div className="clubber-discovery-genres__list">
+                      {item.favorite_genres.slice(0, 3).map((genre) => (
+                        <span key={`${item.user_id}-${genre}`}>{genre}</span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="clubber-discovery-reasons">
+                  <span>Afinidades</span>
+                  <ul>
+                    {item.reasons.map((reason) => (
+                      <li key={`${item.user_id}-${reason}`}>{reason}</li>
+                    ))}
+                  </ul>
                 </div>
-              ) : null}
-
-              <div className="clubber-discovery-reasons">
-                <span>Por que apareceu</span>
-                <ul>
-                  {item.reasons.map((reason) => (
-                    <li key={`${item.user_id}-${reason}`}>{reason}</li>
-                  ))}
-                </ul>
               </div>
 
               <div className="clubber-discovery-actions">
@@ -568,7 +583,7 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
                   )}`}
                   className="clubber-discovery-profile-link"
                 >
-                  Ver perfil Club
+                  Ver Perfil Clubber
                 </Link>
               </div>
             </article>
@@ -576,12 +591,23 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
         </section>
       ) : (
         <section className="clubber-discovery-empty">
-          <strong>Nenhum Perfil Clubber publicado está disponível agora.</strong>
-          <p>
-            Assim que novos perfis forem publicados, eles aparecerão nesta
-            descoberta.
-          </p>
-          <Link href="/dashboard/cards">Revisar meu Perfil Clubber</Link>
+          <div className="clubber-discovery-empty__copy">
+            <span className="clubber-discovery-kicker">
+              Descoberta em formação
+            </span>
+            <strong>
+              Nenhum Perfil Clubber publicado está disponível agora.
+            </strong>
+            <p>
+              Assim que novos perfis forem publicados, eles aparecerão aqui
+              organizados por cidade e identidade musical.
+            </p>
+          </div>
+
+          <div className="clubber-discovery-empty__action">
+            <span>Seu perfil também pode fazer parte dessa descoberta.</span>
+            <Link href="/dashboard/cards">Revisar meu Perfil Clubber</Link>
+          </div>
         </section>
       )}
 
@@ -688,9 +714,10 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
 
         .clubber-discovery-summary {
           display: grid;
-          gap: 3px;
+          gap: 4px;
           align-content: end;
-          padding-top: 6px;
+          padding: 8px 0 2px 16px;
+          border-left: 1px solid rgba(122, 255, 217, 0.28);
         }
 
         .clubber-discovery-summary strong {
@@ -785,94 +812,146 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
         }
 
         .clubber-discovery-card {
+          position: relative;
           display: grid;
-          gap: 16px;
+          gap: 18px;
           min-width: 0;
-          padding: 17px;
+          overflow: hidden;
+          padding: 18px;
           border: 1px solid rgba(255, 255, 255, 0.11);
-          border-radius: 20px;
+          border-radius: 24px;
           background:
-            linear-gradient(180deg, rgba(22, 24, 31, 0.9), rgba(13, 15, 20, 0.9));
-          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.19);
+            radial-gradient(circle at 100% 0%, rgba(125, 92, 255, 0.12), transparent 34%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.024));
+          box-shadow: 0 22px 52px rgba(0, 0, 0, 0.24);
+          transition:
+            transform 180ms ease,
+            border-color 180ms ease,
+            box-shadow 180ms ease;
+        }
+
+        .clubber-discovery-card::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 2px;
+          background: linear-gradient(180deg, #7affd9, rgba(125, 92, 255, 0.18));
+          opacity: 0.72;
         }
 
         .clubber-discovery-card__identity {
           display: grid;
-          grid-template-columns: 64px minmax(0, 1fr);
-          gap: 13px;
-          align-items: center;
+          grid-template-columns: 88px minmax(0, 1fr);
+          gap: 15px;
+          align-items: stretch;
         }
 
         .clubber-discovery-photo {
-          width: 64px;
-          height: 64px;
-          border-radius: 18px;
+          width: 88px;
+          height: 104px;
+          border: 1px solid rgba(255, 255, 255, 0.13);
+          border-radius: 20px;
           background-position: center;
           background-size: cover;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
         }
 
         .clubber-discovery-card__name {
+          display: grid;
           min-width: 0;
+          align-content: center;
+        }
+
+        .clubber-discovery-card__eyebrow {
+          color: #7affd9;
+          font-size: 9px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
         }
 
         .clubber-discovery-card__name h3 {
-          margin: 0;
+          margin: 8px 0 0;
           overflow-wrap: anywhere;
-          font-size: 20px;
-          line-height: 1.1;
-          letter-spacing: -0.025em;
+          font-size: 23px;
+          line-height: 1.02;
+          letter-spacing: -0.04em;
         }
 
-        .clubber-discovery-card__name span {
+        .clubber-discovery-card__location {
           display: block;
-          margin-top: 5px;
+          margin-top: 8px;
           color: rgba(255, 255, 255, 0.58);
           font-size: 11px;
           line-height: 1.4;
         }
 
+        .clubber-discovery-card__content {
+          display: grid;
+          gap: 14px;
+        }
+
         .clubber-discovery-card__tagline {
           margin: 0;
-          color: rgba(255, 255, 255, 0.72);
-          font-size: 12px;
-          line-height: 1.55;
+          color: rgba(255, 255, 255, 0.74);
+          font-size: 13px;
+          line-height: 1.58;
         }
 
         .clubber-discovery-genres {
-          display: flex;
-          flex-wrap: wrap;
+          display: grid;
           gap: 7px;
+          padding: 12px 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.075);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.075);
         }
 
-        .clubber-discovery-genres span {
-          padding: 6px 8px;
-          border: 1px solid rgba(125, 92, 255, 0.24);
-          border-radius: 999px;
-          background: rgba(125, 92, 255, 0.08);
-          color: rgba(255, 255, 255, 0.77);
-          font-size: 10px;
+        .clubber-discovery-genres__label {
+          color: rgba(255, 255, 255, 0.43);
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+        .clubber-discovery-genres__list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 8px;
+        }
+
+        .clubber-discovery-genres__list span {
+          display: inline-flex;
+          align-items: center;
+          color: rgba(203, 193, 255, 0.9);
+          font-size: 11px;
           font-weight: 800;
+          line-height: 1.4;
+        }
+
+        .clubber-discovery-genres__list span:not(:last-child)::after {
+          content: "•";
+          margin-left: 8px;
+          color: rgba(122, 255, 217, 0.44);
         }
 
         .clubber-discovery-reasons {
           display: grid;
           gap: 8px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .clubber-discovery-reasons > span {
           color: rgba(255, 255, 255, 0.43);
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 900;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
         }
 
         .clubber-discovery-reasons ul {
           display: grid;
-          gap: 5px;
+          gap: 6px;
           margin: 0;
           padding: 0;
           list-style: none;
@@ -880,10 +959,10 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
 
         .clubber-discovery-reasons li {
           position: relative;
-          padding-left: 14px;
-          color: rgba(255, 255, 255, 0.77);
+          padding-left: 15px;
+          color: rgba(255, 255, 255, 0.78);
           font-size: 11px;
-          line-height: 1.45;
+          line-height: 1.48;
         }
 
         .clubber-discovery-reasons li::before {
@@ -895,6 +974,7 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
           height: 5px;
           border-radius: 999px;
           background: #7affd9;
+          box-shadow: 0 0 12px rgba(122, 255, 217, 0.28);
         }
 
         .clubber-discovery-actions {
@@ -907,33 +987,100 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
           min-height: 44px;
           display: grid;
           place-items: center;
-          border: 1px solid rgba(255, 255, 255, 0.13);
+          border: 1px solid rgba(125, 92, 255, 0.28);
           border-radius: 14px;
-          color: rgba(255, 255, 255, 0.84);
-          background: rgba(255, 255, 255, 0.04);
+          color: rgba(255, 255, 255, 0.88);
+          background: rgba(125, 92, 255, 0.08);
           font-size: 13px;
           font-weight: 850;
           text-decoration: none;
+          transition:
+            transform 160ms ease,
+            border-color 160ms ease,
+            background 160ms ease;
         }
 
         .clubber-discovery-empty {
           display: grid;
+          gap: 24px;
+          min-height: 220px;
+          padding: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 100% 0%, rgba(125, 92, 255, 0.13), transparent 34%),
+            linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+          box-shadow: 0 22px 52px rgba(0, 0, 0, 0.2);
+        }
+
+        .clubber-discovery-empty__copy {
+          display: grid;
           gap: 10px;
-          padding: 26px 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.09);
+          align-content: center;
+          max-width: 650px;
+        }
+
+        .clubber-discovery-empty strong {
+          max-width: 620px;
+          font-size: clamp(23px, 5vw, 34px);
+          line-height: 1.08;
+          letter-spacing: -0.04em;
         }
 
         .clubber-discovery-empty p {
           margin: 0;
+          max-width: 620px;
           color: rgba(255, 255, 255, 0.64);
-          line-height: 1.55;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .clubber-discovery-empty__action {
+          display: grid;
+          gap: 12px;
+          align-content: end;
+          padding-top: 20px;
+          border-top: 1px solid rgba(255, 255, 255, 0.085);
+        }
+
+        .clubber-discovery-empty__action span {
+          color: rgba(255, 255, 255, 0.58);
+          font-size: 12px;
+          line-height: 1.5;
         }
 
         .clubber-discovery-empty a {
           width: fit-content;
+          min-height: 44px;
+          display: inline-grid;
+          place-items: center;
+          padding: 11px 15px;
+          border: 1px solid rgba(0, 255, 190, 0.46);
+          border-radius: 14px;
+          background: linear-gradient(135deg, rgba(0, 240, 181, 0.13), rgba(118, 255, 217, 0.08));
           color: #7affd9;
-          font-weight: 850;
+          font-size: 13px;
+          font-weight: 900;
           text-decoration: none;
+        }
+
+        @media (hover: hover) {
+          .clubber-discovery-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(122, 255, 217, 0.2);
+            box-shadow: 0 28px 66px rgba(0, 0, 0, 0.3);
+          }
+
+          :global(.clubber-connect-button--primary:hover),
+          .clubber-discovery-profile-link:hover,
+          .clubber-discovery-empty a:hover {
+            transform: translateY(-1px);
+          }
+
+          .clubber-discovery-profile-link:hover {
+            border-color: rgba(125, 92, 255, 0.48);
+            background: rgba(125, 92, 255, 0.13);
+          }
         }
 
         @media (min-width: 720px) {
@@ -971,8 +1118,30 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
+          .clubber-discovery-card__identity {
+            grid-template-columns: 96px minmax(0, 1fr);
+          }
+
+          .clubber-discovery-photo {
+            width: 96px;
+            height: 116px;
+          }
+
           .clubber-discovery-actions {
             grid-template-columns: 1fr 1fr;
+          }
+
+          .clubber-discovery-empty {
+            grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.75fr);
+            align-items: stretch;
+            padding: 30px;
+          }
+
+          .clubber-discovery-empty__action {
+            align-content: center;
+            padding: 0 0 0 24px;
+            border-top: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.085);
           }
         }
 
