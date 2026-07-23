@@ -26,6 +26,15 @@ type TicketIntentApiResponse = {
   } | null;
 };
 
+type JourneyAction = {
+  status: Exclude<TicketIntentStatus, "checked_in">;
+  label: string;
+  detail: string;
+  tone: "interest" | "ticket" | "confirmed" | "cancelled";
+};
+
+const EVENT_TICKET_INTENT_UPDATED = "mhidas:event-ticket-intent-updated";
+
 const TICKET_INTENT_STATUSES: TicketIntentStatus[] = [
   "interested",
   "wants_ticket",
@@ -34,46 +43,118 @@ const TICKET_INTENT_STATUSES: TicketIntentStatus[] = [
   "checked_in",
 ];
 
+const JOURNEY_ACTIONS: JourneyAction[] = [
+  {
+    status: "interested",
+    label: "Tenho interesse",
+    detail: "Acompanhar o evento e explorar sua camada social.",
+    tone: "interest",
+  },
+  {
+    status: "wants_ticket",
+    label: "Quero adquirir ingresso",
+    detail: "Estou me organizando para participar deste evento.",
+    tone: "ticket",
+  },
+  {
+    status: "ticket_acquired",
+    label: "Já tenho ingresso",
+    detail: "Meu ingresso está garantido e posso avançar na jornada.",
+    tone: "confirmed",
+  },
+  {
+    status: "cancelled",
+    label: "Não vou mais",
+    detail: "Registrar desistência sem apagar meu histórico social.",
+    tone: "cancelled",
+  },
+];
+
 function isTicketIntentStatus(value: unknown): value is TicketIntentStatus {
   return TICKET_INTENT_STATUSES.includes(value as TicketIntentStatus);
 }
 
-function getButtonLabel(status: TicketIntentStatus | null) {
+function getStatusLabel(status: TicketIntentStatus | null): string {
   if (status === "ticket_acquired") {
     return "Ingresso garantido";
   }
 
+  if (status === "checked_in") {
+    return "Presença registrada";
+  }
+
   if (status === "wants_ticket") {
-    return "Quero garantir meu ingresso";
+    return "Quero adquirir ingresso";
   }
 
   if (status === "interested") {
-    return "Tenho interesse nesse evento";
+    return "Tenho interesse";
   }
 
-  return "Meu ingresso já está garantido";
+  if (status === "cancelled") {
+    return "Não vou mais";
+  }
+
+  return "Jornada ainda não informada";
 }
 
-function getHelperText(status: TicketIntentStatus | null) {
+function getHelperText(status: TicketIntentStatus | null): string {
   if (status === "ticket_acquired") {
-    return "Sua presença ficou mais forte no radar social do evento.";
+    return "Seu ingresso está registrado. Agora a experiência prioriza preparação, conexões e participação.";
+  }
+
+  if (status === "checked_in") {
+    return "Seu check-in confirmou sua presença neste evento.";
   }
 
   if (status === "wants_ticket") {
-    return "Você sinalizou interesse em garantir ingresso para este evento.";
+    return "Você continua com acesso a pessoas, encontros, grupos e caronas enquanto organiza a compra.";
   }
 
   if (status === "interested") {
-    return "Você demonstrou interesse em viver esse evento.";
+    return "Explore pessoas, encontros, grupos e caronas mesmo antes de adquirir ingresso.";
   }
 
-  return "Marque sua presença e entre melhor no radar, caronas e encontros deste evento.";
+  if (status === "cancelled") {
+    return "Sua desistência foi registrada, mas sua camada social e seu histórico continuam acessíveis.";
+  }
+
+  return "Escolha seu momento sem limitar o acesso à experiência social do evento.";
+}
+
+function getFeedbackText(status: TicketIntentStatus): string {
+  if (status === "ticket_acquired") {
+    return "Ingresso registrado. As ações de aquisição foram ocultadas.";
+  }
+
+  if (status === "wants_ticket") {
+    return "Você informou que pretende adquirir ingresso.";
+  }
+
+  if (status === "interested") {
+    return "Seu interesse neste evento foi registrado.";
+  }
+
+  if (status === "cancelled") {
+    return "Sua desistência foi registrada.";
+  }
+
+  return "Sua jornada foi atualizada.";
+}
+
+function getActionClassName(action: JourneyAction, isActive: boolean): string {
+  return [
+    "event-ticket-journey__action",
+    `event-ticket-journey__action--${action.tone}`,
+    isActive ? "event-ticket-journey__action--active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export default function TicketIntentButton({
   eventGroupId,
   initialStatus = null,
-  compact = false,
 }: TicketIntentButtonProps) {
   const [status, setStatus] = useState<TicketIntentStatus | null>(initialStatus);
   const [isLoadingInitialStatus, setIsLoadingInitialStatus] = useState(
@@ -83,10 +164,9 @@ export default function TicketIntentButton({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isTicketAcquired = status === "ticket_acquired";
-
-  const buttonLabel = useMemo(() => getButtonLabel(status), [status]);
+  const statusLabel = useMemo(() => getStatusLabel(status), [status]);
   const helperText = useMemo(() => getHelperText(status), [status]);
+  const isCheckedIn = status === "checked_in";
 
   useEffect(() => {
     if (!eventGroupId) {
@@ -111,11 +191,7 @@ export default function TicketIntentButton({
           }
         );
 
-        if (response.status === 401) {
-          return;
-        }
-
-        if (!response.ok) {
+        if (response.status === 401 || !response.ok) {
           return;
         }
 
@@ -147,7 +223,7 @@ export default function TicketIntentButton({
   }, [eventGroupId]);
 
   async function saveIntent(nextStatus: TicketIntentStatus) {
-    if (!eventGroupId || isSaving || isLoadingInitialStatus) {
+    if (!eventGroupId || isSaving || isLoadingInitialStatus || isCheckedIn) {
       return;
     }
 
@@ -165,13 +241,11 @@ export default function TicketIntentButton({
           event_group_id: eventGroupId,
           status: nextStatus,
           source: "event_page",
-          notes:
-            nextStatus === "ticket_acquired"
-              ? "Clubber marked ticket acquired from event page."
-              : "Clubber updated ticket intent from event page.",
+          notes: "Clubber updated event journey from public event page.",
           metadata: {
             component: "TicketIntentButton",
-            version: "v4.2.5",
+            version: "v4.8.131",
+            journey_foundation: true,
           },
         }),
       });
@@ -179,120 +253,121 @@ export default function TicketIntentButton({
       const data = (await response.json()) as TicketIntentApiResponse;
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.message || "Não foi possível salvar sua presença.");
+        throw new Error(
+          response.status === 401
+            ? "Entre na sua conta para salvar sua jornada."
+            : data.message || "Não foi possível salvar sua jornada."
+        );
       }
 
       setStatus(nextStatus);
-      setFeedback(
-        nextStatus === "ticket_acquired"
-          ? "Presença marcada. Seu ingresso ficou registrado por você."
-          : "Sua intenção foi atualizada."
+      setFeedback(getFeedbackText(nextStatus));
+
+      window.dispatchEvent(
+        new CustomEvent(EVENT_TICKET_INTENT_UPDATED, {
+          detail: {
+            eventGroupId,
+            status: nextStatus,
+          },
+        })
       );
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Não foi possível salvar sua presença."
+          : "Não foi possível salvar sua jornada."
       );
     } finally {
       setIsSaving(false);
     }
   }
 
-  const isButtonDisabled =
-    isLoadingInitialStatus || isSaving || !eventGroupId;
+  const controlsDisabled =
+    isLoadingInitialStatus || isSaving || !eventGroupId || isCheckedIn;
 
   return (
     <section
-      style={{
-        marginTop: compact ? 12 : 18,
-        padding: compact ? 14 : 16,
-        borderRadius: 22,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background:
-          "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-        boxShadow: "0 18px 42px rgba(0,0,0,0.24)",
-      }}
+      className="event-ticket-journey"
+      aria-labelledby="event-ticket-journey-title"
+      data-status={status || "unselected"}
     >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: compact ? "column" : "row",
-          gap: 12,
-          alignItems: compact ? "stretch" : "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p
-            style={{
-              margin: 0,
-              color: "rgba(255,255,255,0.94)",
-              fontSize: compact ? 14 : 15,
-              fontWeight: 900,
-              lineHeight: 1.25,
-            }}
-          >
-            {isTicketAcquired
-              ? "Você já está no caminho do evento"
-              : "Vai nesse evento?"}
-          </p>
+      <div className="event-ticket-journey__heading">
+        <div className="event-ticket-journey__copy">
+          <span className="event-ticket-journey__eyebrow">Minha Jornada</span>
 
-          <p
-            style={{
-              margin: "6px 0 0",
-              color: "rgba(255,255,255,0.66)",
-              fontSize: compact ? 12 : 13,
-              lineHeight: 1.45,
-            }}
+          <h2
+            id="event-ticket-journey-title"
+            className="event-ticket-journey__title"
           >
-            {helperText}
-          </p>
+            Organize sua participação
+          </h2>
+
+          <p className="event-ticket-journey__description">{helperText}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => saveIntent("ticket_acquired")}
-          disabled={isButtonDisabled}
-          style={{
-            width: compact ? "100%" : "auto",
-            minWidth: compact ? "100%" : 216,
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 999,
-            padding: "12px 15px",
-            cursor: isButtonDisabled ? "not-allowed" : "pointer",
-            background: isTicketAcquired
-              ? "linear-gradient(135deg, rgba(34,197,94,0.95), rgba(21,128,61,0.95))"
-              : "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(214,214,214,0.92))",
-            color: isTicketAcquired ? "#ffffff" : "#080808",
-            fontSize: 13,
-            fontWeight: 950,
-            letterSpacing: "-0.01em",
-            opacity: isButtonDisabled ? 0.68 : 1,
-            boxShadow: isTicketAcquired
-              ? "0 14px 34px rgba(34,197,94,0.24)"
-              : "0 14px 34px rgba(255,255,255,0.12)",
-          }}
-        >
-          {isLoadingInitialStatus
-            ? "Verificando..."
-            : isSaving
-              ? "Salvando..."
-              : buttonLabel}
-        </button>
+        <div className="event-ticket-journey__status" aria-live="polite">
+          <span className="event-ticket-journey__status-dot" aria-hidden="true" />
+          <span className="event-ticket-journey__status-label">Seu momento</span>
+          <strong className="event-ticket-journey__status-value">
+            {isLoadingInitialStatus
+              ? "Verificando sua jornada..."
+              : isSaving
+                ? "Salvando sua escolha..."
+                : statusLabel}
+          </strong>
+        </div>
+      </div>
+
+      <div
+        className="event-ticket-journey__actions"
+        role="group"
+        aria-label="Atualize sua jornada neste evento"
+      >
+        {JOURNEY_ACTIONS.map((action, index) => {
+          const isActive = status === action.status;
+
+          return (
+            <button
+              key={action.status}
+              type="button"
+              onClick={() => saveIntent(action.status)}
+              disabled={controlsDisabled || isActive}
+              aria-pressed={isActive}
+              aria-label={`${action.label}. ${action.detail}`}
+              className={getActionClassName(action, isActive)}
+            >
+              <span className="event-ticket-journey__action-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+
+              <span className="event-ticket-journey__action-copy">
+                <span className="event-ticket-journey__action-title">
+                  {action.label}
+                </span>
+
+                {isActive ? (
+                  <span className="event-ticket-journey__action-state">
+                    Selecionado
+                  </span>
+                ) : null}
+              </span>
+
+              <span className="event-ticket-journey__action-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {(feedback || error) && (
         <p
-          style={{
-            margin: "10px 0 0",
-            color: error
-              ? "rgba(248,113,113,0.95)"
-              : "rgba(134,239,172,0.95)",
-            fontSize: 12,
-            fontWeight: 800,
-            lineHeight: 1.35,
-          }}
+          className={
+            error
+              ? "event-ticket-journey__feedback event-ticket-journey__feedback--error"
+              : "event-ticket-journey__feedback"
+          }
+          role={error ? "alert" : "status"}
         >
           {error || feedback}
         </p>

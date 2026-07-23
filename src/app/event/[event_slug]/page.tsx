@@ -10,6 +10,7 @@ import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
 import TicketIntentButton from "./TicketIntentButton";
+import TicketPurchaseAction from "./TicketPurchaseAction";
 import {
   readCanonicalPublicEventBySlug,
   type CanonicalPublicEventReadResult,
@@ -1496,7 +1497,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
   const activePartnerTicketLabel =
     normalizeText(partnerTicket?.partner_ticket_button_label) ||
-    "Comprar ingresso";
+    "Adquirir ingresso";
 
   const canonicalValidationLabel = canonicalEvent
     ? getCanonicalValidationLabel(canonicalEvent.validation_status)
@@ -1707,30 +1708,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           transform: translateX(3px);
         }
 
-        .event-hero__ticket > section {
-          margin-top: 2px !important;
-          padding: 0 !important;
-          border: 0 !important;
-          border-radius: 0 !important;
-          background: transparent !important;
-          box-shadow: none !important;
-        }
-
-        .event-hero__ticket > section > div {
-          flex-direction: row !important;
-          align-items: center !important;
-        }
-
-        .event-hero__ticket button {
-          width: auto !important;
-          min-width: 250px !important;
-          border: 1px solid rgba(0, 255, 190, 0.32) !important;
-          border-radius: 14px !important;
-          background: linear-gradient(135deg, rgba(0, 184, 153, 0.98), rgba(92, 70, 190, 0.92)) !important;
-          color: #ffffff !important;
-          box-shadow: 0 14px 34px rgba(0, 184, 153, 0.18) !important;
-        }
-
         .event-hero__stats {
           align-self: stretch;
           display: grid;
@@ -1873,6 +1850,263 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           gap: 18px !important;
         }
 
+        .event-ticket-journey {
+          --journey-inline-pad: clamp(22px, 3vw, 36px);
+          width: min(1120px, calc(100vw - 48px));
+          max-width: none;
+          box-sizing: border-box;
+          margin: 18px 0 0 50%;
+          transform: translateX(-50%);
+          padding: clamp(25px, 3vw, 36px) var(--journey-inline-pad) 0;
+          display: grid;
+          gap: 24px;
+          border: 1px solid rgba(125, 92, 255, 0.20);
+          border-radius: 26px;
+          background:
+            radial-gradient(circle at 91% 4%, rgba(96, 72, 220, 0.13), transparent 34%),
+            radial-gradient(circle at 4% 100%, rgba(0, 231, 176, 0.07), transparent 30%),
+            linear-gradient(145deg, rgba(16, 16, 24, 0.97), rgba(7, 7, 11, 0.99));
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
+          overflow: hidden;
+        }
+
+        .event-ticket-journey__heading {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: end;
+          gap: 28px;
+        }
+
+        .event-ticket-journey__copy {
+          min-width: 0;
+          display: grid;
+          gap: 7px;
+        }
+
+        .event-ticket-journey__eyebrow {
+          color: #4ce5c8;
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.13em;
+          text-transform: uppercase;
+        }
+
+        .event-ticket-journey__title {
+          margin: 0;
+          color: #f8f8fb;
+          font-size: clamp(26px, 3vw, 35px);
+          line-height: 1.03;
+          font-weight: 950;
+          letter-spacing: -0.045em;
+        }
+
+        .event-ticket-journey__description {
+          margin: 0;
+          max-width: 720px;
+          color: rgba(220, 220, 232, 0.68);
+          font-size: 14px;
+          line-height: 1.55;
+        }
+
+        .event-ticket-journey__status {
+          min-width: 230px;
+          display: grid;
+          grid-template-columns: 8px auto;
+          grid-template-areas:
+            "dot label"
+            "dot value";
+          align-items: center;
+          column-gap: 10px;
+          row-gap: 2px;
+          padding: 0 0 3px;
+        }
+
+        .event-ticket-journey__status-dot {
+          grid-area: dot;
+          width: 7px;
+          height: 7px;
+          border-radius: 999px;
+          background: rgba(148, 163, 184, 0.72);
+          box-shadow: 0 0 14px rgba(148, 163, 184, 0.20);
+        }
+
+        .event-ticket-journey[data-status="interested"] .event-ticket-journey__status-dot,
+        .event-ticket-journey[data-status="wants_ticket"] .event-ticket-journey__status-dot {
+          background: #4ce5c8;
+          box-shadow: 0 0 14px rgba(76, 229, 200, 0.34);
+        }
+
+        .event-ticket-journey[data-status="ticket_acquired"] .event-ticket-journey__status-dot,
+        .event-ticket-journey[data-status="checked_in"] .event-ticket-journey__status-dot {
+          background: #86efac;
+          box-shadow: 0 0 14px rgba(134, 239, 172, 0.34);
+        }
+
+        .event-ticket-journey[data-status="cancelled"] .event-ticket-journey__status-dot {
+          background: rgba(248, 113, 113, 0.78);
+          box-shadow: 0 0 14px rgba(248, 113, 113, 0.20);
+        }
+
+        .event-ticket-journey__status-label {
+          grid-area: label;
+          color: rgba(205, 205, 218, 0.48);
+          font-size: 9px;
+          line-height: 1.2;
+          font-weight: 900;
+          letter-spacing: 0.11em;
+          text-transform: uppercase;
+        }
+
+        .event-ticket-journey__status-value {
+          grid-area: value;
+          color: rgba(248, 248, 251, 0.94);
+          font-size: 13px;
+          line-height: 1.35;
+          font-weight: 900;
+        }
+
+        .event-ticket-journey__actions {
+          margin-inline: calc(var(--journey-inline-pad) * -1);
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .event-ticket-journey__action {
+          position: relative;
+          min-width: 0;
+          min-height: 116px;
+          padding: 22px 20px;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 12px;
+          border: 0;
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 0;
+          background: transparent;
+          color: #ffffff;
+          text-align: left;
+          cursor: pointer;
+          overflow: hidden;
+          transition:
+            background 170ms ease,
+            color 170ms ease;
+        }
+
+        .event-ticket-journey__action:last-child {
+          border-right: 0;
+        }
+
+        .event-ticket-journey__action::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto;
+          height: 2px;
+          background: transparent;
+          transition: background 170ms ease, box-shadow 170ms ease;
+        }
+
+        .event-ticket-journey__action:hover:not(:disabled) {
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+        }
+
+        .event-ticket-journey__action:focus-visible {
+          outline: 2px solid rgba(76, 229, 200, 0.78);
+          outline-offset: -3px;
+        }
+
+        .event-ticket-journey__action:disabled {
+          cursor: default;
+        }
+
+        .event-ticket-journey__action--active {
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02));
+        }
+
+        .event-ticket-journey__action--active.event-ticket-journey__action--interest::before,
+        .event-ticket-journey__action--active.event-ticket-journey__action--ticket::before {
+          background: linear-gradient(90deg, #27d9b7, #715cff);
+          box-shadow: 0 0 22px rgba(76, 229, 200, 0.28);
+        }
+
+        .event-ticket-journey__action--active.event-ticket-journey__action--confirmed::before {
+          background: linear-gradient(90deg, #4ade80, #27d9b7);
+          box-shadow: 0 0 22px rgba(74, 222, 128, 0.24);
+        }
+
+        .event-ticket-journey__action--active.event-ticket-journey__action--cancelled::before {
+          background: rgba(248, 113, 113, 0.62);
+        }
+
+        .event-ticket-journey__action--cancelled {
+          color: rgba(232, 232, 239, 0.64);
+        }
+
+        .event-ticket-journey__action-index {
+          align-self: start;
+          padding-top: 2px;
+          color: rgba(205, 205, 218, 0.38);
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 900;
+          letter-spacing: 0.10em;
+        }
+
+        .event-ticket-journey__action-copy {
+          min-width: 0;
+          display: grid;
+          gap: 7px;
+        }
+
+        .event-ticket-journey__action-title {
+          color: inherit;
+          font-size: 14px;
+          line-height: 1.3;
+          font-weight: 950;
+          letter-spacing: -0.01em;
+        }
+
+        .event-ticket-journey__action-state {
+          color: rgba(134, 239, 172, 0.90);
+          font-size: 9px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+        }
+
+        .event-ticket-journey__action-arrow {
+          color: rgba(230, 230, 240, 0.46);
+          font-size: 18px;
+          line-height: 1;
+          transition: transform 170ms ease, color 170ms ease;
+        }
+
+        .event-ticket-journey__action:hover:not(:disabled) .event-ticket-journey__action-arrow {
+          color: rgba(76, 229, 200, 0.90);
+          transform: translateX(3px);
+        }
+
+        .event-ticket-journey__action--cancelled .event-ticket-journey__action-arrow {
+          color: rgba(232, 232, 239, 0.24);
+        }
+
+        .event-ticket-journey__feedback {
+          margin: -8px calc(var(--journey-inline-pad) * -1) 0;
+          padding: 14px var(--journey-inline-pad) 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.07);
+          color: rgba(134, 239, 172, 0.94);
+          font-size: 12px;
+          line-height: 1.45;
+          font-weight: 800;
+        }
+
+        .event-ticket-journey__feedback--error {
+          color: rgba(248, 113, 113, 0.96);
+        }
+
         .event-quick-guide {
           width: min(1120px, calc(100vw - 48px));
           max-width: none;
@@ -2003,6 +2237,58 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             overflow: hidden;
           }
 
+          .event-ticket-journey {
+            --journey-inline-pad: 16px;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            margin: 14px 0 0;
+            transform: none;
+            padding: 22px var(--journey-inline-pad) 0;
+            gap: 19px;
+            border-radius: 22px;
+          }
+
+          .event-ticket-journey__heading {
+            grid-template-columns: minmax(0, 1fr);
+            align-items: stretch;
+            gap: 15px;
+          }
+
+          .event-ticket-journey__title {
+            font-size: 25px;
+            line-height: 1.07;
+          }
+
+          .event-ticket-journey__description {
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .event-ticket-journey__status {
+            min-width: 0;
+          }
+
+          .event-ticket-journey__actions {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
+          .event-ticket-journey__action {
+            width: 100%;
+            min-height: 74px;
+            padding: 17px 16px;
+            border-right: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          }
+
+          .event-ticket-journey__action:last-child {
+            border-bottom: 0;
+          }
+
+          .event-ticket-journey__action-index {
+            align-self: center;
+          }
+
           .event-quick-guide {
             width: 100%;
             min-width: 0;
@@ -2113,16 +2399,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             width: fit-content;
           }
 
-          .event-hero__ticket > section > div {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-
-          .event-hero__ticket button {
-            width: 100% !important;
-            min-width: 0 !important;
-          }
-
           .event-hero__stats {
             border-top: 1px solid rgba(255,255,255,0.10);
             border-left: 0;
@@ -2189,14 +2465,12 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
           <div className="event-hero__actions">
             {hasContent(activePartnerTicketUrl) ? (
-              <a
+              <TicketPurchaseAction
+                eventGroupId={eventGroup?.group_id || null}
                 href={activePartnerTicketUrl}
-                target="_blank"
-                rel="noopener noreferrer sponsored"
+                label={activePartnerTicketLabel}
                 className="event-hero__action-primary"
-              >
-                {activePartnerTicketLabel}
-              </a>
+              />
             ) : null}
 
             {hasContent(heroOfficialUrl) ? (
@@ -2218,11 +2492,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             </Link>
           </div>
 
-          {eventGroup?.group_id ? (
-            <div className="event-hero__ticket">
-              <TicketIntentButton eventGroupId={eventGroup.group_id} compact />
-            </div>
-          ) : null}
         </div>
 
         <div className="event-hero__stats" aria-label="Resumo social do evento">
@@ -2288,6 +2557,9 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         ) : null}
       </section>
 
+      {eventGroup?.group_id ? (
+        <TicketIntentButton eventGroupId={eventGroup.group_id} />
+      ) : null}
 
       <section
         className="event-quick-guide"
@@ -2347,6 +2619,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
               >
                 Abrir evento oficial
               </a>
+            ) : null}
+
+            {hasContent(activePartnerTicketUrl) ? (
+              <TicketPurchaseAction
+                eventGroupId={eventGroup?.group_id || null}
+                href={activePartnerTicketUrl}
+                label={activePartnerTicketLabel}
+                className="event-quick-guide__link"
+              />
             ) : null}
 
             {canonicalValidationLabel ? (
