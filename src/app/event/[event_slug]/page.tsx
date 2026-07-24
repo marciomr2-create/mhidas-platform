@@ -11,6 +11,7 @@ import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
+import TicketNetworkAvailability from "./TicketNetworkAvailability";
 import {
   readCanonicalPublicEventBySlug,
   type CanonicalPublicEventReadResult,
@@ -2558,7 +2559,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       </section>
 
       {eventGroup?.group_id ? (
-        <TicketIntentButton eventGroupId={eventGroup.group_id} />
+        <>
+          <TicketIntentButton eventGroupId={eventGroup.group_id} />
+          <TicketNetworkAvailability eventGroupId={eventGroup.group_id} />
+        </>
       ) : null}
 
       <section
@@ -2679,17 +2683,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         <section style={sectionStyle("purple")}>
           <div style={emptyCardStyle()}>
             <strong style={{ display: "block", marginBottom: 10 }}>
-              Nenhum perfil encontrado para este evento.
+              Ainda não há Clubbers vinculados a este evento.
             </strong>
-            <div style={{ marginBottom: 12 }}>
-              Isso normalmente acontece quando o slug digitado não corresponde exatamente ao nome cadastrado em:
-            </div>
-            <div style={{ lineHeight: 1.8 }}>
-              • Próximos eventos
-              <br />
-              • Evento da carona
-              <br />
-              • Evento do encontro
+            <div>
+              Participantes, caronas e encontros aparecerão aqui conforme forem informados.
             </div>
           </div>
         </section>

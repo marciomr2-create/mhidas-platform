@@ -24,8 +24,18 @@ const ALLOWED_SOURCES = [
   "other",
 ] as const;
 
+const ALLOWED_AVAILABILITY_STATUSES = [
+  "available",
+  "reserved",
+  "transferred",
+  "withdrawn",
+] as const;
+
 type TicketIntentStatus = (typeof ALLOWED_STATUSES)[number];
 type TicketIntentSource = (typeof ALLOWED_SOURCES)[number];
+type TicketAvailabilityStatus =
+  (typeof ALLOWED_AVAILABILITY_STATUSES)[number];
+type JsonRecord = Record<string, unknown>;
 
 type TicketIntentPayload = {
   event_group_id?: unknown;
@@ -35,8 +45,27 @@ type TicketIntentPayload = {
   metadata?: unknown;
 };
 
-function normalizeText(value: unknown): string {
-  return String(value ?? "").trim();
+type TicketAvailability = {
+  status: TicketAvailabilityStatus;
+  quantity: number;
+  ticket_type: string;
+  lot: string;
+  asking_price: number;
+  currency: "BRL";
+  transfer_method: string;
+  note: string;
+  audience: "accepted_connections";
+  platform_role: "connection_only";
+  version: "v4.8.132";
+  published_at: string;
+  updated_at: string;
+};
+
+function normalizeText(value: unknown, maxLength = 500): string {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
 }
 
 function isAllowedStatus(value: string): value is TicketIntentStatus {
@@ -47,10 +76,212 @@ function isAllowedSource(value: string): value is TicketIntentSource {
   return ALLOWED_SOURCES.includes(value as TicketIntentSource);
 }
 
+function isAllowedAvailabilityStatus(
+  value: string
+): value is TicketAvailabilityStatus {
+  return ALLOWED_AVAILABILITY_STATUSES.includes(
+    value as TicketAvailabilityStatus
+  );
+}
+
 function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
   );
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as JsonRecord;
+}
+
+function parseStoredAvailability(value: unknown): TicketAvailability | null {
+  const availability = asRecord(value);
+  const status = normalizeText(availability?.status, 24);
+
+  if (!availability || !isAllowedAvailabilityStatus(status)) {
+    return null;
+  }
+
+  const quantity = Number(availability.quantity);
+  const askingPrice = Number(availability.asking_price);
+  const ticketType = normalizeText(availability.ticket_type, 80);
+  const transferMethod = normalizeText(availability.transfer_method, 140);
+  const publishedAt = normalizeText(availability.published_at, 40);
+  const updatedAt = normalizeText(availability.updated_at, 40);
+
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 10 ||
+    !Number.isFinite(askingPrice) ||
+    askingPrice < 0 ||
+    askingPrice > 100000 ||
+    !ticketType ||
+    !transferMethod ||
+    !publishedAt ||
+    !updatedAt
+  ) {
+    return null;
+  }
+
+  return {
+    status,
+    quantity,
+    ticket_type: ticketType,
+    lot: normalizeText(availability.lot, 80),
+    asking_price: Math.round(askingPrice * 100) / 100,
+    currency: "BRL",
+    transfer_method: transferMethod,
+    note: normalizeText(availability.note, 280),
+    audience: "accepted_connections",
+    platform_role: "connection_only",
+    version: "v4.8.132",
+    published_at: publishedAt,
+    updated_at: updatedAt,
+  };
+}
+
+function normalizeAvailabilityUpdate(
+  value: unknown,
+  existingAvailability: TicketAvailability | null,
+  requestedStatus: TicketIntentStatus,
+  now: string
+): TicketAvailability {
+  const availability = asRecord(value);
+  const availabilityStatus = normalizeText(availability?.status, 24);
+
+  if (!availability || !isAllowedAvailabilityStatus(availabilityStatus)) {
+    throw new Error("Invalid ticket availability status.");
+  }
+
+  if (
+    (availabilityStatus === "available" ||
+      availabilityStatus === "reserved") &&
+    requestedStatus !== "cancelled"
+  ) {
+    throw new Error(
+      "Active ticket availability requires cancelled journey status."
+    );
+  }
+
+  const quantity = Number(
+    availability.quantity ?? existingAvailability?.quantity
+  );
+  const askingPrice = Number(
+    availability.asking_price ?? existingAvailability?.asking_price
+  );
+  const ticketType = normalizeText(
+    availability.ticket_type ?? existingAvailability?.ticket_type,
+    80
+  );
+  const lot = normalizeText(
+    availability.lot ?? existingAvailability?.lot,
+    80
+  );
+  const transferMethod = normalizeText(
+    availability.transfer_method ?? existingAvailability?.transfer_method,
+    140
+  );
+  const note = normalizeText(
+    availability.note ?? existingAvailability?.note,
+    280
+  );
+
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 10 ||
+    !Number.isFinite(askingPrice) ||
+    askingPrice < 0 ||
+    askingPrice > 100000 ||
+    !ticketType ||
+    !transferMethod
+  ) {
+    throw new Error("Invalid ticket availability details.");
+  }
+
+  return {
+    status: availabilityStatus,
+    quantity,
+    ticket_type: ticketType,
+    lot,
+    asking_price: Math.round(askingPrice * 100) / 100,
+    currency: "BRL",
+    transfer_method: transferMethod,
+    note,
+    audience: "accepted_connections",
+    platform_role: "connection_only",
+    version: "v4.8.132",
+    published_at: existingAvailability?.published_at || now,
+    updated_at: now,
+  };
+}
+
+function mergeMetadata(
+  existingValue: unknown,
+  incomingValue: unknown,
+  requestedStatus: TicketIntentStatus,
+  now: string
+): JsonRecord {
+  const existingMetadata = asRecord(existingValue) ?? {};
+  const incomingMetadata = asRecord(incomingValue) ?? {};
+  const nextMetadata: JsonRecord = {
+    ...existingMetadata,
+  };
+
+  for (const [key, value] of Object.entries(incomingMetadata)) {
+    if (
+      key === "ticket_network_availability" ||
+      key === "__proto__" ||
+      key === "prototype" ||
+      key === "constructor"
+    ) {
+      continue;
+    }
+
+    nextMetadata[key] = value;
+  }
+
+  const existingAvailability = parseStoredAvailability(
+    existingMetadata.ticket_network_availability
+  );
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      incomingMetadata,
+      "ticket_network_availability"
+    )
+  ) {
+    nextMetadata.ticket_network_availability = normalizeAvailabilityUpdate(
+      incomingMetadata.ticket_network_availability,
+      existingAvailability,
+      requestedStatus,
+      now
+    );
+  } else if (
+    requestedStatus !== "cancelled" &&
+    existingAvailability &&
+    (existingAvailability.status === "available" ||
+      existingAvailability.status === "reserved")
+  ) {
+    nextMetadata.ticket_network_availability = {
+      ...existingAvailability,
+      status: "withdrawn",
+      updated_at: now,
+    } satisfies TicketAvailability;
+  }
+
+  const serializedMetadata = JSON.stringify(nextMetadata);
+
+  if (serializedMetadata.length > 8000) {
+    throw new Error("Ticket intent metadata is too large.");
+  }
+
+  return nextMetadata;
 }
 
 function buildErrorResponse(message: string, status: number) {
@@ -95,7 +326,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const eventGroupId = normalizeText(searchParams.get("event_group_id"));
+  const eventGroupId = normalizeText(searchParams.get("event_group_id"), 64);
 
   if (!eventGroupId || !isUuidLike(eventGroupId)) {
     return buildErrorResponse("Valid event_group_id is required.", 400);
@@ -152,16 +383,10 @@ export async function POST(request: NextRequest) {
     return buildErrorResponse("Invalid JSON body.", 400);
   }
 
-  const eventGroupId = normalizeText(payload.event_group_id);
-  const requestedStatus = normalizeText(payload.status || "interested");
-  const requestedSource = normalizeText(payload.source || "event_page");
-  const notes = normalizeText(payload.notes) || null;
-  const metadata =
-    payload.metadata &&
-    typeof payload.metadata === "object" &&
-    !Array.isArray(payload.metadata)
-      ? payload.metadata
-      : {};
+  const eventGroupId = normalizeText(payload.event_group_id, 64);
+  const requestedStatus = normalizeText(payload.status || "interested", 32);
+  const requestedSource = normalizeText(payload.source || "event_page", 32);
+  const notes = normalizeText(payload.notes, 1000) || null;
 
   if (!eventGroupId || !isUuidLike(eventGroupId)) {
     return buildErrorResponse("Valid event_group_id is required.", 400);
@@ -217,7 +442,41 @@ export async function POST(request: NextRequest) {
     return buildErrorResponse("Event group is not active.", 409);
   }
 
+  const { data: existingIntent, error: existingIntentError } = await supabase
+    .from("event_ticket_intents")
+    .select("intent_id,metadata")
+    .eq("event_group_id", eventGroupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingIntentError) {
+    return NextResponse.json(
+      {
+        ok: false,
+        scope: "event-ticket-intents",
+        message: "Could not load existing ticket intent.",
+        details: existingIntentError.message,
+      },
+      { status: 500 }
+    );
+  }
+
   const now = new Date().toISOString();
+  let metadata: JsonRecord;
+
+  try {
+    metadata = mergeMetadata(
+      existingIntent?.metadata,
+      payload.metadata,
+      requestedStatus,
+      now
+    );
+  } catch (error) {
+    return buildErrorResponse(
+      error instanceof Error ? error.message : "Invalid ticket metadata.",
+      400
+    );
+  }
 
   const { data: intent, error: upsertError } = await supabase
     .from("event_ticket_intents")
