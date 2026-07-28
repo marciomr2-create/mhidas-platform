@@ -904,6 +904,16 @@ export default async function DashboardNetworkPage() {
 
   const currentUserId = user.id;
 
+  const { data: clubberProfile } = await supabase
+    .from("club_profiles")
+    .select("user_id")
+    .eq("user_id", currentUserId)
+    .maybeSingle();
+
+  if (!clubberProfile) {
+    redirect("/onboarding");
+  }
+
   async function acceptConnection(formData: FormData) {
     "use server";
 

@@ -9,21 +9,7 @@ type CardRow = {
   status: string | null;
   slug: string | null;
   is_published: boolean | null;
-  published_at: string | null;
-  issued_at: string | null;
 };
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
-}
 
 function pageStyle() {
   return {
@@ -33,7 +19,7 @@ function pageStyle() {
     margin: "0 auto",
     padding: "16px 12px 42px",
     boxSizing: "border-box",
-    color: "#ffffff",
+    color: "#F8FAFC",
   } as const;
 }
 
@@ -41,12 +27,11 @@ function heroStyle() {
   return {
     padding: "24px 18px",
     borderRadius: 28,
-    border: "1px solid rgba(255,255,255,0.13)",
-    background:
-      "radial-gradient(circle at 18% 10%, rgba(20,184,166,0.22), transparent 34%), radial-gradient(circle at 90% 8%, rgba(125,92,255,0.24), transparent 34%), linear-gradient(135deg, rgba(17,24,39,0.98), rgba(4,12,15,0.98))",
+    border: "1px solid rgba(148,163,184,0.18)",
+    background: "linear-gradient(135deg, #0B1020, #111827)",
     display: "grid",
     gap: 12,
-    boxShadow: "0 24px 74px rgba(0,0,0,0.38)",
+    boxShadow: "0 24px 74px rgba(5,7,13,0.38)",
   } as const;
 }
 
@@ -56,14 +41,14 @@ function panelStyle(highlight = false) {
     padding: 17,
     borderRadius: 22,
     border: highlight
-      ? "1px solid rgba(20,184,166,0.34)"
-      : "1px solid rgba(255,255,255,0.12)",
+      ? "1px solid rgba(20,184,166,0.22)"
+      : "1px solid rgba(148,163,184,0.18)",
     background: highlight
-      ? "linear-gradient(135deg, rgba(20,184,166,0.12), rgba(125,92,255,0.08))"
-      : "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))",
+      ? "linear-gradient(135deg, #0B1020, #111827)"
+      : "linear-gradient(135deg, #0B1020, #111827)",
     display: "grid",
     gap: 14,
-    boxShadow: "0 16px 42px rgba(0,0,0,0.27)",
+    boxShadow: "0 16px 42px rgba(5,7,13,0.27)",
   } as const;
 }
 
@@ -73,12 +58,12 @@ function modePanelStyle(mode: "club" | "pro") {
     borderRadius: 20,
     border:
       mode === "club"
-        ? "1px solid rgba(20,184,166,0.28)"
-        : "1px solid rgba(125,92,255,0.22)",
+        ? "1px solid rgba(20,184,166,0.22)"
+        : "1px solid rgba(29,78,216,0.34)",
     background:
       mode === "club"
-        ? "linear-gradient(145deg, rgba(20,184,166,0.11), rgba(255,255,255,0.025))"
-        : "linear-gradient(145deg, rgba(125,92,255,0.11), rgba(255,255,255,0.025))",
+        ? "#0B1020"
+        : "linear-gradient(145deg, #0F172A, rgba(79,70,229,0.16))",
     display: "grid",
     gap: 11,
   } as const;
@@ -100,35 +85,46 @@ function actionGridStyle(min = 180) {
   } as const;
 }
 
-function buttonStyle(primary = false) {
+function buttonStyle(tone: "secondary" | "clubber" | "pro" = "secondary") {
+  const isClubber = tone === "clubber";
+  const isPro = tone === "pro";
+
   return {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "12px 15px",
     minHeight: 46,
-    borderRadius: 999,
-    border: primary
-      ? "1px solid rgba(45,212,191,0.34)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: primary
-      ? "linear-gradient(135deg, rgba(20,184,166,0.94), rgba(5,150,105,0.95))"
-      : "rgba(255,255,255,0.075)",
-    color: "#fff",
+    borderRadius: 14,
+    border: isClubber
+      ? "1px solid rgba(13,148,136,0.52)"
+      : isPro
+        ? "1px solid rgba(29,78,216,0.52)"
+        : "1px solid rgba(148,163,184,0.18)",
+    background: isClubber
+      ? "#0D9488"
+      : isPro
+        ? "#1D4ED8"
+        : "#111827",
+    color: "#F8FAFC",
     textDecoration: "none",
     fontWeight: 900,
     fontSize: 14,
     width: "100%",
     boxSizing: "border-box",
     textAlign: "center",
-    boxShadow: primary ? "0 14px 38px rgba(20,184,166,0.20)" : "none",
+    boxShadow: isClubber
+      ? "0 10px 24px rgba(13,148,136,0.16)"
+      : isPro
+        ? "0 10px 24px rgba(29,78,216,0.16)"
+        : "none",
   } as const;
 }
 
 function labelStyle() {
   return {
     width: "fit-content",
-    color: "rgba(125,245,228,0.96)",
+    color: "#14B8A6",
     fontSize: 11,
     fontWeight: 950,
     letterSpacing: "0.055em",
@@ -139,7 +135,7 @@ function labelStyle() {
 function mutedTextStyle() {
   return {
     margin: 0,
-    color: "rgba(255,255,255,0.76)",
+    color: "#CBD5E1",
     lineHeight: 1.55,
   } as const;
 }
@@ -149,7 +145,7 @@ function statusLineStyle(active = false) {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    color: active ? "rgba(165,255,230,0.94)" : "rgba(255,255,255,0.70)",
+    color: active ? "#14B8A6" : "rgba(255,255,255,0.70)",
     fontSize: 13,
     fontWeight: 800,
   } as const;
@@ -160,8 +156,8 @@ function statusDotStyle(active = false) {
     width: 8,
     height: 8,
     borderRadius: 999,
-    background: active ? "rgba(45,212,191,0.95)" : "rgba(255,255,255,0.42)",
-    boxShadow: active ? "0 0 14px rgba(45,212,191,0.34)" : "none",
+    background: active ? "#14B8A6" : "rgba(255,255,255,0.42)",
+    boxShadow: active ? "0 0 14px rgba(20,184,166,0.34)" : "none",
   } as const;
 }
 
@@ -176,11 +172,19 @@ export default async function ProfileHubPage() {
 
   const { data: cards, error } = await supabase
     .from("cards")
-    .select("card_id,label,status,slug,is_published,published_at,issued_at")
+    .select("card_id,label,slug,status,is_published")
     .eq("user_id", user.id)
-    .order("issued_at", { ascending: false });
+    .order("label", { ascending: true });
 
-  const items = error ? [] : ((cards ?? []) as CardRow[]);
+  const items = (cards ?? []) as CardRow[];
+  const hasCardsLoadError = Boolean(error);
+
+  const { count: professionalProfilesCount } = await supabase
+    .from("professional_profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const hasProfessionalProfile = (professionalProfilesCount ?? 0) > 0;
 
   return (
     <main style={pageStyle()}>
@@ -195,29 +199,45 @@ export default async function ProfileHubPage() {
           Escolha um perfil para editar sua Experiência Clubber ou seu Perfil profissional.
         </p>
 
-        <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255,255,255,0.70)", fontWeight: 800 }}>
-          Total de perfis: <strong>{items.length}</strong>
+        <div style={{ marginTop: 2, fontSize: 13, color: "#CBD5E1", fontWeight: 800 }}>
+          Total de perfis: <strong>{hasCardsLoadError ? "—" : items.length}</strong>
         </div>
       </section>
 
-      {items.length === 0 ? (
-        <section style={panelStyle(true)}>
-          <span style={labelStyle()}>Primeiro acesso</span>
+      {hasCardsLoadError ? (
+        <section style={panelStyle()}>
+          <span style={labelStyle()}>Perfis indisponíveis</span>
 
           <h2 style={{ margin: 0, fontSize: 25, letterSpacing: "-0.035em" }}>
-            Nenhum perfil vinculado ainda.
+            Não foi possível carregar seus perfis.
           </h2>
 
           <p style={mutedTextStyle()}>
-            Quando seu cartão, pulseira ou pingente USECLUBBERS estiver vinculado à sua conta, seus perfis Clubber e profissional aparecerão aqui.
-          </p>
-
-          <p style={mutedTextStyle()}>
-            Se você já tem um produto USECLUBBERS e ele não apareceu, volte para a central e confirme se está acessando com a conta correta.
+            Nenhum novo perfil foi criado. Volte à central e tente novamente.
           </p>
 
           <Link href="/dashboard" style={buttonStyle()}>
             Voltar à central
+          </Link>
+        </section>
+      ) : items.length === 0 ? (
+        <section style={panelStyle(true)}>
+          <span style={labelStyle()}>Primeiro acesso</span>
+
+          <h2 style={{ margin: 0, fontSize: 25, letterSpacing: "-0.035em" }}>
+            Crie seu perfil Clubber.
+          </h2>
+
+          <p style={mutedTextStyle()}>
+            Sua identidade digital nasce pela conta. Você já pode entrar no radar, participar de eventos e criar conexões sem possuir nenhum produto NFC.
+          </p>
+
+          <p style={mutedTextStyle()}>
+            Cartão, pulseira, pingente e tag profissional são opcionais e poderão ser vinculados depois ao mesmo cadastro.
+          </p>
+
+          <Link href="/onboarding" style={buttonStyle("clubber")}>
+            Criar meu perfil Clubber
           </Link>
         </section>
       ) : (
@@ -241,10 +261,8 @@ export default async function ProfileHubPage() {
                     {isPublished ? "Publicado" : "Ainda não publicado"}
                   </div>
 
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.5 }}>
                     Link público: <strong>{slug || "ainda não definido"}</strong>
-                    <br />
-                    Criado em: {formatDate(card.issued_at)}
                   </div>
                 </div>
               </div>
@@ -254,14 +272,14 @@ export default async function ProfileHubPage() {
                   <div>
                     <strong style={{ fontSize: 19 }}>Experiência Clubber</strong>
                     <p style={{ ...mutedTextStyle(), marginTop: 6, fontSize: 13 }}>
-                      Música, eventos, caronas, encontros, artistas e pertencimento na cena.
+                      Música, eventos, caronas, encontros, artistas, pertencimento na cena e descoberta de eventos.
                     </p>
                   </div>
 
                   <div style={actionGridStyle()}>
                     <Link
                       href={`/dashboard/cards/${card.card_id}/club`}
-                      style={buttonStyle(true)}
+                      style={buttonStyle("clubber")}
                     >
                       Gerenciar Clubber
                     </Link>
@@ -278,23 +296,41 @@ export default async function ProfileHubPage() {
                   <div>
                     <strong style={{ fontSize: 19 }}>Perfil profissional</strong>
                     <p style={{ ...mutedTextStyle(), marginTop: 6, fontSize: 13 }}>
-                      Atuação, contatos, networking, oportunidades e negócios.
+                      Este é o seu perfil profissional para negócios. Use-o para
+                      divulgar sua atuação, portfólio, contatos e oportunidades.
+                      No dia a dia, ele funciona como seu cartão de visitas
+                      profissional e pode ser compartilhado com um toque NFC.
                     </p>
                   </div>
 
                   <div style={actionGridStyle()}>
-                    <Link
-                      href={`/dashboard/cards/${card.card_id}/pro`}
-                      style={buttonStyle(true)}
-                    >
-                      Editar profissional
-                    </Link>
+                    {hasProfessionalProfile ? (
+                      <>
+                        <Link
+                          href={`/dashboard/cards/${card.card_id}/pro`}
+                          style={buttonStyle("pro")}
+                        >
+                          Editar perfil profissional
+                        </Link>
 
-                    {hasSlug ? (
-                      <Link href={`/pro/${slug}`} target="_blank" style={buttonStyle()}>
-                        Ver perfil profissional
+                        {hasSlug ? (
+                          <Link
+                            href={`/pro/${slug}`}
+                            target="_blank"
+                            style={buttonStyle()}
+                          >
+                            Ver perfil profissional
+                          </Link>
+                        ) : null}
+                      </>
+                    ) : (
+                      <Link
+                        href={`/dashboard/cards/${card.card_id}/pro`}
+                        style={buttonStyle("pro")}
+                      >
+                        Ativar perfil profissional
                       </Link>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               </div>

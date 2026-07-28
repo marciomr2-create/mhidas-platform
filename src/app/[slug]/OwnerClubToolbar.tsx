@@ -11,6 +11,7 @@ type OwnerClubToolbarProps = {
 };
 
 export default function OwnerClubToolbar({
+  cardId,
   ownerUserId,
   slug,
 }: OwnerClubToolbarProps) {
@@ -118,7 +119,10 @@ export default function OwnerClubToolbar({
       </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Link href={`/${slug}?mode=club`} style={primaryButtonStyle}>
+        <Link
+          href={`/dashboard/cards/${cardId}/club/edit`}
+          style={primaryButtonStyle}
+        >
           Editar perfil
         </Link>
 

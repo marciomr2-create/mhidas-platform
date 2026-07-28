@@ -2,20 +2,24 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
 
 const RESERVED_NEXT_SLUGS = new Set([
   "api",
+  "auth",
   "clubbers",
   "dashboard",
   "event",
   "invalid",
   "login",
   "network",
+  "onboarding",
   "pro",
   "r",
+  "signup",
   "t",
   "u",
 ]);
@@ -43,17 +47,10 @@ function getSafeNextPath(value: string | null): string {
   const pathname = parsedUrl.pathname;
   const search = parsedUrl.search;
 
-  if (pathname === "/dashboard") {
-    return "/dashboard";
-  }
-
-  if (pathname === "/dashboard/cards") {
-    return "/dashboard/cards";
-  }
-
-  if (pathname === "/clubbers") {
-    return "/clubbers";
-  }
+  if (pathname === "/dashboard") return "/dashboard";
+  if (pathname === "/dashboard/cards") return "/dashboard/cards";
+  if (pathname === "/clubbers") return "/clubbers";
+  if (pathname === "/onboarding") return "/onboarding";
 
   if (/^\/event\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
     return `${pathname}${search}`;
@@ -80,18 +77,32 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "15px 16px",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#ffffff",
+  borderRadius: 14,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "#111827",
+  color: "#F8FAFC",
   outline: "none",
   fontSize: 16,
+};
+
+const secondaryButtonStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "15px 18px",
+  borderRadius: 14,
+  border: "1px solid rgba(148,163,184,0.18)",
+  background: "#111827",
+  color: "#F8FAFC",
+  fontWeight: 850,
+  fontSize: 16,
+  cursor: "pointer",
 };
 
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createBrowserClient(), []);
+  const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   const safeRedirectPath = useMemo(() => {
     const safeNextPath = getSafeNextPath(searchParams.get("next"));
@@ -104,12 +115,18 @@ export default function LoginClient() {
   }, [searchParams]);
 
   const redirectPath = safeRedirectPath || "/dashboard";
+  const callbackError = searchParams.get("auth_error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    callbackError === "callback_failed"
+      ? "Não foi possível concluir o acesso. Tente novamente."
+      : null
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -118,9 +135,7 @@ export default function LoginClient() {
       try {
         const { data } = await supabase.auth.getSession();
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (data.session) {
           router.replace(redirectPath);
@@ -130,9 +145,7 @@ export default function LoginClient() {
 
         setIsCheckingSession(false);
       } catch {
-        if (isMounted) {
-          setIsCheckingSession(false);
-        }
+        if (isMounted) setIsCheckingSession(false);
       }
     }
 
@@ -154,9 +167,7 @@ export default function LoginClient() {
         password,
       });
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw new Error(error.message);
 
       router.push(redirectPath);
       router.refresh();
@@ -167,10 +178,37 @@ export default function LoginClient() {
     }
   }
 
+  async function handleGoogleLogin() {
+    setGoogleLoading(true);
+    setErrorMsg(null);
+
+    try {
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      callbackUrl.searchParams.set("next", redirectPath);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl.toString(),
+          queryParams: { prompt: "select_account" },
+        },
+      });
+
+      if (error) throw new Error(error.message);
+    } catch (err: unknown) {
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível entrar com Google."
+      );
+      setGoogleLoading(false);
+    }
+  }
+
   if (isCheckingSession) {
     return (
       <div style={{ padding: "14px 0 2px" }}>
-        <p style={{ margin: 0, color: "rgba(255,255,255,0.72)" }}>
+        <p style={{ margin: 0, color: "#CBD5E1" }}>
           Verificando acesso...
         </p>
       </div>
@@ -180,12 +218,7 @@ export default function LoginClient() {
   return (
     <form
       onSubmit={handleLogin}
-      style={{
-        width: "100%",
-        display: "grid",
-        gap: 18,
-        marginTop: 28,
-      }}
+      style={{ width: "100%", display: "grid", gap: 18, marginTop: 28 }}
     >
       {errorMsg ? (
         <div
@@ -195,10 +228,39 @@ export default function LoginClient() {
             borderRadius: 14,
             border: "1px solid rgba(255,80,80,0.35)",
             background: "rgba(255,80,80,0.08)",
-            color: "#ffffff",
+            color: "#F8FAFC",
           }}
         >
           {errorMsg}
+        </div>
+      ) : null}
+
+      {googleEnabled ? (
+        <button
+          type="button"
+          disabled={googleLoading || loading}
+          onClick={handleGoogleLogin}
+          style={secondaryButtonStyle}
+        >
+          {googleLoading ? "Abrindo Google..." : "Continuar com Google"}
+        </button>
+      ) : null}
+
+      {googleEnabled ? (
+        <div
+          aria-hidden="true"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto 1fr",
+            alignItems: "center",
+            gap: 10,
+            color: "#CBD5E1",
+            fontSize: 12,
+          }}
+        >
+          <span style={{ height: 1, background: "rgba(203,213,225,0.12)" }} />
+          ou use seu e-mail
+          <span style={{ height: 1, background: "rgba(203,213,225,0.12)" }} />
         </div>
       ) : null}
 
@@ -228,38 +290,48 @@ export default function LoginClient() {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || googleLoading}
         style={{
           width: "100%",
           boxSizing: "border-box",
           padding: "16px 18px",
-          borderRadius: 18,
-          border: "1px solid rgba(45,212,191,0.48)",
+          borderRadius: 14,
+          border: "1px solid rgba(13,148,136,0.52)",
           background: loading
-            ? "rgba(45,212,191,0.22)"
-            : "linear-gradient(135deg, #14b8a6 0%, #10b981 100%)",
-          color: "#ffffff",
+            ? "rgba(13,148,136,0.22)"
+            : "#0D9488",
+          color: "#F8FAFC",
           fontWeight: 850,
           fontSize: 17,
           cursor: loading ? "not-allowed" : "pointer",
-          boxShadow: loading ? "none" : "0 18px 45px rgba(20,184,166,0.18)",
+          boxShadow: loading ? "none" : "0 10px 24px rgba(13,148,136,0.16)",
         }}
       >
         {loading ? "Entrando..." : "Entrar"}
       </button>
 
+      <div style={{ display: "grid", gap: 8, textAlign: "center" }}>
+        <span style={{ color: "#CBD5E1", fontSize: 14 }}>
+          Ainda não tem uma conta?
+        </span>
+        <Link
+          href="/signup"
+          style={{ color: "#14B8A6", fontWeight: 900, textDecoration: "none" }}
+        >
+          Criar minha conta Clubber
+        </Link>
+      </div>
+
       <p
         style={{
           margin: 0,
-          color: "rgba(255,255,255,0.68)",
-          fontSize: 14,
-          lineHeight: 1.55,
+          color: "#CBD5E1",
+          fontSize: 12,
+          lineHeight: 1.5,
+          textAlign: "center",
         }}
       >
-        Depois de entrar, você volta para: {" "}
-        <strong style={{ color: "rgba(255,255,255,0.94)" }}>
-          {redirectPath}
-        </strong>
+        O NFC é opcional e poderá ser vinculado depois.
       </p>
     </form>
   );

@@ -1897,6 +1897,17 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     .eq("user_id", card.user_id)
     .maybeSingle();
 
+  const { data: publicProfessionalProfile } = await supabase
+    .from("professional_profiles")
+    .select("user_id")
+    .eq("user_id", card.user_id)
+    .eq("visible_in_network", true)
+    .maybeSingle();
+
+  const hasPublicProfessionalProfile = Boolean(
+    publicProfessionalProfile?.user_id
+  );
+
   const { data: linksData } = await supabase
     .from("social_links")
     .select("*")
@@ -2380,14 +2391,14 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     marginBottom: 18,
   };
 
-  const modeButtonActive: CSSProperties = {
-    padding: "10px 16px",
-    borderRadius: 999,
-    background: "rgba(255,255,255,0.16)",
-    border: "1px solid rgba(255,255,255,0.20)",
-    color: "#fff",
-    textDecoration: "none",
+  const modeLabel: CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: 34,
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 14,
     fontWeight: 850,
+    letterSpacing: 0.1,
     whiteSpace: "nowrap",
   };
 
@@ -2659,7 +2670,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               <div style={{ flex: "0 0 auto" }}>
                 <ClubQuickAddMenu
                   cardId={card.card_id}
-                  ownerUserId={card.user_id}
+                  ownerUserId={ownerControlsUserId}
                   cityBase={cityBase}
                 />
               </div>
@@ -2673,13 +2684,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                 flexWrap: "wrap",
               }}
             >
-              <Link href={`/${card.slug}?mode=club`} style={modeButtonActive}>
+              <span style={modeLabel}>
                 Experiência Clubber
-              </Link>
+              </span>
 
-              <Link href={`/pro/${card.slug}`} style={modeButton}>
-                Perfil profissional
-              </Link>
+              {hasPublicProfessionalProfile ? (
+                <Link href={`/pro/${card.slug}`} style={modeButton}>
+                  Perfil profissional
+                </Link>
+              ) : null}
             </div>
           </div>
         </header>
@@ -2733,8 +2746,26 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               {sceneDescription}
             </p>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {cityBase ? <span style={pillStyle()}>{cityBase}</span> : null}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              {cityBase ? (
+                <span
+                  style={{
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {cityBase}
+                </span>
+              ) : null}
               {platformLabel ? <span style={pillStyle()}>{platformLabel}</span> : null}
 
               {genres.slice(0, 5).map((item) => (

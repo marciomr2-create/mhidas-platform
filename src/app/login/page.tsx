@@ -1,4 +1,4 @@
-﻿// src/app/login/page.tsx
+// src/app/login/page.tsx
 import { Suspense } from "react";
 import LoginClient from "./LoginClient";
 
@@ -15,8 +15,7 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "clamp(24px, 6vw, 72px) 20px",
-        background:
-          "radial-gradient(circle at 10% 0%, rgba(76,29,149,0.24), transparent 34%), radial-gradient(circle at 100% 20%, rgba(13,148,136,0.18), transparent 36%), #050506",
+        background: "#05070D",
       }}
     >
       <section
@@ -26,17 +25,17 @@ export default function LoginPage() {
           boxSizing: "border-box",
           padding: "clamp(24px, 5vw, 40px)",
           borderRadius: 28,
-          border: "1px solid rgba(255,255,255,0.11)",
+          border: "1px solid rgba(148,163,184,0.18)",
           background:
-            "linear-gradient(145deg, rgba(18,18,24,0.97), rgba(7,13,15,0.98))",
-          boxShadow: "0 28px 80px rgba(0,0,0,0.42)",
+            "linear-gradient(145deg, #0B1020, #111827)",
+          boxShadow: "0 28px 80px rgba(5,7,13,0.42)",
         }}
       >
         <header>
           <p
             style={{
               margin: 0,
-              color: "#5eead4",
+              color: "#14B8A6",
               fontSize: 12,
               fontWeight: 900,
               letterSpacing: "0.14em",
@@ -50,7 +49,7 @@ export default function LoginPage() {
             id="login-title"
             style={{
               margin: "12px 0 0",
-              color: "#ffffff",
+              color: "#F8FAFC",
               fontSize: "clamp(34px, 9vw, 52px)",
               lineHeight: 0.98,
               letterSpacing: "-0.045em",
@@ -62,7 +61,7 @@ export default function LoginPage() {
           <p
             style={{
               margin: "16px 0 0",
-              color: "rgba(255,255,255,0.68)",
+              color: "#CBD5E1",
               fontSize: 16,
               lineHeight: 1.55,
             }}
@@ -74,7 +73,7 @@ export default function LoginPage() {
         <Suspense
           fallback={
             <div style={{ padding: "28px 0 2px" }}>
-              <p style={{ margin: 0, color: "rgba(255,255,255,0.72)" }}>
+              <p style={{ margin: 0, color: "#CBD5E1" }}>
                 Carregando...
               </p>
             </div>
