@@ -31,11 +31,40 @@ const ALLOWED_AVAILABILITY_STATUSES = [
   "withdrawn",
 ] as const;
 
+const ALLOWED_SOCIAL_PARTICIPATION_MODES = [
+  "alone",
+  "with_friends",
+  "undecided",
+] as const;
+
 type TicketIntentStatus = (typeof ALLOWED_STATUSES)[number];
 type TicketIntentSource = (typeof ALLOWED_SOURCES)[number];
 type TicketAvailabilityStatus =
   (typeof ALLOWED_AVAILABILITY_STATUSES)[number];
+type SocialParticipationMode =
+  (typeof ALLOWED_SOCIAL_PARTICIPATION_MODES)[number];
 type JsonRecord = Record<string, unknown>;
+
+type EventSocialPreferences = {
+  wants_group: boolean;
+  accepts_new_people: boolean;
+  meet_on_site: boolean;
+  women_only: boolean;
+  men_only: boolean;
+  lgbtqia_plus: boolean;
+  mixed_group: boolean;
+  first_time: boolean;
+  same_city: boolean;
+};
+
+type EventSocialJourney = {
+  participation_mode: SocialParticipationMode;
+  preferences: EventSocialPreferences;
+  active: boolean;
+  audience: "event_social";
+  version: "v4.8.135";
+  updated_at: string;
+};
 
 type TicketIntentPayload = {
   event_group_id?: unknown;
@@ -81,6 +110,14 @@ function isAllowedAvailabilityStatus(
 ): value is TicketAvailabilityStatus {
   return ALLOWED_AVAILABILITY_STATUSES.includes(
     value as TicketAvailabilityStatus
+  );
+}
+
+function isAllowedSocialParticipationMode(
+  value: string
+): value is SocialParticipationMode {
+  return ALLOWED_SOCIAL_PARTICIPATION_MODES.includes(
+    value as SocialParticipationMode
   );
 }
 
@@ -221,6 +258,143 @@ function normalizeAvailabilityUpdate(
   };
 }
 
+
+function normalizeBoolean(
+  value: unknown,
+  fallback = false
+): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function parseStoredEventSocialJourney(
+  value: unknown
+): EventSocialJourney | null {
+  const socialJourney = asRecord(value);
+  const participationMode = normalizeText(
+    socialJourney?.participation_mode,
+    32
+  );
+
+  if (
+    !socialJourney ||
+    !isAllowedSocialParticipationMode(participationMode)
+  ) {
+    return null;
+  }
+
+  const preferences = asRecord(socialJourney.preferences);
+  const mixedGroup = normalizeBoolean(preferences?.mixed_group);
+
+  return {
+    participation_mode: participationMode,
+    preferences: {
+      wants_group: normalizeBoolean(preferences?.wants_group),
+      accepts_new_people: normalizeBoolean(
+        preferences?.accepts_new_people
+      ),
+      meet_on_site: normalizeBoolean(preferences?.meet_on_site),
+      women_only: mixedGroup
+        ? false
+        : normalizeBoolean(preferences?.women_only),
+      men_only: mixedGroup
+        ? false
+        : normalizeBoolean(preferences?.men_only),
+      lgbtqia_plus: mixedGroup
+        ? false
+        : normalizeBoolean(preferences?.lgbtqia_plus),
+      mixed_group: mixedGroup,
+      first_time: normalizeBoolean(preferences?.first_time),
+      same_city: normalizeBoolean(preferences?.same_city),
+    },
+    active: normalizeBoolean(socialJourney.active, true),
+    audience: "event_social",
+    version: "v4.8.135",
+    updated_at: normalizeText(socialJourney.updated_at, 40),
+  };
+}
+
+function normalizeEventSocialJourneyUpdate(
+  value: unknown,
+  existingJourney: EventSocialJourney | null,
+  requestedStatus: TicketIntentStatus,
+  now: string
+): EventSocialJourney {
+  const socialJourney = asRecord(value);
+
+  if (!socialJourney) {
+    throw new Error("Invalid event social journey.");
+  }
+
+  const participationMode = normalizeText(
+    socialJourney.participation_mode ??
+      existingJourney?.participation_mode,
+    32
+  );
+
+  if (!isAllowedSocialParticipationMode(participationMode)) {
+    throw new Error("Invalid social participation mode.");
+  }
+
+  const incomingPreferences = asRecord(socialJourney.preferences);
+  const existingPreferences = existingJourney?.preferences;
+  const mixedGroup = normalizeBoolean(
+    incomingPreferences?.mixed_group,
+    existingPreferences?.mixed_group ?? false
+  );
+
+  return {
+    participation_mode: participationMode,
+    preferences: {
+      wants_group: normalizeBoolean(
+        incomingPreferences?.wants_group,
+        existingPreferences?.wants_group ?? false
+      ),
+      accepts_new_people: normalizeBoolean(
+        incomingPreferences?.accepts_new_people,
+        existingPreferences?.accepts_new_people ?? false
+      ),
+      meet_on_site: normalizeBoolean(
+        incomingPreferences?.meet_on_site,
+        existingPreferences?.meet_on_site ?? false
+      ),
+      women_only: mixedGroup
+        ? false
+        : normalizeBoolean(
+            incomingPreferences?.women_only,
+            existingPreferences?.women_only ?? false
+          ),
+      men_only: mixedGroup
+        ? false
+        : normalizeBoolean(
+            incomingPreferences?.men_only,
+            existingPreferences?.men_only ?? false
+          ),
+      lgbtqia_plus: mixedGroup
+        ? false
+        : normalizeBoolean(
+            incomingPreferences?.lgbtqia_plus,
+            existingPreferences?.lgbtqia_plus ?? false
+          ),
+      mixed_group: mixedGroup,
+      first_time: normalizeBoolean(
+        incomingPreferences?.first_time,
+        existingPreferences?.first_time ?? false
+      ),
+      same_city: normalizeBoolean(
+        incomingPreferences?.same_city,
+        existingPreferences?.same_city ?? false
+      ),
+    },
+    active:
+      requestedStatus === "cancelled"
+        ? false
+        : normalizeBoolean(socialJourney.active, true),
+    audience: "event_social",
+    version: "v4.8.135",
+    updated_at: now,
+  };
+}
+
 function mergeMetadata(
   existingValue: unknown,
   incomingValue: unknown,
@@ -236,6 +410,7 @@ function mergeMetadata(
   for (const [key, value] of Object.entries(incomingMetadata)) {
     if (
       key === "ticket_network_availability" ||
+      key === "event_social_journey" ||
       key === "__proto__" ||
       key === "prototype" ||
       key === "constructor"
@@ -248,6 +423,9 @@ function mergeMetadata(
 
   const existingAvailability = parseStoredAvailability(
     existingMetadata.ticket_network_availability
+  );
+  const existingSocialJourney = parseStoredEventSocialJourney(
+    existingMetadata.event_social_journey
   );
 
   if (
@@ -273,6 +451,27 @@ function mergeMetadata(
       status: "withdrawn",
       updated_at: now,
     } satisfies TicketAvailability;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      incomingMetadata,
+      "event_social_journey"
+    )
+  ) {
+    nextMetadata.event_social_journey =
+      normalizeEventSocialJourneyUpdate(
+        incomingMetadata.event_social_journey,
+        existingSocialJourney,
+        requestedStatus,
+        now
+      );
+  } else if (requestedStatus === "cancelled" && existingSocialJourney) {
+    nextMetadata.event_social_journey = {
+      ...existingSocialJourney,
+      active: false,
+      updated_at: now,
+    } satisfies EventSocialJourney;
   }
 
   const serializedMetadata = JSON.stringify(nextMetadata);

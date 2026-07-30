@@ -19,7 +19,40 @@ type TicketAvailabilityStatus =
   | "transferred"
   | "withdrawn";
 
+type SocialParticipationMode =
+  | "alone"
+  | "with_friends"
+  | "undecided";
+
+type MobileJourneyPanel = "moment" | "social" | "preferences";
+
+type SocialPreferenceKey =
+  | "wants_group"
+  | "accepts_new_people"
+  | "meet_on_site"
+  | "women_only"
+  | "men_only"
+  | "lgbtqia_plus"
+  | "mixed_group"
+  | "first_time"
+  | "same_city";
+
+type GroupPreferenceKey =
+  | "women_only"
+  | "men_only"
+  | "lgbtqia_plus"
+  | "mixed_group";
+
 type JsonRecord = Record<string, unknown>;
+
+type EventSocialPreferences = Record<SocialPreferenceKey, boolean>;
+
+type EventSocialJourney = {
+  participation_mode: SocialParticipationMode;
+  preferences: EventSocialPreferences;
+  active: boolean;
+  updated_at: string;
+};
 
 type TicketAvailability = {
   status: TicketAvailabilityStatus;
@@ -57,6 +90,24 @@ type JourneyAction = {
   tone: "interest" | "ticket" | "confirmed" | "cancelled";
 };
 
+type SocialModeAction = {
+  mode: SocialParticipationMode;
+  label: string;
+  detail: string;
+  featured?: boolean;
+};
+
+type SocialPreferenceAction = {
+  key: Exclude<SocialPreferenceKey, GroupPreferenceKey>;
+  label: string;
+  detail: string;
+};
+
+type GroupPreferenceAction = {
+  key: GroupPreferenceKey;
+  label: string;
+};
+
 type AvailabilityFormState = {
   quantity: string;
   ticketType: string;
@@ -83,6 +134,90 @@ const TICKET_AVAILABILITY_STATUSES: TicketAvailabilityStatus[] = [
   "reserved",
   "transferred",
   "withdrawn",
+];
+
+const SOCIAL_PARTICIPATION_MODES: SocialParticipationMode[] = [
+  "alone",
+  "with_friends",
+  "undecided",
+];
+
+const EMPTY_SOCIAL_PREFERENCES: EventSocialPreferences = {
+  wants_group: false,
+  accepts_new_people: false,
+  meet_on_site: false,
+  women_only: false,
+  men_only: false,
+  lgbtqia_plus: false,
+  mixed_group: false,
+  first_time: false,
+  same_city: false,
+};
+
+const SOCIAL_MODE_ACTIONS: SocialModeAction[] = [
+  {
+    mode: "alone",
+    label: "Vou sozinho",
+    detail: "Quero encontrar companhia compatível para este evento.",
+    featured: true,
+  },
+  {
+    mode: "with_friends",
+    label: "Vou com amigos",
+    detail: "Já tenho companhia e posso organizar encontros com outras pessoas.",
+  },
+  {
+    mode: "undecided",
+    label: "Ainda estou decidindo",
+    detail: "Quero explorar pessoas e possibilidades antes de confirmar.",
+  },
+];
+
+const SOCIAL_PREFERENCE_ACTIONS: SocialPreferenceAction[] = [
+  {
+    key: "wants_group",
+    label: "Quero entrar em um grupo",
+    detail: "Encontrar uma tribo temporária para este evento.",
+  },
+  {
+    key: "accepts_new_people",
+    label: "Aceito novas pessoas",
+    detail: "Meu grupo está aberto a novas conexões.",
+  },
+  {
+    key: "meet_on_site",
+    label: "Quero encontrar pessoas no local",
+    detail: "Combinar um encontro dentro ou perto do evento.",
+  },
+  {
+    key: "first_time",
+    label: "Primeira vez neste evento",
+    detail: "Conectar com pessoas que possam ajudar na experiência.",
+  },
+  {
+    key: "same_city",
+    label: "Pessoas da minha cidade",
+    detail: "Priorizar Clubbers próximos para organizar ida e volta.",
+  },
+];
+
+const GROUP_PREFERENCE_ACTIONS: GroupPreferenceAction[] = [
+  {
+    key: "mixed_group",
+    label: "Misto",
+  },
+  {
+    key: "women_only",
+    label: "Feminino",
+  },
+  {
+    key: "men_only",
+    label: "Masculino",
+  },
+  {
+    key: "lgbtqia_plus",
+    label: "LGBTQIA+",
+  },
 ];
 
 const JOURNEY_ACTIONS: JourneyAction[] = [
@@ -148,6 +283,14 @@ function isTicketAvailabilityStatus(
   );
 }
 
+function isSocialParticipationMode(
+  value: unknown
+): value is SocialParticipationMode {
+  return SOCIAL_PARTICIPATION_MODES.includes(
+    value as SocialParticipationMode
+  );
+}
+
 function parseTicketAvailability(metadataValue: unknown): TicketAvailability | null {
   const metadata = asRecord(metadataValue);
   const availability = asRecord(metadata?.ticket_network_availability);
@@ -185,6 +328,49 @@ function parseTicketAvailability(metadataValue: unknown): TicketAvailability | n
     note: normalizeText(availability.note, 280),
     published_at: normalizeText(availability.published_at, 40),
     updated_at: normalizeText(availability.updated_at, 40),
+  };
+}
+
+function parseEventSocialJourney(
+  metadataValue: unknown
+): EventSocialJourney | null {
+  const metadata = asRecord(metadataValue);
+  const socialJourney = asRecord(metadata?.event_social_journey);
+  const participationMode = socialJourney?.participation_mode;
+
+  if (
+    !socialJourney ||
+    !isSocialParticipationMode(participationMode)
+  ) {
+    return null;
+  }
+
+  const preferences = asRecord(socialJourney.preferences);
+
+  return {
+    participation_mode: participationMode,
+    preferences: {
+      wants_group: preferences?.wants_group === true,
+      accepts_new_people: preferences?.accepts_new_people === true,
+      meet_on_site: preferences?.meet_on_site === true,
+      women_only:
+        preferences?.mixed_group === true
+          ? false
+          : preferences?.women_only === true,
+      men_only:
+        preferences?.mixed_group === true
+          ? false
+          : preferences?.men_only === true,
+      lgbtqia_plus:
+        preferences?.mixed_group === true
+          ? false
+          : preferences?.lgbtqia_plus === true,
+      mixed_group: preferences?.mixed_group === true,
+      first_time: preferences?.first_time === true,
+      same_city: preferences?.same_city === true,
+    },
+    active: socialJourney.active !== false,
+    updated_at: normalizeText(socialJourney.updated_at, 40),
   };
 }
 
@@ -296,6 +482,43 @@ function getFeedbackText(status: TicketIntentStatus): string {
   return "Sua jornada foi atualizada.";
 }
 
+function getSocialParticipationLabel(
+  journey: EventSocialJourney | null
+): string {
+  if (!journey || !journey.active) {
+    return "Ainda não informado";
+  }
+
+  if (journey.participation_mode === "alone") {
+    return "Vou sozinho";
+  }
+
+  if (journey.participation_mode === "with_friends") {
+    return "Vou com amigos";
+  }
+
+  return "Ainda estou decidindo";
+}
+
+function getSocialFeedbackText(
+  mode: SocialParticipationMode,
+  statusWasActivated: boolean
+): string {
+  const suffix = statusWasActivated
+    ? " O evento também foi registrado em Tenho interesse."
+    : "";
+
+  if (mode === "alone") {
+    return `Registrado: você vai sozinho e poderá encontrar pessoas compatíveis.${suffix}`;
+  }
+
+  if (mode === "with_friends") {
+    return `Registrado: você vai com amigos e pode abrir seu grupo para novas conexões.${suffix}`;
+  }
+
+  return `Registrado: você ainda está decidindo e continua com acesso à camada social.${suffix}`;
+}
+
 function getAvailabilityStatusLabel(
   availability: TicketAvailability | null
 ): string {
@@ -335,6 +558,10 @@ export default function TicketIntentButton({
   const [status, setStatus] = useState<TicketIntentStatus | null>(initialStatus);
   const [availability, setAvailability] =
     useState<TicketAvailability | null>(null);
+  const [socialJourney, setSocialJourney] =
+    useState<EventSocialJourney | null>(null);
+  const [mobileJourneyPanel, setMobileJourneyPanel] =
+    useState<MobileJourneyPanel>("moment");
   const [availabilityForm, setAvailabilityForm] =
     useState<AvailabilityFormState>({ ...EMPTY_AVAILABILITY_FORM });
   const [isAvailabilityEditorOpen, setIsAvailabilityEditorOpen] =
@@ -343,12 +570,15 @@ export default function TicketIntentButton({
     Boolean(eventGroupId)
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSocialJourney, setIsSavingSocialJourney] = useState(false);
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
   const [pendingAvailabilityAction, setPendingAvailabilityAction] = useState<
     "transferred" | "withdrawn" | null
   >(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [socialFeedback, setSocialFeedback] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
   const [availabilityFeedback, setAvailabilityFeedback] =
     useState<string | null>(null);
   const [availabilityError, setAvailabilityError] = useState<string | null>(
@@ -361,6 +591,46 @@ export default function TicketIntentButton({
     () => getAvailabilityStatusLabel(availability),
     [availability]
   );
+  const socialParticipationLabel = useMemo(
+    () => getSocialParticipationLabel(socialJourney),
+    [socialJourney]
+  );
+  const selectedSocialPreferenceCount = useMemo(
+    () =>
+      socialJourney?.active
+        ? Object.values(socialJourney.preferences).filter(Boolean).length
+        : 0,
+    [socialJourney]
+  );
+  const groupPreferenceSummary = useMemo(() => {
+    if (!socialJourney?.active) {
+      return "Sem preferência";
+    }
+
+    if (socialJourney.preferences.mixed_group) {
+      return "Misto / indiferente";
+    }
+
+    const selectedLabels = GROUP_PREFERENCE_ACTIONS.filter(
+      (action) =>
+        action.key !== "mixed_group" &&
+        socialJourney.preferences[action.key]
+    ).map((action) => action.label);
+
+    if (selectedLabels.length === 0) {
+      return "Sem preferência";
+    }
+
+    if (selectedLabels.length === 1) {
+      return selectedLabels[0];
+    }
+
+    if (selectedLabels.length === 2) {
+      return selectedLabels.join(" + ");
+    }
+
+    return "3 preferências";
+  }, [socialJourney]);
   const isCheckedIn = status === "checked_in";
   const hasActiveAvailability =
     availability?.status === "available" || availability?.status === "reserved";
@@ -397,6 +667,9 @@ export default function TicketIntentButton({
         const savedAvailability = parseTicketAvailability(
           data.intent?.metadata
         );
+        const savedSocialJourney = parseEventSocialJourney(
+          data.intent?.metadata
+        );
 
         if (isTicketIntentStatus(savedStatus)) {
           setStatus(savedStatus);
@@ -406,6 +679,10 @@ export default function TicketIntentButton({
           setAvailability(savedAvailability);
           setAvailabilityForm(availabilityToForm(savedAvailability));
           setIsAvailabilityEditorOpen(false);
+        }
+
+        if (savedSocialJourney) {
+          setSocialJourney(savedSocialJourney);
         }
       } catch (caughtError) {
         if (
@@ -436,6 +713,8 @@ export default function TicketIntentButton({
     setIsSaving(true);
     setFeedback(null);
     setError(null);
+    setSocialFeedback(null);
+    setSocialError(null);
     setAvailabilityFeedback(null);
     setAvailabilityError(null);
 
@@ -452,7 +731,7 @@ export default function TicketIntentButton({
           notes: "Clubber updated event journey from public event page.",
           metadata: {
             component: "TicketIntentButton",
-            version: "v4.8.132",
+            version: "v4.8.135",
             journey_foundation: true,
           },
         }),
@@ -469,9 +748,13 @@ export default function TicketIntentButton({
       }
 
       const savedAvailability = parseTicketAvailability(data.intent?.metadata);
+      const savedSocialJourney = parseEventSocialJourney(
+        data.intent?.metadata
+      );
 
       setStatus(nextStatus);
       setAvailability(savedAvailability);
+      setSocialJourney(savedSocialJourney);
       setAvailabilityForm(availabilityToForm(savedAvailability));
       setIsAvailabilityEditorOpen(false);
       setFeedback(getFeedbackText(nextStatus));
@@ -502,6 +785,114 @@ export default function TicketIntentButton({
       );
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveSocialJourney(
+    nextMode: SocialParticipationMode,
+    nextPreferences: EventSocialPreferences
+  ) {
+    if (
+      !eventGroupId ||
+      isSavingSocialJourney ||
+      isLoadingInitialStatus
+    ) {
+      return;
+    }
+
+    const previousStatus = status;
+    const nextStatus: TicketIntentStatus =
+      status && status !== "cancelled" ? status : "interested";
+
+    setIsSavingSocialJourney(true);
+    setSocialFeedback(null);
+    setSocialError(null);
+    setFeedback(null);
+    setError(null);
+    setAvailabilityFeedback(null);
+    setAvailabilityError(null);
+
+    try {
+      const response = await fetch("/api/event-ticket-intents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          event_group_id: eventGroupId,
+          status: nextStatus,
+          source: "event_page",
+          notes: "Clubber updated event social participation state.",
+          metadata: {
+            component: "TicketIntentButton",
+            version: "v4.8.135",
+            journey_foundation: true,
+            event_social_journey: {
+              participation_mode: nextMode,
+              preferences: nextPreferences,
+              active: true,
+            },
+          },
+        }),
+      });
+
+      const data = (await response.json()) as TicketIntentApiResponse;
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          response.status === 401
+            ? "Entre na sua conta para salvar sua participação social."
+            : data.message ||
+                "Não foi possível salvar sua participação social."
+        );
+      }
+
+      const savedStatus = data.intent?.status;
+      const savedSocialJourney = parseEventSocialJourney(
+        data.intent?.metadata
+      );
+      const savedAvailability = parseTicketAvailability(
+        data.intent?.metadata
+      );
+
+      if (!savedSocialJourney) {
+        throw new Error(
+          "A participação social não retornou em formato válido."
+        );
+      }
+
+      if (isTicketIntentStatus(savedStatus)) {
+        setStatus(savedStatus);
+      }
+
+      setSocialJourney(savedSocialJourney);
+      setAvailability(savedAvailability);
+      setAvailabilityForm(availabilityToForm(savedAvailability));
+      setIsAvailabilityEditorOpen(false);
+      setSocialFeedback(
+        getSocialFeedbackText(
+          nextMode,
+          !previousStatus || previousStatus === "cancelled"
+        )
+      );
+
+      window.dispatchEvent(
+        new CustomEvent(EVENT_TICKET_INTENT_UPDATED, {
+          detail: {
+            eventGroupId,
+            status: savedStatus || nextStatus,
+            socialParticipationMode: nextMode,
+          },
+        })
+      );
+    } catch (caughtError) {
+      setSocialError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Não foi possível salvar sua participação social."
+      );
+    } finally {
+      setIsSavingSocialJourney(false);
     }
   }
 
@@ -544,6 +935,8 @@ export default function TicketIntentButton({
     setAvailabilityError(null);
     setFeedback(null);
     setError(null);
+    setSocialFeedback(null);
+    setSocialError(null);
 
     try {
       const response = await fetch("/api/event-ticket-intents", {
@@ -559,7 +952,7 @@ export default function TicketIntentButton({
             "Clubber updated ticket availability for accepted connections.",
           metadata: {
             component: "TicketIntentButton",
-            version: "v4.8.132",
+            version: "v4.8.135",
             journey_foundation: true,
             ticket_network_availability: {
               status: nextStatus,
@@ -586,12 +979,16 @@ export default function TicketIntentButton({
       }
 
       const savedAvailability = parseTicketAvailability(data.intent?.metadata);
+      const savedSocialJourney = parseEventSocialJourney(
+        data.intent?.metadata
+      );
 
       if (!savedAvailability) {
         throw new Error("A disponibilidade não retornou em formato válido.");
       }
 
       setAvailability(savedAvailability);
+      setSocialJourney(savedSocialJourney);
       setAvailabilityForm(availabilityToForm(savedAvailability));
       setIsAvailabilityEditorOpen(false);
       setPendingAvailabilityAction(null);
@@ -632,12 +1029,62 @@ export default function TicketIntentButton({
 
   const controlsDisabled =
     isLoadingInitialStatus || isSaving || !eventGroupId || isCheckedIn;
+  const socialControlsDisabled =
+    isLoadingInitialStatus || isSavingSocialJourney || !eventGroupId;
+
+  function renderSocialPreferenceAction(
+    action: SocialPreferenceAction
+  ) {
+    const isActive =
+      socialJourney?.active === true &&
+      socialJourney.preferences[action.key];
+
+    return (
+      <button
+        key={action.key}
+        type="button"
+        className={[
+          "event-social-journey__preference",
+          isActive
+            ? "event-social-journey__preference--active"
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-pressed={isActive}
+        disabled={socialControlsDisabled}
+        onClick={() => {
+          const currentPreferences =
+            socialJourney?.preferences || {
+              ...EMPTY_SOCIAL_PREFERENCES,
+            };
+
+          void saveSocialJourney(
+            socialJourney?.participation_mode || "undecided",
+            {
+              ...currentPreferences,
+              [action.key]: !isActive,
+            }
+          );
+        }}
+      >
+        <span className="event-social-journey__preference-check">
+          {isActive ? "✓" : "+"}
+        </span>
+        <span className="event-social-journey__preference-copy">
+          <strong>{action.label}</strong>
+          <span>{action.detail}</span>
+        </span>
+      </button>
+    );
+  }
 
   return (
     <section
       className="event-ticket-journey"
       aria-labelledby="event-ticket-journey-title"
       data-status={status || "unselected"}
+      data-mobile-panel={mobileJourneyPanel}
     >
       <div className="event-ticket-journey__heading">
         <div className="event-ticket-journey__copy">
@@ -667,6 +1114,75 @@ export default function TicketIntentButton({
       </div>
 
       <div
+        className="event-journey-mobile-nav"
+        role="tablist"
+        aria-label="Áreas da sua participação"
+      >
+        {[
+          {
+            key: "moment" as const,
+            label: "Momento",
+            value: statusLabel,
+          },
+          {
+            key: "social" as const,
+            label: "Como vou",
+            value: socialParticipationLabel,
+          },
+          {
+            key: "preferences" as const,
+            label: "O que busco",
+            value:
+              selectedSocialPreferenceCount > 0
+                ? `${selectedSocialPreferenceCount} ${
+                    selectedSocialPreferenceCount === 1
+                      ? "escolha"
+                      : "escolhas"
+                  }`
+                : "Nada ainda",
+          },
+        ].map((panel) => {
+          const isActive = mobileJourneyPanel === panel.key;
+
+          return (
+            <button
+              key={panel.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`event-journey-panel-${panel.key}`}
+              className={[
+                "event-journey-mobile-nav__button",
+                isActive
+                  ? "event-journey-mobile-nav__button--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setMobileJourneyPanel(panel.key)}
+            >
+              <span className="event-journey-mobile-nav__label">
+                {panel.label}
+              </span>
+              <strong
+                className="event-journey-mobile-nav__value"
+                title={panel.value}
+              >
+                {panel.value}
+              </strong>
+              <span
+                className="event-journey-mobile-nav__action"
+                aria-hidden="true"
+              >
+                {isActive ? "Aberto" : "Abrir"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        id="event-journey-panel-moment"
         className="event-ticket-journey__actions"
         role="group"
         aria-label="Atualize sua jornada neste evento"
@@ -707,6 +1223,215 @@ export default function TicketIntentButton({
           );
         })}
       </div>
+
+      <section
+        className="event-social-journey"
+        aria-labelledby="event-social-journey-title"
+        data-social-mode={
+          socialJourney?.active
+            ? socialJourney.participation_mode
+            : "unselected"
+        }
+      >
+        <div className="event-social-journey__heading">
+          <div className="event-social-journey__copy">
+            <span className="event-social-journey__eyebrow">
+              Camada social
+            </span>
+            <h3
+              id="event-social-journey-title"
+              className="event-social-journey__title"
+            >
+              Como você vai?
+            </h3>
+            <p className="event-social-journey__description">
+              Informe sua situação para encontrar companhia, grupos e pessoas
+              compatíveis sem depender de já ter ingresso.
+            </p>
+          </div>
+
+          <div
+            className="event-social-journey__status"
+            aria-live="polite"
+          >
+            <span>Participação</span>
+            <strong>
+              {isSavingSocialJourney
+                ? "Salvando..."
+                : socialParticipationLabel}
+            </strong>
+          </div>
+        </div>
+
+        <div
+          id="event-journey-panel-social"
+          className="event-social-journey__modes"
+          role="group"
+          aria-label="Como você pretende participar do evento"
+        >
+          {SOCIAL_MODE_ACTIONS.map((action) => {
+            const isActive =
+              socialJourney?.active === true &&
+              socialJourney.participation_mode === action.mode;
+
+            return (
+              <button
+                key={action.mode}
+                type="button"
+                className={[
+                  "event-social-journey__mode",
+                  action.featured
+                    ? "event-social-journey__mode--featured"
+                    : "",
+                  isActive
+                    ? "event-social-journey__mode--active"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-pressed={isActive}
+                disabled={socialControlsDisabled || isActive}
+                onClick={() =>
+                  saveSocialJourney(
+                    action.mode,
+                    socialJourney?.preferences || {
+                      ...EMPTY_SOCIAL_PREFERENCES,
+                    }
+                  )
+                }
+              >
+                <span className="event-social-journey__mode-title">
+                  {action.label}
+                </span>
+                <span className="event-social-journey__mode-detail">
+                  {action.detail}
+                </span>
+                <span
+                  className="event-social-journey__mode-state"
+                  aria-hidden="true"
+                >
+                  {isActive ? "Selecionado" : "Escolher"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          id="event-journey-panel-preferences"
+          className="event-social-journey__preferences"
+          role="group"
+          aria-label="Preferências sociais para este evento"
+        >
+          <div className="event-social-journey__preferences-heading">
+            <strong>O que você procura neste evento?</strong>
+            <span>Você pode selecionar mais de uma opção.</span>
+          </div>
+
+          <div
+            className="event-social-journey__preference-grid"
+            role="group"
+            aria-label="Preferências sociais para este evento"
+          >
+            {SOCIAL_PREFERENCE_ACTIONS.slice(0, 3).map(
+              renderSocialPreferenceAction
+            )}
+
+            <div
+              className={[
+                "event-social-journey__group-preference",
+                GROUP_PREFERENCE_ACTIONS.some(
+                  (action) =>
+                    socialJourney?.active === true &&
+                    socialJourney.preferences[action.key]
+                )
+                  ? "event-social-journey__group-preference--active"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="group"
+              aria-label="Preferência de grupo"
+            >
+              <div className="event-social-journey__group-preference-heading">
+                <strong>Preferência de grupo</strong>
+                <span title={groupPreferenceSummary}>
+                  {groupPreferenceSummary}
+                </span>
+              </div>
+
+              <div className="event-social-journey__group-preference-options">
+                {GROUP_PREFERENCE_ACTIONS.map((action) => {
+                  const isActive =
+                    socialJourney?.active === true &&
+                    socialJourney.preferences[action.key];
+
+                  return (
+                    <button
+                      key={action.key}
+                      type="button"
+                      className={[
+                        "event-social-journey__group-preference-option",
+                        isActive
+                          ? "event-social-journey__group-preference-option--active"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      aria-pressed={isActive}
+                      disabled={socialControlsDisabled}
+                      onClick={() => {
+                        const currentPreferences =
+                          socialJourney?.preferences || {
+                            ...EMPTY_SOCIAL_PREFERENCES,
+                          };
+
+                        const nextIsActive = !isActive;
+                        const nextPreferences = {
+                          ...currentPreferences,
+                          [action.key]: nextIsActive,
+                        };
+
+                        if (action.key === "mixed_group" && nextIsActive) {
+                          nextPreferences.women_only = false;
+                          nextPreferences.men_only = false;
+                          nextPreferences.lgbtqia_plus = false;
+                        } else if (action.key !== "mixed_group" && nextIsActive) {
+                          nextPreferences.mixed_group = false;
+                        }
+
+                        void saveSocialJourney(
+                          socialJourney?.participation_mode || "undecided",
+                          nextPreferences
+                        );
+                      }}
+                    >
+                      {action.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {SOCIAL_PREFERENCE_ACTIONS.slice(3).map(
+              renderSocialPreferenceAction
+            )}
+          </div>
+        </div>
+
+        {(socialFeedback || socialError) && (
+          <p
+            className={
+              socialError
+                ? "event-social-journey__feedback event-social-journey__feedback--error"
+                : "event-social-journey__feedback"
+            }
+            role={socialError ? "alert" : "status"}
+          >
+            {socialError || socialFeedback}
+          </p>
+        )}
+      </section>
 
       {status === "cancelled" ? (
         <section
