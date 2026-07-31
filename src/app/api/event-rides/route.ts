@@ -11,6 +11,9 @@ const ALLOWED_ACTIONS = [
   "create",
   "request_join",
   "decide_request",
+  "cancel_request",
+  "leave",
+  "set_status",
 ] as const;
 
 const ALLOWED_MODES = ["offer", "seek"] as const;
@@ -21,12 +24,18 @@ const ALLOWED_DIRECTIONS = [
 ] as const;
 const ALLOWED_VISIBILITIES = ["public", "private"] as const;
 const ALLOWED_DECISIONS = ["approved", "rejected"] as const;
+const ALLOWED_LIFECYCLE_STATUSES = [
+  "closed",
+  "cancelled",
+] as const;
 
 type RideAction = (typeof ALLOWED_ACTIONS)[number];
 type RideMode = (typeof ALLOWED_MODES)[number];
 type RideDirection = (typeof ALLOWED_DIRECTIONS)[number];
 type SocialVisibility = (typeof ALLOWED_VISIBILITIES)[number];
 type RequestDecision = (typeof ALLOWED_DECISIONS)[number];
+type LifecycleStatus =
+  (typeof ALLOWED_LIFECYCLE_STATUSES)[number];
 type JsonRecord = Record<string, unknown>;
 
 type RidePayload = {
@@ -49,6 +58,7 @@ type RidePayload = {
   expires_at?: unknown;
   message?: unknown;
   decision?: unknown;
+  status?: unknown;
 };
 
 function normalizeText(value: unknown, maxLength = 500): string {
@@ -122,6 +132,12 @@ function isRequestDecision(value: string): value is RequestDecision {
   return ALLOWED_DECISIONS.includes(value as RequestDecision);
 }
 
+function isLifecycleStatus(value: string): value is LifecycleStatus {
+  return ALLOWED_LIFECYCLE_STATUSES.includes(
+    value as LifecycleStatus
+  );
+}
+
 function buildErrorResponse(message: string, status: number) {
   return NextResponse.json(
     {
@@ -160,9 +176,13 @@ function getRpcFailureStatus(message: string): number {
   }
 
   if (
-    normalized.includes("not found") ||
-    normalized.includes("required")
+    normalized.includes("creator required") ||
+    normalized.includes("owner required")
   ) {
+    return 403;
+  }
+
+  if (normalized.includes("not found")) {
     return 404;
   }
 
@@ -170,7 +190,12 @@ function getRpcFailureStatus(message: string): number {
     normalized.includes("already") ||
     normalized.includes("not accepting") ||
     normalized.includes("expired") ||
-    normalized.includes("prevents")
+    normalized.includes("prevents") ||
+    normalized.includes("capacity exceeded") ||
+    normalized.includes("not pending") ||
+    normalized.includes("not active") ||
+    normalized.includes("transition not allowed") ||
+    normalized.includes("must close")
   ) {
     return 409;
   }
@@ -488,6 +513,115 @@ export async function POST(request: NextRequest) {
       scope: "event-rides",
       mode: "request_join",
       request_id: data,
+    });
+  }
+
+  if (action === "cancel_request") {
+    const requestId = normalizeText(payload.request_id, 64);
+
+    if (!requestId || !isUuidLike(requestId)) {
+      return buildErrorResponse(
+        "Valid request_id is required.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_cancel_event_ride_request",
+      {
+        p_request_id: requestId,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not cancel event ride request.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-rides",
+      mode: "cancel_request",
+      cancelled: data === true,
+    });
+  }
+
+  if (action === "leave") {
+    const rideId = normalizeText(payload.ride_id, 64);
+
+    if (!rideId || !isUuidLike(rideId)) {
+      return buildErrorResponse(
+        "Valid ride_id is required.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_leave_event_ride",
+      {
+        p_ride_id: rideId,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not leave event ride.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-rides",
+      mode: "leave",
+      left: data === true,
+    });
+  }
+
+  if (action === "set_status") {
+    const rideId = normalizeText(payload.ride_id, 64);
+    const status = normalizeText(payload.status, 24);
+
+    if (!rideId || !isUuidLike(rideId)) {
+      return buildErrorResponse(
+        "Valid ride_id is required.",
+        400
+      );
+    }
+
+    if (!isLifecycleStatus(status)) {
+      return buildErrorResponse(
+        "Invalid ride lifecycle status.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_set_event_ride_status",
+      {
+        p_ride_id: rideId,
+        p_status: status,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not update event ride status.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-rides",
+      mode: "set_status",
+      status,
+      updated: data === true,
     });
   }
 

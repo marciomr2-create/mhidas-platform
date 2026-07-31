@@ -11,14 +11,23 @@ const ALLOWED_ACTIONS = [
   "create",
   "request_join",
   "decide_request",
+  "cancel_request",
+  "leave",
+  "set_status",
 ] as const;
 
 const ALLOWED_VISIBILITIES = ["public", "private"] as const;
 const ALLOWED_DECISIONS = ["approved", "rejected"] as const;
+const ALLOWED_LIFECYCLE_STATUSES = [
+  "closed",
+  "cancelled",
+] as const;
 
 type MeetupAction = (typeof ALLOWED_ACTIONS)[number];
 type SocialVisibility = (typeof ALLOWED_VISIBILITIES)[number];
 type RequestDecision = (typeof ALLOWED_DECISIONS)[number];
+type LifecycleStatus =
+  (typeof ALLOWED_LIFECYCLE_STATUSES)[number];
 type JsonRecord = Record<string, unknown>;
 
 type MeetupPayload = {
@@ -38,6 +47,7 @@ type MeetupPayload = {
   expires_at?: unknown;
   message?: unknown;
   decision?: unknown;
+  status?: unknown;
 };
 
 function normalizeText(value: unknown, maxLength = 500): string {
@@ -103,6 +113,12 @@ function isRequestDecision(value: string): value is RequestDecision {
   return ALLOWED_DECISIONS.includes(value as RequestDecision);
 }
 
+function isLifecycleStatus(value: string): value is LifecycleStatus {
+  return ALLOWED_LIFECYCLE_STATUSES.includes(
+    value as LifecycleStatus
+  );
+}
+
 function buildErrorResponse(message: string, status: number) {
   return NextResponse.json(
     {
@@ -141,9 +157,13 @@ function getRpcFailureStatus(message: string): number {
   }
 
   if (
-    normalized.includes("not found") ||
-    normalized.includes("required")
+    normalized.includes("creator required") ||
+    normalized.includes("owner required")
   ) {
+    return 403;
+  }
+
+  if (normalized.includes("not found")) {
     return 404;
   }
 
@@ -151,7 +171,12 @@ function getRpcFailureStatus(message: string): number {
     normalized.includes("already") ||
     normalized.includes("not accepting") ||
     normalized.includes("expired") ||
-    normalized.includes("prevents")
+    normalized.includes("prevents") ||
+    normalized.includes("capacity exceeded") ||
+    normalized.includes("not pending") ||
+    normalized.includes("not active") ||
+    normalized.includes("transition not allowed") ||
+    normalized.includes("must close")
   ) {
     return 409;
   }
@@ -439,6 +464,115 @@ export async function POST(request: NextRequest) {
       scope: "event-meetups",
       mode: "request_join",
       request_id: data,
+    });
+  }
+
+  if (action === "cancel_request") {
+    const requestId = normalizeText(payload.request_id, 64);
+
+    if (!requestId || !isUuidLike(requestId)) {
+      return buildErrorResponse(
+        "Valid request_id is required.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_cancel_event_meetup_request",
+      {
+        p_request_id: requestId,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not cancel event meetup request.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-meetups",
+      mode: "cancel_request",
+      cancelled: data === true,
+    });
+  }
+
+  if (action === "leave") {
+    const meetupId = normalizeText(payload.meetup_id, 64);
+
+    if (!meetupId || !isUuidLike(meetupId)) {
+      return buildErrorResponse(
+        "Valid meetup_id is required.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_leave_event_meetup",
+      {
+        p_meetup_id: meetupId,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not leave event meetup.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-meetups",
+      mode: "leave",
+      left: data === true,
+    });
+  }
+
+  if (action === "set_status") {
+    const meetupId = normalizeText(payload.meetup_id, 64);
+    const status = normalizeText(payload.status, 24);
+
+    if (!meetupId || !isUuidLike(meetupId)) {
+      return buildErrorResponse(
+        "Valid meetup_id is required.",
+        400
+      );
+    }
+
+    if (!isLifecycleStatus(status)) {
+      return buildErrorResponse(
+        "Invalid meetup lifecycle status.",
+        400
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      "mhidas_set_event_meetup_status",
+      {
+        p_meetup_id: meetupId,
+        p_status: status,
+      }
+    );
+
+    if (error) {
+      return buildSupabaseErrorResponse(
+        "Could not update event meetup status.",
+        error.message,
+        getRpcFailureStatus(error.message)
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      scope: "event-meetups",
+      mode: "set_status",
+      status,
+      updated: data === true,
     });
   }
 
