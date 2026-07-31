@@ -16,6 +16,11 @@ import {
   readCanonicalPublicEventBySlug,
   type CanonicalPublicEventReadResult,
 } from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
+import {
+  readEventSocialRadar,
+  type EventSocialRadarMember,
+  type EventSocialRadarReadResult,
+} from "@/app/api/event-ticket-intents/_shared/eventSocialRadarRead";
 
 type PageProps = {
   params: Promise<{ event_slug: string }>;
@@ -136,7 +141,154 @@ type EventMember = {
   event_requires_food_kg: boolean;
   event_requires_student_document: boolean;
   event_preparation_notes: string;
+  social_participation_mode?: string;
+  social_wants_group?: boolean;
+  social_accepts_new_people?: boolean;
+  social_meet_on_site?: boolean;
+  social_first_time?: boolean;
+  social_same_city?: boolean;
+  social_is_accepted_connection?: boolean;
 };
+
+function createSocialEventMember(
+  member: EventSocialRadarMember
+): EventMember {
+  return {
+    user_id: member.user_id,
+    label: member.label,
+    slug: member.slug,
+    city_base: member.city_base,
+    club_tagline: member.club_tagline,
+    club_photo_url: member.club_photo_url,
+    favorite_genres: member.favorite_genres,
+    favorite_clubs: [],
+    favorite_events: [],
+    next_events: [],
+    next_events_links: "",
+    ride_status: "",
+    ride_event_name: "",
+    ride_event_url: "",
+    ride_origin: "",
+    ride_destination: "",
+    ride_seats: "",
+    ride_notes: "",
+    meet_status: "",
+    meet_event_name: "",
+    meet_event_date: "",
+    meet_event_url: "",
+    meet_meeting_point: "",
+    meet_time: "",
+    meet_notes: "",
+    event_social_mode: member.participation_mode,
+    open_to_meet: member.meet_on_site,
+    open_to_networking:
+      member.wants_group || member.accepts_new_people,
+    event_ticket_type: "",
+    event_requires_food_kg: false,
+    event_requires_student_document: false,
+    event_preparation_notes: "",
+    social_participation_mode: member.participation_mode,
+    social_wants_group: member.wants_group,
+    social_accepts_new_people: member.accepts_new_people,
+    social_meet_on_site: member.meet_on_site,
+    social_first_time: member.first_time,
+    social_same_city: member.same_city,
+    social_is_accepted_connection: member.is_accepted_connection,
+  };
+}
+
+function mergeEventMembers(
+  legacyMembers: EventMember[],
+  socialMembers: EventSocialRadarMember[]
+): EventMember[] {
+  const memberByUserId = new Map<string, EventMember>();
+
+  for (const legacyMember of legacyMembers) {
+    if (!memberByUserId.has(legacyMember.user_id)) {
+      memberByUserId.set(legacyMember.user_id, legacyMember);
+    }
+  }
+
+  for (const socialMember of socialMembers) {
+    const normalizedSocialMember = createSocialEventMember(socialMember);
+    const existingMember = memberByUserId.get(socialMember.user_id);
+
+    if (!existingMember) {
+      memberByUserId.set(socialMember.user_id, normalizedSocialMember);
+      continue;
+    }
+
+    memberByUserId.set(socialMember.user_id, {
+      ...existingMember,
+      label: normalizedSocialMember.label || existingMember.label,
+      slug: normalizedSocialMember.slug || existingMember.slug,
+      city_base:
+        normalizedSocialMember.city_base || existingMember.city_base,
+      club_tagline:
+        normalizedSocialMember.club_tagline ||
+        existingMember.club_tagline,
+      club_photo_url:
+        normalizedSocialMember.club_photo_url ||
+        existingMember.club_photo_url,
+      favorite_genres:
+        normalizedSocialMember.favorite_genres.length > 0
+          ? normalizedSocialMember.favorite_genres
+          : existingMember.favorite_genres,
+      event_social_mode: normalizedSocialMember.event_social_mode,
+      open_to_meet:
+        existingMember.open_to_meet ||
+        normalizedSocialMember.open_to_meet,
+      open_to_networking:
+        existingMember.open_to_networking ||
+        normalizedSocialMember.open_to_networking,
+      social_participation_mode:
+        normalizedSocialMember.social_participation_mode,
+      social_wants_group:
+        normalizedSocialMember.social_wants_group,
+      social_accepts_new_people:
+        normalizedSocialMember.social_accepts_new_people,
+      social_meet_on_site:
+        normalizedSocialMember.social_meet_on_site,
+      social_first_time:
+        normalizedSocialMember.social_first_time,
+      social_same_city:
+        normalizedSocialMember.social_same_city,
+      social_is_accepted_connection:
+        normalizedSocialMember.social_is_accepted_connection,
+    });
+  }
+
+  return Array.from(memberByUserId.values());
+}
+
+function createEmptySocialRadar(
+  eventGroupId = ""
+): EventSocialRadarReadResult {
+  return {
+    ok: false,
+    event_group_id: eventGroupId,
+    members: [],
+    counts: {
+      active_participants: 0,
+      alone: 0,
+      with_friends: 0,
+      undecided: 0,
+      wants_group: 0,
+      accepts_new_people: 0,
+      meet_on_site: 0,
+      first_time: 0,
+      same_city: 0,
+      accepted_connections: 0,
+    },
+    group_preferences: {
+      mixed_group: 0,
+      women_only: 0,
+      men_only: 0,
+      lgbtqia_plus: 0,
+    },
+    truncated: false,
+  };
+}
 
 function normalizeText(value: string | null | undefined): string {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -718,6 +870,9 @@ function getMeetStatusLabel(value: string) {
 }
 
 function getSocialModeLabel(value: string) {
+  if (value === "alone") return "Vou sozinho";
+  if (value === "with_friends") return "Vou com amigos";
+  if (value === "undecided") return "Ainda estou decidindo";
   if (value === "solo") return "Indo solo";
   if (value === "tribe") return "Procurando galera";
   if (value === "couple") return "Rolê em casal";
@@ -1390,6 +1545,18 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ((partnerTicketData ?? [])[0] as PartnerTicketRow | undefined) || null;
   }
 
+  const socialRadar = eventGroup?.group_id
+    ? await readEventSocialRadar({
+        eventGroupId: eventGroup.group_id,
+        viewerUserId: authenticatedUser?.id || null,
+      })
+    : createEmptySocialRadar();
+
+  const attendees = mergeEventMembers(
+    matchedMembers,
+    socialRadar.members
+  );
+
   const canonicalHeroTitle = normalizeText(canonicalEvent?.event_name);
 
   const heroTitle =
@@ -1416,8 +1583,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
   const heroMeta =
     canonicalHeroDetails ||
-    `${matchedMembers.length} ${
-      matchedMembers.length === 1
+    `${attendees.length} ${
+      attendees.length === 1
         ? "participante mapeado"
         : "participantes mapeados"
     }`;
@@ -1481,9 +1648,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
   const heroOfficialUrl =
     safeCanonicalOfficialUrl || safeConfirmedOfficialUrl;
 
-  const commercialOfficialLinkBlocked =
-    canonicalOfficialIsCommercial || confirmedOfficialIsCommercial;
-
   const normalizedPartnerTicketUrl = normalizePublicHttpsTicketUrl(
     partnerTicket?.partner_ticket_url
   );
@@ -1500,32 +1664,16 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     normalizeText(partnerTicket?.partner_ticket_button_label) ||
     "Adquirir ingresso";
 
-  const canonicalValidationLabel = canonicalEvent
-    ? getCanonicalValidationLabel(canonicalEvent.validation_status)
-    : "";
+  // O Guia rápido é exclusivamente informativo. A compra permanece
+  // no ponto dedicado do cabeçalho quando existe link autorizado e ativo.
+  // Nenhum CTA ou fallback externo é repetido dentro do Guia rápido.
+  const ticketGuideValue = hasContent(activePartnerTicketUrl)
+    ? "Ingressos disponíveis"
+    : "Disponibilidade a confirmar";
 
-  const memberTicketType =
-    matchedMembers.find((member) => hasContent(member.event_ticket_type))
-      ?.event_ticket_type || "";
-
-  // Links comerciais de ingresso exigem autorização específica do evento
-  // e da ticketeira. Até essa autorização existir, o guia direciona apenas
-  // para o canal oficial do evento e nunca ativa ticket_url automaticamente.
-  const ticketGuideValue = heroOfficialUrl
-    ? "Consulte no evento oficial"
-    : commercialOfficialLinkBlocked
-      ? "Canal de vendas a confirmar"
-      : memberTicketType || "A confirmar";
-
-  const ticketGuideDetail = heroOfficialUrl
-    ? "Confirme ingresso, regras e disponibilidade no canal oficial do evento."
-    : commercialOfficialLinkBlocked
-      ? "Aguardando o envio de um link autorizado pelo evento ou pela ticketeira."
-      : matchedMembers.some((member) => member.event_requires_food_kg)
-        ? "Leve 1 kg de alimento não perecível."
-        : "Confira o ingresso antes de sair.";
-
-  const attendees = matchedMembers;
+  const ticketGuideDetail = hasContent(activePartnerTicketUrl)
+    ? "A opção de compra está disponível no topo do evento."
+    : "Acompanhe as atualizações deste evento.";
 
   const availableCities = Array.from(
     new Set(attendees.map((member) => normalizeText(member.city_base)).filter(Boolean))
@@ -1567,11 +1715,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
 
-  const rideOfferMembers = matchedMembers.filter(
+  const rideOfferMembers = attendees.filter(
     (member) => member.ride_status === "offer" || member.ride_status === "both"
   );
 
-  const rideNeedMembers = matchedMembers.filter(
+  const rideNeedMembers = attendees.filter(
     (member) => member.ride_status === "need" || member.ride_status === "both"
   );
 
@@ -1579,14 +1727,133 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     ...rideOfferMembers.map((member) => member.user_id),
     ...rideNeedMembers.map((member) => member.user_id),
   ])
-    .map((userId) => matchedMembers.find((member) => member.user_id === userId))
+    .map((userId) => attendees.find((member) => member.user_id === userId))
     .filter(Boolean) as EventMember[];
 
-  const meetMembers = matchedMembers.filter(
+  const meetMembers = attendees.filter(
     (member) =>
       member.meet_status === "host" ||
       member.meet_status === "join" ||
       member.meet_status === "both"
+  );
+
+  const persistedSocialStats = [
+    {
+      key: "alone",
+      label: "Vou sozinho",
+      count: socialRadar.counts.alone,
+      members: attendees.filter(
+        (member) => member.social_participation_mode === "alone"
+      ),
+      emptyLabel: "Ninguém marcou ainda",
+    },
+    {
+      key: "with-friends",
+      label: "Vou com amigos",
+      count: socialRadar.counts.with_friends,
+      members: attendees.filter(
+        (member) => member.social_participation_mode === "with_friends"
+      ),
+      emptyLabel: "Ninguém marcou ainda",
+    },
+    {
+      key: "undecided",
+      label: "Ainda decidindo",
+      count: socialRadar.counts.undecided,
+      members: attendees.filter(
+        (member) => member.social_participation_mode === "undecided"
+      ),
+      emptyLabel: "Ninguém marcou ainda",
+    },
+    {
+      key: "wants-group",
+      label: "Quer entrar em grupo",
+      count: socialRadar.counts.wants_group,
+      members: attendees.filter(
+        (member) => member.social_wants_group === true
+      ),
+      emptyLabel: "Nenhum interesse ainda",
+    },
+    {
+      key: "accepts-people",
+      label: "Aceita novas pessoas",
+      count: socialRadar.counts.accepts_new_people,
+      members: attendees.filter(
+        (member) => member.social_accepts_new_people === true
+      ),
+      emptyLabel: "Nenhum grupo aberto",
+    },
+    {
+      key: "meet-on-site",
+      label: "Encontro no local",
+      count: socialRadar.counts.meet_on_site,
+      members: attendees.filter(
+        (member) => member.social_meet_on_site === true
+      ),
+      emptyLabel: "Ninguém marcou ainda",
+    },
+    {
+      key: "first-time",
+      label: "Primeira vez",
+      count: socialRadar.counts.first_time,
+      members: attendees.filter(
+        (member) => member.social_first_time === true
+      ),
+      emptyLabel: "Ninguém marcou ainda",
+    },
+    {
+      key: "same-city",
+      label: "Pessoas da cidade",
+      count: socialRadar.counts.same_city,
+      members: attendees.filter(
+        (member) => member.social_same_city === true
+      ),
+      emptyLabel: "Nenhuma preferência",
+    },
+    {
+      key: "accepted-connections",
+      label: "Conexões aceitas",
+      count: socialRadar.counts.accepted_connections,
+      members: attendees.filter(
+        (member) => member.social_is_accepted_connection === true
+      ),
+      emptyLabel: authenticatedUser
+        ? "Nenhuma conexão aqui"
+        : "Entre para comparar",
+    },
+  ] satisfies Array<{
+    key: string;
+    label: string;
+    count: number;
+    members: EventMember[];
+    emptyLabel: string;
+  }>;
+
+  const groupPreferenceStats = [
+    {
+      key: "mixed-group",
+      label: "Misto",
+      count: socialRadar.group_preferences.mixed_group,
+    },
+    {
+      key: "women-only",
+      label: "Feminino",
+      count: socialRadar.group_preferences.women_only,
+    },
+    {
+      key: "men-only",
+      label: "Masculino",
+      count: socialRadar.group_preferences.men_only,
+    },
+    {
+      key: "lgbtqia-plus",
+      label: "LGBTQIA+",
+      count: socialRadar.group_preferences.lgbtqia_plus,
+    },
+  ];
+
+  const visibleGroupPreferenceStats = groupPreferenceStats.filter(
+    (item) => item.count > 0
   );
 
   const socialStats = [
@@ -1596,6 +1863,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       count: attendees.length,
       members: attendees,
       emptyLabel: "Descobrir pessoas",
+      href: "#event-social-radar",
     },
     {
       key: "ride-offers",
@@ -1603,6 +1871,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       count: rideOfferMembers.length,
       members: rideOfferMembers,
       emptyLabel: "Nenhuma oferta ainda",
+      href:
+        rideOfferMembers.length > 0
+          ? "#event-rides-meets"
+          : "#event-social-radar",
     },
     {
       key: "ride-needs",
@@ -1610,6 +1882,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       count: rideNeedMembers.length,
       members: rideNeedMembers,
       emptyLabel: "Ninguém procurando",
+      href:
+        rideNeedMembers.length > 0
+          ? "#event-rides-meets"
+          : "#event-social-radar",
     },
     {
       key: "meetups",
@@ -1617,6 +1893,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       count: meetMembers.length,
       members: meetMembers,
       emptyLabel: "Nenhum encontro ainda",
+      href:
+        meetMembers.length > 0
+          ? "#event-rides-meets"
+          : "#event-social-radar",
     },
   ] satisfies Array<{
     key: string;
@@ -1624,6 +1904,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     count: number;
     members: EventMember[];
     emptyLabel: string;
+    href: string;
   }>;
 
   return (
@@ -1777,6 +2058,18 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           padding: 28px;
           border-right: 1px solid rgba(255,255,255,0.08);
           border-bottom: 1px solid rgba(255,255,255,0.08);
+          color: inherit;
+          text-decoration: none;
+          transition:
+            background 160ms ease,
+            border-color 160ms ease;
+        }
+
+        .event-hero__stat:hover,
+        .event-hero__stat:focus-visible {
+          background: rgba(20, 184, 166, 0.08);
+          border-color: rgba(20, 184, 166, 0.24);
+          outline: none;
         }
 
         .event-hero__stat-copy {
@@ -1888,8 +2181,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-hero__tribes-subtitle {
           color: rgba(210,210,222,0.62);
-          font-size: 11px;
-          line-height: 1.35;
+          font-size: 9px;
+          line-height: 1.25;
         }
 
         .event-hero__tribes-list {
@@ -1921,8 +2214,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           min-width: 0;
           overflow: visible;
           color: rgba(245,245,250,0.94);
-          font-size: 13px;
-          line-height: 1.25;
+          font-size: 11px;
+          line-height: 1.2;
           font-weight: 900;
           text-overflow: clip;
           white-space: normal;
@@ -1933,6 +2226,230 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           color: rgba(210,210,222,0.64);
           font-size: 11px;
           line-height: 1.25;
+        }
+
+        .event-persisted-radar {
+          width: min(1120px, calc(100vw - 48px));
+          margin: 18px 0 0 50%;
+          transform: translateX(-50%);
+          display: grid;
+          gap: 18px;
+          padding: 24px;
+          box-sizing: border-box;
+          border: 1px solid rgba(20, 184, 166, 0.18);
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 0 0, rgba(20, 184, 166, 0.10), transparent 34%),
+            linear-gradient(145deg, rgba(11, 16, 32, 0.96), rgba(5, 7, 13, 0.98));
+          overflow: hidden;
+        }
+
+        .event-persisted-radar__heading {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          gap: 18px;
+        }
+
+        .event-persisted-radar__copy {
+          display: grid;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .event-persisted-radar__eyebrow {
+          color: #14b8a6;
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.11em;
+          text-transform: uppercase;
+        }
+
+        .event-persisted-radar__title {
+          margin: 0;
+          color: #f8fafc;
+          font-size: clamp(24px, 2.6vw, 34px);
+          line-height: 1;
+          letter-spacing: -0.035em;
+          font-weight: 950;
+        }
+
+        .event-persisted-radar__description {
+          margin: 0;
+          max-width: 760px;
+          color: #cbd5e1;
+          font-size: 13px;
+          line-height: 1.55;
+        }
+
+        .event-persisted-radar__total {
+          flex: 0 0 auto;
+          display: grid;
+          justify-items: end;
+          gap: 4px;
+        }
+
+        .event-persisted-radar__total-value {
+          color: #f8fafc;
+          font-size: 32px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+        }
+
+        .event-persisted-radar__total-label {
+          color: rgba(203, 213, 225, 0.68);
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 850;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .event-persisted-radar__track {
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(154px, 1fr);
+          gap: 10px;
+          overflow-x: auto;
+          overscroll-behavior-inline: contain;
+          scroll-snap-type: inline mandatory;
+        }
+
+        .event-persisted-radar__item {
+          min-width: 0;
+          min-height: 112px;
+          display: grid;
+          align-content: space-between;
+          gap: 12px;
+          padding: 15px;
+          border: 1px solid rgba(148, 163, 184, 0.16);
+          border-radius: 17px;
+          background: rgba(17, 24, 39, 0.68);
+          color: inherit;
+          text-decoration: none;
+          scroll-snap-align: start;
+          transition:
+            border-color 160ms ease,
+            background 160ms ease;
+        }
+
+        .event-persisted-radar__item:hover,
+        .event-persisted-radar__item:focus-visible {
+          border-color: rgba(20, 184, 166, 0.42);
+          background: rgba(20, 184, 166, 0.08);
+          outline: none;
+        }
+
+        .event-persisted-radar__item-copy {
+          display: grid;
+          gap: 5px;
+        }
+
+        .event-persisted-radar__item-label {
+          color: rgba(203, 213, 225, 0.72);
+          font-size: 11px;
+          line-height: 1.3;
+          font-weight: 800;
+        }
+
+        .event-persisted-radar__item-value {
+          color: #f8fafc;
+          font-size: 27px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+        }
+
+        .event-persisted-radar__preview {
+          display: flex;
+          align-items: center;
+          min-height: 25px;
+          min-width: 0;
+        }
+
+        .event-persisted-radar__avatar,
+        .event-persisted-radar__more {
+          width: 25px;
+          height: 25px;
+          margin-left: -6px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #0b1020;
+          border-radius: 999px;
+          background:
+            linear-gradient(135deg, rgba(20, 184, 166, 0.30), rgba(13, 148, 136, 0.15)),
+            #111827;
+          background-position: center;
+          background-size: cover;
+          color: #f8fafc;
+          font-size: 9px;
+          line-height: 1;
+          font-weight: 950;
+          overflow: hidden;
+        }
+
+        .event-persisted-radar__avatar:first-child,
+        .event-persisted-radar__more:first-child {
+          margin-left: 0;
+        }
+
+        .event-persisted-radar__more {
+          background: #0d9488;
+        }
+
+        .event-persisted-radar__empty {
+          color: rgba(203, 213, 225, 0.58);
+          font-size: 10px;
+          line-height: 1.3;
+          font-weight: 750;
+        }
+
+        .event-persisted-radar__groups {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          min-width: 0;
+          overflow-x: auto;
+          padding-top: 2px;
+        }
+
+        .event-persisted-radar__groups-label {
+          flex: 0 0 auto;
+          color: rgba(203, 213, 225, 0.64);
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .event-persisted-radar__group {
+          flex: 0 0 auto;
+          display: inline-flex;
+          align-items: baseline;
+          gap: 6px;
+          padding: 7px 9px;
+          border-bottom: 1px solid rgba(20, 184, 166, 0.30);
+          color: #cbd5e1;
+          font-size: 9px;
+          line-height: 1.15;
+          font-weight: 800;
+        }
+
+        .event-persisted-radar__group strong {
+          color: #f8fafc;
+          font-size: 13px;
+          font-weight: 950;
+        }
+
+        .event-persisted-radar__notice {
+          margin: 0;
+          color: rgba(203, 213, 225, 0.52);
+          font-size: 10px;
+          line-height: 1.45;
         }
 
         .event-social-radar {
@@ -2687,6 +3204,124 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         @media (max-width: 760px) {
+          .event-persisted-radar {
+            width: 100%;
+            max-width: 100%;
+            margin: 10px 0 0;
+            transform: none;
+            gap: 9px;
+            padding: 12px 0;
+            border-left: 0;
+            border-right: 0;
+            border-radius: 0;
+          }
+
+          .event-persisted-radar__heading {
+            align-items: start;
+            gap: 8px;
+            padding: 0 14px;
+          }
+
+          .event-persisted-radar__copy {
+            gap: 3px;
+          }
+
+          .event-persisted-radar__eyebrow {
+            font-size: 8px;
+            letter-spacing: 0.10em;
+          }
+
+          .event-persisted-radar__title {
+            font-size: 18px;
+            line-height: 1.05;
+          }
+
+          .event-persisted-radar__description {
+            display: none;
+          }
+
+          .event-persisted-radar__total {
+            gap: 2px;
+          }
+
+          .event-persisted-radar__total-value {
+            font-size: 24px;
+          }
+
+          .event-persisted-radar__total-label {
+            max-width: 64px;
+            font-size: 8px;
+            line-height: 1.1;
+            text-align: right;
+          }
+
+          .event-persisted-radar__track {
+            grid-template-rows: repeat(2, 62px);
+            grid-auto-flow: column;
+            grid-auto-columns: 126px;
+            gap: 7px;
+            padding: 0 14px;
+            scroll-padding-inline: 14px;
+          }
+
+          .event-persisted-radar__item {
+            min-height: 0;
+            height: 62px;
+            padding: 8px 9px;
+            gap: 4px;
+            border-radius: 12px;
+            scroll-snap-stop: always;
+          }
+
+          .event-persisted-radar__item-copy {
+            gap: 2px;
+          }
+
+          .event-persisted-radar__item-label {
+            font-size: 8.5px;
+            line-height: 1.12;
+          }
+
+          .event-persisted-radar__item-value {
+            font-size: 20px;
+          }
+
+          .event-persisted-radar__preview {
+            min-height: 16px;
+          }
+
+          .event-persisted-radar__avatar,
+          .event-persisted-radar__more {
+            width: 18px;
+            height: 18px;
+            margin-left: -4px;
+            border-width: 1px;
+            font-size: 7px;
+          }
+
+          .event-persisted-radar__empty {
+            overflow: hidden;
+            font-size: 7.5px;
+            line-height: 1.1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .event-persisted-radar__groups {
+            padding: 0 14px;
+            scroll-padding-inline: 14px;
+          }
+
+          .event-persisted-radar__notice {
+            display: -webkit-box;
+            overflow: hidden;
+            padding: 0 14px;
+            font-size: 8.5px;
+            line-height: 1.3;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+          }
+
           .event-social-radar {
             width: 100%;
             min-width: 0;
@@ -2842,7 +3477,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             margin-inline: 0;
             padding: 10px var(--journey-inline-pad) 12px;
             display: flex;
-            gap: 7px;
+            gap: 6px;
             overflow-x: auto;
             overscroll-behavior-inline: contain;
             scroll-snap-type: inline mandatory;
@@ -3285,6 +3920,193 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             white-space: normal;
           }
         }
+
+        .event-hero > .event-quick-guide {
+          grid-column: 1 / -1;
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          margin: 0;
+          transform: none;
+          padding: 8px clamp(16px, 2vw, 24px) 9px !important;
+          gap: 5px !important;
+          border: 0 !important;
+          border-top: 1px solid rgba(255,255,255,0.10) !important;
+          border-radius: 0 !important;
+          background:
+            linear-gradient(90deg, rgba(8,8,13,0.90), rgba(12,10,22,0.84)) !important;
+          overflow: hidden;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__heading {
+          display: flex;
+          align-items: baseline;
+          gap: 10px;
+          min-width: 0;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__title {
+          flex: 0 0 auto;
+          font-size: 11px;
+          line-height: 1.2;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__subtitle {
+          min-width: 0;
+          max-width: none;
+          font-size: 11px;
+          line-height: 1.35;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          border-top: 0;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__item,
+        .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(even),
+        .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(odd) {
+          min-width: 0;
+          padding: 5px 10px;
+          gap: 2px;
+          border: 0;
+          border-left: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__item:first-child {
+          padding-left: 0;
+          border-left: 0;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__label {
+          font-size: 8px;
+          letter-spacing: 0.065em;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__label::before {
+          width: 4px;
+          height: 4px;
+          flex-basis: 4px;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__value {
+          font-size: 13px;
+          line-height: 1.25;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__detail,
+        .event-hero > .event-quick-guide .event-quick-guide__note,
+        .event-hero > .event-quick-guide .event-quick-guide__link {
+          font-size: 9px;
+          line-height: 1.25;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__detail,
+        .event-hero > .event-quick-guide .event-quick-guide__note {
+          display: -webkit-box;
+          overflow: hidden;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+
+        .event-hero > .event-quick-guide .event-quick-guide__note {
+          display: none;
+        }
+
+        .event-quick-guide__actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        @media (max-width: 760px) {
+          .event-hero > .event-quick-guide {
+            padding: 5px 14px 7px !important;
+            gap: 3px !important;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__heading {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__title {
+            font-size: 7px;
+            line-height: 1.1;
+            letter-spacing: 0.075em;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__subtitle {
+            display: none;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__grid {
+            display: flex;
+            gap: 7px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scroll-snap-type: x mandatory;
+            scroll-padding-inline: 0;
+            scrollbar-width: none;
+            padding: 0 0 1px;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__grid::-webkit-scrollbar {
+            display: none;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__item,
+          .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(even),
+          .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(odd),
+          .event-hero > .event-quick-guide .event-quick-guide__item:first-child {
+            flex: 0 0 126px;
+            width: 126px;
+            min-height: 50px;
+            padding: 5px 6px;
+            gap: 1px;
+            align-content: center;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 8px;
+            background: rgba(13,15,22,0.72);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__label {
+            font-size: 6px;
+            line-height: 1.05;
+            letter-spacing: 0.055em;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__label::before {
+            width: 3px;
+            height: 3px;
+            flex-basis: 3px;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__value {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            font-size: 8.5px;
+            line-height: 1.12;
+          }
+
+          .event-hero > .event-quick-guide .event-quick-guide__detail,
+          .event-hero > .event-quick-guide .event-quick-guide__note,
+          .event-hero > .event-quick-guide .event-quick-guide__link {
+            display: none;
+          }
+        }
       `}</style>
       <section
         className="event-hero"
@@ -3336,7 +4158,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         <div className="event-hero__stats" aria-label="Resumo social do evento">
           {socialStats.map((stat) => (
-            <div className="event-hero__stat" key={stat.key}>
+            <a
+              className="event-hero__stat"
+              href={stat.href}
+              key={stat.key}
+            >
               <div className="event-hero__stat-copy">
                 <span className="event-hero__stat-label">{stat.label}</span>
                 <strong className="event-hero__stat-value">{stat.count}</strong>
@@ -3386,9 +4212,97 @@ export default async function EventPage({ params, searchParams }: PageProps) {
                   </span>
                 ) : null}
               </div>
-            </div>
+            </a>
           ))}
         </div>
+
+        <section
+          className="event-quick-guide"
+          aria-label="Guia rápido do evento"
+        >
+          <div className="event-quick-guide__heading">
+            <h2 className="event-quick-guide__title">
+              Guia rápido
+            </h2>
+
+            <p className="event-quick-guide__subtitle">
+              Informações essenciais antes de sair de casa.
+            </p>
+          </div>
+
+          <div className="event-quick-guide__grid">
+            <div className="event-quick-guide__item">
+              <span className="event-quick-guide__label">
+                Clima
+              </span>
+
+              <strong className="event-quick-guide__value">
+                {normalizeText(eventGroup?.weather_temperature) || "A confirmar"}
+              </strong>
+
+              <p className="event-quick-guide__detail">
+                {normalizeText(eventGroup?.weather_summary) ||
+                  "Previsão ainda não cadastrada."}
+              </p>
+
+              <p className="event-quick-guide__note">
+                {normalizeText(eventGroup?.weather_rain_alert) ||
+                  "Sem alerta de chuva cadastrado."}
+              </p>
+            </div>
+
+            <div className="event-quick-guide__item">
+              <span className="event-quick-guide__label">
+                Ingresso
+              </span>
+
+              <strong className="event-quick-guide__value">
+                {ticketGuideValue}
+              </strong>
+
+              <p className="event-quick-guide__detail">
+                {ticketGuideDetail}
+              </p>
+
+            </div>
+
+            <div className="event-quick-guide__item">
+              <span className="event-quick-guide__label">
+                Entrada
+              </span>
+
+              <strong className="event-quick-guide__value">
+                Documento em mãos
+              </strong>
+
+              <p className="event-quick-guide__detail">
+                {attendees.some(
+                  (member) => member.event_requires_student_document
+                )
+                  ? "Leve documento e comprovante de estudante."
+                  : "Documento com foto sempre em mãos."}
+              </p>
+            </div>
+
+            <div className="event-quick-guide__item">
+              <span className="event-quick-guide__label">
+                Antes de sair
+              </span>
+
+              <strong className="event-quick-guide__value">
+                Última conferência
+              </strong>
+
+              <p className="event-quick-guide__detail">
+                {attendees.find((member) =>
+                  hasContent(member.event_preparation_notes)
+                )?.event_preparation_notes ||
+                  normalizeText(eventGroup?.preparation_note) ||
+                  "Confira ingresso, documento, rota, carona e ponto de encontro antes de sair."}
+              </p>
+            </div>
+          </div>
+        </section>
 
         {topTribes.length > 0 ? (
           <div
@@ -3428,128 +4342,163 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       </section>
 
       {eventGroup?.group_id ? (
+        <section
+          id="event-social-radar-summary"
+          className="event-persisted-radar"
+          aria-label="Estados sociais compartilhados no evento"
+        >
+          <div className="event-persisted-radar__heading">
+            <div className="event-persisted-radar__copy">
+              <span className="event-persisted-radar__eyebrow">
+                Radar social real
+              </span>
+
+              <h2 className="event-persisted-radar__title">
+                Como as pessoas estão se organizando
+              </h2>
+
+              <p className="event-persisted-radar__description">
+                Estados compartilhados por Clubbers neste evento. O acesso
+                social independe da compra do ingresso.
+              </p>
+            </div>
+
+            <div
+              className="event-persisted-radar__total"
+              aria-label={`${socialRadar.counts.active_participants} participantes sociais ativos`}
+            >
+              <strong className="event-persisted-radar__total-value">
+                {socialRadar.ok
+                  ? socialRadar.counts.active_participants
+                  : "—"}
+              </strong>
+
+              <span className="event-persisted-radar__total-label">
+                {socialRadar.ok
+                  ? "participantes sociais"
+                  : "radar indisponível"}
+              </span>
+            </div>
+          </div>
+
+          {socialRadar.ok ? (
+            <div className="event-persisted-radar__track">
+              {persistedSocialStats.map((stat) => (
+                <a
+                  href="#event-social-radar"
+                  className="event-persisted-radar__item"
+                  key={stat.key}
+                  aria-label={`${stat.label}: ${stat.count}. Abrir radar social.`}
+                >
+                  <div className="event-persisted-radar__item-copy">
+                    <span className="event-persisted-radar__item-label">
+                      {stat.label}
+                    </span>
+
+                    <strong className="event-persisted-radar__item-value">
+                      {stat.count}
+                    </strong>
+                  </div>
+
+                  <div
+                    className="event-persisted-radar__preview"
+                    aria-label={
+                      stat.count > 0
+                        ? `Prévia de ${stat.label.toLowerCase()}`
+                        : stat.emptyLabel
+                    }
+                  >
+                    {stat.members.slice(0, 3).map((member) => {
+                      const memberInitial =
+                        normalizeText(member.label || member.slug)
+                          .charAt(0)
+                          .toUpperCase() || "C";
+
+                      return (
+                        <span
+                          className="event-persisted-radar__avatar"
+                          key={`${stat.key}-${member.user_id}`}
+                          title={member.label}
+                          style={
+                            member.club_photo_url
+                              ? {
+                                  backgroundImage: `url("${member.club_photo_url}")`,
+                                }
+                              : undefined
+                          }
+                        >
+                          {member.club_photo_url ? "" : memberInitial}
+                        </span>
+                      );
+                    })}
+
+                    {stat.count > 3 ? (
+                      <span className="event-persisted-radar__more">
+                        +{stat.count - 3}
+                      </span>
+                    ) : null}
+
+                    {stat.count === 0 ? (
+                      <span className="event-persisted-radar__empty">
+                        {stat.emptyLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="event-persisted-radar__notice">
+              O radar social não pôde ser carregado agora. A página continua
+              disponível sem expor dados incompletos.
+            </p>
+          )}
+
+          {socialRadar.ok && visibleGroupPreferenceStats.length > 0 ? (
+            <div
+              className="event-persisted-radar__groups"
+              aria-label="Preferências de grupo agregadas"
+            >
+              <span className="event-persisted-radar__groups-label">
+                Preferência de grupo
+              </span>
+
+              {visibleGroupPreferenceStats.map((item) => (
+                <span
+                  className="event-persisted-radar__group"
+                  key={item.key}
+                >
+                  {item.label}
+                  <strong>{item.count}</strong>
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {socialRadar.ok ? (
+            <p className="event-persisted-radar__notice">
+              Preferências de composição de grupo aparecem somente de forma
+              agregada e a partir de três pessoas. Localização precisa e dados
+              privados não são publicados.
+              {socialRadar.truncated
+                ? " A leitura atingiu o limite operacional desta fundação."
+                : ""}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {eventGroup?.group_id ? (
         <>
           <TicketIntentButton eventGroupId={eventGroup.group_id} />
           <TicketNetworkAvailability eventGroupId={eventGroup.group_id} />
         </>
       ) : null}
 
-      <section
-        className="event-quick-guide"
-        style={sectionStyle("green")}
-      >
-        <div className="event-quick-guide__heading">
-          <h2 className="event-quick-guide__title">
-            Guia rápido do evento
-          </h2>
 
-          <p className="event-quick-guide__subtitle">
-            <strong>Antes de sair de casa.</strong>{" "}
-            Um resumo simples para chegar preparado, sem surpresa na entrada.
-          </p>
-        </div>
 
-        <div className="event-quick-guide__grid">
-          <div className="event-quick-guide__item">
-            <span className="event-quick-guide__label">
-              Clima previsto
-            </span>
-
-            <strong className="event-quick-guide__value">
-              {normalizeText(eventGroup?.weather_temperature) || "A confirmar"}
-            </strong>
-
-            <p className="event-quick-guide__detail">
-              {normalizeText(eventGroup?.weather_summary) ||
-                "Previsão ainda não cadastrada."}
-            </p>
-
-            <p className="event-quick-guide__note">
-              {normalizeText(eventGroup?.weather_rain_alert) ||
-                "Sem alerta de chuva cadastrado."}
-            </p>
-          </div>
-
-          <div className="event-quick-guide__item">
-            <span className="event-quick-guide__label">
-              Ingresso
-            </span>
-
-            <strong className="event-quick-guide__value">
-              {ticketGuideValue}
-            </strong>
-
-            <p className="event-quick-guide__detail">
-              {ticketGuideDetail}
-            </p>
-
-            {heroOfficialUrl ? (
-              <a
-                href={heroOfficialUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="event-quick-guide__link"
-              >
-                Abrir evento oficial
-              </a>
-            ) : null}
-
-            {hasContent(activePartnerTicketUrl) ? (
-              <TicketPurchaseAction
-                eventGroupId={eventGroup?.group_id || null}
-                href={activePartnerTicketUrl}
-                label={activePartnerTicketLabel}
-                className="event-quick-guide__link"
-              />
-            ) : null}
-
-            {canonicalValidationLabel ? (
-              <p className="event-quick-guide__note">
-                {canonicalValidationLabel}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="event-quick-guide__item">
-            <span className="event-quick-guide__label">
-              Entrada
-            </span>
-
-            <strong className="event-quick-guide__value">
-              Documento em mãos
-            </strong>
-
-            <p className="event-quick-guide__detail">
-              {matchedMembers.some(
-                (member) => member.event_requires_student_document
-              )
-                ? "Leve documento e comprovante de estudante."
-                : "Documento com foto sempre em mãos."}
-            </p>
-          </div>
-
-          <div className="event-quick-guide__item">
-            <span className="event-quick-guide__label">
-              Antes de sair
-            </span>
-
-            <strong className="event-quick-guide__value">
-              Última conferência
-            </strong>
-
-            <p className="event-quick-guide__detail">
-              {matchedMembers.find((member) =>
-                hasContent(member.event_preparation_notes)
-              )?.event_preparation_notes ||
-                normalizeText(eventGroup?.preparation_note) ||
-                "Confira ingresso, documento, rota, carona e ponto de encontro antes de sair."}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {matchedMembers.length === 0 ? (
-        <section style={sectionStyle("purple")}>
+      {attendees.length === 0 ? (
+        <section id="event-social-radar" style={sectionStyle("purple")}>
           <div style={emptyCardStyle()}>
             <strong style={{ display: "block", marginBottom: 10 }}>
               Ainda não há Clubbers vinculados a este evento.
@@ -3562,6 +4511,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ) : (
         <>
           <section
+            id="event-social-radar"
             className="event-social-radar"
             style={sectionStyle("purple")}
           >
@@ -3579,12 +4529,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             />
           </section>
 
-          <RideMeetCards
-            rideMembers={rideMembers}
-            meetMembers={meetMembers}
-            eventReturnTo={eventReturnPath}
-            officialEventUrl={heroOfficialUrl}
-          />
+          <div id="event-rides-meets">
+            <RideMeetCards
+              rideMembers={rideMembers}
+              meetMembers={meetMembers}
+              eventReturnTo={eventReturnPath}
+              officialEventUrl={heroOfficialUrl}
+            />
+          </div>
         </>
       )}
     </main>

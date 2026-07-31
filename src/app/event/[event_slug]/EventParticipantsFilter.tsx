@@ -14,6 +14,13 @@ type EventParticipant = {
   club_photo_url: string;
   favorite_genres: string[];
   event_social_mode: string;
+  social_participation_mode?: string;
+  social_wants_group?: boolean;
+  social_accepts_new_people?: boolean;
+  social_meet_on_site?: boolean;
+  social_first_time?: boolean;
+  social_same_city?: boolean;
+  social_is_accepted_connection?: boolean;
   compatibilityScore?: number;
   compatibilityBadges?: string[];
 };
@@ -65,7 +72,7 @@ type ProximityMatch = {
   reasons: string[];
 };
 
-const DEV_SOCIAL_SANDBOX = process.env.NODE_ENV === "development";
+const DEV_SOCIAL_SANDBOX = false;
 
 const PREMIUM = {
   bg: "#05050A",
@@ -340,6 +347,9 @@ function getTribeVisual(tribe: string): TribeVisual {
 function getSocialModeLabel(mode: string): string {
   const normalized = normalizeText(mode).toLowerCase();
 
+  if (normalized === "alone") return "Vai sozinho";
+  if (normalized === "with_friends") return "Vai com amigos";
+  if (normalized === "undecided") return "Ainda está decidindo";
   if (normalized.includes("network")) return "Aberto a conexões";
   if (normalized.includes("meet")) return "Aberto a encontros";
   if (normalized.includes("ride")) return "Aberto a caronas";
@@ -1958,6 +1968,62 @@ export default function EventParticipantsFilter({
         badges.push("Presença social ativa");
       }
 
+      if (
+        member.social_is_accepted_connection &&
+        !badges.includes("Conexão aceita")
+      ) {
+        score += 30;
+        badges.unshift("Conexão aceita");
+      }
+
+      if (
+        member.social_participation_mode === "alone" &&
+        !badges.includes("Vai sozinho")
+      ) {
+        score += 10;
+        badges.push("Vai sozinho");
+      }
+
+      if (
+        member.social_wants_group &&
+        !badges.includes("Quer entrar em grupo")
+      ) {
+        score += 12;
+        badges.push("Quer entrar em grupo");
+      }
+
+      if (
+        member.social_accepts_new_people &&
+        !badges.includes("Aceita novas pessoas")
+      ) {
+        score += 12;
+        badges.push("Aceita novas pessoas");
+      }
+
+      if (
+        member.social_meet_on_site &&
+        !badges.includes("Encontro no local")
+      ) {
+        score += 10;
+        badges.push("Encontro no local");
+      }
+
+      if (
+        member.social_first_time &&
+        !badges.includes("Primeira vez")
+      ) {
+        score += 6;
+        badges.push("Primeira vez");
+      }
+
+      if (
+        member.social_same_city &&
+        !badges.includes("Busca pessoas da cidade")
+      ) {
+        score += 6;
+        badges.push("Busca pessoas da cidade");
+      }
+
       return {
         ...member,
         compatibilityScore: Math.min(score, 100),
@@ -2153,19 +2219,22 @@ export default function EventParticipantsFilter({
 
         .event-radar-card {
           min-width: 0;
-          flex: 0 0 260px;
-          width: 260px;
+          flex: 0 0 292px;
+          width: 292px;
           max-width: calc(100vw - 64px);
-          display: flex;
-          flex-direction: column;
-          border-radius: 22px;
+          display: grid;
+          grid-template-columns: 62px minmax(0, 1fr);
+          align-items: start;
+          gap: 10px;
+          padding: 11px;
+          border-radius: 18px;
           border: 1px solid rgba(255, 255, 255, 0.1);
           background: linear-gradient(
             180deg,
             rgba(22, 22, 34, 0.82),
             rgba(10, 10, 17, 0.96)
           );
-          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
           overflow: hidden;
           scroll-snap-align: start;
         }
@@ -2173,13 +2242,18 @@ export default function EventParticipantsFilter({
         .event-radar-card[data-selected="true"] {
           border-color: rgba(0, 245, 200, 0.3);
           box-shadow:
-            0 16px 36px rgba(0, 0, 0, 0.32),
-            0 0 24px rgba(0, 245, 200, 0.08);
+            0 12px 28px rgba(0, 0, 0, 0.3),
+            0 0 22px rgba(0, 245, 200, 0.08);
         }
 
         .event-radar-card__image {
-          min-height: 168px;
-          flex: 0 0 168px;
+          width: 62px;
+          height: 62px;
+          min-height: 62px;
+          align-self: start;
+          border: 1px solid rgba(255,255,255,0.16);
+          border-radius: 999px;
+          box-shadow: 0 8px 18px rgba(0,0,0,0.28);
         }
 
         .event-radar-card__profile-link {
@@ -2209,31 +2283,70 @@ export default function EventParticipantsFilter({
         }
 
         .event-radar-card__body {
-          min-height: 272px;
-          flex: 1;
+          min-height: 0;
+          min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 14px;
-          padding: 16px;
+          gap: 7px;
+          padding: 0;
+        }
+
+        .event-radar-card__body header {
+          gap: 2px !important;
+        }
+
+        .event-radar-card__profile-link,
+        .event-radar-card__body header > strong {
+          font-size: 14px !important;
+          line-height: 1.1 !important;
+        }
+
+        .event-radar-card__body header > span {
+          font-size: 9px !important;
+          line-height: 1.2 !important;
+        }
+
+        .event-radar-card__body dl {
+          gap: 4px !important;
+          padding-top: 7px !important;
+        }
+
+        .event-radar-card__body dl > div {
+          grid-template-columns: 58px minmax(0, 1fr) !important;
+          gap: 6px !important;
+        }
+
+        .event-radar-card__body dt {
+          font-size: 7px !important;
+          line-height: 1.15 !important;
+        }
+
+        .event-radar-card__body dd {
+          font-size: 9px !important;
+          line-height: 1.2 !important;
         }
 
         .event-radar-card__toggle {
-          min-height: 50px;
+          min-height: 32px;
           width: 100%;
-          margin-top: auto;
+          margin-top: 1px;
           display: inline-flex;
           align-items: center;
           justify-content: space-between;
-          gap: 14px;
-          padding: 12px 14px;
-          border-radius: 13px;
+          gap: 8px;
+          padding: 6px 8px;
+          border-radius: 10px;
           border: 1px solid rgba(255,255,255,0.13);
           background: rgba(255,255,255,0.025);
           color: #fff;
-          font-size: 13px;
-          line-height: 1.2;
+          font-size: 10px;
+          line-height: 1.15;
           font-weight: 950;
           cursor: pointer;
+        }
+
+        .event-radar-card__toggle > span:last-child {
+          font-size: 18px !important;
         }
 
         .event-radar-card[data-selected="true"] .event-radar-card__toggle {
@@ -2346,19 +2459,66 @@ export default function EventParticipantsFilter({
 
         @media (max-width: 760px) {
           .event-radar-results {
-            gap: 12px;
-            padding-bottom: 6px;
+            gap: 9px;
+            padding: 2px 0 5px;
             scroll-snap-type: x mandatory;
           }
 
           .event-radar-card {
-            flex: 0 0 min(84vw, 310px);
-            width: min(84vw, 310px);
-            max-width: min(84vw, 310px);
+            flex: 0 0 244px;
+            width: 244px;
+            max-width: 244px;
+            grid-template-columns: 50px minmax(0, 1fr);
+            gap: 8px;
+            padding: 9px;
+            border-radius: 15px;
+          }
+
+          .event-radar-card__image {
+            width: 50px;
+            height: 50px;
+            min-height: 50px;
+            border-radius: 999px;
+          }
+
+          .event-radar-card__profile-link,
+          .event-radar-card__body header > strong {
+            font-size: 12px !important;
+          }
+
+          .event-radar-card__body header > span {
+            font-size: 8px !important;
           }
 
           .event-radar-card__body {
-            min-height: 286px;
+            min-height: 0;
+            gap: 5px;
+            padding: 0;
+          }
+
+          .event-radar-card__body dl {
+            gap: 3px !important;
+            padding-top: 5px !important;
+          }
+
+          .event-radar-card__body dl > div {
+            grid-template-columns: 48px minmax(0, 1fr) !important;
+            gap: 4px !important;
+          }
+
+          .event-radar-card__body dt {
+            font-size: 6.5px !important;
+          }
+
+          .event-radar-card__body dd {
+            font-size: 8px !important;
+          }
+
+          .event-radar-card__toggle {
+            min-height: 28px;
+            padding: 5px 7px;
+            border-radius: 9px;
+            font-size: 9px;
           }
 
           .event-radar-detail {

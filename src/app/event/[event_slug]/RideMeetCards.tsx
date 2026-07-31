@@ -1537,6 +1537,9 @@ export default function RideMeetCards({
   eventReturnTo,
   officialEventUrl,
 }: RideMeetCardsProps) {
+  const hasRideMembers = rideMembers.length > 0;
+  const hasMeetMembers = meetMembers.length > 0;
+
   return (
     <div className="event-ride-meet-stack">
       <style>{`
@@ -1548,6 +1551,97 @@ export default function RideMeetCards({
           display: grid;
           gap: 18px;
           box-sizing: border-box;
+        }
+
+        .event-ride-meet-overview {
+          gap: 14px !important;
+          padding: 18px 20px !important;
+        }
+
+        .event-ride-meet-overview__heading {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          gap: 18px;
+        }
+
+        .event-ride-meet-overview__copy {
+          display: grid;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .event-ride-meet-overview__eyebrow {
+          color: ${EVENT_PALETTE.teal};
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .event-ride-meet-overview__title {
+          margin: 0;
+          color: #fff;
+          font-size: 23px;
+          line-height: 1.08;
+          font-weight: 950;
+          letter-spacing: -0.03em;
+        }
+
+        .event-ride-meet-overview__subtitle {
+          margin: 0;
+          color: ${EVENT_PALETTE.textMuted};
+          font-size: 12px;
+          line-height: 1.4;
+        }
+
+        .event-ride-meet-overview__grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          border-top: 1px solid rgba(255,255,255,0.09);
+        }
+
+        .event-ride-meet-overview__item {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px 2px 0;
+        }
+
+        .event-ride-meet-overview__item + .event-ride-meet-overview__item {
+          padding-left: 16px;
+          border-left: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-ride-meet-overview__count {
+          min-width: 36px;
+          color: #fff;
+          font-size: 28px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+        }
+
+        .event-ride-meet-overview__item-copy {
+          display: grid;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .event-ride-meet-overview__label {
+          color: #fff;
+          font-size: 13px;
+          line-height: 1.25;
+          font-weight: 900;
+        }
+
+        .event-ride-meet-overview__status {
+          color: ${EVENT_PALETTE.textMuted};
+          font-size: 11px;
+          line-height: 1.35;
         }
 
         .event-ride-card {
@@ -1668,9 +1762,51 @@ export default function RideMeetCards({
           .event-ride-meet-stack {
             width: 100%;
             max-width: 100%;
-            margin: 14px 0 0;
+            margin: 12px 0 0;
             transform: none;
-            gap: 16px;
+            gap: 14px;
+          }
+
+          .event-ride-meet-overview {
+            padding: 15px 14px !important;
+            gap: 11px !important;
+          }
+
+          .event-ride-meet-overview__heading {
+            display: grid;
+            gap: 4px;
+          }
+
+          .event-ride-meet-overview__title {
+            font-size: 20px;
+          }
+
+          .event-ride-meet-overview__subtitle {
+            font-size: 11px;
+          }
+
+          .event-ride-meet-overview__item {
+            grid-template-columns: 28px minmax(0, 1fr);
+            gap: 8px;
+            padding: 11px 10px 0 0;
+          }
+
+          .event-ride-meet-overview__item + .event-ride-meet-overview__item {
+            padding-left: 10px;
+          }
+
+          .event-ride-meet-overview__count {
+            min-width: 28px;
+            font-size: 22px;
+          }
+
+          .event-ride-meet-overview__label {
+            font-size: 11px;
+          }
+
+          .event-ride-meet-overview__status {
+            font-size: 9px;
+            line-height: 1.3;
           }
 
           .event-ride-card {
@@ -1728,25 +1864,87 @@ export default function RideMeetCards({
         }
       `}</style>
 
-      <section style={sectionStyle("ride")}>
-        <div style={sectionHeaderStyle()}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <h2 style={sectionTitleStyle()}>Carona compartilhada</h2>
-            <p style={sectionSubtitleStyle()}>
-              Quem oferece e quem procura carona para este evento.
+      <section
+        className="event-ride-meet-overview"
+        style={sectionStyle("ride")}
+        aria-label="Resumo de mobilidade e encontros"
+      >
+        <div className="event-ride-meet-overview__heading">
+          <div className="event-ride-meet-overview__copy">
+            <span className="event-ride-meet-overview__eyebrow">
+              Planejamento social
+            </span>
+
+            <h2 className="event-ride-meet-overview__title">
+              Mobilidade e encontros
+            </h2>
+
+            <p className="event-ride-meet-overview__subtitle">
+              Veja rapidamente se já existem caronas ou pontos combinados.
             </p>
           </div>
-
-          <span style={statusBadgeStyle("ride")}>
-            Radar ativo
-          </span>
         </div>
 
-        {rideMembers.length === 0 ? (
-          <div style={emptyCardStyle()}>
-            {"Ainda não há caronas mapeadas para este evento."}
+        <div className="event-ride-meet-overview__grid">
+          <div className="event-ride-meet-overview__item">
+            <strong className="event-ride-meet-overview__count">
+              {rideMembers.length}
+            </strong>
+
+            <div className="event-ride-meet-overview__item-copy">
+              <span className="event-ride-meet-overview__label">
+                Caronas
+              </span>
+
+              <span className="event-ride-meet-overview__status">
+                {hasRideMembers
+                  ? rideMembers.length === 1
+                    ? "1 opção mapeada"
+                    : `${rideMembers.length} opções mapeadas`
+                  : "Nenhuma oferta ou busca ativa"}
+              </span>
+            </div>
           </div>
-        ) : (
+
+          <div className="event-ride-meet-overview__item">
+            <strong className="event-ride-meet-overview__count">
+              {meetMembers.length}
+            </strong>
+
+            <div className="event-ride-meet-overview__item-copy">
+              <span className="event-ride-meet-overview__label">
+                Encontros
+              </span>
+
+              <span className="event-ride-meet-overview__status">
+                {hasMeetMembers
+                  ? meetMembers.length === 1
+                    ? "1 ponto combinado"
+                    : `${meetMembers.length} pontos combinados`
+                  : "Nenhum ponto ativo"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {hasRideMembers ? (
+        <section style={sectionStyle("ride")}>
+          <div style={sectionHeaderStyle()}>
+            <div style={{ display: "grid", gap: 4 }}>
+              <h2 style={sectionTitleStyle()}>Carona compartilhada</h2>
+              <p style={sectionSubtitleStyle()}>
+                Quem oferece e quem procura carona para este evento.
+              </p>
+            </div>
+
+            <span style={statusBadgeStyle("ride")}>
+              {rideMembers.length === 1
+                ? "1 opção ativa"
+                : `${rideMembers.length} opções ativas`}
+            </span>
+          </div>
+
           <div style={carouselStyle()}>
             {rideMembers.map((member) => (
               <RideCard
@@ -1757,26 +1955,26 @@ export default function RideMeetCards({
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <section style={sectionStyle("meet")}>
-        <div style={sectionHeaderStyle()}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <h2 style={sectionTitleStyle()}>Encontros combinados</h2>
-            <p style={sectionSubtitleStyle()}>
-              {"Pontos de encontro e horários que já foram marcados para este evento."}
-            </p>
+      {hasMeetMembers ? (
+        <section style={sectionStyle("meet")}>
+          <div style={sectionHeaderStyle()}>
+            <div style={{ display: "grid", gap: 4 }}>
+              <h2 style={sectionTitleStyle()}>Encontros combinados</h2>
+              <p style={sectionSubtitleStyle()}>
+                Pontos de encontro e horários que já foram marcados para este evento.
+              </p>
+            </div>
+
+            <span style={statusBadgeStyle("meet")}>
+              {meetMembers.length === 1
+                ? "1 ponto ativo"
+                : `${meetMembers.length} pontos ativos`}
+            </span>
           </div>
 
-          <span style={statusBadgeStyle("meet")}>Ponto ativo</span>
-        </div>
-
-        {meetMembers.length === 0 ? (
-          <div style={emptyCardStyle()}>
-            {"Ainda não há encontros ativos mapeados para este evento."}
-          </div>
-        ) : (
           <div style={carouselStyle()}>
             {meetMembers.map((member) => (
               <MeetCard
@@ -1787,8 +1985,8 @@ export default function RideMeetCards({
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }
