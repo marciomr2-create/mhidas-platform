@@ -9,6 +9,7 @@ import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import RideMeetCards from "./RideMeetCards";
+import StructuredRideMeetHub from "./StructuredRideMeetHub";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
 import TicketNetworkAvailability from "./TicketNetworkAvailability";
@@ -4496,6 +4497,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ) : null}
 
 
+
+      {eventGroup?.group_id ? (
+        <StructuredRideMeetHub
+          eventGroupId={eventGroup.group_id}
+          eventReturnTo={eventReturnPath}
+          isAuthenticated={Boolean(authenticatedUser)}
+        />
+      ) : null}
 
       {attendees.length === 0 ? (
         <section id="event-social-radar" style={sectionStyle("purple")}>
