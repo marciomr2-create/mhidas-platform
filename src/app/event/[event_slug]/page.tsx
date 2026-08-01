@@ -8,7 +8,6 @@ import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
-import RideMeetCards from "./RideMeetCards";
 import StructuredRideMeetHub from "./StructuredRideMeetHub";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
@@ -1724,13 +1723,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
     (member) => member.ride_status === "need" || member.ride_status === "both"
   );
 
-  const rideMembers = dedupeStrings([
-    ...rideOfferMembers.map((member) => member.user_id),
-    ...rideNeedMembers.map((member) => member.user_id),
-  ])
-    .map((userId) => attendees.find((member) => member.user_id === userId))
-    .filter(Boolean) as EventMember[];
-
   const meetMembers = attendees.filter(
     (member) =>
       member.meet_status === "host" ||
@@ -1874,7 +1866,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       emptyLabel: "Nenhuma oferta ainda",
       href:
         rideOfferMembers.length > 0
-          ? "#event-rides-meets"
+          ? "#event-structured-rides-meetups"
           : "#event-social-radar",
     },
     {
@@ -1885,7 +1877,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       emptyLabel: "Ninguém procurando",
       href:
         rideNeedMembers.length > 0
-          ? "#event-rides-meets"
+          ? "#event-structured-rides-meetups"
           : "#event-social-radar",
     },
     {
@@ -1896,7 +1888,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       emptyLabel: "Nenhum encontro ainda",
       href:
         meetMembers.length > 0
-          ? "#event-rides-meets"
+          ? "#event-structured-rides-meetups"
           : "#event-social-radar",
     },
   ] satisfies Array<{
@@ -4538,14 +4530,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             />
           </section>
 
-          <div id="event-rides-meets">
-            <RideMeetCards
-              rideMembers={rideMembers}
-              meetMembers={meetMembers}
-              eventReturnTo={eventReturnPath}
-              officialEventUrl={heroOfficialUrl}
-            />
-          </div>
         </>
       )}
     </main>

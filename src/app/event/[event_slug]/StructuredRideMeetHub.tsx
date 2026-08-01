@@ -2,7 +2,13 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 
 type StructuredRideMeetHubProps = {
@@ -128,6 +134,8 @@ type MutationPayload = {
   ok: boolean;
   message?: string;
   details?: string;
+  ride_id?: string;
+  meetup_id?: string;
 };
 
 type ActivePanel = "rides" | "meetups";
@@ -298,6 +306,12 @@ export default function StructuredRideMeetHub({
   const [busyKey, setBusyKey] = useState("");
   const [feedback, setFeedback] =
     useState<FeedbackState>(null);
+  const [rideComposerOpen, setRideComposerOpen] =
+    useState(false);
+  const [highlightedRideId, setHighlightedRideId] =
+    useState("");
+
+  const rideRailRef = useRef<HTMLDivElement>(null);
 
   const [viewerUserId, setViewerUserId] = useState("");
   const [rides, setRides] = useState<RideRow[]>([]);
@@ -401,21 +415,29 @@ export default function StructuredRideMeetHub({
     void loadData();
   }, [loadData]);
 
-  async function runMutation(
+  async function runMutation<T>(
     key: string,
-    action: () => Promise<void>,
+    action: () => Promise<T>,
     successMessage: string
-  ) {
+  ): Promise<T | null> {
+    if (busyKey) {
+      return null;
+    }
+
     setBusyKey(key);
     setFeedback(null);
 
     try {
-      await action();
+      const result = await action();
+
       setFeedback({
         tone: "success",
         message: successMessage,
       });
+
       await loadData();
+
+      return result;
     } catch (error) {
       setFeedback({
         tone: "error",
@@ -424,6 +446,8 @@ export default function StructuredRideMeetHub({
             ? error.message
             : "Não foi possível concluir esta ação.",
       });
+
+      return null;
     } finally {
       setBusyKey("");
     }
@@ -434,20 +458,27 @@ export default function StructuredRideMeetHub({
   ) {
     event.preventDefault();
 
+    if (busyKey) {
+      return;
+    }
+
     const seats = Number(rideSeats);
 
     if (!Number.isInteger(seats) || seats < 1 || seats > 50) {
       setFeedback({
         tone: "error",
-        message: "Informe entre 1 e 50 vagas.",
+        message:
+          rideMode === "offer"
+            ? "Informe entre 1 e 50 vagas disponíveis."
+            : "Informe entre 1 e 50 vagas necessárias.",
       });
       return;
     }
 
-    await runMutation(
+    const createdRideId = await runMutation(
       "create-ride",
       async () => {
-        await postMutation("/api/event-rides", {
+        const payload = await postMutation("/api/event-rides", {
           action: "create",
           event_group_id: eventGroupId,
           mode: rideMode,
@@ -464,17 +495,33 @@ export default function StructuredRideMeetHub({
           expires_at: null,
         });
 
-        setRideOrigin("");
-        setRideDestination("");
-        setRideDepartureAt("");
-        setRideReturnAt("");
-        setRideSeats("3");
-        setRideTransportType("");
-        setRideContribution("");
-        setRideNotes("");
+        const rideId = normalizeText(payload.ride_id);
+
+        if (!rideId) {
+          throw new Error(
+            "A carona foi criada, mas o identificador não foi retornado."
+          );
+        }
+
+        return rideId;
       },
       "Carona publicada com sucesso."
     );
+
+    if (!createdRideId) {
+      return;
+    }
+
+    setRideOrigin("");
+    setRideDestination("");
+    setRideDepartureAt("");
+    setRideReturnAt("");
+    setRideSeats("3");
+    setRideTransportType("");
+    setRideContribution("");
+    setRideNotes("");
+    setRideComposerOpen(false);
+    setHighlightedRideId(createdRideId);
   }
 
   async function handleCreateMeetup(
@@ -527,12 +574,48 @@ export default function StructuredRideMeetHub({
     );
   }
 
-  const activeRides = rides.filter(
-    (ride) => ride.status === "active"
-  );
+  const activeRides = rides
+    .filter((ride) => ride.status === "active")
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() -
+        new Date(left.created_at).getTime()
+    );
   const activeMeetups = meetups.filter(
     (meetup) => meetup.status === "active"
   );
+
+  useEffect(() => {
+    if (!highlightedRideId) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const card = document.getElementById(
+        `structured-ride-card-${highlightedRideId}`
+      );
+
+      if (!card) {
+        return;
+      }
+
+      card.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "start",
+      });
+      card.focus({ preventScroll: true });
+    });
+
+    const timeout = window.setTimeout(() => {
+      setHighlightedRideId("");
+    }, 3200);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [highlightedRideId, rides]);
 
   return (
     <section
@@ -842,6 +925,10 @@ export default function StructuredRideMeetHub({
           gap: 0;
         }
 
+        .structured-social__list--rides {
+          min-width: 0;
+        }
+
         .structured-social__empty {
           margin: 0;
           padding: 18px 0;
@@ -859,6 +946,20 @@ export default function StructuredRideMeetHub({
           gap: 24px;
           padding: 20px 0;
           border-top: 1px solid rgba(255,255,255,0.09);
+          outline: 0 solid transparent;
+          outline-offset: -1px;
+          transition:
+            outline-color 180ms ease,
+            background-color 180ms ease;
+        }
+
+        .structured-social__card:focus {
+          outline: none;
+        }
+
+        .structured-social__card[data-highlighted="true"] {
+          outline: 2px solid rgba(94,234,212,0.86);
+          background: rgba(20,184,166,0.08);
         }
 
         .structured-social__card-main,
@@ -947,6 +1048,17 @@ export default function StructuredRideMeetHub({
           opacity: 0.48;
         }
 
+        .structured-social__action-stack {
+          display: grid;
+          gap: 9px;
+        }
+
+        .structured-social__owner-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
         .structured-social__request-list {
           display: grid;
           gap: 10px;
@@ -1012,6 +1124,31 @@ export default function StructuredRideMeetHub({
           .structured-social__field--wide,
           .structured-social__submit {
             grid-column: 1;
+          }
+
+          .structured-social__list--rides {
+            display: flex;
+            gap: 12px;
+            margin-inline: -14px;
+            padding: 0 14px 14px;
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            scroll-padding-inline: 14px;
+            scroll-snap-type: inline mandatory;
+            scrollbar-width: thin;
+          }
+
+          .structured-social__list--rides > .structured-social__card {
+            flex: 0 0 min(88%, 430px);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(4,8,14,0.66);
+          }
+
+          .structured-social__list--rides > .structured-social__empty {
+            flex: 1 0 100%;
           }
 
           .structured-social__card {
@@ -1136,8 +1273,18 @@ export default function StructuredRideMeetHub({
                 </span>
               </div>
 
-              <details className="structured-social__composer">
-                <summary>Publicar uma carona</summary>
+              <details
+                className="structured-social__composer"
+                open={rideComposerOpen}
+                onToggle={(event) =>
+                  setRideComposerOpen(event.currentTarget.open)
+                }
+              >
+                <summary>
+                  {activeRides.length > 0
+                    ? "Criar outra carona"
+                    : "Publicar uma carona"}
+                </summary>
 
                 <form
                   className="structured-social__form"
@@ -1253,7 +1400,9 @@ export default function StructuredRideMeetHub({
 
                   <div className="structured-social__field">
                     <label htmlFor="structured-ride-seats">
-                      Vagas
+                      {rideMode === "offer"
+                        ? "Vagas disponíveis"
+                        : "Vagas necessárias"}
                     </label>
                     <input
                       id="structured-ride-seats"
@@ -1344,12 +1493,18 @@ export default function StructuredRideMeetHub({
                   >
                     {busyKey === "create-ride"
                       ? "Publicando..."
-                      : "Publicar carona"}
+                      : rideMode === "offer"
+                        ? "Publicar oferta de carona"
+                        : "Publicar busca de carona"}
                   </button>
                 </form>
               </details>
 
-              <div className="structured-social__list">
+              <div
+                className="structured-social__list structured-social__list--rides"
+                ref={rideRailRef}
+                aria-label="Caronas deste evento"
+              >
                 {loading ? (
                   <p className="structured-social__empty">
                     Carregando caronas...
@@ -1388,11 +1543,35 @@ export default function StructuredRideMeetHub({
                               request.status === "pending"
                           )
                         : [];
+                    const approvedSeatCount = rideRequests
+                      .filter(
+                        (request) =>
+                          request.ride_id === ride.ride_id &&
+                          request.status === "approved"
+                      )
+                      .reduce(
+                        (total, request) =>
+                          total + request.seats_requested,
+                        0
+                      );
+                    const remainingSeatCount =
+                      ride.mode === "offer" &&
+                      ride.seats_available !== null
+                        ? Math.max(
+                            ride.seats_available -
+                              approvedSeatCount,
+                            0
+                          )
+                        : null;
+                    const capacityReached =
+                      remainingSeatCount !== null &&
+                      remainingSeatCount <= 0;
 
                     const joinDisabled =
                       isCreator ||
                       Boolean(viewerMembership) ||
                       Boolean(viewerPendingRequest) ||
+                      capacityReached ||
                       Boolean(busyKey);
 
                     let joinLabel = "Solicitar participação";
@@ -1403,11 +1582,18 @@ export default function StructuredRideMeetHub({
                       joinLabel = "Participação confirmada";
                     } else if (viewerPendingRequest) {
                       joinLabel = "Solicitação pendente";
+                    } else if (capacityReached) {
+                      joinLabel = "Sem vagas disponíveis";
                     }
 
                     return (
                       <article
+                        id={`structured-ride-card-${ride.ride_id}`}
                         className="structured-social__card"
+                        data-highlighted={
+                          highlightedRideId === ride.ride_id
+                        }
+                        tabIndex={-1}
                         key={ride.ride_id}
                       >
                         <div className="structured-social__card-main">
@@ -1438,8 +1624,14 @@ export default function StructuredRideMeetHub({
                               </span>
                             ) : null}
                             <span>
-                              Vagas informadas:{" "}
-                              {ride.seats_available ?? "a combinar"}
+                              {ride.mode === "offer"
+                                ? remainingSeatCount !== null
+                                  ? `Vagas disponíveis: ${remainingSeatCount} de ${ride.seats_available}`
+                                  : "Vagas disponíveis: a combinar"
+                                : `Vagas necessárias: ${
+                                    ride.seats_available ??
+                                    "a combinar"
+                                  }`}
                             </span>
                             <span>
                               Participantes confirmados:{" "}
@@ -1470,33 +1662,153 @@ export default function StructuredRideMeetHub({
                         </div>
 
                         <div className="structured-social__card-side">
-                          <button
-                            type="button"
-                            className="structured-social__action"
-                            disabled={joinDisabled}
-                            onClick={() =>
-                              void runMutation(
-                                `join-ride-${ride.ride_id}`,
-                                async () => {
-                                  await postMutation(
-                                    "/api/event-rides",
-                                    {
-                                      action: "request_join",
-                                      ride_id: ride.ride_id,
-                                      seats_requested: 1,
-                                      message: null,
+                          <div className="structured-social__action-stack">
+                            {isCreator ? (
+                              <div className="structured-social__owner-actions">
+                                <button
+                                  type="button"
+                                  className="structured-social__action structured-social__action--secondary"
+                                  disabled={Boolean(busyKey)}
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        "Encerrar esta carona? Novas solicitações pendentes serão canceladas."
+                                      )
+                                    ) {
+                                      return;
                                     }
+
+                                    void runMutation(
+                                      `close-ride-${ride.ride_id}`,
+                                      async () => {
+                                        await postMutation(
+                                          "/api/event-rides",
+                                          {
+                                            action: "set_status",
+                                            ride_id: ride.ride_id,
+                                            status: "closed",
+                                          }
+                                        );
+                                      },
+                                      "Carona encerrada."
+                                    );
+                                  }}
+                                >
+                                  Encerrar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="structured-social__action structured-social__action--reject"
+                                  disabled={Boolean(busyKey)}
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        "Cancelar esta carona? A publicação deixará de aparecer e solicitações pendentes serão canceladas."
+                                      )
+                                    ) {
+                                      return;
+                                    }
+
+                                    void runMutation(
+                                      `cancel-ride-${ride.ride_id}`,
+                                      async () => {
+                                        await postMutation(
+                                          "/api/event-rides",
+                                          {
+                                            action: "set_status",
+                                            ride_id: ride.ride_id,
+                                            status: "cancelled",
+                                          }
+                                        );
+                                      },
+                                      "Carona cancelada."
+                                    );
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : viewerMembership ? (
+                              <button
+                                type="button"
+                                className="structured-social__action structured-social__action--secondary"
+                                disabled={Boolean(busyKey)}
+                                onClick={() => {
+                                  if (!window.confirm("Sair desta carona?")) {
+                                    return;
+                                  }
+
+                                  void runMutation(
+                                    `leave-ride-${ride.ride_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-rides",
+                                        {
+                                          action: "leave",
+                                          ride_id: ride.ride_id,
+                                        }
+                                      );
+                                    },
+                                    "Você saiu da carona."
                                   );
-                                },
-                                "Solicitação de carona enviada."
-                              )
-                            }
-                          >
-                            {busyKey ===
-                            `join-ride-${ride.ride_id}`
-                              ? "Enviando..."
-                              : joinLabel}
-                          </button>
+                                }}
+                              >
+                                Sair da carona
+                              </button>
+                            ) : viewerPendingRequest ? (
+                              <button
+                                type="button"
+                                className="structured-social__action structured-social__action--secondary"
+                                disabled={Boolean(busyKey)}
+                                onClick={() =>
+                                  void runMutation(
+                                    `cancel-request-ride-${viewerPendingRequest.request_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-rides",
+                                        {
+                                          action: "cancel_request",
+                                          request_id:
+                                            viewerPendingRequest.request_id,
+                                        }
+                                      );
+                                    },
+                                    "Solicitação cancelada."
+                                  )
+                                }
+                              >
+                                Cancelar solicitação
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="structured-social__action"
+                                disabled={joinDisabled}
+                                onClick={() =>
+                                  void runMutation(
+                                    `join-ride-${ride.ride_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-rides",
+                                        {
+                                          action: "request_join",
+                                          ride_id: ride.ride_id,
+                                          seats_requested: 1,
+                                          message: null,
+                                        }
+                                      );
+                                    },
+                                    "Solicitação de carona enviada."
+                                  )
+                                }
+                              >
+                                {busyKey ===
+                                `join-ride-${ride.ride_id}`
+                                  ? "Enviando..."
+                                  : joinLabel}
+                              </button>
+                            )}
+                          </div>
 
                           {isCreator &&
                           ownerPendingRequests.length > 0 ? (
@@ -1526,7 +1838,15 @@ export default function StructuredRideMeetHub({
                                       <button
                                         type="button"
                                         className="structured-social__action"
-                                        disabled={Boolean(busyKey)}
+                                        disabled={
+                                          Boolean(busyKey) ||
+                                          (ride.mode === "offer" &&
+                                            ride.seats_available !==
+                                              null &&
+                                            approvedSeatCount +
+                                              request.seats_requested >
+                                              ride.seats_available)
+                                        }
                                         onClick={() =>
                                           void runMutation(
                                             `approve-ride-${request.request_id}`,
@@ -1547,7 +1867,14 @@ export default function StructuredRideMeetHub({
                                           )
                                         }
                                       >
-                                        Aprovar
+                                        {ride.mode === "offer" &&
+                                        ride.seats_available !==
+                                          null &&
+                                        approvedSeatCount +
+                                          request.seats_requested >
+                                          ride.seats_available
+                                          ? "Sem vagas"
+                                          : "Aprovar"}
                                       </button>
                                       <button
                                         type="button"
@@ -1822,11 +2149,15 @@ export default function StructuredRideMeetHub({
                               request.status === "pending"
                           )
                         : [];
+                    const capacityReached =
+                      approvedMembers.length >=
+                      meetup.max_members;
 
                     const joinDisabled =
                       isCreator ||
                       Boolean(viewerMembership) ||
                       Boolean(viewerPendingRequest) ||
+                      capacityReached ||
                       Boolean(busyKey);
 
                     let joinLabel = "Solicitar participação";
@@ -1837,6 +2168,8 @@ export default function StructuredRideMeetHub({
                       joinLabel = "Participação confirmada";
                     } else if (viewerPendingRequest) {
                       joinLabel = "Solicitação pendente";
+                    } else if (capacityReached) {
+                      joinLabel = "Lotação atingida";
                     }
 
                     return (
@@ -1899,33 +2232,156 @@ export default function StructuredRideMeetHub({
                         </div>
 
                         <div className="structured-social__card-side">
-                          <button
-                            type="button"
-                            className="structured-social__action"
-                            disabled={joinDisabled}
-                            onClick={() =>
-                              void runMutation(
-                                `join-meetup-${meetup.meetup_id}`,
-                                async () => {
-                                  await postMutation(
-                                    "/api/event-meetups",
-                                    {
-                                      action: "request_join",
-                                      meetup_id:
-                                        meetup.meetup_id,
-                                      message: null,
+                          <div className="structured-social__action-stack">
+                            {isCreator ? (
+                              <div className="structured-social__owner-actions">
+                                <button
+                                  type="button"
+                                  className="structured-social__action structured-social__action--secondary"
+                                  disabled={Boolean(busyKey)}
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        "Encerrar este encontro? Novas solicitações pendentes serão canceladas."
+                                      )
+                                    ) {
+                                      return;
                                     }
+
+                                    void runMutation(
+                                      `close-meetup-${meetup.meetup_id}`,
+                                      async () => {
+                                        await postMutation(
+                                          "/api/event-meetups",
+                                          {
+                                            action: "set_status",
+                                            meetup_id:
+                                              meetup.meetup_id,
+                                            status: "closed",
+                                          }
+                                        );
+                                      },
+                                      "Encontro encerrado."
+                                    );
+                                  }}
+                                >
+                                  Encerrar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="structured-social__action structured-social__action--reject"
+                                  disabled={Boolean(busyKey)}
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        "Cancelar este encontro? A publicação deixará de aparecer e solicitações pendentes serão canceladas."
+                                      )
+                                    ) {
+                                      return;
+                                    }
+
+                                    void runMutation(
+                                      `cancel-meetup-${meetup.meetup_id}`,
+                                      async () => {
+                                        await postMutation(
+                                          "/api/event-meetups",
+                                          {
+                                            action: "set_status",
+                                            meetup_id:
+                                              meetup.meetup_id,
+                                            status: "cancelled",
+                                          }
+                                        );
+                                      },
+                                      "Encontro cancelado."
+                                    );
+                                  }}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : viewerMembership ? (
+                              <button
+                                type="button"
+                                className="structured-social__action structured-social__action--secondary"
+                                disabled={Boolean(busyKey)}
+                                onClick={() => {
+                                  if (!window.confirm("Sair deste encontro?")) {
+                                    return;
+                                  }
+
+                                  void runMutation(
+                                    `leave-meetup-${meetup.meetup_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-meetups",
+                                        {
+                                          action: "leave",
+                                          meetup_id:
+                                            meetup.meetup_id,
+                                        }
+                                      );
+                                    },
+                                    "Você saiu do encontro."
                                   );
-                                },
-                                "Solicitação de encontro enviada."
-                              )
-                            }
-                          >
-                            {busyKey ===
-                            `join-meetup-${meetup.meetup_id}`
-                              ? "Enviando..."
-                              : joinLabel}
-                          </button>
+                                }}
+                              >
+                                Sair do encontro
+                              </button>
+                            ) : viewerPendingRequest ? (
+                              <button
+                                type="button"
+                                className="structured-social__action structured-social__action--secondary"
+                                disabled={Boolean(busyKey)}
+                                onClick={() =>
+                                  void runMutation(
+                                    `cancel-request-meetup-${viewerPendingRequest.request_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-meetups",
+                                        {
+                                          action: "cancel_request",
+                                          request_id:
+                                            viewerPendingRequest.request_id,
+                                        }
+                                      );
+                                    },
+                                    "Solicitação cancelada."
+                                  )
+                                }
+                              >
+                                Cancelar solicitação
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="structured-social__action"
+                                disabled={joinDisabled}
+                                onClick={() =>
+                                  void runMutation(
+                                    `join-meetup-${meetup.meetup_id}`,
+                                    async () => {
+                                      await postMutation(
+                                        "/api/event-meetups",
+                                        {
+                                          action: "request_join",
+                                          meetup_id:
+                                            meetup.meetup_id,
+                                          message: null,
+                                        }
+                                      );
+                                    },
+                                    "Solicitação de encontro enviada."
+                                  )
+                                }
+                              >
+                                {busyKey ===
+                                `join-meetup-${meetup.meetup_id}`
+                                  ? "Enviando..."
+                                  : joinLabel}
+                              </button>
+                            )}
+                          </div>
 
                           {isCreator &&
                           ownerPendingRequests.length > 0 ? (
@@ -1952,7 +2408,10 @@ export default function StructuredRideMeetHub({
                                       <button
                                         type="button"
                                         className="structured-social__action"
-                                        disabled={Boolean(busyKey)}
+                                        disabled={
+                                          Boolean(busyKey) ||
+                                          capacityReached
+                                        }
                                         onClick={() =>
                                           void runMutation(
                                             `approve-meetup-${request.request_id}`,
@@ -1973,7 +2432,9 @@ export default function StructuredRideMeetHub({
                                           )
                                         }
                                       >
-                                        Aprovar
+                                        {capacityReached
+                                          ? "Lotação"
+                                          : "Aprovar"}
                                       </button>
                                       <button
                                         type="button"
