@@ -929,6 +929,38 @@ export default function StructuredRideMeetHub({
           min-width: 0;
         }
 
+        @media (min-width: 900px) {
+          .structured-social__list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            padding-top: 4px;
+          }
+
+          .structured-social__list > .structured-social__card {
+            min-width: 0;
+            height: 100%;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(4,8,14,0.66);
+          }
+
+          .structured-social__list > .structured-social__empty {
+            grid-column: 1 / -1;
+          }
+
+          .structured-social__card {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+          }
+
+          .structured-social__card-side {
+            padding-left: 0;
+            padding-top: 15px;
+            border-left: 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+          }
+        }
+
         .structured-social__empty {
           margin: 0;
           padding: 18px 0;

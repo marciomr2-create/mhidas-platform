@@ -461,7 +461,7 @@ function buildProximityMatch(
 
   if (selfTribe && candidateTribe && selfTribe === candidateTribe) {
     score += 24;
-    reasons.push("Mesma tribo");
+    reasons.push("Mesma afinidade");
   }
 
   if (sharedGenres.length > 0) {
@@ -1006,7 +1006,7 @@ function CompactAffinityGrid({
 
   const items = [
     {
-      label: "Tribo",
+      label: "Afinidade",
       value: visual.name,
       sub: visual.shortName,
       accent: visual.accent,
@@ -2602,7 +2602,7 @@ export default function EventParticipantsFilter({
               },
               {
                 key: "tribes",
-                label: "Tribos",
+                label: "Afinidades",
                 count: topTribes.length,
               },
             ] as const
@@ -2687,7 +2687,7 @@ export default function EventParticipantsFilter({
               }}
             >
               {selfParticipant
-                ? `Radar baseado em ${selfParticipant.city_base || "sua presença no evento"}, região, tribo e som.`
+                ? `Radar baseado em ${selfParticipant.city_base || "sua presença no evento"}, região, afinidade e som.`
                 : "Identificando seu perfil no evento para calcular proximidade cultural."}
             </span>
           </div>
@@ -2700,7 +2700,7 @@ export default function EventParticipantsFilter({
             onToggleParticipant={toggleParticipant}
             onSelfDetected={handleSelfDetected}
             emptyTitle="Ainda não há clubbers próximos suficientes"
-            emptyText="À medida que mais pessoas entrarem no radar, o sistema destacará afinidades por cidade, região, tribo e som."
+            emptyText="À medida que mais pessoas entrarem no radar, o sistema destacará afinidades por cidade, região, afinidade e som."
           />
         </section>
       ) : null}
@@ -2764,7 +2764,7 @@ export default function EventParticipantsFilter({
                 lineHeight: 1.2,
               }}
             >
-              Tribos em destaque neste evento
+              Afinidades em destaque neste evento
             </strong>
 
             <span
@@ -2774,13 +2774,13 @@ export default function EventParticipantsFilter({
                 lineHeight: 1.45,
               }}
             >
-              Escolha uma tribo para ver os Clubbers relacionados.
+              Escolha uma afinidade para ver os Clubbers relacionados.
             </span>
           </div>
 
           <div
             className="event-tribe-selector-list"
-            aria-label="Seleção de tribos em destaque"
+            aria-label="Seleção de afinidades em destaque"
           >
             {topTribes.map(({ tribe, count, visual }) => {
               const active = activeTribe === tribe;
@@ -2820,8 +2820,8 @@ export default function EventParticipantsFilter({
             expandedParticipantKey={expandedParticipantKey}
             onToggleParticipant={toggleParticipant}
             onSelfDetected={handleSelfDetected}
-            emptyTitle="Nenhum Clubber nesta tribo"
-            emptyText="Selecione outra tribo para continuar explorando o radar."
+            emptyTitle="Nenhum Clubber nesta afinidade"
+            emptyText="Selecione outra afinidade para continuar explorando o radar."
           />
         </section>
       ) : null}

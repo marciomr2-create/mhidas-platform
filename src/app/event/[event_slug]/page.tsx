@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
+import EventTribeHub from "./EventTribeHub";
 import StructuredRideMeetHub from "./StructuredRideMeetHub";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
@@ -4300,15 +4301,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         {topTribes.length > 0 ? (
           <div
             className="event-hero__tribes"
-            aria-label="Tribos dominantes do evento"
+            aria-label="Afinidades dominantes do evento"
           >
             <div className="event-hero__tribes-heading">
               <strong className="event-hero__tribes-title">
-                Tribos dominantes
+                Afinidades dominantes
               </strong>
 
               <span className="event-hero__tribes-subtitle">
-                Afinidades mais presentes
+                Vertentes mais presentes
               </span>
             </div>
 
@@ -4489,6 +4490,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       ) : null}
 
 
+
+      {eventGroup?.group_id ? (
+        <EventTribeHub
+          eventGroupId={eventGroup.group_id}
+          eventReturnTo={eventReturnPath}
+          isAuthenticated={Boolean(authenticatedUser)}
+        />
+      ) : null}
 
       {eventGroup?.group_id ? (
         <StructuredRideMeetHub

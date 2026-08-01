@@ -363,6 +363,7 @@ export async function GET(request: NextRequest) {
       tribes: [],
       members: [],
       requests: [],
+      people: [],
     });
   }
 
@@ -400,6 +401,99 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const visibleUserIds = Array.from(
+    new Set(
+      [
+        ...(tribesData ?? []).map(
+          (tribe) => tribe.creator_user_id
+        ),
+        ...(membersData ?? []).map(
+          (member) => member.user_id
+        ),
+        ...(requestsData ?? []).map(
+          (joinRequest) => joinRequest.requester_user_id
+        ),
+      ].filter(Boolean)
+    )
+  );
+
+  let people: Array<{
+    user_id: string;
+    label: string;
+    slug: string | null;
+    photo_url: string | null;
+    city_base: string | null;
+  }> = [];
+
+  if (visibleUserIds.length > 0) {
+    const [
+      { data: cardsData, error: cardsError },
+      { data: profilesData, error: profilesError },
+    ] = await Promise.all([
+      supabase
+        .from("cards")
+        .select("user_id,label,slug,status,is_published")
+        .in("user_id", visibleUserIds)
+        .eq("status", "active")
+        .eq("is_published", true),
+      supabase
+        .from("club_profiles")
+        .select("user_id,city_base,club_photo_url")
+        .in("user_id", visibleUserIds),
+    ]);
+
+    if (!cardsError || !profilesError) {
+      const cardByUserId = new Map<
+        string,
+        {
+          label: string | null;
+          slug: string | null;
+        }
+      >();
+
+      for (const card of cardsError ? [] : cardsData ?? []) {
+        if (!cardByUserId.has(card.user_id)) {
+          cardByUserId.set(card.user_id, {
+            label: card.label,
+            slug: card.slug,
+          });
+        }
+      }
+
+      const profileByUserId = new Map<
+        string,
+        {
+          city_base: string | null;
+          club_photo_url: string | null;
+        }
+      >();
+
+      for (const profile of profilesError ? [] : profilesData ?? []) {
+        profileByUserId.set(profile.user_id, {
+          city_base: profile.city_base,
+          club_photo_url: profile.club_photo_url,
+        });
+      }
+
+      people = visibleUserIds.map((userId) => {
+        const card = cardByUserId.get(userId);
+        const profile = profileByUserId.get(userId);
+
+        return {
+          user_id: userId,
+          label:
+            normalizeText(card?.label, 100) || "Clubber",
+          slug: normalizeText(card?.slug, 160) || null,
+          photo_url:
+            normalizeText(profile?.club_photo_url, 1000) ||
+            null,
+          city_base:
+            normalizeText(profile?.city_base, 160) || null,
+        };
+      });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     scope: "event-tribes",
@@ -410,6 +504,7 @@ export async function GET(request: NextRequest) {
     tribes: tribesData ?? [],
     members: membersData ?? [],
     requests: requestsData ?? [],
+    people,
   });
 }
 
