@@ -1,5 +1,6 @@
 // src/app/dashboard/page.tsx
 import Link from "next/link";
+import DashboardNotificationsPanel from "@/components/notifications/DashboardNotificationsPanel";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
@@ -353,6 +354,8 @@ export default async function DashboardPage() {
           ) : null}
         </div>
       </section>
+
+      <DashboardNotificationsPanel />
 
       <section className="mhidas-dashboard-grid" style={gridStyle(180)}>
         <article className="mhidas-dashboard-card" style={glassCardStyle("clubber")}>
