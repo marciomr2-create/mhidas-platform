@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import PushNotificationsControl from "./PushNotificationsControl";
 
 type NotificationItem = {
   id: string;
@@ -724,6 +725,8 @@ export default function DashboardNotificationsPanel() {
           </p>
         </div>
       </div>
+
+      <PushNotificationsControl />
 
       <div className="mhidas-notifications-toolbar">
         <button
