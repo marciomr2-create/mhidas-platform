@@ -190,35 +190,71 @@ function getErrorClass(error: unknown): string {
   return "UnknownError";
 }
 
+function getNetworkErrorCodes(error: unknown): string[] {
+  const codes: string[] = [];
+  const seen = new WeakSet<object>();
+
+  const addCode = (value: unknown) => {
+    const normalized = normalizeText(value).toUpperCase();
+
+    if (!normalized) return;
+    if (!/^[A-Z][A-Z0-9_]+$/.test(normalized)) return;
+    if (!codes.includes(normalized)) codes.push(normalized);
+  };
+
+  const visit = (value: unknown, depth: number) => {
+    if (!value || typeof value !== "object") return;
+    if (depth > 4 || codes.length >= 4) return;
+    if (seen.has(value)) return;
+
+    seen.add(value);
+
+    const record = value as {
+      code?: unknown;
+      cause?: unknown;
+      errors?: unknown;
+      message?: unknown;
+    };
+
+    addCode(record.code);
+
+    const message = normalizeText(record.message);
+
+    if (message) {
+      const messageCodes =
+        message.match(/\b(?:E[A-Z0-9_]{2,}|UND_ERR_[A-Z0-9_]+|ERR_[A-Z0-9_]+)\b/g) ?? [];
+
+      for (const messageCode of messageCodes) {
+        addCode(messageCode);
+        if (codes.length >= 4) break;
+      }
+    }
+
+    visit(record.cause, depth + 1);
+
+    if (Array.isArray(record.errors)) {
+      for (const nestedError of record.errors) {
+        visit(nestedError, depth + 1);
+        if (codes.length >= 4) break;
+      }
+    }
+  };
+
+  visit(error, 0);
+
+  return codes;
+}
+
 function getProviderCode(error: unknown, status: number | null): string {
   if (status !== null) return `push_${status}`;
 
-  if (error && typeof error === "object") {
-    const directCode = normalizeText(
-      (error as { code?: unknown }).code
-    );
+  const networkCodes = getNetworkErrorCodes(error);
 
-    if (directCode) {
-      return sanitizeCode(
-        `network_${directCode}`,
-        "push_network_error"
-      ).toLowerCase();
-    }
-
-    const cause = (error as { cause?: unknown }).cause;
-
-    if (cause && typeof cause === "object") {
-      const causeCode = normalizeText(
-        (cause as { code?: unknown }).code
-      );
-
-      if (causeCode) {
-        return sanitizeCode(
-          `network_${causeCode}`,
-          "push_network_error"
-        ).toLowerCase();
-      }
-    }
+  if (networkCodes.length > 0) {
+    return sanitizeCode(
+      `network_${networkCodes.join(".")}`,
+      "push_network_error"
+    ).toLowerCase();
   }
 
   return "push_network_error";
