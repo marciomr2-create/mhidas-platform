@@ -190,10 +190,45 @@ function getErrorClass(error: unknown): string {
   return "UnknownError";
 }
 
+function getProviderCode(error: unknown, status: number | null): string {
+  if (status !== null) return `push_${status}`;
+
+  if (error && typeof error === "object") {
+    const directCode = normalizeText(
+      (error as { code?: unknown }).code
+    );
+
+    if (directCode) {
+      return sanitizeCode(
+        `network_${directCode}`,
+        "push_network_error"
+      ).toLowerCase();
+    }
+
+    const cause = (error as { cause?: unknown }).cause;
+
+    if (cause && typeof cause === "object") {
+      const causeCode = normalizeText(
+        (cause as { code?: unknown }).code
+      );
+
+      if (causeCode) {
+        return sanitizeCode(
+          `network_${causeCode}`,
+          "push_network_error"
+        ).toLowerCase();
+      }
+    }
+  }
+
+  return "push_network_error";
+}
+
 function classifyHttpStatus(status: number | null): "revoked" | "transient" | "permanent" {
+  if (status === null) return "transient";
   if (status === 404 || status === 410) return "revoked";
   if (status === 408 || status === 425 || status === 429) return "transient";
-  if (status !== null && status >= 500) return "transient";
+  if (status >= 500) return "transient";
   return "permanent";
 }
 
@@ -350,6 +385,7 @@ async function processJob(params: {
       const status = getHttpStatus(error);
       const classification = classifyHttpStatus(status);
       const errorClass = getErrorClass(error);
+      const providerCode = getProviderCode(error, status);
 
       if (classification === "revoked") {
         const { error: revokeError } = await callRpc<null>(
@@ -383,7 +419,7 @@ async function processJob(params: {
           subscription,
           result: "transient_error",
           httpStatus: status,
-          providerCode: status ? `push_${status}` : "push_network_error",
+          providerCode,
           errorClass,
         });
         transientDeviceErrors += 1;
@@ -396,7 +432,7 @@ async function processJob(params: {
         subscription,
         result: "permanent_error",
         httpStatus: status,
-        providerCode: status ? `push_${status}` : "push_permanent_error",
+        providerCode,
         errorClass,
       });
       permanentDeviceErrors += 1;
