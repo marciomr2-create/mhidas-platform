@@ -384,7 +384,7 @@ async function processJob(params: {
     }
 
     try {
-      const response = await webpush.sendNotification(
+      const requestDetails = webpush.generateRequestDetails(
         {
           endpoint,
           keys: {
@@ -395,7 +395,6 @@ async function processJob(params: {
         payload,
         {
           TTL: PUSH_TTL_SECONDS,
-          timeout: PUSH_TIMEOUT_MS,
           urgency: "normal",
           topic: buildTopic(job),
           vapidDetails: {
@@ -406,12 +405,39 @@ async function processJob(params: {
         }
       );
 
+      const requestBody = requestDetails.body
+        ? new Uint8Array(requestDetails.body)
+        : undefined;
+
+      const response = await fetch(requestDetails.endpoint, {
+        method: requestDetails.method,
+        headers: requestDetails.headers,
+        body: requestBody,
+        redirect: "manual",
+        signal: AbortSignal.timeout(PUSH_TIMEOUT_MS),
+      });
+
+      const responseStatus = Number(response.status) || 0;
+
+      await response.arrayBuffer();
+
+      if (!response.ok) {
+        const pushServiceError = new Error(
+          "Push service returned HTTP " + responseStatus
+        ) as Error & { statusCode?: number };
+
+        pushServiceError.name = "PushServiceHttpError";
+        pushServiceError.statusCode = responseStatus;
+
+        throw pushServiceError;
+      }
+
       await recordAttempt({
         supabase,
         job,
         subscription,
         result: "delivered",
-        httpStatus: Number(response.statusCode) || 201,
+        httpStatus: responseStatus || 201,
         providerCode: "accepted_by_push_service",
         errorClass: null,
       });
