@@ -321,13 +321,96 @@ export async function POST(
     );
   }
 
+  const publicKeyTextLength =
+    vapidPublicKey.length;
+
+  const privateKeyTextLength =
+    vapidPrivateKey.length;
+
+  const publicKeyBase64UrlFormatOk =
+    /^[A-Za-z0-9_-]+={0,2}$/.test(
+      vapidPublicKey
+    );
+
+  const privateKeyBase64UrlFormatOk =
+    /^[A-Za-z0-9_-]+={0,2}$/.test(
+      vapidPrivateKey
+    );
+
+  const publicKeyLengthModulo4 =
+    vapidPublicKey.length % 4;
+
+  const privateKeyLengthModulo4 =
+    vapidPrivateKey.length % 4;
+
+  const publicKeyHasWhitespace =
+    /\s/.test(vapidPublicKey);
+
+  const privateKeyHasWhitespace =
+    /\s/.test(vapidPrivateKey);
+
+  const publicKeyHasWrappingQuotes =
+    (
+      vapidPublicKey.startsWith('"') &&
+      vapidPublicKey.endsWith('"')
+    ) ||
+    (
+      vapidPublicKey.startsWith("'") &&
+      vapidPublicKey.endsWith("'")
+    );
+
+  const privateKeyHasWrappingQuotes =
+    (
+      vapidPrivateKey.startsWith('"') &&
+      vapidPrivateKey.endsWith('"')
+    ) ||
+    (
+      vapidPrivateKey.startsWith("'") &&
+      vapidPrivateKey.endsWith("'")
+    );
+
   let publicKeyBytes: Buffer;
-  let privateKeyBytes: Buffer;
 
   try {
     publicKeyBytes =
       decodeBase64Url(vapidPublicKey);
+  } catch {
+    return NextResponse.json(
+      {
+        ok: false,
+        scope: "push-generation-diagnostics",
+        code: "vapid_public_key_base64url_decode_failed",
 
+        configStageOk: true,
+
+        publicKeyTextLength,
+        privateKeyTextLength,
+
+        publicKeyBase64UrlFormatOk,
+        privateKeyBase64UrlFormatOk,
+
+        publicKeyLengthModulo4,
+        privateKeyLengthModulo4,
+
+        publicKeyHasWhitespace,
+        privateKeyHasWhitespace,
+
+        publicKeyHasWrappingQuotes,
+        privateKeyHasWrappingQuotes,
+
+        networkRequestSent: false,
+        pushNotificationSent: false,
+        attemptConsumed: false,
+        databaseChanged: false,
+        sensitiveValuesReturned: false,
+      },
+      { status: 200 }
+    );
+  }
+
+  let privateKeyBytes: Buffer;
+
+  try {
     privateKeyBytes =
       decodeBase64Url(vapidPrivateKey);
   } catch {
@@ -335,15 +418,37 @@ export async function POST(
       {
         ok: false,
         scope: "push-generation-diagnostics",
-        code: "vapid_base64url_decode_failed",
+        code: "vapid_private_key_base64url_decode_failed",
+
         configStageOk: true,
-        sensitiveValuesReturned: false,
+
+        publicKeyTextLength,
+        privateKeyTextLength,
+
+        publicKeyBase64UrlFormatOk,
+        privateKeyBase64UrlFormatOk,
+
+        publicKeyLengthModulo4,
+        privateKeyLengthModulo4,
+
+        publicKeyHasWhitespace,
+        privateKeyHasWhitespace,
+
+        publicKeyHasWrappingQuotes,
+        privateKeyHasWrappingQuotes,
+
+        publicKeyBytes:
+          publicKeyBytes.length,
+
         networkRequestSent: false,
+        pushNotificationSent: false,
+        attemptConsumed: false,
+        databaseChanged: false,
+        sensitiveValuesReturned: false,
       },
       { status: 200 }
     );
   }
-
   let derivedPublicKey: Buffer | null = null;
   let publicPrivateKeypairMatch = false;
 
