@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { data: connectionData, error: connectionError } = await serviceSupabase
-    .from("professional_connections")
+    .from("clubber_connections")
     .select("requester_user_id,target_user_id,status")
     .eq("status", "accepted")
     .or(
@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { data: controlData, error: controlError } = await serviceSupabase
-    .from("professional_relationship_controls")
+    .from("clubber_relationship_controls")
     .select("owner_user_id,target_user_id,status")
     .or(`owner_user_id.eq.${user.id},target_user_id.eq.${user.id}`);
 
