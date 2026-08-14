@@ -193,7 +193,7 @@ export default async function ClubbersPage() {
   if (authenticatedUser) {
     const [connectionsResult, controlsResult] = await Promise.all([
       authSupabase
-        .from("professional_connections")
+        .from("clubber_connections")
         .select(
           "requester_user_id,target_user_id,status,created_at",
         )
@@ -202,7 +202,7 @@ export default async function ClubbersPage() {
         )
         .order("created_at", { ascending: false }),
       authSupabase
-        .from("professional_relationship_controls")
+        .from("clubber_relationship_controls")
         .select("owner_user_id,target_user_id,status")
         .or(
           `owner_user_id.eq.${authenticatedUser.id},target_user_id.eq.${authenticatedUser.id}`,

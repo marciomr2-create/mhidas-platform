@@ -73,7 +73,7 @@ export default function ClubberConnectButton({
     setMessage("");
 
     try {
-      const response = await fetch("/api/network/connections", {
+      const response = await fetch("/api/clubbers/connections", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +146,7 @@ export default function ClubberConnectButton({
     setMessage("");
 
     try {
-      const response = await fetch("/api/network/connections", {
+      const response = await fetch("/api/clubbers/connections", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
