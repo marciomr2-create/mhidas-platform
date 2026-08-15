@@ -6,6 +6,7 @@ export const fetchCache = "force-no-store";
 
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient } from "@/utils/supabase/public";
+import { repairCommonUtf8Mojibake } from "@/lib/text/repairCommonUtf8Mojibake";
 
 type CatalogType = "club" | "festival" | "party" | "event" | "venue";
 
@@ -108,7 +109,9 @@ const GENERIC_SEARCH_WORDS = new Set([
 ]);
 
 function normalizeText(value: unknown): string {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return repairCommonUtf8Mojibake(String(value || ""))
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalizeForSearch(value: unknown): string {
