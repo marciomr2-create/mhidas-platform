@@ -411,14 +411,14 @@ export async function readEventSocialRadar({
     if (viewerIsValid) {
       const [connectionResult, controlResult] = await Promise.all([
         serviceSupabase
-          .from("professional_connections")
+          .from("clubber_connections")
           .select("requester_user_id,target_user_id,status")
           .eq("status", "accepted")
           .or(
             `requester_user_id.eq.${normalizedViewerUserId},target_user_id.eq.${normalizedViewerUserId}`
           ),
         serviceSupabase
-          .from("professional_relationship_controls")
+          .from("clubber_relationship_controls")
           .select("owner_user_id,target_user_id,status")
           .or(
             `owner_user_id.eq.${normalizedViewerUserId},target_user_id.eq.${normalizedViewerUserId}`
