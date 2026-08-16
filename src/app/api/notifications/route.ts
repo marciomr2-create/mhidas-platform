@@ -21,19 +21,6 @@ const NO_STORE_HEADERS = {
   Vary: "Cookie",
 } as const;
 
-const NOTIFICATION_SELECT = [
-  "notification_id",
-  "source_type",
-  "source_id",
-  "notification_type",
-  "title",
-  "summary",
-  "payload",
-  "internal_url",
-  "read_at",
-  "expires_at",
-  "created_at",
-].join(", ");
 
 type JsonRecord = Record<string, unknown>;
 
@@ -393,45 +380,19 @@ export async function GET(
       return errorResponse("INVALID_CURSOR", 400);
     }
 
-    const nowIso = new Date().toISOString();
-
-    let query = supabase
-      .from("social_notifications")
-      .select(NOTIFICATION_SELECT)
-      .eq("status", "active")
-      .or(
-        `expires_at.is.null,expires_at.gt.${nowIso}`
-      )
-      .order("created_at", {
-        ascending: false,
-      })
-      .order("notification_id", {
-        ascending: false,
-      })
-      .limit(limit + 1);
-
-    if (unreadOnly) {
-      query = query.is("read_at", null);
-    }
-
-    if (cursor) {
-      query = query.or(
-        [
-          `created_at.lt.${cursor.createdAt}`,
-          [
-            "and(",
-            `created_at.eq.${cursor.createdAt},`,
-            `notification_id.lt.${cursor.notificationId}`,
-            ")",
-          ].join(""),
-        ].join(",")
-      );
-    }
-
     const {
       data,
       error: listError,
-    } = await query;
+    } = await supabase.rpc(
+      "mhidas_get_social_notifications_feed",
+      {
+        p_limit: limit + 1,
+        p_unread_only: unreadOnly,
+        p_cursor_created_at: cursor?.createdAt ?? null,
+        p_cursor_notification_id:
+          cursor?.notificationId ?? null,
+      }
+    );
 
     if (listError) {
       console.error(
