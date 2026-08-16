@@ -384,7 +384,7 @@ export async function GET(
       data,
       error: listError,
     } = await supabase.rpc(
-      "mhidas_get_social_notifications_feed",
+      "mhidas_get_social_notifications_envelope",
       {
         p_limit: limit + 1,
         p_unread_only: unreadOnly,
@@ -396,7 +396,7 @@ export async function GET(
 
     if (listError) {
       console.error(
-        "[api/notifications] list error:",
+        "[api/notifications] envelope error:",
         listError
       );
 
@@ -406,22 +406,56 @@ export async function GET(
       );
     }
 
-    const rows = (data ?? []) as unknown as NotificationRow[];
-    const hasMore = rows.length > limit;
-    const pageRows = hasMore
-      ? rows.slice(0, limit)
-      : rows;
+    const envelopeRows = (data ?? []) as unknown as Array<{
+      notifications: unknown;
+      unread_count: unknown;
+    }>;
 
-    const unreadResult = await readUnreadCount(
-      supabase
+    const envelope =
+      envelopeRows.length === 1
+        ? envelopeRows[0]
+        : null;
+
+    if (
+      !envelope ||
+      !Array.isArray(envelope.notifications)
+    ) {
+      console.error(
+        "[api/notifications] invalid envelope result:",
+        data
+      );
+
+      return errorResponse(
+        "NOTIFICATIONS_ENVELOPE_INVALID",
+        500
+      );
+    }
+
+    const unreadCount = Number(
+      envelope.unread_count ?? 0
     );
 
-    if (!unreadResult.ok) {
+    if (
+      !Number.isSafeInteger(unreadCount) ||
+      unreadCount < 0
+    ) {
+      console.error(
+        "[api/notifications] invalid envelope unread count:",
+        envelope.unread_count
+      );
+
       return errorResponse(
         "UNREAD_COUNT_FAILED",
         500
       );
     }
+
+    const rows =
+      envelope.notifications as NotificationRow[];
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore
+      ? rows.slice(0, limit)
+      : rows;
 
     const lastRow =
       hasMore && pageRows.length > 0
@@ -441,7 +475,7 @@ export async function GET(
           ? encodeCursor(lastRow)
           : null,
       },
-      unreadCount: unreadResult.count,
+      unreadCount,
     });
   } catch (error) {
     console.error(
