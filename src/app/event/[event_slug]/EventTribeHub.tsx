@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import memberStyles from "./EventTribeMemberManager.module.css";
 
 type EventTribeHubProps = {
   eventGroupId: string;
@@ -2837,6 +2838,201 @@ export default function EventTribeHub({
                         </span>
                       ) : null}
                     </div>
+
+                    {isManager ? (
+                      <div className={`event-tribe-hub__request-list ${memberStyles.memberList}`}>
+                        <span className="event-tribe-hub__status">
+                          Membros aprovados: {approvedMembers.length}
+                        </span>
+
+                        {approvedMembers.map((member) => {
+                          const memberPerson = getPerson(
+                            member.user_id
+                          );
+                          const isViewerMember =
+                            member.user_id === viewerUserId;
+                          const viewerRole =
+                            viewerMembership?.role;
+                          const canChangeMemberRole =
+                            viewerRole === "creator" &&
+                            member.role !== "creator" &&
+                            !isViewerMember;
+                          const canRemoveMember =
+                            !isViewerMember &&
+                            member.role !== "creator" &&
+                            (viewerRole === "creator" ||
+                              (viewerRole === "organizer" &&
+                                member.role !== "organizer") ||
+                              (viewerRole === "moderator" &&
+                                member.role === "member"));
+
+                          return (
+                            <div
+                              key={member.tribe_member_id}
+                              className="event-tribe-hub__request"
+                            >
+                              <div className="event-tribe-hub__request-person">
+                                <span
+                                  className="event-tribe-hub__avatar"
+                                  aria-hidden="true"
+                                >
+                                  {memberPerson.photo_url ? (
+                                    <img
+                                      src={memberPerson.photo_url}
+                                      alt=""
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    memberPerson.label
+                                      .slice(0, 1)
+                                      .toUpperCase()
+                                  )}
+                                </span>
+
+                                <div className="event-tribe-hub__request-copy">
+                                  {memberPerson.slug ? (
+                                    <Link
+                                      href={`/${memberPerson.slug}?mode=club`}
+                                    >
+                                      {memberPerson.label}
+                                    </Link>
+                                  ) : (
+                                    <strong>
+                                      {memberPerson.label}
+                                    </strong>
+                                  )}
+                                  <span>
+                                    {getRoleLabel(member.role)}
+                                    {isViewerMember
+                                      ? " \u00b7 Voc\u00ea"
+                                      : ""}
+                                    {memberPerson.city_base
+                                      ? ` \u00b7 ${memberPerson.city_base}`
+                                      : ""}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {canChangeMemberRole ||
+                              canRemoveMember ? (
+                                <div className="event-tribe-hub__request-actions">
+                                  {canChangeMemberRole ? (
+                                    <select
+                                      className="event-tribe-hub__action"
+                                      aria-label={`Alterar fun\u00e7\u00e3o de ${memberPerson.label}`}
+                                      value={member.role}
+                                      disabled={Boolean(busyKey)}
+                                      onChange={(event) => {
+                                        const nextRole =
+                                          event.target.value as
+                                            TribeMemberRow["role"];
+
+                                        if (
+                                          nextRole === member.role ||
+                                          nextRole === "creator"
+                                        ) {
+                                          return;
+                                        }
+
+                                        void runMutation(
+                                          `set-role-${tribe.tribe_id}-${member.user_id}`,
+                                          {
+                                            action:
+                                              "set_member_role",
+                                            tribe_id:
+                                              tribe.tribe_id,
+                                            member_user_id:
+                                              member.user_id,
+                                            role: nextRole,
+                                          },
+                                          "Fun\u00e7\u00e3o do membro atualizada."
+                                        );
+                                      }}
+                                    >
+                                      <option value="organizer">
+                                        Organizador
+                                      </option>
+                                      <option value="moderator">
+                                        Moderador
+                                      </option>
+                                      <option value="member">
+                                        Participante
+                                      </option>
+                                    </select>
+                                  ) : null}
+
+                                  {canRemoveMember ? (
+                                    <button
+                                      type="button"
+                                      className="event-tribe-hub__action event-tribe-hub__action--danger"
+                                      disabled={Boolean(busyKey)}
+                                      onClick={() => {
+                                        if (
+                                          !window.confirm(
+                                            `Remover ${memberPerson.label} desta tribo?`
+                                          )
+                                        ) {
+                                          return;
+                                        }
+
+                                        void runMutation(
+                                          `remove-member-${tribe.tribe_id}-${member.user_id}`,
+                                          {
+                                            action:
+                                              "remove_member",
+                                            tribe_id:
+                                              tribe.tribe_id,
+                                            member_user_id:
+                                              member.user_id,
+                                            block: false,
+                                          },
+                                          "Membro removido da tribo."
+                                        );
+                                      }}
+                                    >
+                                      Remover
+                                    </button>
+                                  ) : null}
+
+                                  {canRemoveMember ? (
+                                    <button
+                                      type="button"
+                                      className="event-tribe-hub__action event-tribe-hub__action--danger"
+                                      disabled={Boolean(busyKey)}
+                                      onClick={() => {
+                                        if (
+                                          !window.confirm(
+                                            `Bloquear ${memberPerson.label}? Essa pessoa n\u00e3o poder\u00e1 solicitar entrada novamente.`
+                                          )
+                                        ) {
+                                          return;
+                                        }
+
+                                        void runMutation(
+                                          `block-member-${tribe.tribe_id}-${member.user_id}`,
+                                          {
+                                            action:
+                                              "remove_member",
+                                            tribe_id:
+                                              tribe.tribe_id,
+                                            member_user_id:
+                                              member.user_id,
+                                            block: true,
+                                          },
+                                          "Membro bloqueado na tribo."
+                                        );
+                                      }}
+                                    >
+                                      Bloquear
+                                    </button>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
 
                     {isManager &&
                     pendingRequests.length > 0 ? (
