@@ -1736,9 +1736,9 @@ export default function EventTribeHub({
         .event-tribe-hub__list {
           min-width: 0;
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0 24px;
-          padding-top: 2px;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 16px;
+          padding-top: 8px;
         }
 
         .event-tribe-hub__empty {
@@ -1753,12 +1753,20 @@ export default function EventTribeHub({
         .event-tribe-hub__card {
           min-width: 0;
           display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           align-content: start;
-          gap: 14px;
-          padding: 20px 0;
-          border-bottom: 1px solid rgba(255,255,255,0.09);
+          gap: 16px;
+          padding: 22px;
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 20px;
+          background:
+            linear-gradient(
+              145deg,
+              rgba(11,17,26,0.94),
+              rgba(4,8,14,0.84)
+            );
           outline: 0 solid transparent;
-          outline-offset: -1px;
+          outline-offset: 2px;
           transition:
             outline-color 180ms ease,
             background-color 180ms ease;
@@ -1770,7 +1778,19 @@ export default function EventTribeHub({
 
         .event-tribe-hub__card[data-highlighted="true"] {
           outline: 2px solid rgba(94,234,212,0.86);
-          background: rgba(20,184,166,0.08);
+          background:
+            linear-gradient(
+              145deg,
+              rgba(20,184,166,0.12),
+              rgba(4,8,14,0.88)
+            );
+        }
+
+        .event-tribe-hub__card > .event-tribe-hub__card-header,
+        .event-tribe-hub__card > .event-tribe-hub__meta,
+        .event-tribe-hub__card > .event-tribe-hub__creator,
+        .event-tribe-hub__card > .event-tribe-hub__actions {
+          grid-column: 1 / -1;
         }
 
         .event-tribe-hub__card-header {
@@ -1807,11 +1827,24 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__meta {
-          display: grid;
-          gap: 5px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
           color: rgba(255,255,255,0.62);
-          font-size: 11px;
-          line-height: 1.45;
+          font-size: 10px;
+          line-height: 1.35;
+        }
+
+        .event-tribe-hub__meta > span {
+          display: inline-flex;
+          align-items: center;
+          min-height: 28px;
+          box-sizing: border-box;
+          padding: 5px 9px;
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          overflow-wrap: anywhere;
         }
 
         .event-tribe-hub__creator {
@@ -1819,15 +1852,16 @@ export default function EventTribeHub({
           display: flex;
           align-items: center;
           gap: 9px;
-          padding: 10px 0;
-          border-top: 1px solid rgba(255,255,255,0.08);
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          padding: 11px 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
         }
 
         .event-tribe-hub__avatar {
-          width: 34px;
-          height: 34px;
-          flex: 0 0 34px;
+          width: 46px;
+          height: 46px;
+          flex: 0 0 46px;
           display: grid;
           place-items: center;
           overflow: hidden;
@@ -1835,8 +1869,52 @@ export default function EventTribeHub({
           border: 1px solid rgba(20,184,166,0.38);
           background: rgba(20,184,166,0.10);
           color: #fff;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 950;
+        }
+
+        .event-tribe-hub__rules {
+          grid-column: 1 / -1;
+          border-top: 1px solid rgba(255,255,255,0.07);
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .event-tribe-hub__rules summary {
+          min-height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          color: rgba(255,255,255,0.72);
+          font-size: 11px;
+          font-weight: 850;
+          cursor: pointer;
+          list-style: none;
+        }
+
+        .event-tribe-hub__rules summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .event-tribe-hub__rules summary::after {
+          content: "›";
+          color: #5EEAD4;
+          font-size: 18px;
+          line-height: 1;
+          transform: rotate(90deg);
+          transition: transform 160ms ease;
+        }
+
+        .event-tribe-hub__rules[open] summary::after {
+          transform: rotate(-90deg);
+        }
+
+        .event-tribe-hub__rules p {
+          margin: 0;
+          padding: 0 0 12px;
+          color: rgba(255,255,255,0.62);
+          font-size: 11px;
+          line-height: 1.5;
         }
 
         .event-tribe-hub__avatar img {
@@ -1873,10 +1951,16 @@ export default function EventTribeHub({
 
         .event-tribe-hub__actions {
           display: grid;
+          gap: 10px;
+          padding-top: 2px;
+        }
+
+        .event-tribe-hub__owner-actions {
+          display: flex;
+          flex-wrap: wrap;
           gap: 8px;
         }
 
-        .event-tribe-hub__owner-actions,
         .event-tribe-hub__request-actions {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1884,16 +1968,19 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__edit-composer {
-          border-top: 1px solid rgba(255,255,255,0.08);
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
+          overflow: hidden;
         }
 
         .event-tribe-hub__edit-composer summary {
-          min-height: 42px;
+          min-height: 46px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
+          padding: 0 13px;
           color: #fff;
           font-size: 12px;
           font-weight: 950;
@@ -1906,21 +1993,24 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__edit-composer summary::after {
-          content: "+";
+          content: "›";
           color: #5EEAD4;
-          font-size: 18px;
-          font-weight: 600;
+          font-size: 20px;
+          font-weight: 800;
+          line-height: 1;
+          transform: rotate(90deg);
+          transition: transform 160ms ease;
         }
 
         .event-tribe-hub__edit-composer[open] summary::after {
-          content: "−";
+          transform: rotate(-90deg);
         }
 
         .event-tribe-hub__edit-form {
           display: grid;
           grid-template-columns: minmax(0, 1fr);
           gap: 12px;
-          padding: 2px 0 14px;
+          padding: 4px 13px 14px;
         }
 
         .event-tribe-hub__field[data-invalid="true"] label {
@@ -2011,14 +2101,23 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__action {
-          min-height: 40px;
+          min-height: 42px;
+          box-sizing: border-box;
           border: 1px solid rgba(20,184,166,0.42);
+          border-radius: 12px;
           background: rgba(20,184,166,0.10);
           color: #fff;
           font: inherit;
           font-size: 12px;
           font-weight: 950;
           cursor: pointer;
+          padding: 0 14px;
+        }
+
+        .event-tribe-hub__action--primary {
+          border-color: rgba(45,212,191,0.72);
+          background: #0D9488;
+          box-shadow: 0 10px 24px rgba(13,148,136,0.16);
         }
 
         .event-tribe-hub__action--secondary {
@@ -2038,54 +2137,167 @@ export default function EventTribeHub({
           opacity: 0.48;
         }
 
-        .event-tribe-hub__request-composer {
+        .event-tribe-hub__settings-footer {
+          grid-column: 1 / -1;
+          display: grid;
+          gap: 10px;
+          margin-top: 2px;
+        }
+
+        .event-tribe-hub__lifecycle-section {
+          display: grid;
+          gap: 9px;
+          padding: 12px 13px 14px;
           border-top: 1px solid rgba(255,255,255,0.08);
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .event-tribe-hub__lifecycle-label {
+          color: rgba(255,255,255,0.52);
+          font-size: 10px;
+          font-weight: 850;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+        .event-tribe-hub__request-actions--decision
+          .event-tribe-hub__action--danger {
+          background: transparent;
+        }
+
+        .event-tribe-hub__request-composer {
+          border: 1px solid rgba(20,184,166,0.28);
+          border-radius: 16px;
+          background:
+            linear-gradient(
+              145deg,
+              rgba(20,184,166,0.10),
+              rgba(15,23,42,0.30)
+            );
+          overflow: hidden;
         }
 
         .event-tribe-hub__request-composer summary {
-          min-height: 42px;
+          min-height: 62px;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 14px;
+          padding: 12px 14px;
           color: #fff;
-          font-size: 12px;
-          font-weight: 950;
           cursor: pointer;
           list-style: none;
+        }
+
+        .event-tribe-hub__request-composer summary::after {
+          content: "›";
+          flex: 0 0 auto;
+          color: #5EEAD4;
+          font-size: 22px;
+          font-weight: 900;
+          line-height: 1;
+          transform: rotate(90deg);
+          transition: transform 160ms ease;
+        }
+
+        .event-tribe-hub__request-composer[open] summary::after {
+          transform: rotate(-90deg);
         }
 
         .event-tribe-hub__request-composer summary::-webkit-details-marker {
           display: none;
         }
 
+        .event-tribe-hub__request-entry-copy {
+          min-width: 0;
+          display: grid;
+          gap: 3px;
+        }
+
+        .event-tribe-hub__request-entry-title {
+          color: #F8FAFC;
+          font-size: 13px;
+          font-weight: 950;
+          line-height: 1.25;
+        }
+
+        .event-tribe-hub__request-entry-subtitle {
+          color: rgba(226,232,240,0.68);
+          font-size: 11px;
+          font-weight: 700;
+          line-height: 1.4;
+        }
+
         .event-tribe-hub__request-form {
           display: grid;
           gap: 10px;
-          padding: 0 0 12px;
+          padding: 0 14px 14px;
         }
 
         .event-tribe-hub__request-form textarea {
           width: 100%;
-          min-height: 62px;
+          min-height: 82px;
           box-sizing: border-box;
           resize: vertical;
-          border: 0;
-          border-bottom: 1px solid rgba(255,255,255,0.18);
-          border-radius: 0;
-          background: transparent;
+          border: 1px solid rgba(148,163,184,0.18);
+          border-radius: 13px;
+          background: rgba(2,6,23,0.34);
           color: #fff;
           font: inherit;
           font-size: 12px;
           line-height: 1.45;
           outline: none;
-          padding: 8px 0;
+          padding: 11px 12px;
+        }
+
+        .event-tribe-hub__request-form textarea:focus {
+          border-color: rgba(45,212,191,0.58);
+          box-shadow: 0 0 0 3px rgba(20,184,166,0.08);
         }
 
         .event-tribe-hub__request-list {
           display: grid;
           gap: 10px;
-          padding-top: 2px;
+          align-content: start;
+        }
+
+        .event-tribe-hub__management-panel {
+          min-width: 0;
+          padding: 14px;
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 16px;
+          background: rgba(255,255,255,0.025);
+        }
+
+        .event-tribe-hub__management-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          min-height: 28px;
+        }
+
+        .event-tribe-hub__management-heading strong {
+          color: #F8FAFC;
+          font-size: 13px;
+          font-weight: 950;
+        }
+
+        .event-tribe-hub__management-heading span {
+          flex: 0 0 auto;
+          padding: 4px 8px;
+          border-radius: 999px;
+          background: rgba(20,184,166,0.10);
+          color: #5EEAD4;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .event-tribe-hub__management-empty {
+          margin: 0;
+          padding: 12px 0 2px;
+          color: rgba(255,255,255,0.50);
+          font-size: 11px;
+          line-height: 1.45;
         }
 
         .event-tribe-hub__request {
@@ -2122,6 +2334,36 @@ export default function EventTribeHub({
           font-size: 10px;
           line-height: 1.4;
           overflow-wrap: anywhere;
+        }
+
+        .event-tribe-hub__management-panel
+          .event-tribe-hub__request-copy span {
+          overflow: visible;
+          text-overflow: clip;
+          white-space: normal;
+        }
+
+        .event-tribe-hub__viewer-state {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .event-tribe-hub__role-badge {
+          display: inline-flex;
+          align-items: center;
+          min-height: 28px;
+          box-sizing: border-box;
+          padding: 5px 9px;
+          border: 1px solid rgba(45,212,191,0.30);
+          border-radius: 999px;
+          background: rgba(20,184,166,0.10);
+          color: #5EEAD4;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
         }
 
         .event-tribe-hub__status {
@@ -2168,28 +2410,55 @@ export default function EventTribeHub({
           }
 
           .event-tribe-hub__list {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
             gap: 12px;
-            margin-inline: -14px;
-            padding: 14px 14px 16px;
-            overflow-x: auto;
-            overscroll-behavior-inline: contain;
-            scroll-padding-inline: 14px;
-            scroll-snap-type: inline mandatory;
-            scrollbar-width: thin;
+            margin-inline: 0;
+            padding: 14px 0 0;
+            overflow: visible;
           }
 
           .event-tribe-hub__card {
-            flex: 0 0 min(88%, 430px);
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-            padding: 18px;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 16px;
             border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 18px;
             background: rgba(4,8,14,0.66);
           }
 
+          .event-tribe-hub__management-panel {
+            grid-column: 1;
+          }
+
+          .event-tribe-hub__owner-actions,
+          .event-tribe-hub__request-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+          }
+
+          .event-tribe-hub__action {
+            min-height: 46px;
+          }
+
+          .event-tribe-hub__viewer-state
+            .event-tribe-hub__status {
+            display: none;
+          }
+
+          .event-tribe-hub__request-actions--decision {
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: stretch;
+          }
+
+          .event-tribe-hub__request-actions--decision
+            .event-tribe-hub__action--danger {
+            min-width: 104px;
+          }
+
           .event-tribe-hub__empty {
-            flex: 1 0 100%;
             padding: 18px 0;
           }
         }
@@ -2591,10 +2860,14 @@ export default function EventTribeHub({
                           Disponível até {expiresLabel}
                         </span>
                       ) : null}
-                      {tribe.rules ? (
-                        <span>Regras: {tribe.rules}</span>
-                      ) : null}
                     </div>
+
+                    {tribe.rules ? (
+                      <details className="event-tribe-hub__rules">
+                        <summary>Regras da tribo</summary>
+                        <p>{tribe.rules}</p>
+                      </details>
+                    ) : null}
 
                     <div className="event-tribe-hub__creator">
                       <span
@@ -2631,92 +2904,6 @@ export default function EventTribeHub({
                     </div>
 
                     <div className="event-tribe-hub__actions">
-                      {canControlLifecycle ? (
-                        <details className="event-tribe-hub__edit-composer">
-                          <summary>Editar tribo</summary>
-
-                          <TribeEditForm
-                            tribe={tribe}
-                            disabled={Boolean(busyKey)}
-                            onSave={saveTribeEdits}
-                          />
-                        </details>
-                      ) : null}
-
-                      {canControlLifecycle ? (
-                        <div className="event-tribe-hub__owner-actions">
-                          <button
-                            type="button"
-                            className="event-tribe-hub__action event-tribe-hub__action--secondary"
-                            disabled={Boolean(busyKey)}
-                            onClick={() => {
-                              if (
-                                active &&
-                                !window.confirm(
-                                  "Encerrar esta tribo? Novas solicitações deixarão de ser aceitas."
-                                )
-                              ) {
-                                return;
-                              }
-
-                              void runMutation(
-                                `${
-                                  active ? "close" : "reopen"
-                                }-tribe-${tribe.tribe_id}`,
-                                {
-                                  action: "set_status",
-                                  tribe_id: tribe.tribe_id,
-                                  status: active
-                                    ? "closed"
-                                    : "active",
-                                },
-                                active
-                                  ? "Tribo encerrada."
-                                  : "Tribo reaberta."
-                              );
-                            }}
-                          >
-                            {busyKey ===
-                            `${
-                              active ? "close" : "reopen"
-                            }-tribe-${tribe.tribe_id}`
-                              ? "Salvando..."
-                              : active
-                                ? "Encerrar"
-                                : "Reabrir"}
-                          </button>
-
-                          {canCancel ? (
-                            <button
-                              type="button"
-                              className="event-tribe-hub__action event-tribe-hub__action--danger"
-                              disabled={Boolean(busyKey)}
-                              onClick={() => {
-                                if (
-                                  !window.confirm(
-                                    "Cancelar esta tribo? Ela deixará de aparecer e solicitações pendentes serão encerradas."
-                                  )
-                                ) {
-                                  return;
-                                }
-
-                                void runMutation(
-                                  `cancel-tribe-${tribe.tribe_id}`,
-                                  {
-                                    action: "set_status",
-                                    tribe_id: tribe.tribe_id,
-                                    status: "cancelled",
-                                  },
-                                  "Tribo cancelada."
-                                );
-                              }}
-                            >
-                              Cancelar
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-
                       {viewerMembership &&
                       viewerMembership.role !== "creator" ? (
                         <button
@@ -2772,9 +2959,18 @@ export default function EventTribeHub({
                       active ? (
                         <details className="event-tribe-hub__request-composer">
                           <summary>
-                            {capacityReached
-                              ? "Tribo lotada"
-                              : "Solicitar entrada"}
+                            <span className="event-tribe-hub__request-entry-copy">
+                              <span className="event-tribe-hub__request-entry-title">
+                                {capacityReached
+                                  ? "Tribo lotada"
+                                  : "Entrar nesta tribo"}
+                              </span>
+                              <span className="event-tribe-hub__request-entry-subtitle">
+                                {capacityReached
+                                  ? "A capacidade máxima foi atingida."
+                                  : "Solicite participação ao gestor da tribo."}
+                              </span>
+                            </span>
                           </summary>
                           <div className="event-tribe-hub__request-form">
                             <textarea
@@ -2794,7 +2990,7 @@ export default function EventTribeHub({
                             />
                             <button
                               type="button"
-                              className="event-tribe-hub__action"
+                              className="event-tribe-hub__action event-tribe-hub__action--primary"
                               disabled={
                                 Boolean(busyKey) ||
                                 capacityReached
@@ -2817,17 +3013,21 @@ export default function EventTribeHub({
                               {busyKey ===
                               `request-join-${tribe.tribe_id}`
                                 ? "Enviando..."
-                                : "Enviar solicitação"}
+                                : "Solicitar entrada"}
                             </button>
                           </div>
                         </details>
                       ) : null}
 
                       {viewerMembership ? (
-                        <span className="event-tribe-hub__status">
-                          Sua participação:{" "}
-                          {getRoleLabel(viewerMembership.role)}
-                        </span>
+                        <div className="event-tribe-hub__viewer-state">
+                          <span className="event-tribe-hub__role-badge">
+                            {getRoleLabel(viewerMembership.role)}
+                          </span>
+                          <span className="event-tribe-hub__status">
+                            Seu papel nesta tribo
+                          </span>
+                        </div>
                       ) : viewerPendingRequest ? (
                         <span className="event-tribe-hub__status">
                           Solicitação aguardando decisão do gestor.
@@ -2840,10 +3040,13 @@ export default function EventTribeHub({
                     </div>
 
                     {isManager ? (
-                      <div className={`event-tribe-hub__request-list ${memberStyles.memberList}`}>
-                        <span className="event-tribe-hub__status">
-                          Membros aprovados: {approvedMembers.length}
-                        </span>
+                      <div className={`event-tribe-hub__request-list event-tribe-hub__management-panel ${memberStyles.memberList}`}>
+                        <div className="event-tribe-hub__management-heading">
+                          <strong>Membros</strong>
+                          <span>
+                            {approvedMembers.length}/{tribe.max_members}
+                          </span>
+                        </div>
 
                         {approvedMembers.map((member) => {
                           const memberPerson = getPerson(
@@ -3034,13 +3237,18 @@ export default function EventTribeHub({
                       </div>
                     ) : null}
 
-                    {isManager &&
-                    pendingRequests.length > 0 ? (
-                      <div className="event-tribe-hub__request-list">
-                        <span className="event-tribe-hub__status">
-                          Solicitações pendentes:{" "}
-                          {pendingRequests.length}
-                        </span>
+                    {isManager ? (
+                      <div className="event-tribe-hub__request-list event-tribe-hub__management-panel">
+                        <div className="event-tribe-hub__management-heading">
+                          <strong>Solicitações</strong>
+                          <span>{pendingRequests.length}</span>
+                        </div>
+
+                        {pendingRequests.length === 0 ? (
+                          <p className="event-tribe-hub__management-empty">
+                            Nenhuma solicitação pendente.
+                          </p>
+                        ) : null}
 
                         {pendingRequests.map((joinRequest) => {
                           const requester = getPerson(
@@ -3092,10 +3300,10 @@ export default function EventTribeHub({
                                 </div>
                               </div>
 
-                              <div className="event-tribe-hub__request-actions">
+                              <div className="event-tribe-hub__request-actions event-tribe-hub__request-actions--decision">
                                 <button
                                   type="button"
-                                  className="event-tribe-hub__action"
+                                  className="event-tribe-hub__action event-tribe-hub__action--primary"
                                   disabled={
                                     Boolean(busyKey) ||
                                     capacityReached
@@ -3142,6 +3350,97 @@ export default function EventTribeHub({
                             </div>
                           );
                         })}
+                      </div>
+                    ) : null}
+
+                    {canControlLifecycle ? (
+                      <div className="event-tribe-hub__settings-footer">
+                        <details className="event-tribe-hub__edit-composer">
+                          <summary>Configurações da tribo</summary>
+
+                          <TribeEditForm
+                            tribe={tribe}
+                            disabled={Boolean(busyKey)}
+                            onSave={saveTribeEdits}
+                          />
+
+                          <div className="event-tribe-hub__lifecycle-section">
+                            <span className="event-tribe-hub__lifecycle-label">
+                              Gerenciamento
+                            </span>
+                            <div className="event-tribe-hub__owner-actions">
+                              <button
+                                type="button"
+                                className="event-tribe-hub__action event-tribe-hub__action--secondary"
+                                disabled={Boolean(busyKey)}
+                                onClick={() => {
+                                  if (
+                                    active &&
+                                    !window.confirm(
+                                      "Encerrar esta tribo? Novas solicitações deixarão de ser aceitas."
+                                    )
+                                  ) {
+                                    return;
+                                  }
+
+                                  void runMutation(
+                                    `${
+                                      active ? "close" : "reopen"
+                                    }-tribe-${tribe.tribe_id}`,
+                                    {
+                                      action: "set_status",
+                                      tribe_id: tribe.tribe_id,
+                                      status: active
+                                        ? "closed"
+                                        : "active",
+                                    },
+                                    active
+                                      ? "Tribo encerrada."
+                                      : "Tribo reaberta."
+                                  );
+                                }}
+                              >
+                                {busyKey ===
+                                `${
+                                  active ? "close" : "reopen"
+                                }-tribe-${tribe.tribe_id}`
+                                  ? "Salvando..."
+                                  : active
+                                    ? "Encerrar tribo"
+                                    : "Reabrir tribo"}
+                              </button>
+
+                              {canCancel ? (
+                                <button
+                                  type="button"
+                                  className="event-tribe-hub__action event-tribe-hub__action--danger"
+                                  disabled={Boolean(busyKey)}
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        "Cancelar esta tribo? Ela deixará de aparecer e solicitações pendentes serão encerradas."
+                                      )
+                                    ) {
+                                      return;
+                                    }
+
+                                    void runMutation(
+                                      `cancel-tribe-${tribe.tribe_id}`,
+                                      {
+                                        action: "set_status",
+                                        tribe_id: tribe.tribe_id,
+                                        status: "cancelled",
+                                      },
+                                      "Tribo cancelada."
+                                    );
+                                  }}
+                                >
+                                  Cancelar tribo
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </details>
                       </div>
                     ) : null}
                   </article>

@@ -62,11 +62,11 @@
 
 .memberList :global(.event-tribe-hub__avatar) {
   display: inline-flex;
-  flex: 0 0 2.75rem;
+  flex: 0 0 3.1rem;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3.1rem;
+  height: 3.1rem;
   overflow: hidden;
   border: 1px solid rgba(98, 243, 221, 0.35);
   border-radius: 999px;
@@ -114,12 +114,12 @@
 }
 
 .memberList :global(.event-tribe-hub__request-copy span) {
-  overflow: hidden;
+  overflow: visible;
   color: rgba(230, 234, 245, 0.64);
   font-size: 0.76rem;
   line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .memberList :global(.event-tribe-hub__request-actions) {
