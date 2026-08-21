@@ -1847,6 +1847,23 @@ export default function EventTribeHub({
           overflow-wrap: anywhere;
         }
 
+        .event-tribe-hub__creator-section {
+          grid-column: 1 / -1;
+          display: grid;
+          gap: 7px;
+          min-width: 0;
+        }
+
+        .event-tribe-hub__creator-label {
+          padding-left: 2px;
+          color: #5EEAD4;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          line-height: 1.35;
+          text-transform: uppercase;
+        }
+
         .event-tribe-hub__creator {
           min-width: 0;
           display: flex;
@@ -2869,37 +2886,39 @@ export default function EventTribeHub({
                       </details>
                     ) : null}
 
-                    <div className="event-tribe-hub__creator">
-                      <span
-                        className="event-tribe-hub__avatar"
-                        aria-hidden="true"
-                      >
-                        {creator.photo_url ? (
-                          <img
-                            src={creator.photo_url}
-                            alt=""
-                            loading="lazy"
-                          />
-                        ) : (
-                          creator.label.slice(0, 1).toUpperCase()
-                        )}
+                    <div className="event-tribe-hub__creator-section">
+                      <span className="event-tribe-hub__creator-label">
+                        Criador da tribo
                       </span>
-                      <div className="event-tribe-hub__creator-copy">
-                        {creator.slug ? (
-                          <Link
-                            href={`/${creator.slug}?mode=club`}
-                          >
-                            {creator.label}
-                          </Link>
-                        ) : (
-                          <strong>{creator.label}</strong>
-                        )}
-                        <span>
-                          Criador da tribo
-                          {creator.city_base
-                            ? ` · ${creator.city_base}`
-                            : ""}
+                      <div className="event-tribe-hub__creator">
+                        <span
+                          className="event-tribe-hub__avatar"
+                          aria-hidden="true"
+                        >
+                          {creator.photo_url ? (
+                            <img
+                              src={creator.photo_url}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : (
+                            creator.label.slice(0, 1).toUpperCase()
+                          )}
                         </span>
+                        <div className="event-tribe-hub__creator-copy">
+                          {creator.slug ? (
+                            <Link
+                              href={`/${creator.slug}?mode=club`}
+                            >
+                              {creator.label}
+                            </Link>
+                          ) : (
+                            <strong>{creator.label}</strong>
+                          )}
+                          <span>
+                            {creator.city_base || "Perfil Clubber"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -3019,7 +3038,8 @@ export default function EventTribeHub({
                         </details>
                       ) : null}
 
-                      {viewerMembership ? (
+                      {viewerMembership &&
+                      viewerMembership.role !== "creator" ? (
                         <div className="event-tribe-hub__viewer-state">
                           <span className="event-tribe-hub__role-badge">
                             {getRoleLabel(viewerMembership.role)}
