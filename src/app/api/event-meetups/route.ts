@@ -255,6 +255,7 @@ export async function GET(request: NextRequest) {
       meetups: [],
       members: [],
       requests: [],
+      people: [],
     });
   }
 
@@ -292,6 +293,92 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const personUserIds = Array.from(
+    new Set([
+      ...(meetupsData ?? []).map((meetup) =>
+        String(meetup.creator_user_id || "")
+      ),
+      ...(membersData ?? []).map((member) =>
+        String(member.user_id || "")
+      ),
+      ...(requestsData ?? []).map((requestRow) =>
+        String(requestRow.requester_user_id || "")
+      ),
+    ].filter(Boolean))
+  );
+
+  const people: Array<{
+    user_id: string;
+    slug: string;
+    label: string;
+    city_base: string | null;
+    club_photo_url: string | null;
+  }> = [];
+
+  if (personUserIds.length > 0) {
+    const [
+      { data: cardsData, error: cardsError },
+      { data: profilesData, error: profilesError },
+    ] = await Promise.all([
+      supabase
+        .from("cards")
+        .select("user_id,slug,label,status,is_published")
+        .in("user_id", personUserIds)
+        .eq("status", "active")
+        .eq("is_published", true),
+      supabase
+        .from("club_profiles")
+        .select("user_id,city_base,club_photo_url")
+        .in("user_id", personUserIds),
+    ]);
+
+    if (cardsError) {
+      return buildSupabaseErrorResponse(
+        "Could not load Clubber identities for event meetups.",
+        cardsError.message
+      );
+    }
+
+    if (profilesError) {
+      return buildSupabaseErrorResponse(
+        "Could not load Clubber profiles for event meetups.",
+        profilesError.message
+      );
+    }
+
+    const profilesByUserId = new Map(
+      (profilesData ?? []).map((profile) => [
+        String(profile.user_id),
+        profile,
+      ])
+    );
+    const seenUserIds = new Set<string>();
+
+    for (const card of cardsData ?? []) {
+      const userId = String(card.user_id || "").trim();
+      const slug = normalizeText(card.slug, 200);
+
+      if (!userId || !slug || seenUserIds.has(userId)) {
+        continue;
+      }
+
+      seenUserIds.add(userId);
+      const profile = profilesByUserId.get(userId);
+
+      people.push({
+        user_id: userId,
+        slug,
+        label: normalizeText(card.label, 120) || "Clubber",
+        city_base: profile?.city_base
+          ? normalizeText(profile.city_base, 160)
+          : null,
+        club_photo_url: profile?.club_photo_url
+          ? normalizeText(profile.club_photo_url, 1000)
+          : null,
+      });
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     scope: "event-meetups",
@@ -301,6 +388,7 @@ export async function GET(request: NextRequest) {
     meetups: meetupsData ?? [],
     members: membersData ?? [],
     requests: requestsData ?? [],
+    people,
   });
 }
 
@@ -386,6 +474,23 @@ export async function POST(request: NextRequest) {
 
     if (!startsAt) {
       return buildErrorResponse("starts_at is required.", 400);
+    }
+
+    const startsAtMs = new Date(startsAt).getTime();
+    const endsAtMs = endsAt ? new Date(endsAt).getTime() : null;
+
+    if (startsAtMs <= Date.now()) {
+      return buildErrorResponse(
+        "starts_at must be in the future.",
+        400
+      );
+    }
+
+    if (endsAtMs !== null && endsAtMs <= startsAtMs) {
+      return buildErrorResponse(
+        "ends_at must be after starts_at.",
+        400
+      );
     }
 
     if (maxMembers < 2 || maxMembers > 250) {

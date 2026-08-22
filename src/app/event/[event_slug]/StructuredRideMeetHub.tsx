@@ -110,6 +110,14 @@ type MeetupRequestRow = {
   updated_at: string;
 };
 
+type ClubberPersonRow = {
+  user_id: string;
+  slug: string;
+  label: string;
+  city_base: string | null;
+  club_photo_url: string | null;
+};
+
 type RideReadPayload = {
   ok: boolean;
   message?: string;
@@ -118,6 +126,7 @@ type RideReadPayload = {
   rides?: RideRow[];
   members?: RideMemberRow[];
   requests?: RideRequestRow[];
+  people?: ClubberPersonRow[];
 };
 
 type MeetupReadPayload = {
@@ -128,6 +137,7 @@ type MeetupReadPayload = {
   meetups?: MeetupRow[];
   members?: MeetupMemberRow[];
   requests?: MeetupRequestRow[];
+  people?: ClubberPersonRow[];
 };
 
 type MutationPayload = {
@@ -154,6 +164,95 @@ function normalizeText(value: unknown): string {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
+function getPersonByUserId(
+  people: ClubberPersonRow[],
+  userId: string
+): ClubberPersonRow | undefined {
+  return people.find((person) => person.user_id === userId);
+}
+
+function getSocialRoleLabel(role: string): string {
+  if (role === "creator") {
+    return "Criador";
+  }
+
+  if (role === "organizer") {
+    return "Organizador";
+  }
+
+  if (role === "driver") {
+    return "Motorista";
+  }
+
+  if (role === "passenger") {
+    return "Passageiro";
+  }
+
+  return "Participante";
+}
+
+function ClubberPersonIdentity({
+  person,
+  meta,
+}: {
+  person: ClubberPersonRow | undefined;
+  meta?: string;
+}) {
+  const label = normalizeText(person?.label) || "Clubber";
+  const city = normalizeText(person?.city_base);
+  const metaLine = [normalizeText(meta), city]
+    .filter(Boolean)
+    .join(" · ");
+  const initials =
+    label
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase() || "C";
+
+  return (
+    <div className="structured-social__person">
+      {person?.club_photo_url ? (
+        <img
+          className="structured-social__person-avatar"
+          src={person.club_photo_url}
+          alt=""
+        />
+      ) : (
+        <span
+          className="structured-social__person-avatar structured-social__person-avatar--fallback"
+          aria-hidden="true"
+        >
+          {initials}
+        </span>
+      )}
+
+      <div className="structured-social__person-copy">
+        {person?.slug ? (
+          <Link
+            href={`/${person.slug}?mode=club`}
+            className="structured-social__person-name"
+          >
+            {label}
+          </Link>
+        ) : (
+          <strong className="structured-social__person-name">
+            {label}
+          </strong>
+        )}
+
+        {metaLine ? (
+          <span className="structured-social__person-meta">
+            {metaLine}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function toNullableIso(value: string): string | null {
   const normalized = normalizeText(value);
 
@@ -168,6 +267,22 @@ function toNullableIso(value: string): string | null {
   }
 
   return date.toISOString();
+}
+
+function toLocalDateTimeInputValue(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return [
+    date.getFullYear(),
+    "-",
+    pad(date.getMonth() + 1),
+    "-",
+    pad(date.getDate()),
+    "T",
+    pad(date.getHours()),
+    ":",
+    pad(date.getMinutes()),
+  ].join("");
 }
 
 function formatDateTime(value: string | null): string {
@@ -314,6 +429,7 @@ export default function StructuredRideMeetHub({
   const rideRailRef = useRef<HTMLDivElement>(null);
 
   const [viewerUserId, setViewerUserId] = useState("");
+  const [people, setPeople] = useState<ClubberPersonRow[]>([]);
   const [rides, setRides] = useState<RideRow[]>([]);
   const [rideMembers, setRideMembers] = useState<
     RideMemberRow[]
@@ -391,7 +507,19 @@ export default function StructuredRideMeetHub({
         normalizeText(ridePayload.viewer_user_id) ||
         normalizeText(meetupPayload.viewer_user_id);
 
+      const peopleByUserId = new Map<string, ClubberPersonRow>();
+
+      for (const person of [
+        ...(ridePayload.people ?? []),
+        ...(meetupPayload.people ?? []),
+      ]) {
+        if (!peopleByUserId.has(person.user_id)) {
+          peopleByUserId.set(person.user_id, person);
+        }
+      }
+
       setViewerUserId(resolvedViewer);
+      setPeople(Array.from(peopleByUserId.values()));
       setRides(ridePayload.rides ?? []);
       setRideMembers(ridePayload.members ?? []);
       setRideRequests(ridePayload.requests ?? []);
@@ -414,6 +542,20 @@ export default function StructuredRideMeetHub({
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!feedback || feedback.tone === "error") {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setFeedback(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [feedback]);
 
   async function runMutation<T>(
     key: string,
@@ -543,6 +685,51 @@ export default function StructuredRideMeetHub({
       return;
     }
 
+    let startsAt: string | null;
+    let endsAt: string | null;
+
+    try {
+      startsAt = toNullableIso(meetupStartsAt);
+      endsAt = toNullableIso(meetupEndsAt);
+    } catch (error) {
+      setFeedback({
+        tone: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Data ou horário inválido.",
+      });
+      return;
+    }
+
+    if (!startsAt) {
+      setFeedback({
+        tone: "error",
+        message: "Informe o início do encontro.",
+      });
+      return;
+    }
+
+    const startsAtMs = new Date(startsAt).getTime();
+    const endsAtMs = endsAt ? new Date(endsAt).getTime() : null;
+
+    if (startsAtMs <= Date.now()) {
+      setFeedback({
+        tone: "error",
+        message: "O início do encontro deve estar no futuro.",
+      });
+      return;
+    }
+
+    if (endsAtMs !== null && endsAtMs <= startsAtMs) {
+      setFeedback({
+        tone: "error",
+        message:
+          "O término do encontro deve ser posterior ao início.",
+      });
+      return;
+    }
+
     await runMutation(
       "create-meetup",
       async () => {
@@ -553,8 +740,8 @@ export default function StructuredRideMeetHub({
           description: meetupDescription || null,
           meeting_point_label: meetupPoint,
           meeting_point_reference: meetupReference || null,
-          starts_at: toNullableIso(meetupStartsAt),
-          ends_at: toNullableIso(meetupEndsAt),
+          starts_at: startsAt,
+          ends_at: endsAt,
           max_members: maxMembers,
           rules: meetupRules || null,
           visibility: meetupVisibility,
@@ -752,26 +939,38 @@ export default function StructuredRideMeetHub({
 
         .structured-social__tabs {
           display: flex;
-          gap: 24px;
+          gap: 8px;
           padding-top: 18px;
           border-bottom: 1px solid rgba(255,255,255,0.09);
         }
 
         .structured-social__tab {
           min-height: 42px;
-          padding: 0 0 8px;
-          border: 0;
+          padding: 0 14px 8px;
+          border: 1px solid transparent;
           border-bottom: 2px solid transparent;
+          border-radius: 10px 10px 0 0;
           background: transparent;
           color: rgba(255,255,255,0.58);
           font: inherit;
           font-size: 13px;
           font-weight: 900;
           cursor: pointer;
+          transition:
+            color 160ms ease,
+            background-color 160ms ease,
+            border-color 160ms ease;
+        }
+
+        .structured-social__tab:hover {
+          color: rgba(255,255,255,0.86);
+          background: rgba(255,255,255,0.035);
         }
 
         .structured-social__tab[aria-selected="true"] {
+          border-color: rgba(20,184,166,0.22);
           border-bottom-color: #14B8A6;
+          background: rgba(20,184,166,0.08);
           color: #fff;
         }
 
@@ -870,6 +1069,18 @@ export default function StructuredRideMeetHub({
           text-transform: uppercase;
         }
 
+        .structured-social__field-help {
+          margin: -1px 0 0;
+          color: rgba(255,255,255,0.48);
+          font-size: 10px;
+          line-height: 1.45;
+        }
+
+        .structured-social__field-help strong {
+          color: rgba(94,234,212,0.88);
+          font-weight: 850;
+        }
+
         .structured-social__field input,
         .structured-social__field select,
         .structured-social__field textarea {
@@ -931,16 +1142,21 @@ export default function StructuredRideMeetHub({
 
         @media (min-width: 900px) {
           .structured-social__list {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
             padding-top: 4px;
           }
 
           .structured-social__list > .structured-social__card {
             min-width: 0;
-            height: 100%;
-            padding: 18px;
+            width: 100%;
+            grid-template-columns:
+              minmax(0, 1.1fr)
+              minmax(320px, 0.9fr);
+            gap: 24px;
+            padding: 20px;
             border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 18px;
             background: rgba(4,8,14,0.66);
           }
 
@@ -948,24 +1164,23 @@ export default function StructuredRideMeetHub({
             grid-column: 1 / -1;
           }
 
-          .structured-social__card {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 16px;
-          }
-
-          .structured-social__card-side {
-            padding-left: 0;
-            padding-top: 15px;
-            border-left: 0;
-            border-top: 1px solid rgba(255,255,255,0.08);
+          .structured-social__list
+            > .structured-social__card
+            > .structured-social__card-side {
+            padding-left: 22px;
+            padding-top: 0;
+            border-left: 1px solid rgba(255,255,255,0.08);
+            border-top: 0;
           }
         }
 
         .structured-social__empty {
           margin: 0;
-          padding: 18px 0;
-          border-top: 1px solid rgba(255,255,255,0.09);
-          color: rgba(255,255,255,0.58);
+          padding: 16px 18px;
+          border: 1px dashed rgba(255,255,255,0.14);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
+          color: rgba(255,255,255,0.62);
           font-size: 12px;
           line-height: 1.55;
         }
@@ -1053,6 +1268,115 @@ export default function StructuredRideMeetHub({
           line-height: 1.5;
         }
 
+        .structured-social__creator-block {
+          display: grid;
+          gap: 7px;
+          padding-top: 4px;
+        }
+
+        .structured-social__creator-label {
+          color: #5EEAD4;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.07em;
+          line-height: 1.35;
+          text-transform: uppercase;
+        }
+
+        .structured-social__people-panel {
+          display: grid;
+          gap: 10px;
+          padding: 13px;
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
+        }
+
+        .structured-social__people-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .structured-social__people-panel-header strong {
+          color: #fff;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .structured-social__people-count {
+          min-width: 28px;
+          min-height: 24px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 8px;
+          border-radius: 999px;
+          background: rgba(20,184,166,0.12);
+          color: #5EEAD4;
+          font-size: 10px;
+          font-weight: 950;
+        }
+
+        .structured-social__people-list {
+          display: grid;
+          gap: 8px;
+        }
+
+        .structured-social__person {
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .structured-social__person-avatar {
+          width: 42px;
+          height: 42px;
+          flex: 0 0 42px;
+          border: 1px solid rgba(20,184,166,0.52);
+          border-radius: 999px;
+          object-fit: cover;
+          background: rgba(20,184,166,0.08);
+        }
+
+        .structured-social__person-avatar--fallback {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .structured-social__person-copy {
+          min-width: 0;
+          display: grid;
+          gap: 2px;
+        }
+
+        .structured-social__person-name {
+          min-width: 0;
+          color: #fff;
+          font-size: 12px;
+          line-height: 1.3;
+          font-weight: 950;
+          text-decoration: none;
+          overflow-wrap: anywhere;
+        }
+
+        .structured-social__person-name:hover {
+          color: #5EEAD4;
+        }
+
+        .structured-social__person-meta {
+          color: rgba(255,255,255,0.58);
+          font-size: 10px;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
+        }
+
         .structured-social__action {
           min-height: 40px;
           border: 1px solid rgba(20,184,166,0.42);
@@ -1094,7 +1418,10 @@ export default function StructuredRideMeetHub({
         .structured-social__request-list {
           display: grid;
           gap: 10px;
-          padding-top: 4px;
+          padding: 13px;
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 14px;
+          background: rgba(255,255,255,0.025);
         }
 
         .structured-social__request {
@@ -1102,6 +1429,11 @@ export default function StructuredRideMeetHub({
           gap: 8px;
           padding-top: 10px;
           border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .structured-social__request:first-of-type {
+          padding-top: 0;
+          border-top: 0;
         }
 
         .structured-social__request-copy {
@@ -1159,28 +1491,23 @@ export default function StructuredRideMeetHub({
           }
 
           .structured-social__list--rides {
-            display: flex;
-            gap: 12px;
-            margin-inline: -14px;
-            padding: 0 14px 14px;
-            overflow-x: auto;
-            overscroll-behavior-inline: contain;
-            scroll-padding-inline: 14px;
-            scroll-snap-type: inline mandatory;
-            scrollbar-width: thin;
+            display: grid;
+            gap: 14px;
+            margin: 0;
+            padding: 0;
+            overflow: visible;
           }
 
           .structured-social__list--rides > .structured-social__card {
-            flex: 0 0 min(88%, 430px);
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-            padding: 18px;
+            width: 100%;
+            padding: 16px;
             border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 16px;
             background: rgba(4,8,14,0.66);
           }
 
           .structured-social__list--rides > .structured-social__empty {
-            flex: 1 0 100%;
+            width: 100%;
           }
 
           .structured-social__card {
@@ -1351,12 +1678,17 @@ export default function StructuredRideMeetHub({
                     <select
                       id="structured-ride-direction"
                       value={rideDirection}
-                      onChange={(event) =>
-                        setRideDirection(
+                      onChange={(event) => {
+                        const nextDirection =
                           event.target
-                            .value as RideRow["direction"]
-                        )
-                      }
+                            .value as RideRow["direction"];
+
+                        setRideDirection(nextDirection);
+
+                        if (nextDirection !== "round_trip") {
+                          setRideReturnAt("");
+                        }
+                      }}
                     >
                       <option value="round_trip">
                         Ida e volta
@@ -1384,6 +1716,10 @@ export default function StructuredRideMeetHub({
                       placeholder="Cidade, bairro ou ponto geral"
                       required
                     />
+                    <span className="structured-social__field-help">
+                      Use <strong>região aproximada ou referência pública</strong>.
+                      Não informe endereço residencial.
+                    </span>
                   </div>
 
                   <div className="structured-social__field">
@@ -1400,6 +1736,9 @@ export default function StructuredRideMeetHub({
                       placeholder="Evento ou região próxima"
                       required
                     />
+                    <span className="structured-social__field-help">
+                      Informe o evento, bairro ou uma referência pública segura.
+                    </span>
                   </div>
 
                   <div className="structured-social__field">
@@ -1416,25 +1755,30 @@ export default function StructuredRideMeetHub({
                     />
                   </div>
 
-                  <div className="structured-social__field">
-                    <label htmlFor="structured-ride-return">
-                      Retorno
-                    </label>
-                    <input
-                      id="structured-ride-return"
-                      type="datetime-local"
-                      value={rideReturnAt}
-                      onChange={(event) =>
-                        setRideReturnAt(event.target.value)
-                      }
-                    />
-                  </div>
+                  {rideDirection === "round_trip" ? (
+                    <div className="structured-social__field">
+                      <label htmlFor="structured-ride-return">
+                        Retorno
+                      </label>
+                      <input
+                        id="structured-ride-return"
+                        type="datetime-local"
+                        value={rideReturnAt}
+                        onChange={(event) =>
+                          setRideReturnAt(event.target.value)
+                        }
+                      />
+                      <span className="structured-social__field-help">
+                        Opcional. Use apenas quando já houver previsão de volta.
+                      </span>
+                    </div>
+                  ) : null}
 
                   <div className="structured-social__field">
                     <label htmlFor="structured-ride-seats">
                       {rideMode === "offer"
                         ? "Vagas disponíveis"
-                        : "Vagas necessárias"}
+                        : "Vagas que preciso"}
                     </label>
                     <input
                       id="structured-ride-seats"
@@ -1543,7 +1887,8 @@ export default function StructuredRideMeetHub({
                   </p>
                 ) : activeRides.length === 0 ? (
                   <p className="structured-social__empty">
-                    Ainda não há caronas estruturadas para este
+                    Nenhuma carona publicada ainda. Abra “Publicar uma
+                    carona” para oferecer ou procurar uma opção para este
                     evento.
                   </p>
                 ) : (
@@ -1674,6 +2019,18 @@ export default function StructuredRideMeetHub({
                             </span>
                           </div>
 
+                          <div className="structured-social__creator-block">
+                            <span className="structured-social__creator-label">
+                              Criador da carona
+                            </span>
+                            <ClubberPersonIdentity
+                              person={getPersonByUserId(
+                                people,
+                                ride.creator_user_id
+                              )}
+                            />
+                          </div>
+
                           {ride.transport_type ? (
                             <p className="structured-social__note">
                               Transporte: {ride.transport_type}
@@ -1694,6 +2051,34 @@ export default function StructuredRideMeetHub({
                         </div>
 
                         <div className="structured-social__card-side">
+                          <section className="structured-social__people-panel">
+                            <div className="structured-social__people-panel-header">
+                              <strong>Participantes</strong>
+                              <span className="structured-social__people-count">
+                                {approvedMembers.length}
+                              </span>
+                            </div>
+
+                            <div className="structured-social__people-list">
+                              {approvedMembers.map((member) => (
+                                <ClubberPersonIdentity
+                                  key={member.user_id}
+                                  person={getPersonByUserId(
+                                    people,
+                                    member.user_id
+                                  )}
+                                  meta={`${getSocialRoleLabel(
+                                    member.role
+                                  )}${
+                                    member.user_id === viewerUserId
+                                      ? " · Você"
+                                      : ""
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </section>
+
                           <div className="structured-social__action-stack">
                             {isCreator ? (
                               <div className="structured-social__owner-actions">
@@ -1851,19 +2236,25 @@ export default function StructuredRideMeetHub({
                               </span>
 
                               {ownerPendingRequests.map(
-                                (request, index) => (
+                                (request) => (
                                   <div
                                     className="structured-social__request"
                                     key={request.request_id}
                                   >
+                                    <ClubberPersonIdentity
+                                      person={getPersonByUserId(
+                                        people,
+                                        request.requester_user_id
+                                      )}
+                                      meta={
+                                        request.seats_requested > 1
+                                          ? `${request.seats_requested} vagas solicitadas`
+                                          : "1 vaga solicitada"
+                                      }
+                                    />
                                     <span className="structured-social__request-copy">
-                                      Solicitação {index + 1}
-                                      {request.seats_requested > 1
-                                        ? ` · ${request.seats_requested} vagas`
-                                        : ""}
-                                      {request.message
-                                        ? ` · ${request.message}`
-                                        : ""}
+                                      {request.message ||
+                                        "Solicitação sem mensagem."}
                                     </span>
 
                                     <div className="structured-social__request-actions">
@@ -2008,6 +2399,10 @@ export default function StructuredRideMeetHub({
                       placeholder="Referência geral e segura"
                       required
                     />
+                    <span className="structured-social__field-help">
+                      Prefira <strong>local público e reconhecível</strong>.
+                      Não use endereço residencial.
+                    </span>
                   </div>
 
                   <div className="structured-social__field">
@@ -2018,6 +2413,7 @@ export default function StructuredRideMeetHub({
                       id="structured-meetup-start"
                       type="datetime-local"
                       value={meetupStartsAt}
+                      min={toLocalDateTimeInputValue(new Date())}
                       onChange={(event) =>
                         setMeetupStartsAt(event.target.value)
                       }
@@ -2027,12 +2423,16 @@ export default function StructuredRideMeetHub({
 
                   <div className="structured-social__field">
                     <label htmlFor="structured-meetup-end">
-                      Término
+                      Término (opcional)
                     </label>
                     <input
                       id="structured-meetup-end"
                       type="datetime-local"
                       value={meetupEndsAt}
+                      min={
+                        meetupStartsAt ||
+                        toLocalDateTimeInputValue(new Date())
+                      }
                       onChange={(event) =>
                         setMeetupEndsAt(event.target.value)
                       }
@@ -2144,7 +2544,8 @@ export default function StructuredRideMeetHub({
                   </p>
                 ) : activeMeetups.length === 0 ? (
                   <p className="structured-social__empty">
-                    Ainda não há pontos de encontro estruturados
+                    Nenhum ponto de encontro publicado ainda. Abra “Criar
+                    ponto de encontro” para organizar uma referência segura
                     para este evento.
                   </p>
                 ) : (
@@ -2243,6 +2644,18 @@ export default function StructuredRideMeetHub({
                             </span>
                           </div>
 
+                          <div className="structured-social__creator-block">
+                            <span className="structured-social__creator-label">
+                              Criador do encontro
+                            </span>
+                            <ClubberPersonIdentity
+                              person={getPersonByUserId(
+                                people,
+                                meetup.creator_user_id
+                              )}
+                            />
+                          </div>
+
                           {meetup.meeting_point_reference ? (
                             <p className="structured-social__note">
                               Referência:{" "}
@@ -2264,6 +2677,34 @@ export default function StructuredRideMeetHub({
                         </div>
 
                         <div className="structured-social__card-side">
+                          <section className="structured-social__people-panel">
+                            <div className="structured-social__people-panel-header">
+                              <strong>Participantes</strong>
+                              <span className="structured-social__people-count">
+                                {approvedMembers.length}
+                              </span>
+                            </div>
+
+                            <div className="structured-social__people-list">
+                              {approvedMembers.map((member) => (
+                                <ClubberPersonIdentity
+                                  key={member.user_id}
+                                  person={getPersonByUserId(
+                                    people,
+                                    member.user_id
+                                  )}
+                                  meta={`${getSocialRoleLabel(
+                                    member.role
+                                  )}${
+                                    member.user_id === viewerUserId
+                                      ? " · Você"
+                                      : ""
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </section>
+
                           <div className="structured-social__action-stack">
                             {isCreator ? (
                               <div className="structured-social__owner-actions">
@@ -2424,16 +2865,21 @@ export default function StructuredRideMeetHub({
                               </span>
 
                               {ownerPendingRequests.map(
-                                (request, index) => (
+                                (request) => (
                                   <div
                                     className="structured-social__request"
                                     key={request.request_id}
                                   >
+                                    <ClubberPersonIdentity
+                                      person={getPersonByUserId(
+                                        people,
+                                        request.requester_user_id
+                                      )}
+                                      meta="Solicitação de participação"
+                                    />
                                     <span className="structured-social__request-copy">
-                                      Solicitação {index + 1}
-                                      {request.message
-                                        ? ` · ${request.message}`
-                                        : ""}
+                                      {request.message ||
+                                        "Solicitação sem mensagem."}
                                     </span>
 
                                     <div className="structured-social__request-actions">
