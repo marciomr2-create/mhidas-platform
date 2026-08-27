@@ -1,4 +1,4 @@
-﻿// src/app/api/club-profile/remove-token/route.ts
+// src/app/api/club-profile/remove-token/route.ts
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,6 +26,109 @@ function normalizeCompare(value: any): string {
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeDateKey(value: any): string {
+  const text = normalizeText(value);
+
+  if (!text) {
+    return "";
+  }
+
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (iso) {
+    return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  }
+
+  const br = text.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+
+  if (br) {
+    return `${br[3]}-${br[2]}-${br[1]}`;
+  }
+
+  return "";
+}
+
+function normalizeUrlCompare(value: any): string {
+  const text = normalizeText(value);
+
+  if (!text) {
+    return "";
+  }
+
+  try {
+    const url = new URL(text);
+    url.hash = "";
+    url.protocol = url.protocol.toLowerCase();
+    url.hostname = url.hostname.toLowerCase();
+
+    if (url.pathname.length > 1) {
+      url.pathname = url.pathname.replace(/\/+$/, "");
+    }
+
+    return url.toString();
+  } catch {
+    return text.replace(/\/+$/, "");
+  }
+}
+
+function removeFirstDateMetadata(
+  items: string[],
+  requestedValue: string
+): { items: string[]; removed: boolean } {
+  const targetText = normalizeText(requestedValue);
+
+  if (!targetText) {
+    return { items, removed: false };
+  }
+
+  let removeIndex = items.findIndex(
+    (item) => normalizeText(item) === targetText
+  );
+
+  if (removeIndex < 0) {
+    const targetDateKey = normalizeDateKey(targetText);
+
+    if (targetDateKey) {
+      removeIndex = items.findIndex(
+        (item) => normalizeDateKey(item) === targetDateKey
+      );
+    }
+  }
+
+  if (removeIndex < 0) {
+    return { items, removed: false };
+  }
+
+  return {
+    items: items.filter((_, index) => index !== removeIndex),
+    removed: true,
+  };
+}
+
+function removeFirstLinkMetadata(
+  items: string[],
+  requestedValue: string
+): { items: string[]; removed: boolean } {
+  const target = normalizeUrlCompare(requestedValue);
+
+  if (!target) {
+    return { items, removed: false };
+  }
+
+  const removeIndex = items.findIndex(
+    (item) => normalizeUrlCompare(item) === target
+  );
+
+  if (removeIndex < 0) {
+    return { items, removed: false };
+  }
+
+  return {
+    items: items.filter((_, index) => index !== removeIndex),
+    removed: true,
+  };
 }
 
 function splitTokenList(value: any): string[] {
@@ -56,6 +159,8 @@ export async function POST(request: NextRequest) {
     const cardId = normalizeText(body?.cardId);
     const field = normalizeText(body?.field);
     const value = normalizeText(body?.value);
+    const nextEventDate = normalizeText(body?.nextEventDate);
+    const nextEventLink = normalizeText(body?.nextEventLink);
 
     if (!cardId) {
       return NextResponse.json(
@@ -154,17 +259,39 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
+    let removeMetadataMatchMode =
+      field === "next_events" ? "positional_fallback" : "not_applicable";
+    let removedNextEventDate = false;
+    let removedNextEventLink = false;
+
     if (field === "next_events") {
       const currentDates = splitTokenList(row.next_events_dates);
       const currentLinks = splitTokenList(row.next_events_links);
+      const hasCanonicalMetadataIdentity = Boolean(nextEventDate || nextEventLink);
 
-      updatePayload.next_events_dates = joinTokenList(
-        keepIndexes.map((index) => currentDates[index] || "").filter(Boolean)
-      );
+      if (hasCanonicalMetadataIdentity) {
+        removeMetadataMatchMode = "canonical_metadata";
 
-      updatePayload.next_events_links = joinTokenList(
-        keepIndexes.map((index) => currentLinks[index] || "").filter(Boolean)
-      );
+        if (nextEventDate) {
+          const dateResult = removeFirstDateMetadata(currentDates, nextEventDate);
+          updatePayload.next_events_dates = joinTokenList(dateResult.items);
+          removedNextEventDate = dateResult.removed;
+        }
+
+        if (nextEventLink) {
+          const linkResult = removeFirstLinkMetadata(currentLinks, nextEventLink);
+          updatePayload.next_events_links = joinTokenList(linkResult.items);
+          removedNextEventLink = linkResult.removed;
+        }
+      } else {
+        updatePayload.next_events_dates = joinTokenList(
+          keepIndexes.map((index) => currentDates[index] || "").filter(Boolean)
+        );
+
+        updatePayload.next_events_links = joinTokenList(
+          keepIndexes.map((index) => currentLinks[index] || "").filter(Boolean)
+        );
+      }
     }
 
     const { error: updateError } = await supabase
@@ -195,6 +322,9 @@ export async function POST(request: NextRequest) {
       removed: true,
       field,
       value,
+      removeMetadataMatchMode,
+      removedNextEventDate,
+      removedNextEventLink,
       message: "Item removido do Club Mode.",
     });
   } catch (error: any) {

@@ -130,10 +130,7 @@ const pageCss = `
   .artists-shell {
     min-height: 100vh;
     padding: 30px 22px 110px;
-    background:
-      radial-gradient(circle at 12% 0%, rgba(111, 103, 255, 0.14), transparent 30%),
-      radial-gradient(circle at 92% 8%, rgba(61, 76, 128, 0.10), transparent 25%),
-      #07080c;
+    background: var(--mhidas-bg-main);
     color: #f5f6fa;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
@@ -168,7 +165,7 @@ const pageCss = `
 
   .artists-eyebrow {
     margin: 0;
-    color: #a9a4ff;
+    color: var(--mhidas-clubber-action);
     font-size: 11px;
     line-height: 1.2;
     letter-spacing: 0.16em;
@@ -195,11 +192,9 @@ const pageCss = `
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 24px;
-    border: 1px solid rgba(122, 114, 255, 0.25);
+    border: 1px solid rgba(42, 134, 148, 0.28);
     border-radius: 24px;
-    background:
-      radial-gradient(circle at top right, rgba(122, 114, 255, 0.18), transparent 42%),
-      linear-gradient(145deg, #12141d, #0d0f16);
+    background: var(--mhidas-card-dark);
     box-shadow: 0 26px 70px rgba(0, 0, 0, 0.26);
   }
 
@@ -227,11 +222,11 @@ const pageCss = `
   }
 
   .artists-status {
-    padding: 7px 10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 999px;
-    background: rgba(255,255,255,0.055);
-    color: #d8dae2;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--mhidas-clubber-action);
     font-size: 11px;
     font-weight: 780;
   }
@@ -247,22 +242,22 @@ const pageCss = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(122, 114, 255, 0.88);
+    border: 1px solid rgba(42, 134, 148, 0.52);
     border-radius: 14px;
-    background: linear-gradient(180deg, #776fff, #625ae8);
+    background: var(--mhidas-clubber-action-strong);
     color: #ffffff;
     text-align: center;
     text-decoration: none;
     font-size: 14px;
     font-weight: 850;
-    box-shadow: 0 14px 34px rgba(98, 90, 232, 0.24);
+    box-shadow: none;
   }
 
   .artists-empty-state {
     padding: 28px;
-    border: 1px solid #242733;
+    border: 1px solid var(--mhidas-border);
     border-radius: 24px;
-    background: #101219;
+    background: var(--mhidas-card-dark);
   }
 
   .artists-empty-state .artists-primary-button {

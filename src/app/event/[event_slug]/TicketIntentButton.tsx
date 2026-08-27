@@ -177,7 +177,7 @@ const SOCIAL_PREFERENCE_ACTIONS: SocialPreferenceAction[] = [
   {
     key: "wants_group",
     label: "Quero entrar em um grupo",
-    detail: "Encontrar uma tribo temporária para este evento.",
+    detail: "Encontrar um grupo para este evento.",
   },
   {
     key: "accepts_new_people",

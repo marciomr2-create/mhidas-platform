@@ -50,14 +50,14 @@ type ConnectionUiState =
   | "error";
 
 const EVENT_PALETTE = {
-  surface: "rgba(12,12,20,0.94)",
-  surfaceStrong: "rgba(18,18,29,0.92)",
-  violet: "#7C5CFF",
-  violetSoft: "rgba(124,92,255,0.16)",
-  indigoBorder: "rgba(124,92,255,0.24)",
-  teal: "#00F5C8",
-  tealSoft: "rgba(0,245,200,0.12)",
-  tealBorder: "rgba(0,245,200,0.28)",
+  surface: "#0E0E0E",
+  surfaceStrong: "#111111",
+  violet: "#2A8694",
+  violetSoft: "rgba(42,134,148,0.12)",
+  indigoBorder: "rgba(255,255,255,0.10)",
+  teal: "#2A8694",
+  tealSoft: "rgba(42,134,148,0.12)",
+  tealBorder: "rgba(42,134,148,0.28)",
   amber: "#FFBC58",
   border: "rgba(255,255,255,0.10)",
   borderStrong: "rgba(255,255,255,0.15)",
@@ -476,7 +476,7 @@ function rideProfileActionStyle(): CSSProperties {
     width: "fit-content",
     minHeight: 28,
     padding: "2px 0",
-    borderBottom: "1px solid rgba(124,92,255,0.42)",
+    borderBottom: "1px solid rgba(42,134,148,0.42)",
     color: EVENT_PALETTE.violet,
     textDecoration: "none",
     fontWeight: 850,
@@ -508,8 +508,8 @@ function rideConnectionButtonStyle(
     background: error
       ? "linear-gradient(135deg, rgba(255,85,118,0.15), rgba(255,255,255,0.04))"
       : completed
-        ? "linear-gradient(135deg, rgba(0,245,200,0.14), rgba(124,92,255,0.14))"
-        : "linear-gradient(135deg, rgba(47,128,255,0.15), rgba(124,92,255,0.18))",
+        ? "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.92))"
+        : "linear-gradient(135deg, rgba(255,255,255,0.045), rgba(17,17,17,0.92))",
     color: completed ? EVENT_PALETTE.teal : "#fff",
     textDecoration: "none",
     fontWeight: 900,
@@ -545,8 +545,8 @@ function avatarStyle(kind: "ride" | "meet"): CSSProperties {
         : EVENT_PALETTE.indigoBorder
     }`,
     background:
-      "linear-gradient(135deg, rgba(47,128,255,0.14), rgba(124,92,255,0.18))",
-    boxShadow: "0 0 22px rgba(124,92,255,0.10)",
+      "linear-gradient(135deg, rgba(42,134,148,0.08), rgba(17,17,17,0.92))",
+    boxShadow: "none",
   };
 }
 
@@ -939,7 +939,7 @@ function RideEventOfficialAction({ href }: { href: string }) {
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        color: "rgba(0,255,190,0.88)",
+        color: "#2A8694",
         fontSize: 12,
         lineHeight: 1.4,
         fontWeight: 850,
@@ -1232,7 +1232,7 @@ function RideCard({
                   borderRadius: 999,
                   background: EVENT_PALETTE.teal,
                   boxShadow:
-                    "0 0 14px rgba(0,245,200,0.34)",
+                    "none",
                 }}
               />
               <span>Sua carona</span>
@@ -1683,12 +1683,12 @@ export default function RideMeetCards({
 
         .event-ride-card__review-link {
           width: fit-content;
-          color: ${"#7C5CFF"};
+          color: ${"#2A8694"};
           font-size: 11px;
           line-height: 1.35;
           font-weight: 850;
           text-decoration: none;
-          border-bottom: 1px solid rgba(124,92,255,0.40);
+          border-bottom: 1px solid rgba(42,134,148,0.40);
         }
 
         .event-ride-card__secondary-actions {
@@ -1742,12 +1742,12 @@ export default function RideMeetCards({
 
         .event-meet-card__review-link {
           width: fit-content;
-          color: #7C5CFF;
+          color: #2A8694;
           font-size: 11px;
           line-height: 1.35;
           font-weight: 850;
           text-decoration: none;
-          border-bottom: 1px solid rgba(124,92,255,0.40);
+          border-bottom: 1px solid rgba(42,134,148,0.40);
         }
 
         .event-meet-card__secondary-actions {

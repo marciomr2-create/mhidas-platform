@@ -15,6 +15,8 @@ type StructuredRideMeetHubProps = {
   eventGroupId: string;
   eventReturnTo: string;
   isAuthenticated: boolean;
+  initialPanel?: "rides" | "meetups";
+  focusedPanel?: "rides" | "meetups";
 };
 
 type RideRow = {
@@ -414,9 +416,12 @@ export default function StructuredRideMeetHub({
   eventGroupId,
   eventReturnTo,
   isAuthenticated,
+  initialPanel = "rides",
+  focusedPanel,
 }: StructuredRideMeetHubProps) {
   const [activePanel, setActivePanel] =
-    useState<ActivePanel>("rides");
+    useState<ActivePanel>(initialPanel);
+  const visiblePanel: ActivePanel = focusedPanel ?? activePanel;
   const [loading, setLoading] = useState(isAuthenticated);
   const [busyKey, setBusyKey] = useState("");
   const [feedback, setFeedback] =
@@ -817,11 +822,9 @@ export default function StructuredRideMeetHub({
           margin: 22px 0 0 50%;
           transform: translateX(-50%);
           padding: 24px;
-          border-top: 1px solid rgba(20,184,166,0.34);
+          border-top: 1px solid var(--mhidas-border);
           border-bottom: 1px solid rgba(255,255,255,0.10);
-          background:
-            radial-gradient(circle at top right, rgba(20,184,166,0.10), transparent 32%),
-            rgba(8,12,19,0.76);
+          background: var(--mhidas-card-dark);
           box-sizing: border-box;
         }
 
@@ -841,7 +844,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__eyebrow {
-          color: #14B8A6;
+          color: var(--mhidas-clubber-action);
           font-size: 10px;
           line-height: 1.2;
           font-weight: 950;
@@ -871,9 +874,9 @@ export default function StructuredRideMeetHub({
           min-height: 38px;
           padding: 0 2px 5px;
           border: 0;
-          border-bottom: 1px solid rgba(20,184,166,0.55);
+          border-bottom: 1px solid var(--mhidas-border);
           background: transparent;
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font: inherit;
           font-size: 12px;
           font-weight: 900;
@@ -912,8 +915,8 @@ export default function StructuredRideMeetHub({
           align-items: center;
           justify-content: center;
           padding: 0 18px;
-          border: 1px solid rgba(20,184,166,0.54);
-          background: rgba(20,184,166,0.12);
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-border);
           color: #fff;
           text-decoration: none;
           font-size: 13px;
@@ -930,7 +933,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__feedback[data-tone="success"] {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
         }
 
         .structured-social__feedback[data-tone="error"] {
@@ -968,9 +971,9 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__tab[aria-selected="true"] {
-          border-color: rgba(20,184,166,0.22);
-          border-bottom-color: #14B8A6;
-          background: rgba(20,184,166,0.08);
+          border-color: var(--mhidas-border);
+          border-bottom-color: var(--mhidas-clubber-action);
+          background: var(--mhidas-border);
           color: #fff;
         }
 
@@ -1035,7 +1038,7 @@ export default function StructuredRideMeetHub({
 
         .structured-social__composer summary::after {
           content: "+";
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 20px;
           font-weight: 600;
         }
@@ -1077,7 +1080,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__field-help strong {
-          color: rgba(94,234,212,0.88);
+          color: var(--mhidas-text-secondary);
           font-weight: 850;
         }
 
@@ -1106,19 +1109,19 @@ export default function StructuredRideMeetHub({
         .structured-social__field input:focus,
         .structured-social__field select:focus,
         .structured-social__field textarea:focus {
-          border-bottom-color: #14B8A6;
+          border-bottom-color: var(--mhidas-clubber-action);
         }
 
         .structured-social__field select option {
-          background: #0B111A;
+          background: var(--mhidas-card-dark);
           color: #fff;
         }
 
         .structured-social__submit {
           grid-column: 1 / -1;
           min-height: 44px;
-          border: 1px solid rgba(20,184,166,0.54);
-          background: #0D9488;
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-clubber-action-strong);
           color: #fff;
           font: inherit;
           font-size: 13px;
@@ -1205,8 +1208,8 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__card[data-highlighted="true"] {
-          outline: 2px solid rgba(94,234,212,0.86);
-          background: rgba(20,184,166,0.08);
+          outline: 2px solid var(--mhidas-text-secondary);
+          background: var(--mhidas-border);
         }
 
         .structured-social__card-main,
@@ -1232,7 +1235,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__card-kicker {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.06em;
@@ -1250,7 +1253,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__route span:nth-child(2) {
-          color: #14B8A6;
+          color: var(--mhidas-clubber-action);
         }
 
         .structured-social__meta {
@@ -1275,7 +1278,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__creator-label {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.07em;
@@ -1311,10 +1314,10 @@ export default function StructuredRideMeetHub({
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 0 8px;
-          border-radius: 999px;
-          background: rgba(20,184,166,0.12);
-          color: #5EEAD4;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 950;
         }
@@ -1335,10 +1338,10 @@ export default function StructuredRideMeetHub({
           width: 42px;
           height: 42px;
           flex: 0 0 42px;
-          border: 1px solid rgba(20,184,166,0.52);
+          border: 1px solid var(--mhidas-border);
           border-radius: 999px;
           object-fit: cover;
-          background: rgba(20,184,166,0.08);
+          background: var(--mhidas-border);
         }
 
         .structured-social__person-avatar--fallback {
@@ -1367,7 +1370,7 @@ export default function StructuredRideMeetHub({
         }
 
         .structured-social__person-name:hover {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
         }
 
         .structured-social__person-meta {
@@ -1379,8 +1382,8 @@ export default function StructuredRideMeetHub({
 
         .structured-social__action {
           min-height: 40px;
-          border: 1px solid rgba(20,184,166,0.42);
-          background: rgba(20,184,166,0.10);
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-border);
           color: #fff;
           font: inherit;
           font-size: 12px;
@@ -1542,7 +1545,11 @@ export default function StructuredRideMeetHub({
             id="structured-social-title"
             className="structured-social__title"
           >
-            Caronas e pontos de encontro
+            {focusedPanel === "rides"
+              ? "Caronas"
+              : focusedPanel === "meetups"
+                ? "Encontros"
+                : "Caronas e pontos de encontro"}
           </h2>
           <p className="structured-social__subtitle">
             Publique uma necessidade real, entre em uma organização
@@ -1589,6 +1596,7 @@ export default function StructuredRideMeetHub({
             </p>
           ) : null}
 
+          {focusedPanel ? null : (
           <div
             className="structured-social__tabs"
             role="tablist"
@@ -1598,7 +1606,7 @@ export default function StructuredRideMeetHub({
               type="button"
               role="tab"
               className="structured-social__tab"
-              aria-selected={activePanel === "rides"}
+              aria-selected={visiblePanel === "rides"}
               onClick={() => setActivePanel("rides")}
             >
               Caronas ({activeRides.length})
@@ -1607,21 +1615,22 @@ export default function StructuredRideMeetHub({
               type="button"
               role="tab"
               className="structured-social__tab"
-              aria-selected={activePanel === "meetups"}
+              aria-selected={visiblePanel === "meetups"}
               onClick={() => setActivePanel("meetups")}
             >
               Encontros ({activeMeetups.length})
             </button>
           </div>
+          )}
 
-          {activePanel === "rides" ? (
+          {visiblePanel === "rides" ? (
             <div
               className="structured-social__panel"
               role="tabpanel"
             >
               <div className="structured-social__summary">
                 <div className="structured-social__summary-copy">
-                  <strong>Caronas estruturadas</strong>
+                  <strong>Caronas</strong>
                   <span>
                     Ofertas e buscas vinculadas exclusivamente a este
                     evento.

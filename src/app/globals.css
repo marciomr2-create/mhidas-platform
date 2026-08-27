@@ -1,3 +1,4 @@
+@import "./mhidas-visual-tokens.css";
 @import "tailwindcss";
 
 :root {
@@ -24,3 +25,53 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* MHIDAS CLUBBER COLOR TEST START */
+:root {
+  --mhidas-clubber-action: #2A8694;
+  --mhidas-clubber-action-strong: #247C88;
+}
+/* MHIDAS CLUBBER COLOR TEST END */
+/* MHIDAS EVENT BACKGROUND TEST START */
+/* Referência visual: último bloco "Quem vai para este evento". */
+.event-persisted-radar,
+.event-ticket-journey,
+.event-tribe-hub,
+.structured-social {
+  background: #0E0E0E !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+/* Subsuperfícies continuam neutras, sem azul-marinho dominante. */
+.event-ticket-journey .event-social-journey,
+.event-tribe-hub__card,
+.structured-social__card,
+.structured-social__people-panel,
+.event-tribe-hub__creator,
+.event-tribe-hub__member-row,
+.event-tribe-hub__request-row {
+  background-color: #111111 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+/* MHIDAS EVENT BACKGROUND TEST END */
+/* MHIDAS TRIBE ANOMALY COLOR TEST START */
+/*
+  Correção visual pontual:
+  o card interno de gestão da tribo ainda mantinha um background shorthand
+  azul/navy. background-color não anulava o gradient anterior.
+*/
+.event-tribe-hub__card,
+.event-tribe-hub__card[data-highlighted="true"] {
+  background: #111111 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  outline-color: rgba(255,255,255,0.10) !important;
+}
+
+/* Subáreas de gestão seguem o mesmo grafite neutro. */
+.event-tribe-hub__creator,
+.event-tribe-hub__edit-composer,
+.event-tribe-hub__request-composer,
+.event-tribe-hub__edit-savebar {
+  background: #111111 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+/* MHIDAS TRIBE ANOMALY COLOR TEST END */

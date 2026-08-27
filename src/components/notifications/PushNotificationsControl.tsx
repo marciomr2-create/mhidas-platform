@@ -667,13 +667,13 @@ export default function PushNotificationsControl() {
           padding: 13px;
           border: 1px solid rgba(148, 163, 184, 0.18);
           border-radius: 16px;
-          background: rgba(15, 23, 42, 0.72);
+          background: var(--mhidas-card-secondary);
           box-sizing: border-box;
         }
 
         .mhidas-push-control[data-state="active"] {
-          border-color: rgba(20, 184, 166, 0.48);
-          background: rgba(13, 148, 136, 0.1);
+          border-color: rgba(42, 134, 148, 0.48);
+          background: rgba(42, 134, 148, 0.08);
         }
 
         .mhidas-push-control[data-state="denied"],
@@ -710,9 +710,9 @@ export default function PushNotificationsControl() {
           flex: 0 0 auto;
           min-height: 38px;
           padding: 9px 12px;
-          border: 1px solid rgba(20, 184, 166, 0.42);
+          border: 1px solid rgba(42, 134, 148, 0.42);
           border-radius: 12px;
-          background: #0D9488;
+          background: var(--mhidas-clubber-action-strong);
           color: #FFFFFF;
           font: inherit;
           font-size: 12px;
@@ -722,7 +722,7 @@ export default function PushNotificationsControl() {
 
         .mhidas-push-button[data-action="deactivate"] {
           border-color: rgba(148, 163, 184, 0.28);
-          background: #111827;
+          background: var(--mhidas-card-secondary);
         }
 
         .mhidas-push-button:disabled {

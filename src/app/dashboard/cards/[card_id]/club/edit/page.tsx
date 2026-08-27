@@ -49,10 +49,10 @@ function actionStyle(primary = false) {
     padding: "10px 14px",
     borderRadius: 12,
     border: primary
-      ? "1px solid rgba(124,92,255,0.55)"
+      ? "1px solid rgba(42,134,148,0.52)"
       : "1px solid rgba(255,255,255,0.14)",
     background: primary
-      ? "linear-gradient(135deg, rgba(91,72,235,0.95), rgba(124,92,255,0.95))"
+      ? "var(--mhidas-clubber-action-strong)"
       : "rgba(255,255,255,0.05)",
     color: "#fff",
     textDecoration: "none",
@@ -100,7 +100,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
       <header style={{ display: "grid", gap: 10 }}>
         <Link
           href={`/dashboard/cards/${currentCard.card_id}/club`}
-          style={{ color: "#d8d4ff", textDecoration: "none", fontWeight: 800 }}
+          style={{ color: "#CBD5E1", textDecoration: "none", fontWeight: 800 }}
         >
           ← Voltar ao meu perfil
         </Link>
@@ -112,7 +112,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
               fontWeight: 900,
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "#a99cff",
+              color: "var(--mhidas-clubber-action)",
             }}
           >
             Perfil Clubber
@@ -142,7 +142,7 @@ export default async function CardClubEditPage({ params }: PageProps) {
         />
       </section>
 
-      <section style={sectionStyle()}>
+      <section id="redes-contatos" style={{ ...sectionStyle(), scrollMarginTop: 24 }}>
         <div style={{ display: "grid", gap: 5 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>Redes e contatos</h2>
           <p style={{ margin: 0, opacity: 0.68, lineHeight: 1.55 }}>

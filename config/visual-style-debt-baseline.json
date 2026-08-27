@@ -1,0 +1,221 @@
+{
+  "visual_standard": "MHIDAS_VISUAL_STANDARD_LOCK_V1",
+  "policy": {
+    "shared": [
+      "#050505",
+      "#0E0E0E",
+      "#111111",
+      "#F8FAFC",
+      "#CBD5E1",
+      "rgba(255,255,255,0.10)"
+    ],
+    "clubber_action": [
+      "#2A8694",
+      "#247C88"
+    ],
+    "pro": [
+      "#1D4ED8",
+      "#0F172A",
+      "#4F46E5"
+    ],
+    "green_large_surfaces": "FORBIDDEN",
+    "green_dominant_glow": "FORBIDDEN",
+    "mode_mixing": "FORBIDDEN"
+  },
+  "debt": {
+    "src/app/clubbers/ClubberDiscoveryClient.tsx": [
+      "FORBIDDEN_COLOR|1102|color: #5eead4;",
+      "FORBIDDEN_COLOR|727|color: #5eead4;",
+      "FORBIDDEN_COLOR|907|color: #5eead4;",
+      "GREEN_GLOW|1018|box-shadow: 0 0 12px rgba(20, 184, 166, 0.28);",
+      "GREEN_GLOW|644|box-shadow: 0 12px 28px rgba(20, 184, 166, 0.16);",
+      "GREEN_GLOW|809|box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.10);",
+      "GREEN_SURFACE|1017|background: #14b8a6;",
+      "GREEN_SURFACE|1052|radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.10), transparent 34%),",
+      "GREEN_SURFACE|1101|background: linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(13, 148, 136, 0.08));",
+      "GREEN_SURFACE|524|: \"linear-gradient(135deg, rgba(20,184,166,0.30), rgba(13,148,136,0.14))\",",
+      "GREEN_SURFACE|617|radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.10), transparent 34%),",
+      "GREEN_SURFACE|618|radial-gradient(circle at 90% 16%, rgba(13, 148, 136, 0.07), transparent 32%),",
+      "GREEN_SURFACE|643|background: linear-gradient(135deg, #14b8a6, #0d9488);",
+      "GREEN_SURFACE|676|background: rgba(20, 184, 166, 0.10);",
+      "GREEN_SURFACE|865|radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.10), transparent 34%),",
+      "GREEN_SURFACE|879|background: linear-gradient(180deg, #14b8a6, rgba(13, 148, 136, 0.18));"
+    ],
+    "src/app/dashboard/admin/official-events/ticket-links/TicketLinkAdminCard.tsx": [
+      "PURPLE_DRIFT|271|\"linear-gradient(135deg, rgba(125,34,255,1), rgba(125,92,255,0.74))\","
+    ],
+    "src/app/dashboard/cards/page.tsx": [
+      "GREEN_GLOW|160|boxShadow: active ? \"0 0 14px rgba(20,184,166,0.34)\" : \"none\",",
+      "GREEN_SURFACE|159|background: active ? \"#14B8A6\" : \"rgba(255,255,255,0.42)\","
+    ],
+    "src/app/dashboard/cards/[card_id]/club/edit/ClubIdentityManager.tsx": [
+      "PURPLE_DRIFT|117|? \"1px solid rgba(124,92,255,0.55)\"",
+      "PURPLE_DRIFT|120|? \"linear-gradient(135deg, rgba(91,72,235,0.95), rgba(124,92,255,0.95))\"",
+      "PURPLE_DRIFT|134|? \"1px solid rgba(124,92,255,0.52)\"",
+      "PURPLE_DRIFT|136|background: active ? \"rgba(124,92,255,0.16)\" : \"rgba(255,255,255,0.045)\",",
+      "PURPLE_DRIFT|452|border: \"1px solid rgba(124,92,255,0.28)\",",
+      "PURPLE_DRIFT|453|background: \"rgba(124,92,255,0.09)\",",
+      "PURPLE_DRIFT|613|border: \"1px solid rgba(124,92,255,0.28)\",",
+      "PURPLE_DRIFT|614|background: \"rgba(124,92,255,0.10)\","
+    ],
+    "src/app/dashboard/cards/[card_id]/club/edit/page.tsx": [
+      "PURPLE_DRIFT|52|? \"1px solid rgba(124,92,255,0.55)\"",
+      "PURPLE_DRIFT|55|? \"linear-gradient(135deg, rgba(91,72,235,0.95), rgba(124,92,255,0.95))\""
+    ],
+    "src/app/dashboard/cards/[card_id]/pro/page.tsx": [
+      "GREEN_GLOW|100|boxShadow: isPrimary ? \"0 14px 34px rgba(13,148,136,0.18)\" : \"none\",",
+      "GREEN_SURFACE|30|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.14), transparent 26%), linear-gradient(180deg, #020617 0%, #050816 46%, #070b14 100%)\",",
+      "GREEN_SURFACE|95|? \"linear-gradient(135deg, rgba(13,148,136,0.98), rgba(20,184,166,0.86))\""
+    ],
+    "src/app/dashboard/cards/[card_id]/ProfessionalLinksManager.tsx": [
+      "FORBIDDEN_COLOR|853|? \"#5EEAD4\"",
+      "GREEN_SURFACE|186|? \"linear-gradient(135deg, rgba(13,148,136,0.10), rgba(15,23,42,0.72))\"",
+      "GREEN_SURFACE|236|background = \"linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)\";",
+      "GREEN_SURFACE|271|background: active ? \"#0D9488\" : \"rgba(51,65,85,0.8)\","
+    ],
+    "src/app/dashboard/network/page.tsx": [
+      "GREEN_GLOW|237|boxShadow: \"0 12px 30px rgba(20,184,166,0.16)\",",
+      "GREEN_SURFACE|236|\"linear-gradient(135deg, rgba(20,184,166,0.88), rgba(13,148,136,0.92))\","
+    ],
+    "src/app/event/[event_slug]/RideMeetCards.tsx": [
+      "FORBIDDEN_COLOR|1686|color: ${\"#7C5CFF\"};",
+      "FORBIDDEN_COLOR|1745|color: #7C5CFF;",
+      "FORBIDDEN_COLOR|55|violet: \"#7C5CFF\",",
+      "FORBIDDEN_COLOR|58|teal: \"#00F5C8\",",
+      "GREEN_SURFACE|511|? \"linear-gradient(135deg, rgba(0,245,200,0.14), rgba(124,92,255,0.14))\"",
+      "PURPLE_DRIFT|1686|color: ${\"#7C5CFF\"};",
+      "PURPLE_DRIFT|1691|border-bottom: 1px solid rgba(124,92,255,0.40);",
+      "PURPLE_DRIFT|1745|color: #7C5CFF;",
+      "PURPLE_DRIFT|1750|border-bottom: 1px solid rgba(124,92,255,0.40);",
+      "PURPLE_DRIFT|479|borderBottom: \"1px solid rgba(124,92,255,0.42)\",",
+      "PURPLE_DRIFT|511|? \"linear-gradient(135deg, rgba(0,245,200,0.14), rgba(124,92,255,0.14))\"",
+      "PURPLE_DRIFT|512|: \"linear-gradient(135deg, rgba(47,128,255,0.15), rgba(124,92,255,0.18))\",",
+      "PURPLE_DRIFT|548|\"linear-gradient(135deg, rgba(47,128,255,0.14), rgba(124,92,255,0.18))\",",
+      "PURPLE_DRIFT|549|boxShadow: \"0 0 22px rgba(124,92,255,0.10)\",",
+      "PURPLE_DRIFT|55|violet: \"#7C5CFF\",",
+      "PURPLE_DRIFT|56|violetSoft: \"rgba(124,92,255,0.16)\",",
+      "PURPLE_DRIFT|57|indigoBorder: \"rgba(124,92,255,0.24)\","
+    ],
+    "src/app/event/[event_slug]/ticket-intent-preview/page.tsx": [
+      "GREEN_SURFACE|116|background: \"rgba(0,255,190,0.09)\",",
+      "PURPLE_DRIFT|80|\"radial-gradient(circle at top, rgba(125,92,255,0.28), transparent 36%), #050505\","
+    ],
+    "src/app/event/[event_slug]/TicketNetworkAvailability.module.css": [
+      "PURPLE_DRIFT|224|border-left: 2px solid rgba(125, 92, 255, 0.42);",
+      "PURPLE_DRIFT|452|border-left: 2px solid rgba(125, 92, 255, 0.42);"
+    ],
+    "src/app/login/LoginClient.tsx": [
+      "GREEN_GLOW|307|boxShadow: loading ? \"none\" : \"0 10px 24px rgba(13,148,136,0.16)\","
+    ],
+    "src/app/network/connections/page.tsx": [
+      "GREEN_SURFACE|80|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 86% 8%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #030712 46%, #050505 100%)\","
+    ],
+    "src/app/network/page.tsx": [
+      "GREEN_GLOW|271|boxShadow: isMatched ? \"0 10px 24px rgba(20,184,166,0.12)\" : \"none\",",
+      "GREEN_SURFACE|265|? \"linear-gradient(135deg, rgba(20,184,166,0.22), rgba(37,99,235,0.14))\"",
+      "GREEN_SURFACE|386|background: isMatched ? \"rgba(20,184,166,0.14)\" : \"rgba(37,99,235,0.13)\","
+    ],
+    "src/app/onboarding/OnboardingClient.tsx": [
+      "FORBIDDEN_COLOR|234|? \"#5eead4\"",
+      "GREEN_SURFACE|312|: \"linear-gradient(135deg, #14b8a6, #059669)\","
+    ],
+    "src/app/onboarding/page.tsx": [
+      "FORBIDDEN_COLOR|115|color: \"#5eead4\",",
+      "GREEN_SURFACE|97|\"radial-gradient(circle at 10% 0%, rgba(20,184,166,0.20), transparent 34%), radial-gradient(circle at 100% 8%, rgba(124,58,237,0.20), transparent 32%), #050506\","
+    ],
+    "src/app/pro/[slug]/page.tsx": [
+      "GREEN_GLOW|408|boxShadow: \"0 0 0 1px rgba(45,212,191,0.10) inset, 0 16px 30px rgba(20,184,166,0.16)\",",
+      "GREEN_SURFACE|169|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.22), transparent 34%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #050B18 48%, #020617 100%)\",",
+      "GREEN_SURFACE|251|background: \"linear-gradient(135deg, rgba(13,148,136,0.22), rgba(15,23,42,0.78))\",",
+      "GREEN_SURFACE|406|background: \"linear-gradient(135deg, rgba(13,148,136,0.92), rgba(20,184,166,0.62))\",",
+      "GREEN_SURFACE|583|? \"linear-gradient(135deg, rgba(13,148,136,0.18), rgba(15,23,42,0.78))\"",
+      "GREEN_SURFACE|641|background: \"rgba(13,148,136,0.10)\","
+    ],
+    "src/app/signup/page.tsx": [
+      "FORBIDDEN_COLOR|38|color: \"#5eead4\",",
+      "GREEN_SURFACE|20|\"radial-gradient(circle at 8% 0%, rgba(20,184,166,0.22), transparent 35%), radial-gradient(circle at 100% 12%, rgba(124,58,237,0.20), transparent 34%), #050506\","
+    ],
+    "src/app/signup/SignupClient.tsx": [
+      "FORBIDDEN_COLOR|127|style={{ color: \"#5eead4\", fontWeight: 900, textDecoration: \"none\" }}",
+      "FORBIDDEN_COLOR|243|style={{ color: \"#5eead4\", fontWeight: 900, textAlign: \"center\", textDecoration: \"none\" }}",
+      "GREEN_SURFACE|220|: \"linear-gradient(135deg, #14b8a6, #059669)\","
+    ],
+    "src/app/[slug]/AddClubArtistButton.tsx": [
+      "GREEN_SURFACE|281|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
+      "PURPLE_DRIFT|281|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\","
+    ],
+    "src/app/[slug]/AddClubTokenButton.tsx": [
+      "GREEN_SURFACE|408|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
+      "PURPLE_DRIFT|408|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
+      "PURPLE_DRIFT|602|: \"linear-gradient(135deg, rgba(0,210,190,0.30), rgba(125,92,255,0.24))\","
+    ],
+    "src/app/[slug]/ClubOwnerEmptyBlock.tsx": [
+      "GREEN_GLOW|162|boxShadow: \"0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)\",",
+      "GREEN_SURFACE|92|\"linear-gradient(145deg, rgba(255,255,255,0.040), rgba(0,255,190,0.024))\",",
+      "PURPLE_DRIFT|161|border: \"1px solid rgba(125,92,255,0.16)\","
+    ],
+    "src/app/[slug]/ClubQuickAddMenu.tsx": [
+      "PURPLE_DRIFT|318|color: \"rgba(125,92,255,0.82)\","
+    ],
+    "src/app/[slug]/OwnerClubToolbar.tsx": [
+      "GREEN_SURFACE|86|\"linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))\",",
+      "PURPLE_DRIFT|86|\"linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))\","
+    ],
+    "src/app/[slug]/page.tsx": [
+      "FORBIDDEN_COLOR|1111|background: isActive ? \"#00ffbe\" : \"#ffd25c\",",
+      "FORBIDDEN_COLOR|852|bg: \"#04171c\",",
+      "FORBIDDEN_COLOR|853|glow: \"#00dcec\",",
+      "FORBIDDEN_COLOR|854|glowSoft: \"#08717b\",",
+      "FORBIDDEN_COLOR|867|bg: \"#10091f\",",
+      "FORBIDDEN_COLOR|868|glow: \"#7d5cff\",",
+      "FORBIDDEN_COLOR|869|glowSoft: \"#3a227a\",",
+      "GREEN_GLOW|1284|boxShadow: \"0 0 26px rgba(0,255,190,0.16)\",",
+      "GREEN_GLOW|1345|boxShadow: \"0 0 14px rgba(0,255,190,0.16)\",",
+      "GREEN_GLOW|564|boxShadow: \"0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)\",",
+      "GREEN_SURFACE|1093|? \"linear-gradient(135deg, rgba(0,255,190,0.18), rgba(0,110,95,0.22))\"",
+      "GREEN_SURFACE|1111|background: isActive ? \"#00ffbe\" : \"#ffd25c\",",
+      "GREEN_SURFACE|1222|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.10))\",",
+      "GREEN_SURFACE|1278|\"linear-gradient(135deg, rgba(0,255,190,0.14), rgba(125,92,255,0.16))\",",
+      "GREEN_SURFACE|1342|\"linear-gradient(135deg, rgba(0,255,190,0.22), rgba(125,92,255,0.22))\",",
+      "GREEN_SURFACE|2375|\"radial-gradient(circle at 8% 0%, rgba(0,255,190,0.16), transparent 30%), radial-gradient(circle at 92% 6%, rgba(125,92,255,0.32), transparent 34%), radial-gradient(circle at 50% 100%, rgba(0,220,255,0.10), transparent 32%), linear-gradient(180deg, #030308 0%,",
+      "GREEN_SURFACE|2426|\"linear-gradient(145deg, rgba(0,255,190,0.075), rgba(125,92,255,0.13) 42%, rgba(5,5,12,0.78))\",",
+      "GREEN_SURFACE|2460|\"linear-gradient(145deg, rgba(0,255,190,0.055), rgba(125,92,255,0.13))\",",
+      "GREEN_SURFACE|2904|\"linear-gradient(145deg, rgba(125,92,255,0.18), rgba(0,255,190,0.08))\",",
+      "GREEN_SURFACE|549|background: \"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.16))\",",
+      "GREEN_SURFACE|573|background: \"linear-gradient(145deg, rgba(255,255,255,0.045), rgba(0,255,190,0.028))\",",
+      "PURPLE_DRIFT|1158|? \"rgba(125,92,255,0.14)\"",
+      "PURPLE_DRIFT|1222|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.10))\",",
+      "PURPLE_DRIFT|1278|\"linear-gradient(135deg, rgba(0,255,190,0.14), rgba(125,92,255,0.16))\",",
+      "PURPLE_DRIFT|1342|\"linear-gradient(135deg, rgba(0,255,190,0.22), rgba(125,92,255,0.22))\",",
+      "PURPLE_DRIFT|1668|: \"rgba(125,92,255,0.22)\",",
+      "PURPLE_DRIFT|2375|\"radial-gradient(circle at 8% 0%, rgba(0,255,190,0.16), transparent 30%), radial-gradient(circle at 92% 6%, rgba(125,92,255,0.32), transparent 34%), radial-gradient(circle at 50% 100%, rgba(0,220,255,0.10), transparent 32%), linear-gradient(180deg, #030308 0%,",
+      "PURPLE_DRIFT|2426|\"linear-gradient(145deg, rgba(0,255,190,0.075), rgba(125,92,255,0.13) 42%, rgba(5,5,12,0.78))\",",
+      "PURPLE_DRIFT|2428|boxShadow: \"0 28px 80px rgba(0,0,0,0.42), inset 0 0 38px rgba(125,92,255,0.045)\",",
+      "PURPLE_DRIFT|2460|\"linear-gradient(145deg, rgba(0,255,190,0.055), rgba(125,92,255,0.13))\",",
+      "PURPLE_DRIFT|2462|boxShadow: \"0 18px 48px rgba(0,0,0,0.44), 0 0 26px rgba(125,92,255,0.10)\",",
+      "PURPLE_DRIFT|2904|\"linear-gradient(145deg, rgba(125,92,255,0.18), rgba(0,255,190,0.08))\",",
+      "PURPLE_DRIFT|549|background: \"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.16))\",",
+      "PURPLE_DRIFT|563|border: \"1px solid rgba(125,92,255,0.16)\",",
+      "PURPLE_DRIFT|684|: \"rgba(125,92,255,0.22)\";",
+      "PURPLE_DRIFT|704|? `linear-gradient(145deg, rgba(4,4,12,0.10), rgba(4,4,12,0.72)), radial-gradient(circle at 78% 18%, rgba(125,92,255,0.34), transparent 34%), url(\"${imageUrl}\")`",
+      "PURPLE_DRIFT|705|: \"linear-gradient(145deg, rgba(132,92,255,0.18), rgba(255,255,255,0.045))\",",
+      "PURPLE_DRIFT|867|bg: \"#10091f\",",
+      "PURPLE_DRIFT|868|glow: \"#7d5cff\",",
+      "PURPLE_DRIFT|869|glowSoft: \"#3a227a\","
+    ],
+    "src/components/network/ProfessionalConnectButton.tsx": [
+      "GREEN_SURFACE|76|background: \"rgba(20,184,166,0.12)\","
+    ],
+    "src/components/notifications/DashboardNotificationsPanel.tsx": [
+      "GREEN_SURFACE|525|background: #0D9488;",
+      "GREEN_SURFACE|549|background: rgba(13, 148, 136, 0.12);",
+      "GREEN_SURFACE|559|background: #0D9488;",
+      "GREEN_SURFACE|589|background: rgba(13, 148, 136, 0.1);",
+      "GREEN_SURFACE|668|background: #0D9488;"
+    ],
+    "src/components/notifications/PushNotificationsControl.tsx": [
+      "GREEN_SURFACE|676|background: rgba(13, 148, 136, 0.1);",
+      "GREEN_SURFACE|715|background: #0D9488;"
+    ]
+  }
+}

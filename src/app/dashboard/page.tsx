@@ -116,7 +116,7 @@ export default async function DashboardPage() {
       boxSizing: "border-box",
       borderRadius: 28,
       border: "1px solid rgba(148,163,184,0.18)",
-      background: "linear-gradient(135deg, #0B1020, #111827)",
+      background: "var(--mhidas-card-dark)",
       boxShadow: "0 24px 74px rgba(5,7,13,0.38)",
       padding: "24px 18px",
       display: "grid",
@@ -129,16 +129,16 @@ export default async function DashboardPage() {
       borderRadius: 22,
       border:
         tone === "clubber"
-          ? "1px solid rgba(20,184,166,0.22)"
+          ? "1px solid rgba(42,134,148,0.28)"
           : tone === "pro"
             ? "1px solid rgba(29,78,216,0.34)"
             : "1px solid rgba(148,163,184,0.18)",
       background:
         tone === "clubber"
-          ? "linear-gradient(135deg, #0B1020, #111827)"
+          ? "var(--mhidas-card-dark)"
           : tone === "pro"
             ? "linear-gradient(135deg, rgba(15,23,42,0.98), rgba(79,70,229,0.12))"
-            : "linear-gradient(135deg, #0B1020, #111827)",
+            : "var(--mhidas-card-dark)",
       boxShadow: "0 16px 42px rgba(5,7,13,0.27)",
       width: "100%",
       maxWidth: "100%",
@@ -185,15 +185,15 @@ export default async function DashboardPage() {
       padding: "12px 15px",
       borderRadius: 14,
       border: isClubber
-        ? "1px solid rgba(13,148,136,0.52)"
+        ? "1px solid rgba(36,124,136,0.52)"
         : isPro
           ? "1px solid rgba(29,78,216,0.52)"
           : "1px solid rgba(148,163,184,0.18)",
       background: isClubber
-        ? "#0D9488"
+        ? "var(--mhidas-clubber-action-strong)"
         : isPro
           ? "#1D4ED8"
-          : "#111827",
+          : "var(--mhidas-card-secondary)",
       color: "#F8FAFC",
       textDecoration: "none",
       fontWeight: 900,
@@ -205,7 +205,7 @@ export default async function DashboardPage() {
       minWidth: 0,
       boxSizing: "border-box",
       boxShadow: isClubber
-        ? "0 10px 24px rgba(13,148,136,0.16)"
+        ? "none"
         : isPro
           ? "0 10px 24px rgba(29,78,216,0.16)"
           : "none",
@@ -219,7 +219,7 @@ export default async function DashboardPage() {
   function labelStyle() {
     return {
       width: "fit-content",
-      color: "#14B8A6",
+      color: "var(--mhidas-clubber-action)",
       fontSize: 11,
       fontWeight: 950,
       letterSpacing: "0.055em",
@@ -342,6 +342,12 @@ export default async function DashboardPage() {
           {firstPublishedClubProfile?.slug ? (
             <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} style={buttonStyle()}>
               Ver meu perfil Clubber
+            </Link>
+          ) : null}
+
+          {hasClubberProfile ? (
+            <Link href="/dashboard/organizations" style={buttonStyle("clubber")}>
+              Minhas organizações
             </Link>
           ) : null}
 

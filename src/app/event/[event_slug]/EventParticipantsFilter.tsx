@@ -1,4 +1,4 @@
-﻿// src/app/event/[event_slug]/EventParticipantsFilter.tsx
+// src/app/event/[event_slug]/EventParticipantsFilter.tsx
 "use client";
 
 import type { CSSProperties } from "react";
@@ -75,23 +75,23 @@ type ProximityMatch = {
 const DEV_SOCIAL_SANDBOX = false;
 
 const PREMIUM = {
-  bg: "#05050A",
-  surface: "rgba(17,17,26,0.86)",
-  surfaceStrong: "rgba(24,24,39,0.82)",
-  violet: "#7C5CFF",
-  violetSoft: "rgba(124,92,255,0.18)",
-  blue: "#2F80FF",
-  blueSoft: "rgba(47,128,255,0.16)",
-  radar: "#00F5C8",
-  radarSoft: "rgba(0,245,200,0.12)",
-  radarBorder: "rgba(0,245,200,0.26)",
+  bg: "var(--mhidas-bg-main)",
+  surface: "var(--mhidas-card-dark)",
+  surfaceStrong: "var(--mhidas-card-secondary)",
+  violet: "var(--mhidas-text-secondary)",
+  violetSoft: "var(--mhidas-card-secondary)",
+  blue: "var(--mhidas-text-secondary)",
+  blueSoft: "var(--mhidas-card-secondary)",
+  radar: "var(--mhidas-clubber-action)",
+  radarSoft: "var(--mhidas-card-secondary)",
+  radarBorder: "var(--mhidas-border)",
   amber: "#FFBC58",
   amberSoft: "rgba(255,188,88,0.14)",
   pink: "#FF5576",
-  whiteBorder: "rgba(255,255,255,0.10)",
-  whiteBorderStrong: "rgba(255,255,255,0.16)",
-  textMuted: "rgba(255,255,255,0.68)",
-  textSoft: "rgba(255,255,255,0.78)",
+  whiteBorder: "var(--mhidas-border)",
+  whiteBorderStrong: "var(--mhidas-border)",
+  textMuted: "var(--mhidas-text-secondary)",
+  textSoft: "var(--mhidas-text-primary)",
 };
 
 const MOCK_PARTICIPANTS: EventParticipant[] = [
@@ -126,7 +126,7 @@ const MOCK_PARTICIPANTS: EventParticipant[] = [
     label: "Bruno Costa",
     slug: "sandbox-bruno-costa",
     city_base: "Florianópolis - SC",
-    club_tagline: "Busco minha tribo para after, carona e pista.",
+    club_tagline: "Busco meu grupo para after, carona e pista.",
     club_photo_url:
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=80",
     favorite_genres: ["Techno", "Melodic Techno", "Progressive House"],
@@ -252,7 +252,7 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Hard Techno",
       description: "Energia intensa, pista pesada e conexão de alta presença.",
       gradient:
-        "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(12,12,20,0.92))",
+        "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(14,14,14,0.96))",
       border: "1px solid rgba(255,255,255,0.18)",
       glow: "0 0 28px rgba(255,255,255,0.08)",
       accent: "#ffffff",
@@ -266,9 +266,9 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Techno",
       description: "Grave, atmosfera escura e identidade forte de pista.",
       gradient:
-        "linear-gradient(135deg, rgba(47,128,255,0.18), rgba(124,92,255,0.18), rgba(9,10,18,0.90))",
-      border: "1px solid rgba(124,92,255,0.34)",
-      glow: "0 0 30px rgba(47,128,255,0.14)",
+        "linear-gradient(135deg, rgba(14,14,14,0.92), rgba(17,17,17,0.92), rgba(14,14,14,0.96))",
+      border: "1px solid rgba(17,17,17,0.92)",
+      glow: "none",
       accent: PREMIUM.radar,
     };
   }
@@ -280,10 +280,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "Progressive",
       description: "Viagem melódica, conexão emocional e espírito de festival.",
       gradient:
-        "linear-gradient(135deg, rgba(124,92,255,0.30), rgba(47,128,255,0.12), rgba(9,10,18,0.90))",
-      border: "1px solid rgba(124,92,255,0.42)",
-      glow: "0 0 30px rgba(124,92,255,0.18)",
-      accent: "#9B7CFF",
+        "linear-gradient(135deg, rgba(17,17,17,0.92), rgba(14,14,14,0.92), rgba(14,14,14,0.96))",
+      border: "1px solid rgba(17,17,17,0.92)",
+      glow: "none",
+      accent: "#2A8694",
     };
   }
 
@@ -295,10 +295,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       description:
         "Atmosfera emocional, synths profundos e encontro sensorial.",
       gradient:
-        "linear-gradient(135deg, rgba(196,124,255,0.24), rgba(47,128,255,0.12), rgba(9,10,18,0.90))",
-      border: "1px solid rgba(196,124,255,0.34)",
-      glow: "0 0 30px rgba(196,124,255,0.16)",
-      accent: "#C47CFF",
+        "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(14,14,14,0.92), rgba(14,14,14,0.96))",
+      border: "1px solid rgba(42,134,148,0.28)",
+      glow: "none",
+      accent: "#2A8694",
     };
   }
 
@@ -309,10 +309,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       shortName: "House",
       description: "Groove, alegria de pista e conexões sociais leves.",
       gradient:
-        "linear-gradient(135deg, rgba(255,188,88,0.22), rgba(124,92,255,0.10), rgba(9,10,18,0.90))",
-      border: "1px solid rgba(255,188,88,0.32)",
-      glow: "0 0 28px rgba(255,188,88,0.12)",
-      accent: PREMIUM.amber,
+        "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.92), rgba(14,14,14,0.96))",
+      border: "1px solid rgba(42,134,148,0.28)",
+      glow: "none",
+      accent: PREMIUM.radar,
     };
   }
 
@@ -324,10 +324,10 @@ function getTribeVisual(tribe: string): TribeVisual {
       description:
         "Sons elegantes, conexão mais intimista e pista sofisticada.",
       gradient:
-        "linear-gradient(135deg, rgba(47,128,255,0.22), rgba(124,92,255,0.12), rgba(9,10,18,0.90))",
-      border: "1px solid rgba(47,128,255,0.34)",
-      glow: "0 0 28px rgba(47,128,255,0.14)",
-      accent: "#3EB0FF",
+        "linear-gradient(135deg, rgba(14,14,14,0.92), rgba(17,17,17,0.92), rgba(14,14,14,0.96))",
+      border: "1px solid rgba(14,14,14,0.92)",
+      glow: "none",
+      accent: "#2A8694",
     };
   }
 
@@ -337,10 +337,10 @@ function getTribeVisual(tribe: string): TribeVisual {
     shortName: "Festival",
     description: "Exploradores de eventos, encontros e novas experiências.",
     gradient:
-      "linear-gradient(135deg, rgba(255,85,118,0.22), rgba(124,92,255,0.12), rgba(9,10,18,0.90))",
-    border: "1px solid rgba(255,85,118,0.32)",
-    glow: "0 0 28px rgba(255,85,118,0.12)",
-    accent: PREMIUM.pink,
+      "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.92), rgba(14,14,14,0.96))",
+    border: "1px solid rgba(42,134,148,0.28)",
+    glow: "none",
+    accent: PREMIUM.radar,
   };
 }
 
@@ -367,9 +367,9 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
         "Alta chance de afinidade real por música, região e presença social.",
       border: `1px solid ${PREMIUM.radarBorder}`,
       background:
-        "linear-gradient(135deg, rgba(0,245,200,0.12), rgba(47,128,255,0.14), rgba(124,92,255,0.16))",
+        "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.94))",
       color: PREMIUM.radar,
-      glow: "0 0 26px rgba(0,245,200,0.14)",
+      glow: "none",
     };
   }
 
@@ -379,11 +379,11 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
       shortLabel: "Quente",
       description:
         "Boa combinação de vertentes, localização e intenção social.",
-      border: "1px solid rgba(255,188,88,0.34)",
+      border: `1px solid ${PREMIUM.radarBorder}`,
       background:
-        "linear-gradient(135deg, rgba(255,188,88,0.13), rgba(124,92,255,0.16), rgba(47,128,255,0.10))",
-      color: PREMIUM.amber,
-      glow: "0 0 24px rgba(255,188,88,0.12)",
+        "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.92), rgba(14,14,14,0.92))",
+      color: PREMIUM.radar,
+      glow: "none",
     };
   }
 
@@ -393,11 +393,11 @@ function getHotConnectionMeta(score = 0): HotConnectionMeta {
       shortLabel: "Boa",
       description:
         "Existe potencial de conexão, principalmente pelo evento e preferências.",
-      border: "1px solid rgba(124,92,255,0.32)",
+      border: "1px solid rgba(17,17,17,0.92)",
       background:
-        "linear-gradient(135deg, rgba(124,92,255,0.16), rgba(47,128,255,0.08), rgba(255,255,255,0.035))",
-      color: "#B8A4FF",
-      glow: "0 0 20px rgba(124,92,255,0.10)",
+        "linear-gradient(135deg, rgba(17,17,17,0.92), rgba(14,14,14,0.92), rgba(255,255,255,0.035))",
+      color: "#2A8694",
+      glow: "0 0 20px rgba(17,17,17,0.92)",
     };
   }
 
@@ -606,7 +606,7 @@ function chipStyle(active = false): CSSProperties {
       ? `1px solid ${PREMIUM.radarBorder}`
       : "1px solid rgba(255,255,255,0.13)",
     background: active
-      ? "linear-gradient(135deg, rgba(0,245,200,0.12), rgba(124,92,255,0.16))"
+      ? "linear-gradient(135deg, rgba(148,163,184,0.18), rgba(17,17,17,0.92))"
       : "rgba(255,255,255,0.05)",
     color: "#fff",
     fontSize: 12,
@@ -632,7 +632,7 @@ function actionButtonStyle(primary = false): CSSProperties {
     lineHeight: 1.35,
     fontWeight: 850,
     borderBottom: primary
-      ? "1px solid rgba(124,92,255,0.42)"
+      ? "1px solid rgba(17,17,17,0.92)"
       : "1px solid rgba(255,255,255,0.18)",
   };
 }
@@ -666,12 +666,12 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
           : `1px solid ${PREMIUM.radarBorder}`,
     background:
       state === "checking"
-        ? "linear-gradient(135deg, rgba(124,92,255,0.12), rgba(47,128,255,0.10))"
+        ? "linear-gradient(135deg, rgba(17,17,17,0.92), rgba(14,14,14,0.92))"
         : state === "outgoing_pending" || state === "connected"
-          ? "linear-gradient(135deg, rgba(0,245,200,0.16), rgba(124,92,255,0.14))"
+          ? "linear-gradient(135deg, rgba(148,163,184,0.18), rgba(17,17,17,0.92))"
           : state === "error"
             ? "linear-gradient(135deg, rgba(255,85,118,0.16), rgba(255,255,255,0.04))"
-            : "linear-gradient(135deg, rgba(0,245,200,0.15), rgba(47,128,255,0.12), rgba(124,92,255,0.14))",
+            : "linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.94))",
     color:
       state === "outgoing_pending" || state === "connected"
         ? PREMIUM.radar
@@ -687,8 +687,8 @@ function connectionButtonStyle(state: ConnectionUiState): CSSProperties {
         : 1,
     boxShadow:
       state === "outgoing_pending" || state === "connected"
-        ? "0 0 20px rgba(0,245,200,0.12)"
-        : "0 0 18px rgba(124,92,255,0.10)",
+        ? "0 0 20px rgba(148,163,184,0.18)"
+        : "0 0 18px rgba(17,17,17,0.92)",
   };
 }
 
@@ -1027,7 +1027,7 @@ function CompactAffinityGrid({
       label: "Sinal",
       value: mainBadge,
       sub: "Afinidade social",
-      accent: PREMIUM.amber,
+      accent: PREMIUM.radar,
     },
   ];
 
@@ -1190,7 +1190,7 @@ function ParticipantCard({
             display: "block",
             background: photo
               ? `url(${photo})`
-              : "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(47,128,255,0.14))",
+              : "linear-gradient(135deg, rgba(17,17,17,0.92), rgba(14,14,14,0.92))",
             backgroundSize: "cover",
             backgroundPosition: "center",
             cursor: "pointer",
@@ -1204,7 +1204,7 @@ function ParticipantCard({
           style={{
             background: photo
               ? `url(${photo})`
-              : "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(47,128,255,0.14))",
+              : "linear-gradient(135deg, rgba(17,17,17,0.92), rgba(14,14,14,0.92))",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -2231,8 +2231,8 @@ export default function EventParticipantsFilter({
           border: 1px solid rgba(255, 255, 255, 0.1);
           background: linear-gradient(
             180deg,
-            rgba(22, 22, 34, 0.82),
-            rgba(10, 10, 17, 0.96)
+            rgba(14, 14, 14, 0.94),
+            rgba(17, 17, 17, 0.98)
           );
           box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
           overflow: hidden;
@@ -2240,10 +2240,8 @@ export default function EventParticipantsFilter({
         }
 
         .event-radar-card[data-selected="true"] {
-          border-color: rgba(0, 245, 200, 0.3);
-          box-shadow:
-            0 12px 28px rgba(0, 0, 0, 0.3),
-            0 0 22px rgba(0, 245, 200, 0.08);
+          border-color: rgba(148,163,184,0.18);
+          box-shadow: none;
         }
 
         .event-radar-card__image {
@@ -2265,13 +2263,13 @@ export default function EventParticipantsFilter({
 
         @media (hover: hover) {
           .event-radar-card__profile-link:hover {
-            color: #28e6c2;
-            text-shadow: 0 0 18px rgba(40, 230, 194, 0.18);
+            color: var(--mhidas-clubber-action);
+            text-shadow: none;
           }
         }
 
         .event-radar-card__profile-link:focus-visible {
-          color: #28e6c2;
+          color: var(--mhidas-clubber-action);
           outline: none;
           text-decoration: underline;
           text-decoration-thickness: 1px;
@@ -2279,7 +2277,7 @@ export default function EventParticipantsFilter({
         }
 
         .event-radar-card__profile-link:active {
-          color: #28e6c2;
+          color: var(--mhidas-clubber-action);
         }
 
         .event-radar-card__body {
@@ -2350,12 +2348,12 @@ export default function EventParticipantsFilter({
         }
 
         .event-radar-card[data-selected="true"] .event-radar-card__toggle {
-          border-color: rgba(0,245,200,0.26);
+          border-color: rgba(148,163,184,0.18);
           background:
             linear-gradient(
               135deg,
-              rgba(0,245,200,0.08),
-              rgba(124,92,255,0.08)
+              rgba(148,163,184,0.18),
+              rgba(17,17,17,0.92)
             );
         }
 
@@ -2363,7 +2361,7 @@ export default function EventParticipantsFilter({
           display: grid;
           gap: 16px;
           padding: 22px 0 6px;
-          border-top: 1px solid rgba(0,245,200,0.18);
+          border-top: 1px solid rgba(148,163,184,0.18);
           border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
@@ -2381,7 +2379,7 @@ export default function EventParticipantsFilter({
           gap: 10px;
           padding: 2px 0;
           border: 0;
-          border-bottom: 1px solid rgba(0,245,200,0.34);
+          border-bottom: 1px solid rgba(148,163,184,0.18);
           background: transparent;
           color: rgba(255,255,255,0.82);
           font-size: 11px;
@@ -2420,7 +2418,7 @@ export default function EventParticipantsFilter({
 
         .event-tribe-selector[data-active="true"] {
           color: #fff;
-          border-bottom-color: #00f5c8;
+          border-bottom-color: var(--mhidas-clubber-action);
         }
 
         .event-tribe-selector__dot {
@@ -2433,8 +2431,8 @@ export default function EventParticipantsFilter({
 
         .event-tribe-selector[data-active="true"]
         .event-tribe-selector__dot {
-          background: #00f5c8;
-          box-shadow: 0 0 12px rgba(0,245,200,0.34);
+          background: var(--mhidas-clubber-action);
+          box-shadow: none;
         }
 
         .event-tribe-selector__name {
@@ -2454,7 +2452,7 @@ export default function EventParticipantsFilter({
 
         .event-tribe-selector[data-active="true"]
         .event-tribe-selector__count {
-          color: rgba(0,245,200,0.82);
+          color: rgba(148,163,184,0.18);
         }
 
         @media (max-width: 760px) {
@@ -2541,7 +2539,6 @@ export default function EventParticipantsFilter({
         }
       `}</style>
 
-      <VisualInteractionGuide />
 
       <div
         style={{
@@ -2630,10 +2627,10 @@ export default function EventParticipantsFilter({
                   borderBottom:
                     index < 2 ? "1px solid rgba(255,255,255,0.08)" : "0",
                   background: active
-                    ? "linear-gradient(135deg, rgba(0,245,200,0.10), rgba(124,92,255,0.08))"
+                    ? "linear-gradient(135deg, rgba(148,163,184,0.18), rgba(17,17,17,0.92))"
                     : "transparent",
                   boxShadow: active
-                    ? "inset 0 -2px 0 rgba(0,245,200,0.82)"
+                    ? "inset 0 -2px 0 rgba(148,163,184,0.18)"
                     : "none",
                   color: active ? "#fff" : "rgba(255,255,255,0.62)",
                   fontSize: 11,

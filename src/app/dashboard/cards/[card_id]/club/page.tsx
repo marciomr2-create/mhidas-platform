@@ -116,9 +116,10 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
       supabase
         .from("social_links")
         .select("id", { count: "exact", head: true })
-        .eq("card_id", card.card_id)
+        .eq("user_id", user.id)
         .eq("is_active", true)
-        .in("mode", ["club", "both"]),
+        .in("mode", ["club", "both"])
+        .in("platform", ["instagram", "whatsapp", "telegram", "tiktok"]),
       supabase
         .from("club_event_checkins")
         .select("id", { count: "exact", head: true })
@@ -129,12 +130,22 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
   const profile = (profileResult.data ?? null) as ClubProfileRow | null;
   const profileName = cleanText(card.label) || "Meu perfil Clubber";
   const city = cleanText(profile?.city_base) || "Cidade ainda não informada";
+  const mapsHref =
+    city !== "Cidade ainda não informada"
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          `${city}, Brasil`
+        )}`
+      : "";
   const identity =
     cleanText(profile?.club_tagline) ||
     "Sua identidade na cena aparecerá aqui conforme você completar o perfil.";
   const allGenres = splitList(profile?.favorite_genres);
-  const visibleGenres = allGenres.slice(0, 3);
-  const hiddenGenreCount = Math.max(allGenres.length - visibleGenres.length, 0);
+  const primaryGenre = allGenres[0] || "";
+  const secondaryGenres = allGenres.slice(1, 8);
+  const hiddenSecondaryGenreCount = Math.max(
+    allGenres.length - 1 - secondaryGenres.length,
+    0
+  );
   const nextEvents = splitList(profile?.next_events);
   const artistCount = artistCountResult.count ?? 0;
   const socialCount = socialCountResult.count ?? 0;
@@ -147,13 +158,15 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
   const rideMeetEventSlug = toEventSlug(rideMeetEventName);
 
   const overviewHref = "/dashboard/cards";
-  const editHref = `/dashboard/cards/${card.card_id}/club/edit`;
+  const editHref = `/dashboard/cards/${card.card_id}/club/identity`;
+  const identityHref = `/dashboard/cards/${card.card_id}/club/identity`;
+
   const publicHref = card.slug ? `/${card.slug}?mode=club` : overviewHref;
   const artistsHref = `/dashboard/cards/${card.card_id}/club/artists`;
-  const eventsHref = card.slug ? `${publicHref}#agenda-club` : overviewHref;
-  const socialHref = card.slug
-    ? `/${card.slug}?mode=club#canais-club`
-    : overviewHref;
+  const eventsHref = `/dashboard/cards/${card.card_id}/club/events?view=upcoming`;
+  const checkInsHref = `/dashboard/cards/${card.card_id}/club/events?view=checkins`;
+  const socialHref = `/dashboard/cards/${card.card_id}/club/contacts`;
+  const contentHref = `/dashboard/cards/${card.card_id}/club/content`;
   const professionalHref = card.slug
     ? `/pro/${card.slug}`
     : `/dashboard/cards/${card.card_id}/pro`;
@@ -191,22 +204,82 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
           >
             <div className="club-hero-copy">
               <h2>{profileName}</h2>
-              <p className="club-location">{city}</p>
+              <div className="club-location-row">
+                <p className="club-location">{city}</p>
+
+                {mapsHref ? (
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="club-brazil-map-link"
+                    aria-label={`Ver ${city} no Google Maps`}
+                    title="Ver no Google Maps"
+                  >
+                    <svg
+                      className="club-brazil-map-icon"
+                      viewBox="0 0 64 64"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M24.2 4.8 34 8.1l6.7 6.2 8.5 2.4 1.6 7.7-4.2 6.3 2.2 7.3-6.1 4.8-2.8 8.5-6.7 7.9-5.2-4.4-1.4-7-6.8-4.8-2.4-7.2-5.7-5.7 3.2-7.5-2.1-6.8 6.1-3.7 5.3-7.1Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle cx="31.5" cy="33" r="2.8" fill="currentColor" />
+                    </svg>
+                    <span>Ver no mapa</span>
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
 
           <div className="club-hero-content">
-            <div className="club-identity-block">
+            <section className="club-signature" aria-label="Minha identidade na cena">
               <p className="club-eyebrow">Minha identidade na cena</p>
-              <p className="club-identity-text">{identity}</p>
-            </div>
 
-            {visibleGenres.length > 0 ? (
-              <p className="club-genres" aria-label="Vertentes musicais">
-                {visibleGenres.join(" · ")}
-                {hiddenGenreCount > 0 ? ` · +${hiddenGenreCount}` : ""}
-              </p>
-            ) : null}
+              <div className="club-signature-body">
+                <span className="club-signature-mark" aria-hidden="true">
+                  “
+                </span>
+                <p className="club-identity-text">{identity}</p>
+              </div>
+
+              {primaryGenre ? (
+                <div className="club-music-identity">
+                  <div className="club-primary-sound">
+                    <span>Meu som principal</span>
+                    <strong>{primaryGenre}</strong>
+                  </div>
+
+                  {secondaryGenres.length > 0 ? (
+                    <div
+                      className="club-secondary-sounds"
+                      aria-label="Outras vertentes musicais"
+                    >
+                      {secondaryGenres.map((genre, index) => (
+                        <span
+                          key={`${genre}-${index}`}
+                          className={`club-secondary-sound club-secondary-sound-${index + 1}`}
+                        >
+                          {genre}
+                        </span>
+                      ))}
+
+                      {hiddenSecondaryGenreCount > 0 ? (
+                        <span className="club-secondary-more">
+                          +{hiddenSecondaryGenreCount}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
 
             <div className="club-hero-actions">
               <Link href={editHref} className="club-primary-button">
@@ -239,6 +312,14 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
           </div>
 
           <nav className="club-nav-list" aria-label="Resumo da experiência Clubber">
+            <Link href={identityHref} className="club-nav-row">
+              <span className="club-nav-number" aria-hidden="true"></span>
+              <span className="club-nav-label">Minha identidade</span>
+              <span className="club-nav-arrow" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+
             <Link href={artistsHref} className="club-nav-row">
               <span className="club-nav-number">{artistCount}</span>
               <span className="club-nav-label">Artistas</span>
@@ -247,7 +328,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
               </span>
             </Link>
 
-            <Link href={eventsHref} target="_blank" className="club-nav-row">
+            <Link href={eventsHref} className="club-nav-row">
               <span className="club-nav-number">{nextEvents.length}</span>
               <span className="club-nav-label">Próximos eventos</span>
               <span className="club-nav-arrow" aria-hidden="true">
@@ -255,7 +336,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
               </span>
             </Link>
 
-            <Link href={eventsHref} target="_blank" className="club-nav-row">
+            <Link href={checkInsHref} className="club-nav-row">
               <span className="club-nav-number">{activeCheckIns}</span>
               <span className="club-nav-label">Check-ins e presenças</span>
               <span className="club-nav-arrow" aria-hidden="true">
@@ -263,9 +344,23 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
               </span>
             </Link>
 
-            <Link href={socialHref} target="_blank" className="club-nav-row">
+            <Link href={socialHref} className="club-nav-row">
               <span className="club-nav-number">{socialCount}</span>
               <span className="club-nav-label">Redes e contatos</span>
+              <span className="club-nav-arrow" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+            <Link href={contentHref} className="club-nav-row">
+              <span className="club-nav-number" aria-hidden="true"></span>
+              <span className="club-nav-label">Canais e conteúdo</span>
+              <span className="club-nav-arrow" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+            <Link href={`/dashboard/cards/${card.card_id}/club/places`} className="club-nav-row">
+              <span className="club-nav-number" aria-hidden="true"></span>
+              <span className="club-nav-label">Clubes e lugares</span>
               <span className="club-nav-arrow" aria-hidden="true">
                 ›
               </span>
@@ -335,10 +430,7 @@ const pageCss = `
   .club-shell {
     min-height: 100vh;
     padding: 30px 22px 110px;
-    background:
-      radial-gradient(circle at 12% 0%, rgba(111, 103, 255, 0.13), transparent 30%),
-      radial-gradient(circle at 92% 8%, rgba(61, 76, 128, 0.10), transparent 25%),
-      #07080c;
+    background: var(--mhidas-bg-main);
     color: #f5f6fa;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
@@ -376,7 +468,7 @@ const pageCss = `
   .club-eyebrow,
   .club-overline {
     margin: 0;
-    color: #a9a4ff;
+    color: var(--mhidas-clubber-action);
     font-size: 11px;
     line-height: 1.2;
     letter-spacing: 0.16em;
@@ -401,9 +493,9 @@ const pageCss = `
 
   .club-hero {
     overflow: hidden;
-    border: 1px solid #242733;
+    border: 1px solid var(--mhidas-border);
     border-radius: 28px;
-    background: #101219;
+    background: var(--mhidas-card-dark);
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
   }
 
@@ -432,6 +524,42 @@ const pageCss = `
     line-height: 0.98;
     letter-spacing: -0.05em;
     font-weight: 900;
+  }
+
+  .club-location-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 13px);
+    flex-wrap: wrap;
+  }
+
+  .club-brazil-map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(6px, 0.8vw, 9px);
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: clamp(10px, 1vw, 13px);
+    line-height: 1;
+    font-weight: 820;
+    opacity: 0.98;
+    transition:
+      color 150ms ease,
+      opacity 150ms ease,
+      transform 150ms ease;
+  }
+
+  .club-brazil-map-link:hover {
+    color: var(--mhidas-clubber-action);
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  .club-brazil-map-icon {
+    width: clamp(22px, 2.8vw, 34px);
+    height: clamp(22px, 2.8vw, 34px);
+    flex: 0 0 auto;
+    color: var(--mhidas-clubber-action);
   }
 
   .club-location {
@@ -480,21 +608,21 @@ const pageCss = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(122, 114, 255, 0.88);
+    border: 1px solid rgba(42, 134, 148, 0.52);
     border-radius: 14px;
-    background: linear-gradient(180deg, #776fff, #625ae8);
+    background: var(--mhidas-clubber-action-strong);
     color: #ffffff;
     text-align: center;
     text-decoration: none;
     font-size: 14px;
     font-weight: 850;
-    box-shadow: 0 14px 34px rgba(98, 90, 232, 0.24);
+    box-shadow: none;
     transition: transform 160ms ease, box-shadow 160ms ease;
   }
 
   .club-primary-button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 18px 40px rgba(98, 90, 232, 0.30);
+    box-shadow: none;
   }
 
   .club-primary-button:disabled {
@@ -558,10 +686,9 @@ const pageCss = `
     text-decoration: none;
     transition: background 160ms ease, padding 160ms ease;
   }
-
   .club-nav-row:hover {
     padding-inline: 10px;
-    background: rgba(122, 114, 255, 0.055);
+    background: rgba(42, 134, 148, 0.08);
   }
 
   .club-nav-row-disabled {
@@ -583,7 +710,7 @@ const pageCss = `
   }
 
   .club-nav-symbol {
-    color: #9b95ff;
+    color: var(--mhidas-clubber-action);
     font-size: 25px;
   }
 
@@ -616,11 +743,9 @@ const pageCss = `
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.52fr);
     align-items: end;
     gap: 30px;
-    border: 1px solid rgba(122, 114, 255, 0.24);
+    border: 1px solid rgba(42, 134, 148, 0.28);
     border-radius: 24px;
-    background:
-      radial-gradient(circle at top right, rgba(122, 114, 255, 0.18), transparent 42%),
-      linear-gradient(145deg, #12141d, #0d0f16);
+    background: var(--mhidas-card-dark);
     box-shadow: 0 26px 70px rgba(0, 0, 0, 0.26);
   }
 
@@ -665,11 +790,9 @@ const pageCss = `
     max-height: calc(100vh - 40px);
     overflow: auto;
     padding: 26px;
-    border: 1px solid rgba(122, 114, 255, 0.30);
+    border: 1px solid rgba(42, 134, 148, 0.28);
     border-radius: 24px;
-    background:
-      radial-gradient(circle at top right, rgba(122, 114, 255, 0.16), transparent 38%),
-      #101219;
+    background: var(--mhidas-card-dark);
     box-shadow: 0 32px 110px rgba(0, 0, 0, 0.62);
   }
 
@@ -692,7 +815,7 @@ const pageCss = `
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    border: 1px solid #303440;
+    border: 1px solid var(--mhidas-border);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     color: #f5f6fa;
@@ -745,69 +868,417 @@ const pageCss = `
     padding: 28px;
     display: grid;
     gap: 16px;
-    border: 1px solid #242733;
+    border: 1px solid var(--mhidas-border);
     border-radius: 24px;
-    background: #101219;
+    background: var(--mhidas-card-dark);
+  }
+
+
+  /* R13-R12-R2 — Hero de Identidade Clubber */
+  .club-signature {
+    position: relative;
+    padding: 24px 24px 22px;
+    display: grid;
+    gap: 18px;
+    border: 1px solid var(--mhidas-border);
+    border-left: 3px solid var(--mhidas-clubber-action);
+    border-radius: 18px;
+    background: #111111;
+  }
+
+  .club-signature-body {
+    position: relative;
+    padding-left: 31px;
+  }
+
+  .club-signature-mark {
+    position: absolute;
+    top: -9px;
+    left: 0;
+    color: var(--mhidas-clubber-action);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 48px;
+    line-height: 1;
+    font-weight: 700;
+    opacity: 0.82;
+    pointer-events: none;
+  }
+
+  .club-signature .club-identity-text {
+    margin: 0;
+    max-width: 760px;
+    color: #f8fafc;
+    font-size: clamp(20px, 2.05vw, 22px);
+    line-height: 1.48;
+    letter-spacing: -0.018em;
+    font-weight: 740;
+  }
+
+  .club-music-identity {
+    padding-top: 17px;
+    display: grid;
+    gap: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .club-primary-sound {
+    display: grid;
+    gap: 8px;
+    align-items: start;
+  }
+
+  .club-primary-sound span {
+    color: var(--mhidas-clubber-action);
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 900;
+  }
+
+  .club-primary-sound strong {
+    position: relative;
+    width: max-content;
+    max-width: 100%;
+    padding-bottom: 10px;
+    color: #f8fafc;
+    font-size: clamp(38px, 5vw, 56px);
+    line-height: 0.92;
+    letter-spacing: -0.055em;
+    font-weight: 950;
+  }
+
+  .club-primary-sound strong::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: min(92px, 72%);
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--mhidas-clubber-action),
+      var(--mhidas-clubber-action-strong)
+    );
+  }
+
+  .club-secondary-sounds {
+    margin-top: 5px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: clamp(12px, 1.4vw, 18px);
+    row-gap: 9px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .club-secondary-sound,
+  .club-secondary-more {
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .club-secondary-sound-1 {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 880;
+    letter-spacing: -0.02em;
+  }
+
+  .club-secondary-sound-2 {
+    color: #2a8694;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .club-secondary-sound-3 {
+    color: #cbd5e1;
+    font-size: 17px;
+    font-style: italic;
+    font-weight: 760;
+    letter-spacing: -0.03em;
+  }
+
+  .club-secondary-sound-4 {
+    color: #247c88;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .club-secondary-sound-5 {
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 720;
+    letter-spacing: 0.015em;
+  }
+
+  .club-secondary-sound-6 {
+    color: #2a8694;
+    font-size: 16px;
+    font-weight: 820;
+    letter-spacing: -0.02em;
+  }
+
+  .club-secondary-sound-7 {
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .club-secondary-more {
+    color: #89929f;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .club-hero-actions {
+    gap: 13px;
+  }
+
+  .club-primary-button {
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #111111;
+    color: #f8fafc;
+    box-shadow: none;
+  }
+
+  .club-primary-button:hover {
+    border-color: rgba(42, 134, 148, 0.58);
+    background: rgba(42, 134, 148, 0.08);
+    box-shadow: none;
+  }
+
+  @media (max-width: 760px) {
+    .club-signature {
+      padding: 20px 18px 18px;
+      gap: 16px;
+      border-radius: 16px;
+    }
+
+    .club-signature-body {
+      padding-left: 27px;
+    }
+
+    .club-signature-mark {
+      top: -7px;
+      font-size: 42px;
+    }
+
+    .club-signature .club-identity-text {
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .club-primary-sound {
+      display: grid;
+      gap: 7px;
+    }
+
+    .club-primary-sound strong {
+      font-size: 38px;
+    }
+
+    .club-secondary-sounds {
+      column-gap: 10px;
+      row-gap: 7px;
+    }
+
+    .club-secondary-sound-1 {
+      font-size: 13px;
+    }
+
+    .club-secondary-sound-2 {
+      font-size: 10px;
+    }
+
+    .club-secondary-sound-3 {
+      font-size: 14px;
+    }
+
+    .club-secondary-sound-4 {
+      font-size: 10px;
+    }
+
+    .club-secondary-sound-5 {
+      font-size: 12px;
+    }
+
+    .club-secondary-sound-6 {
+      font-size: 13px;
+    }
+
+    .club-secondary-sound-7 {
+      font-size: 10px;
+    }
   }
 
   @media (max-width: 760px) {
     .club-shell {
-      padding: 16px 14px 96px;
+      padding: 14px 12px 78px;
     }
 
     .club-page {
-      gap: 22px;
+      gap: 18px;
     }
 
     .club-topbar {
       align-items: flex-start;
     }
 
+    .club-topbar h1 {
+      font-size: 30px;
+    }
+
     .club-back-link {
       text-align: right;
-      line-height: 1.35;
+      line-height: 1.3;
       white-space: nowrap;
+      font-size: 12px;
     }
 
     .club-hero {
-      border-radius: 22px;
+      border-radius: 18px;
     }
 
     .club-hero-image {
-      min-height: 260px;
-      padding: 20px;
+      min-height: 218px;
+      padding: 16px;
+    }
+
+    .club-hero-copy h2 {
+      font-size: 34px;
+      line-height: 1.02;
+    }
+
+    .club-location {
+      font-size: 14px;
     }
 
     .club-hero-content {
-      padding: 21px;
+      padding: 18px;
+      gap: 16px;
+    }
+
+    .club-identity-text {
+      font-size: 16px;
+      line-height: 1.52;
+    }
+
+    .club-genres {
+      font-size: 13px;
+    }
+
+    .club-primary-button {
+      min-height: 46px;
     }
 
     .club-text-links {
       display: grid;
-      gap: 11px;
+      gap: 9px;
+    }
+
+    .club-section-heading h2 {
+      font-size: 27px;
+    }
+
+    .club-nav-list {
+      margin-top: 14px;
+      border-top: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .club-nav-row {
+      min-height: 108px;
+      padding: 14px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "number arrow"
+        "label label";
+      align-content: space-between;
+      gap: 12px 8px;
+      border: 1px solid var(--mhidas-border);
+      border-radius: 16px;
+      background: var(--mhidas-card-dark);
+    }
+  .club-nav-row:hover {
+      padding: 14px;
+      background: rgba(42, 134, 148, 0.08);
+    }
+
+    .club-nav-row-disabled:hover {
+      padding: 14px;
+      background: var(--mhidas-card-dark);
+    }
+
+    .club-nav-row:nth-child(5) {
+      grid-column: 1 / -1;
       min-height: 72px;
-      grid-template-columns: 54px minmax(0, 1fr) 20px;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "number label arrow";
+      align-content: center;
+      align-items: center;
+    }
+
+    .club-nav-number {
+      grid-area: number;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .club-nav-symbol {
+      font-size: 20px;
+    }
+
+    .club-nav-label {
+      grid-area: label;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .club-nav-arrow {
+      grid-area: arrow;
+      font-size: 18px;
+      align-self: start;
+    }
+
+    .club-nav-row:nth-child(5) .club-nav-arrow {
+      align-self: center;
     }
 
     .club-nav-meta {
       display: none;
     }
 
-    .club-nav-number {
-      font-size: 27px;
-    }
-
-    .club-nav-label {
-      font-size: 15px;
-    }
-
     .club-nfc-panel {
       grid-template-columns: 1fr;
-      gap: 22px;
-      padding: 24px;
+      gap: 16px;
+      padding: 18px;
+      border-radius: 18px;
+    }
+
+    .club-nfc-panel h2 {
+      font-size: 25px;
+    }
+
+    .club-nfc-panel p:not(.club-eyebrow) {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .club-nfc-actions {
+      gap: 10px;
     }
 
     .club-qr-content {
@@ -815,7 +1286,7 @@ const pageCss = `
     }
 
     .club-qr-image-wrap {
-      width: min(100%, 300px);
+      width: min(100%, 280px);
       margin: 0 auto;
     }
   }
@@ -826,27 +1297,62 @@ const pageCss = `
     }
 
     .club-topbar h1 {
-      font-size: 31px;
+      font-size: 28px;
     }
 
     .club-back-link {
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .club-hero-image {
-      min-height: 248px;
+      min-height: 205px;
     }
 
     .club-hero-copy h2 {
-      font-size: 40px;
+      font-size: 32px;
     }
 
     .club-location {
-      font-size: 15px;
+      font-size: 13px;
     }
 
     .club-identity-text {
-      font-size: 18px;
+      font-size: 15px;
+    }
+
+    .club-section-heading h2 {
+      font-size: 25px;
+    }
+
+    .club-nav-row {
+      min-height: 100px;
+      padding: 13px;
+      border-radius: 15px;
+    }
+
+    .club-nav-row:hover,
+    .club-nav-row-disabled:hover {
+      padding: 13px;
+    }
+
+    .club-nav-row:nth-child(5) {
+      min-height: 68px;
+    }
+
+    .club-nav-number {
+      font-size: 21px;
+    }
+
+    .club-nav-label {
+      font-size: 12px;
+    }
+
+    .club-nfc-panel {
+      padding: 17px;
+    }
+
+    .club-nfc-panel h2 {
+      font-size: 23px;
     }
   }
 `;

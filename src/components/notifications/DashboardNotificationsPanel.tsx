@@ -485,8 +485,8 @@ export default function DashboardNotificationsPanel() {
           padding: 17px;
           border: 1px solid rgba(148, 163, 184, 0.18);
           border-radius: 22px;
-          background: linear-gradient(135deg, #0B1020, #111827);
-          box-shadow: 0 16px 42px rgba(5, 7, 13, 0.27);
+          background: var(--mhidas-card-dark);
+          box-shadow: none;
           color: #F8FAFC;
           box-sizing: border-box;
         }
@@ -518,12 +518,12 @@ export default function DashboardNotificationsPanel() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-width: 26px;
-          min-height: 26px;
-          padding: 3px 8px;
-          border-radius: 999px;
-          background: #0D9488;
-          color: #FFFFFF;
+          min-width: 0;
+          min-height: 0;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+          color: var(--mhidas-clubber-action);
           font-size: 12px;
           font-weight: 950;
           line-height: 1;
@@ -544,9 +544,9 @@ export default function DashboardNotificationsPanel() {
         .mhidas-notifications-retry {
           min-height: 38px;
           padding: 9px 12px;
-          border: 1px solid rgba(20, 184, 166, 0.34);
+          border: 1px solid rgba(42, 134, 148, 0.34);
           border-radius: 12px;
-          background: rgba(13, 148, 136, 0.12);
+          background: rgba(42, 134, 148, 0.10);
           color: #CCFBF1;
           font: inherit;
           font-size: 13px;
@@ -555,8 +555,8 @@ export default function DashboardNotificationsPanel() {
         }
 
         .mhidas-notifications-filter[aria-pressed="true"] {
-          border-color: rgba(20, 184, 166, 0.68);
-          background: #0D9488;
+          border-color: rgba(42, 134, 148, 0.68);
+          background: var(--mhidas-clubber-action-strong);
           color: #FFFFFF;
         }
 
@@ -580,13 +580,13 @@ export default function DashboardNotificationsPanel() {
           padding: 13px;
           border: 1px solid rgba(148, 163, 184, 0.16);
           border-radius: 16px;
-          background: rgba(15, 23, 42, 0.72);
+          background: var(--mhidas-card-secondary);
           box-sizing: border-box;
         }
 
         .mhidas-notification-item[data-unread="true"] {
-          border-color: rgba(20, 184, 166, 0.42);
-          background: rgba(13, 148, 136, 0.1);
+          border-color: rgba(42, 134, 148, 0.42);
+          background: rgba(42, 134, 148, 0.08);
         }
 
         .mhidas-notification-topline {
@@ -655,7 +655,7 @@ export default function DashboardNotificationsPanel() {
           padding: 8px 11px;
           border: 1px solid rgba(148, 163, 184, 0.2);
           border-radius: 11px;
-          background: #111827;
+          background: var(--mhidas-card-secondary);
           color: #F8FAFC;
           font: inherit;
           font-size: 12px;
@@ -664,8 +664,8 @@ export default function DashboardNotificationsPanel() {
         }
 
         .mhidas-notification-button[data-primary="true"] {
-          border-color: rgba(13, 148, 136, 0.52);
-          background: #0D9488;
+          border-color: rgba(36, 124, 136, 0.52);
+          background: var(--mhidas-clubber-action-strong);
         }
 
         .mhidas-notification-button:disabled {

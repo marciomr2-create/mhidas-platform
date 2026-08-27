@@ -541,27 +541,26 @@ function findBestCatalogItem(
 
 function pillStyle(): CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
+    display: "inline",
     width: "fit-content",
-    padding: "7px 11px",
-    borderRadius: 999,
-    background: "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.16))",
-    border: "1px solid rgba(0,255,190,0.18)",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
     fontSize: 12,
     fontWeight: 750,
-    color: "#fff",
+    color: "rgba(248,250,252,0.82)",
   };
 }
 
 function sectionBoxStyle(): CSSProperties {
   return {
-    background: "linear-gradient(145deg, rgba(14,12,28,0.58), rgba(3,4,10,0.42))",
+    background: "#0E0E0E",
     borderRadius: 24,
     padding: 20,
     marginTop: 20,
-    border: "1px solid rgba(125,92,255,0.16)",
-    boxShadow: "0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow: "0 20px 58px rgba(0,0,0,0.28)",
   };
 }
 
@@ -569,8 +568,8 @@ function innerCardStyle(): CSSProperties {
   return {
     padding: 14,
     borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.075)",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(0,255,190,0.028))",
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#111111",
   };
 }
 
@@ -678,10 +677,10 @@ function catalogCardStyle(
 ): CSSProperties {
   const glow =
     accent === "cyan"
-      ? "rgba(0,220,255,0.18)"
+      ? "rgba(42,134,148,0.18)"
       : accent === "neutral"
         ? "rgba(255,255,255,0.10)"
-        : "rgba(125,92,255,0.22)";
+        : "rgba(42,134,148,0.22)";
 
   return {
     ...editorialCardStyle(width),
@@ -701,8 +700,8 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
     padding: 18,
     borderRadius: 24,
     background: imageUrl
-      ? `linear-gradient(145deg, rgba(4,4,12,0.10), rgba(4,4,12,0.72)), radial-gradient(circle at 78% 18%, rgba(125,92,255,0.34), transparent 34%), url("${imageUrl}")`
-      : "linear-gradient(145deg, rgba(132,92,255,0.18), rgba(255,255,255,0.045))",
+      ? `linear-gradient(145deg, rgba(4,4,12,0.10), rgba(4,4,12,0.72)), radial-gradient(circle at 78% 18%, rgba(42,134,148,0.34), transparent 34%), url("${imageUrl}")`
+      : "linear-gradient(145deg, rgba(42,134,148,0.18), rgba(255,255,255,0.045))",
     backgroundSize: imageUrl ? "cover" : undefined,
     backgroundPosition: imageUrl ? "center center" : undefined,
     border: "1px solid rgba(255,255,255,0.08)",
@@ -716,16 +715,15 @@ function eventCardStyle(width = 300, imageUrl = ""): CSSProperties {
 
 function microLabelStyle(): CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
+    display: "inline",
     width: "fit-content",
-    padding: "6px 9px",
-    borderRadius: 999,
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
     fontSize: 11,
     fontWeight: 850,
-    opacity: 0.88,
+    opacity: 0.72,
     textTransform: "uppercase",
     letterSpacing: 0.35,
   };
@@ -800,10 +798,9 @@ function connectionPrimaryActionStyle(): CSSProperties {
     minHeight: 40,
     padding: "11px 14px",
     borderRadius: 13,
-    background:
-      "linear-gradient(135deg, rgba(0,198,164,0.20), rgba(82,88,255,0.12))",
-    border: "1px solid rgba(0,220,190,0.34)",
-    color: "#f7fffd",
+    background: "#2A8694",
+    border: "1px solid #2A8694",
+    color: "#F8FAFC",
     textDecoration: "none",
     fontWeight: 850,
     lineHeight: 1.1,
@@ -849,9 +846,9 @@ function getGeneratedClubCoverImage(
   const palette =
     accent === "cyan"
       ? {
-          bg: "#04171c",
-          glow: "#00dcec",
-          glowSoft: "#08717b",
+          bg: "#0E0E0E",
+          glow: "#2A8694",
+          glowSoft: "#247C88",
           text: "#f3feff",
           sub: "#b6f8ff",
         }
@@ -864,9 +861,9 @@ function getGeneratedClubCoverImage(
             sub: "#d8d8d8",
           }
         : {
-            bg: "#10091f",
-            glow: "#7d5cff",
-            glowSoft: "#3a227a",
+            bg: "#0E0E0E",
+            glow: "#2A8694",
+            glowSoft: "#247C88",
             text: "#ffffff",
             sub: "#d8ccff",
           };
@@ -1046,9 +1043,9 @@ function getEventCheckInStatus(event: any): "none" | "pending" | "active" | "exp
 function getCheckInCardGlowStyle(status: "none" | "pending" | "active" | "expired"): CSSProperties {
   if (status === "active") {
     return {
-      border: "1px solid rgba(0,255,190,0.72)",
+      border: "1px solid rgba(42,134,148,0.72)",
       boxShadow:
-        "0 0 0 1px rgba(0,255,190,0.42), 0 0 64px rgba(0,255,190,0.46), 0 0 180px rgba(0,255,190,0.18), 0 32px 100px rgba(0,0,0,0.62)",
+        "0 0 0 1px rgba(42,134,148,0.42), 0 0 64px rgba(42,134,148,0.46), 0 0 180px rgba(42,134,148,0.18), 0 32px 100px rgba(0,0,0,0.62)",
     };
   }
 
@@ -1084,19 +1081,13 @@ function CheckInStatusBadge({
         display: "inline-flex",
         alignItems: "center",
         gap: 7,
-        padding: "8px 11px",
-        borderRadius: 999,
-        border: isActive
-          ? "1px solid rgba(0,255,190,0.62)"
-          : "1px solid rgba(255,210,92,0.56)",
-        background: isActive
-          ? "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(0,110,95,0.22))"
-          : "linear-gradient(135deg, rgba(255,210,92,0.26), rgba(120,80,0,0.28))",
+        padding: 0,
+        borderRadius: 0,
+        border: "none",
+        background: "transparent",
         color: "#fff",
-        backdropFilter: "blur(18px)",
-        boxShadow: isActive
-          ? "0 0 34px rgba(0,255,190,0.42)"
-          : "0 0 22px rgba(255,210,92,0.20)",
+        backdropFilter: "none",
+        boxShadow: "none",
         fontSize: 11,
         fontWeight: 950,
         letterSpacing: 0.2,
@@ -1108,9 +1099,9 @@ function CheckInStatusBadge({
           width: 8,
           height: 8,
           borderRadius: 999,
-          background: isActive ? "#00ffbe" : "#ffd25c",
+          background: isActive ? "#2A8694" : "#ffd25c",
           boxShadow: isActive
-            ? "0 0 24px rgba(0,255,190,1)"
+            ? "0 0 24px rgba(42,134,148,1)"
             : "0 0 14px rgba(255,210,92,0.82)",
         }}
       />
@@ -1143,7 +1134,7 @@ function CheckInPresenceText({
         : "CHECK-IN MANUAL";
 
   const border = isValidated
-    ? "1px solid rgba(0,255,190,0.48)"
+    ? "1px solid rgba(42,134,148,0.48)"
     : isOutsideRadius
       ? "1px solid rgba(255,210,92,0.42)"
       : isActive
@@ -1151,15 +1142,15 @@ function CheckInPresenceText({
         : "1px solid rgba(255,210,92,0.32)";
 
   const background = isValidated
-    ? "rgba(0,255,190,0.14)"
+    ? "rgba(42,134,148,0.14)"
     : isOutsideRadius
       ? "rgba(255,210,92,0.12)"
       : isActive
-        ? "rgba(125,92,255,0.14)"
+        ? "rgba(42,134,148,0.14)"
         : "rgba(255,210,92,0.10)";
 
   const shadow = isValidated
-    ? "0 0 18px rgba(0,255,190,0.22)"
+    ? "0 0 18px rgba(42,134,148,0.22)"
     : isOutsideRadius
       ? "0 0 16px rgba(255,210,92,0.16)"
       : "none";
@@ -1171,11 +1162,11 @@ function CheckInPresenceText({
         alignItems: "center",
         gap: 7,
         width: "fit-content",
-        padding: "7px 10px",
-        borderRadius: 999,
-        border,
-        background,
-        boxShadow: shadow,
+        padding: 0,
+        borderRadius: 0,
+        border: "none",
+        background: "transparent",
+        boxShadow: "none",
         color: "#fff",
         fontSize: 12,
         fontWeight: 850,
@@ -1215,15 +1206,11 @@ function EventHeatScoreBadge({
         display: "grid",
         gap: 3,
         width: "fit-content",
-        padding: "8px 10px",
-        borderRadius: 14,
-        border: "1px solid rgba(0,255,190,0.24)",
-        background:
-          "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.10))",
-        boxShadow:
-          confirmedCount >= 3
-            ? "0 0 22px rgba(0,255,190,0.18)"
-            : "0 10px 22px rgba(0,0,0,0.16)",
+        padding: 0,
+        borderRadius: 0,
+        border: "none",
+        background: "transparent",
+        boxShadow: "none",
         color: "#fff",
       }}
     >
@@ -1271,17 +1258,16 @@ function EventStateBadge({
         display: "inline-flex",
         alignItems: "center",
         width: "fit-content",
-        padding: "8px 11px",
-        borderRadius: 999,
-        border: "1px solid rgba(0,255,190,0.30)",
-        background:
-          "linear-gradient(135deg, rgba(0,255,190,0.14), rgba(125,92,255,0.16))",
+        padding: 0,
+        borderRadius: 0,
+        border: "none",
+        background: "transparent",
         color: "#fff",
         fontSize: 11,
         fontWeight: 950,
         letterSpacing: 0.45,
         textTransform: "uppercase",
-        boxShadow: "0 0 26px rgba(0,255,190,0.16)",
+        boxShadow: "none",
       }}
     >
       {label}
@@ -1339,10 +1325,10 @@ function EventMiniAvatarStack({
               marginLeft: index === 0 ? 0 : -9,
               border: "2px solid rgba(14,14,24,0.96)",
               background:
-                "linear-gradient(135deg, rgba(0,255,190,0.22), rgba(125,92,255,0.22))",
+                "linear-gradient(135deg, rgba(42,134,148,0.22), rgba(42,134,148,0.22))",
               display: "grid",
               placeItems: "center",
-              boxShadow: "0 0 14px rgba(0,255,190,0.16)",
+              boxShadow: "0 0 14px rgba(42,134,148,0.16)",
               textDecoration: "none",
             }}
           >
@@ -1662,10 +1648,10 @@ function CatalogRailCard({
             borderRadius: 999,
             background:
               accent === "cyan"
-                ? "rgba(0,220,255,0.16)"
+                ? "rgba(42,134,148,0.16)"
                 : accent === "neutral"
                   ? "rgba(255,255,255,0.10)"
-                  : "rgba(125,92,255,0.22)",
+                  : "rgba(42,134,148,0.22)",
             filter: "blur(4px)",
           }}
         />
@@ -2371,8 +2357,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   const container: CSSProperties = {
     minHeight: "100vh",
-    background:
-      "radial-gradient(circle at 8% 0%, rgba(0,255,190,0.16), transparent 30%), radial-gradient(circle at 92% 6%, rgba(125,92,255,0.32), transparent 34%), radial-gradient(circle at 50% 100%, rgba(0,220,255,0.10), transparent 32%), linear-gradient(180deg, #030308 0%, #070712 44%, #020204 100%)",
+    background: "#050505",
     color: "#fff",
     padding: 18,
   };
@@ -2422,10 +2407,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     alignItems: "center",
     padding: 20,
     borderRadius: 30,
-    background:
-      "linear-gradient(145deg, rgba(0,255,190,0.075), rgba(125,92,255,0.13) 42%, rgba(5,5,12,0.78))",
-    border: "1px solid rgba(0,255,190,0.14)",
-    boxShadow: "0 28px 80px rgba(0,0,0,0.42), inset 0 0 38px rgba(125,92,255,0.045)",
+    background: "#0E0E0E",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow: "0 28px 80px rgba(0,0,0,0.42)",
   };
 
   const heroBackgroundPhoto: CSSProperties = {
@@ -2456,10 +2440,9 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     height: 250,
     borderRadius: 28,
     overflow: "hidden",
-    background:
-      "linear-gradient(145deg, rgba(0,255,190,0.055), rgba(125,92,255,0.13))",
-    border: "1px solid rgba(0,255,190,0.16)",
-    boxShadow: "0 18px 48px rgba(0,0,0,0.44), 0 0 26px rgba(125,92,255,0.10)",
+    background: "#111111",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow: "0 18px 48px rgba(0,0,0,0.44)",
   };
 
   const heroContent: CSSProperties = {
@@ -2493,11 +2476,10 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     flex: "0 0 232px",
     position: "relative",
     scrollSnapAlign: "start",
-    background:
-      "linear-gradient(180deg, rgba(22,22,40,0.98), rgba(11,11,22,0.98))",
+    background: "#111111",
     borderRadius: 22,
     overflow: "hidden",
-    border: "1px solid rgba(139,112,255,0.28)",
+    border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "0 18px 42px rgba(0,0,0,0.30)",
     textDecoration: "none",
     color: "#fff",
@@ -2531,7 +2513,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         }
 
         .uc-event-back-link__arrow {
-          color: #28e6c2;
+          color: #2A8694;
           font-size: 18px;
           line-height: 1;
           transition: transform 160ms ease;
@@ -2555,7 +2537,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
         }
 
         .uc-event-back-link:active {
-          color: #28e6c2;
+          color: #2A8694;
           transform: translateY(1px);
         }
 
@@ -2901,7 +2883,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
                         display: "grid",
                         placeItems: "center",
                         background:
-                          "linear-gradient(145deg, rgba(125,92,255,0.18), rgba(0,255,190,0.08))",
+                          "linear-gradient(145deg, rgba(42,134,148,0.18), rgba(42,134,148,0.08))",
                         fontWeight: 850,
                       }}
                     >

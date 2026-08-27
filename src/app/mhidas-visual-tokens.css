@@ -1,0 +1,31 @@
+/*
+  MHIDAS / USECLUBBERS — VISUAL STANDARD LOCK V1
+  Fonte canônica aprovada. Não adicionar cores de marca diretamente em componentes.
+*/
+
+:root {
+  --mhidas-bg-main: #050505;
+  --mhidas-card-dark: #0E0E0E;
+  --mhidas-card-secondary: #111111;
+
+  --mhidas-text-primary: #F8FAFC;
+  --mhidas-text-secondary: #CBD5E1;
+  --mhidas-border: rgba(255,255,255,0.10);
+
+  --mhidas-clubber-action: #2A8694;
+  --mhidas-clubber-action-strong: #247C88;
+
+  --mhidas-pro-blue: #1D4ED8;
+  --mhidas-pro-deep: #0F172A;
+  --mhidas-pro-indigo: #4F46E5;
+}
+
+[data-mhidas-mode="clubber"] {
+  --mhidas-mode-action: var(--mhidas-clubber-action);
+  --mhidas-mode-action-strong: var(--mhidas-clubber-action-strong);
+}
+
+[data-mhidas-mode="pro"] {
+  --mhidas-mode-action: var(--mhidas-pro-blue);
+  --mhidas-mode-action-strong: var(--mhidas-pro-indigo);
+}

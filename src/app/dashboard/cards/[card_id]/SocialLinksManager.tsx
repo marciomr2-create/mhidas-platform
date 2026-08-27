@@ -24,6 +24,7 @@ type LinkDraft = {
 type Props = {
   cardId: string;
   scope?: "all" | "direct";
+  modeScope?: "all" | "club" | "pro";
 };
 
 type LinkGroup = {
@@ -265,15 +266,14 @@ function badgeStyle(active: boolean) {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "7px 10px",
-    borderRadius: 999,
-    border: active
-      ? "1px solid rgba(0,200,120,0.25)"
-      : "1px solid rgba(255,255,255,0.14)",
-    background: active ? "rgba(0,160,90,0.18)" : "rgba(255,255,255,0.05)",
+    padding: 0,
+    borderRadius: 0,
+    border: "0",
+    background: "transparent",
+    color: active ? "#2A8694" : "#CBD5E1",
     fontWeight: 800,
     fontSize: 12,
-    minWidth: 82,
+    minWidth: "auto",
   } as const;
 }
 
@@ -321,7 +321,7 @@ function labelStyle() {
 function cardStyle(groupKey: LinkGroup["key"]) {
   const accent =
     groupKey === "direct"
-      ? "rgba(0,200,120,0.10)"
+      ? "#111111"
       : groupKey === "streaming"
         ? "rgba(80,160,255,0.10)"
         : "rgba(255,255,255,0.06)";
@@ -336,7 +336,11 @@ function cardStyle(groupKey: LinkGroup["key"]) {
   } as const;
 }
 
-export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
+export default function SocialLinksManager({
+  cardId,
+  scope = "all",
+  modeScope = "all",
+}: Props) {
   const supabase = useMemo(() => createBrowserClient(), []);
 
   const [loading, setLoading] = useState(true);
@@ -347,11 +351,21 @@ export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
   const [drafts, setDrafts] = useState<Record<string, LinkDraft>>({});
 
   async function fetchLinks(userId: string) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("social_links")
-      .select("id,platform,url,label,is_active,sort_order,position,clicks_count,updated_at")
+      .select(
+        "id,platform,url,label,is_active,sort_order,position,clicks_count,updated_at"
+      )
       .eq("user_id", userId)
-      .eq("card_id", cardId)
+      .eq("card_id", cardId);
+
+    if (modeScope === "club") {
+      query = query.in("mode", ["club", "both"]);
+    } else if (modeScope === "pro") {
+      query = query.in("mode", ["pro", "both"]);
+    }
+
+    const { data, error } = await query
       .order("sort_order", { ascending: true })
       .order("position", { ascending: true });
 
@@ -630,8 +644,8 @@ export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
             <div
               style={{
                 padding: 10,
-                border: "1px solid rgba(0,200,120,0.28)",
-                background: "rgba(0,200,120,0.08)",
+                border: "1px solid rgba(42,134,148,0.28)",
+                background: "rgba(42,134,148,0.08)",
                 borderRadius: 10,
                 marginBottom: 12,
               }}
@@ -703,12 +717,13 @@ export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
                                   {isFirstDirect ? (
                                     <span
                                       style={{
-                                        padding: "4px 8px",
-                                        borderRadius: 999,
+                                        padding: 0,
+                                        borderRadius: 0,
                                         fontSize: 11,
                                         fontWeight: 800,
-                                        background: "rgba(0,200,120,0.18)",
-                                        border: "1px solid rgba(0,200,120,0.25)",
+                                        color: "#CBD5E1",
+                                        background: "transparent",
+                                        border: "0",
                                       }}
                                     >
                                       Contato principal
@@ -859,7 +874,14 @@ export default function SocialLinksManager({ cardId, scope = "all" }: Props) {
               onClick={() => {
                 void loadLinks();
               }}
-              style={buttonStyle(false)}
+              style={{
+                ...buttonStyle(false),
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "none",
+                color: "#CBD5E1",
+                fontWeight: 700,
+              }}
             >
               Recarregar
             </button>

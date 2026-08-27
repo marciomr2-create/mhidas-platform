@@ -79,10 +79,11 @@ function infoCardStyle() {
 function miniTagStyle() {
   return {
     display: "inline-block",
-    padding: "6px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.06)",
+    padding: 0,
+    borderRadius: 0,
+    border: "0",
+    background: "transparent",
+    color: "var(--mhidas-clubber-action)",
     fontSize: 12,
     fontWeight: 700,
     width: "fit-content",

@@ -462,9 +462,7 @@ const pickerCss = `
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 24px;
-    background:
-      radial-gradient(circle at 100% 0%, rgba(116, 101, 255, 0.10), transparent 28%),
-      linear-gradient(180deg, rgba(17, 18, 25, 0.98), rgba(11, 12, 17, 0.98));
+    background: var(--mhidas-card-dark);
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.20);
   }
 
@@ -493,7 +491,7 @@ const pickerCss = `
 
   .spotify-artist-picker__eyebrow {
     margin: 0;
-    color: #aaa4ff;
+    color: var(--mhidas-clubber-action);
     font-size: 10px;
     line-height: 1.2;
     letter-spacing: 0.16em;
@@ -525,9 +523,9 @@ const pickerCss = `
   }
 
   .spotify-artist-picker__search-field:focus-within {
-    border-color: rgba(133, 124, 255, 0.72);
+    border-color: rgba(42, 134, 148, 0.72);
     background: rgba(255, 255, 255, 0.065);
-    box-shadow: 0 0 0 4px rgba(111, 101, 255, 0.10);
+    box-shadow: 0 0 0 4px rgba(42, 134, 148, 0.10);
   }
 
   .spotify-artist-picker__search-field > span {
@@ -584,16 +582,14 @@ const pickerCss = `
   }
 
   .spotify-artist-picker__count {
-    min-width: 31px;
-    height: 31px;
-    padding: 0 9px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(137, 128, 255, 0.30);
-    border-radius: 999px;
-    background: rgba(113, 102, 255, 0.12);
-    color: #dcd9ff;
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    display: inline;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--mhidas-clubber-action);
     font-size: 12px;
     font-weight: 900;
   }
@@ -626,23 +622,23 @@ const pickerCss = `
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 21px;
-    background: linear-gradient(180deg, rgba(31, 31, 45, 0.98), rgba(18, 19, 28, 0.98));
+    background: var(--mhidas-card-secondary);
     box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
   }
 
   .spotify-artist-card--saved {
-    border-color: rgba(125, 115, 255, 0.28);
+    border-color: rgba(42, 134, 148, 0.28);
   }
 
   .spotify-artist-card--selected {
-    border-color: rgba(118, 244, 194, 0.32);
+    border-color: rgba(42, 134, 148, 0.32);
   }
 
   .spotify-artist-card__visual {
     position: relative;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    background: #171822;
+    background: var(--mhidas-card-secondary);
   }
 
   .spotify-artist-card__visual img,
@@ -664,9 +660,7 @@ const pickerCss = `
   .spotify-artist-card__placeholder {
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(circle at 50% 35%, rgba(128, 118, 255, 0.30), transparent 40%),
-      #171822;
+    background: var(--mhidas-card-secondary);
     color: rgba(255, 255, 255, 0.44);
     font-size: 34px;
   }
@@ -685,19 +679,18 @@ const pickerCss = `
     z-index: 1;
     top: 10px;
     left: 10px;
-    min-width: 32px;
-    height: 28px;
-    padding: 0 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
-    background: rgba(8, 9, 13, 0.72);
-    backdrop-filter: blur(12px);
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    display: block;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: #ffffff;
     font-size: 11px;
     font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.88);
   }
 
   .spotify-artist-card__body {
@@ -744,8 +737,8 @@ const pickerCss = `
   .spotify-artist-card__actions button:hover:not(:disabled),
   .spotify-artist-card__add:hover:not(:disabled) {
     transform: translateY(-1px);
-    border-color: rgba(139, 130, 255, 0.50);
-    background: rgba(119, 108, 255, 0.17);
+    border-color: rgba(42, 134, 148, 0.50);
+    background: rgba(42, 134, 148, 0.14);
   }
 
   .spotify-artist-card__actions button:disabled,
@@ -761,15 +754,15 @@ const pickerCss = `
   .spotify-artist-card__add {
     width: 100%;
     padding: 9px 12px;
-    background: linear-gradient(180deg, rgba(120, 110, 255, 0.94), rgba(93, 84, 226, 0.94));
-    border-color: rgba(141, 132, 255, 0.56);
+    background: var(--mhidas-clubber-action-strong);
+    border-color: rgba(42, 134, 148, 0.56);
     font-size: 12px;
   }
 
   .spotify-artist-card--selected .spotify-artist-card__add {
-    background: rgba(79, 205, 153, 0.10);
-    border-color: rgba(102, 224, 174, 0.22);
-    color: #bff4db;
+    background: rgba(42, 134, 148, 0.10);
+    border-color: rgba(42, 134, 148, 0.24);
+    color: var(--mhidas-clubber-action);
     opacity: 1;
   }
 
@@ -791,8 +784,8 @@ const pickerCss = `
     display: grid;
     place-items: center;
     border-radius: 15px;
-    background: rgba(116, 105, 255, 0.12);
-    color: #c8c3ff;
+    background: rgba(42, 134, 148, 0.10);
+    color: var(--mhidas-clubber-action);
     font-size: 22px;
   }
 
@@ -823,10 +816,10 @@ const pickerCss = `
   .spotify-artist-picker__message {
     margin: 0;
     padding: 11px 13px;
-    border: 1px solid rgba(137, 128, 255, 0.19);
+    border: 1px solid rgba(42, 134, 148, 0.20);
     border-radius: 13px;
-    background: rgba(114, 103, 255, 0.08);
-    color: #ddd9ff;
+    background: rgba(42, 134, 148, 0.08);
+    color: #CBD5E1;
     font-size: 12px;
     line-height: 1.5;
   }

@@ -8,8 +8,7 @@ import Link from "next/link";
 import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
-import EventTribeHub from "./EventTribeHub";
-import StructuredRideMeetHub from "./StructuredRideMeetHub";
+import EventSocialActionsHub from "./EventSocialActionsHub";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
 import TicketNetworkAvailability from "./TicketNetworkAvailability";
@@ -336,9 +335,9 @@ function filterChipStyle(active = false): React.CSSProperties {
     justifyContent: "center",
     padding: "8px 11px",
     borderRadius: 999,
-    border: active ? "1px solid rgba(0,255,190,0.55)" : "1px solid rgba(255,255,255,0.14)",
+    border: active ? "1px solid rgba(148,163,184,0.18)" : "1px solid rgba(255,255,255,0.14)",
     background: active
-      ? "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.18))"
+      ? "linear-gradient(135deg, rgba(148,163,184,0.18), rgba(17,24,39,0.72))"
       : "rgba(255,255,255,0.055)",
     color: "#fff",
     textDecoration: "none",
@@ -679,7 +678,7 @@ function shellStyle() {
     borderRadius: 34,
     border: "1px solid rgba(255,255,255,0.12)",
     background:
-      "radial-gradient(circle at top left, rgba(125,92,255,0.18), rgba(255,255,255,0.03) 34%, rgba(255,255,255,0.02) 100%)",
+      "radial-gradient(circle at top left, rgba(17,24,39,0.72), rgba(255,255,255,0.03) 34%, rgba(255,255,255,0.02) 100%)",
     boxShadow: "0 28px 80px rgba(0,0,0,0.34)",
     overflow: "hidden",
   } as const;
@@ -731,10 +730,10 @@ function badgeStyle() {
 function sectionStyle(accent: "purple" | "green" | "yellow" = "green") {
   const border =
     accent === "purple"
-      ? "rgba(125,92,255,0.26)"
+      ? "rgba(17,24,39,0.72)"
       : accent === "yellow"
         ? "rgba(255,196,0,0.22)"
-        : "rgba(0,255,190,0.18)";
+        : "rgba(148,163,184,0.18)";
 
   return {
     marginTop: 14,
@@ -760,8 +759,8 @@ function statsGridStyle() {
 
 function statCardStyle(color: "purple" | "green" | "blue" | "yellow") {
   const colors = {
-    purple: "rgba(125,92,255,0.38)",
-    green: "rgba(0,255,190,0.30)",
+    purple: "rgba(17,24,39,0.72)",
+    green: "rgba(148,163,184,0.18)",
     blue: "rgba(0,145,255,0.32)",
     yellow: "rgba(255,196,0,0.28)",
   };
@@ -834,7 +833,7 @@ function actionButtonStyle(primary = false) {
       ? "1px solid rgba(255,255,255,0.20)"
       : "1px solid rgba(255,255,255,0.14)",
     background: primary
-      ? "linear-gradient(135deg, rgba(125,34,255,1), rgba(125,92,255,0.72))"
+      ? "linear-gradient(135deg, rgba(17,24,39,0.72), rgba(17,24,39,0.72))"
       : "rgba(255,255,255,0.075)",
     color: "#fff",
     textDecoration: "none",
@@ -902,8 +901,8 @@ function socialBadgeStyle(kind: "vibe" | "meet" | "networking") {
       width: "fit-content",
       padding: "6px 10px",
       borderRadius: 999,
-      border: "1px solid rgba(0,255,190,0.26)",
-      background: "rgba(0,255,190,0.11)",
+      border: "1px solid rgba(148,163,184,0.18)",
+      background: "rgba(148,163,184,0.18)",
       color: "#fff",
       fontSize: 11,
       fontWeight: 900,
@@ -914,8 +913,8 @@ function socialBadgeStyle(kind: "vibe" | "meet" | "networking") {
     width: "fit-content",
     padding: "6px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(125,92,255,0.30)",
-    background: "rgba(125,92,255,0.16)",
+    border: "1px solid rgba(17,24,39,0.72)",
+    background: "rgba(17,24,39,0.72)",
     color: "#fff",
     fontSize: 11,
     fontWeight: 900,
@@ -1009,7 +1008,7 @@ function ProfileCard({
           position: "relative",
           background: photo
             ? `linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.78)), url(${photo})`
-            : "linear-gradient(135deg, rgba(125,92,255,0.32), rgba(0,255,190,0.12))",
+            : "linear-gradient(135deg, rgba(17,24,39,0.72), rgba(148,163,184,0.18))",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -1021,7 +1020,7 @@ function ProfileCard({
             left: 14,
             padding: "7px 10px",
             borderRadius: 999,
-            border: "1px solid rgba(0,255,190,0.30)",
+            border: "1px solid rgba(148,163,184,0.18)",
             background: "rgba(0,0,0,0.48)",
             color: "#fff",
             fontWeight: 900,
@@ -1114,7 +1113,7 @@ function RideCard({
           minHeight: 176,
           background: photo
             ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.32)), url(${photo})`
-            : "linear-gradient(135deg, rgba(0,255,190,0.18), rgba(125,92,255,0.18))",
+            : "linear-gradient(135deg, rgba(148,163,184,0.18), rgba(17,24,39,0.72))",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -1194,7 +1193,7 @@ function MeetCard({
           minHeight: 176,
           background: photo
             ? `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.36)), url(${photo})`
-            : "linear-gradient(135deg, rgba(255,196,0,0.20), rgba(125,92,255,0.18))",
+            : "linear-gradient(135deg, rgba(255,196,0,0.20), rgba(17,24,39,0.72))",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -1985,8 +1984,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         .event-hero__action-primary {
           border: 1px solid rgba(255, 255, 255, 0.22);
           background:
-            linear-gradient(135deg, rgba(125, 34, 255, 1), rgba(125, 92, 255, 0.76));
-          box-shadow: 0 16px 38px rgba(125, 34, 255, 0.28);
+            var(--mhidas-card-secondary);
+          box-shadow: 0 16px 38px rgba(0,0,0,0.24);
         }
 
         .event-hero__action-secondary {
@@ -2006,7 +2005,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-hero__action-link::after {
           content: "→";
-          color: #18d8c0;
+          color: var(--mhidas-clubber-action);
           font-size: 16px;
           font-weight: 800;
           line-height: 1;
@@ -2061,8 +2060,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-hero__stat:hover,
         .event-hero__stat:focus-visible {
-          background: rgba(20, 184, 166, 0.08);
-          border-color: rgba(20, 184, 166, 0.24);
+          background: rgba(148,163,184,0.18);
+          border-color: var(--mhidas-clubber-action);
           outline: none;
         }
 
@@ -2113,8 +2112,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           justify-content: center;
           overflow: hidden;
           background:
-            linear-gradient(145deg, rgba(20, 184, 166, 0.28), rgba(79, 70, 229, 0.22)),
-            #10141e;
+            var(--mhidas-card-secondary);
           background-position: center;
           background-repeat: no-repeat;
           background-size: cover;
@@ -2200,8 +2198,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           width: 6px;
           height: 6px;
           border-radius: 999px;
-          background: #00e7b0;
-          box-shadow: 0 0 12px rgba(0,231,176,0.38);
+          background: var(--mhidas-clubber-action);
+          box-shadow: none;
         }
 
         .event-hero__tribe-name {
@@ -2230,11 +2228,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           gap: 18px;
           padding: 24px;
           box-sizing: border-box;
-          border: 1px solid rgba(20, 184, 166, 0.18);
+          border: 1px solid var(--mhidas-border);
           border-radius: 24px;
           background:
-            radial-gradient(circle at 0 0, rgba(20, 184, 166, 0.10), transparent 34%),
-            linear-gradient(145deg, rgba(11, 16, 32, 0.96), rgba(5, 7, 13, 0.98));
+            var(--mhidas-card-dark);
           overflow: hidden;
         }
 
@@ -2252,7 +2249,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-persisted-radar__eyebrow {
-          color: #14b8a6;
+          color: var(--mhidas-clubber-action);
           font-size: 10px;
           line-height: 1.2;
           font-weight: 950;
@@ -2331,8 +2328,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-persisted-radar__item:hover,
         .event-persisted-radar__item:focus-visible {
-          border-color: rgba(20, 184, 166, 0.42);
-          background: rgba(20, 184, 166, 0.08);
+          border-color: var(--mhidas-clubber-action);
+          background: rgba(148,163,184,0.18);
           outline: none;
         }
 
@@ -2371,11 +2368,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border: 2px solid #0b1020;
+          border: 2px solid #0E0E0E;
           border-radius: 999px;
           background:
-            linear-gradient(135deg, rgba(20, 184, 166, 0.30), rgba(13, 148, 136, 0.15)),
-            #111827;
+            linear-gradient(135deg, rgba(148,163,184,0.18), rgba(148,163,184,0.18)),
+            #111111;
           background-position: center;
           background-size: cover;
           color: #f8fafc;
@@ -2391,7 +2388,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-persisted-radar__more {
-          background: #0d9488;
+          background: var(--mhidas-clubber-action);
         }
 
         .event-persisted-radar__empty {
@@ -2426,7 +2423,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           align-items: baseline;
           gap: 6px;
           padding: 7px 9px;
-          border-bottom: 1px solid rgba(20, 184, 166, 0.30);
+          border-bottom: 1px solid rgba(148,163,184,0.18);
           color: #cbd5e1;
           font-size: 9px;
           line-height: 1.15;
@@ -2466,12 +2463,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           padding: clamp(25px, 3vw, 36px) var(--journey-inline-pad) 0;
           display: grid;
           gap: 24px;
-          border: 1px solid rgba(125, 92, 255, 0.20);
+          border: 1px solid var(--mhidas-border);
           border-radius: 26px;
           background:
-            radial-gradient(circle at 91% 4%, rgba(96, 72, 220, 0.13), transparent 34%),
-            radial-gradient(circle at 4% 100%, rgba(0, 231, 176, 0.07), transparent 30%),
-            linear-gradient(145deg, rgba(16, 16, 24, 0.97), rgba(7, 7, 11, 0.99));
+            var(--mhidas-card-dark);
           box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
           overflow: hidden;
         }
@@ -2494,7 +2489,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-ticket-journey__eyebrow {
-          color: #4ce5c8;
+          color: var(--mhidas-clubber-action);
           font-size: 10px;
           line-height: 1.2;
           font-weight: 950;
@@ -2543,14 +2538,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-ticket-journey[data-status="interested"] .event-ticket-journey__status-dot,
         .event-ticket-journey[data-status="wants_ticket"] .event-ticket-journey__status-dot {
-          background: #4ce5c8;
-          box-shadow: 0 0 14px rgba(76, 229, 200, 0.34);
+          background: var(--mhidas-clubber-action);
+          box-shadow: none;
         }
 
         .event-ticket-journey[data-status="ticket_acquired"] .event-ticket-journey__status-dot,
         .event-ticket-journey[data-status="checked_in"] .event-ticket-journey__status-dot {
-          background: #86efac;
-          box-shadow: 0 0 14px rgba(134, 239, 172, 0.34);
+          background: var(--mhidas-clubber-action);
+          box-shadow: none;
         }
 
         .event-ticket-journey[data-status="cancelled"] .event-ticket-journey__status-dot {
@@ -2623,7 +2618,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-ticket-journey__action:focus-visible {
-          outline: 2px solid rgba(76, 229, 200, 0.78);
+          outline: 2px solid rgba(148,163,184,0.18);
           outline-offset: -3px;
         }
 
@@ -2637,13 +2632,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-ticket-journey__action--active.event-ticket-journey__action--interest::before,
         .event-ticket-journey__action--active.event-ticket-journey__action--ticket::before {
-          background: linear-gradient(90deg, #27d9b7, #715cff);
-          box-shadow: 0 0 22px rgba(76, 229, 200, 0.28);
+          background: linear-gradient(90deg, var(--mhidas-clubber-action), var(--mhidas-card-secondary));
+          box-shadow: none;
         }
 
         .event-ticket-journey__action--active.event-ticket-journey__action--confirmed::before {
-          background: linear-gradient(90deg, #4ade80, #27d9b7);
-          box-shadow: 0 0 22px rgba(74, 222, 128, 0.24);
+          background: linear-gradient(90deg, var(--mhidas-clubber-action), var(--mhidas-clubber-action));
+          box-shadow: none;
         }
 
         .event-ticket-journey__action--active.event-ticket-journey__action--cancelled::before {
@@ -2679,7 +2674,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-ticket-journey__action-state {
-          color: rgba(134, 239, 172, 0.90);
+          color: var(--mhidas-clubber-action);
           font-size: 9px;
           line-height: 1.2;
           font-weight: 950;
@@ -2695,7 +2690,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-ticket-journey__action:hover:not(:disabled) .event-ticket-journey__action-arrow {
-          color: rgba(76, 229, 200, 0.90);
+          color: var(--mhidas-clubber-action);
           transform: translateX(3px);
         }
 
@@ -2707,7 +2702,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           margin: -8px calc(var(--journey-inline-pad) * -1) 0;
           padding: 14px var(--journey-inline-pad) 16px;
           border-top: 1px solid rgba(255, 255, 255, 0.07);
-          color: rgba(134, 239, 172, 0.94);
+          color: var(--mhidas-clubber-action);
           font-size: 12px;
           line-height: 1.45;
           font-weight: 800;
@@ -2724,8 +2719,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           gap: 22px;
           border-top: 1px solid rgba(148, 163, 184, 0.16);
           background:
-            radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.10), transparent 34%),
-            linear-gradient(180deg, rgba(5, 7, 13, 0.10), rgba(5, 7, 13, 0.52));
+            var(--mhidas-card-dark);
         }
 
         .event-social-journey__heading {
@@ -2742,7 +2736,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__eyebrow {
-          color: #14b8a6;
+          color: var(--mhidas-clubber-action);
           font-size: 10px;
           line-height: 1.2;
           font-weight: 950;
@@ -2821,13 +2815,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-social-journey__mode:hover:not(:disabled),
         .event-social-journey__mode:focus-visible {
-          background: rgba(20, 184, 166, 0.07);
+          background: rgba(148,163,184,0.18);
         }
 
         .event-social-journey__mode:focus-visible,
         .event-social-journey__preference:focus-visible,
         .event-social-journey__group-preference-option:focus-visible {
-          outline: 2px solid rgba(20, 184, 166, 0.78);
+          outline: 2px solid rgba(148,163,184,0.18);
           outline-offset: -3px;
         }
 
@@ -2839,13 +2833,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__mode--featured {
-          background: rgba(13, 148, 136, 0.07);
+          background: rgba(148,163,184,0.18);
         }
 
         .event-social-journey__mode--active {
           background:
-            linear-gradient(180deg, rgba(20, 184, 166, 0.16), rgba(13, 148, 136, 0.07));
-          box-shadow: inset 0 3px 0 #14b8a6;
+            linear-gradient(180deg, rgba(148,163,184,0.18), rgba(148,163,184,0.18));
+          box-shadow: none;
         }
 
         .event-social-journey__mode-title {
@@ -2862,7 +2856,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__mode-state {
-          color: rgba(20, 184, 166, 0.92);
+          color: var(--mhidas-clubber-action);
           font-size: 9px;
           line-height: 1.2;
           font-weight: 950;
@@ -2933,11 +2927,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__preference:hover:not(:disabled) {
-          background: rgba(20, 184, 166, 0.055);
+          background: rgba(148,163,184,0.18);
         }
 
         .event-social-journey__preference--active {
-          background: rgba(13, 148, 136, 0.10);
+          background: rgba(148,163,184,0.18);
         }
 
         .event-social-journey__preference-check {
@@ -2955,9 +2949,9 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__preference--active .event-social-journey__preference-check {
-          border-color: rgba(20, 184, 166, 0.74);
-          background: rgba(20, 184, 166, 0.16);
-          color: #5eead4;
+          border-color: var(--mhidas-clubber-action);
+          background: rgba(148,163,184,0.18);
+          color: var(--mhidas-clubber-action);
         }
 
         .event-social-journey__preference-copy {
@@ -2994,7 +2988,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__group-preference--active {
-          background: rgba(13, 148, 136, 0.10);
+          background: rgba(148,163,184,0.18);
         }
 
         .event-social-journey__group-preference-heading {
@@ -3051,23 +3045,23 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         }
 
         .event-social-journey__group-preference-option:hover:not(:disabled) {
-          border-color: rgba(20, 184, 166, 0.56);
-          background: rgba(20, 184, 166, 0.08);
+          border-color: var(--mhidas-clubber-action);
+          background: rgba(148,163,184,0.18);
           color: #f8fafc;
         }
 
         .event-social-journey__group-preference-option--active {
-          border-color: rgba(20, 184, 166, 0.72);
-          background: rgba(20, 184, 166, 0.16);
-          color: #5eead4;
+          border-color: var(--mhidas-clubber-action);
+          background: rgba(148,163,184,0.18);
+          color: var(--mhidas-clubber-action);
         }
 
         .event-social-journey__feedback {
           margin: 0;
           padding: 13px 15px;
-          border-left: 2px solid #14b8a6;
-          background: rgba(20, 184, 166, 0.08);
-          color: #99f6e4;
+          border-left: 2px solid var(--mhidas-clubber-action);
+          background: rgba(148,163,184,0.18);
+          color: var(--mhidas-clubber-action);
           font-size: 12px;
           line-height: 1.45;
           font-weight: 800;
@@ -3087,7 +3081,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           transform: translateX(-50%);
           padding: clamp(18px, 2.4vw, 26px) !important;
           gap: 18px !important;
-          border-color: rgba(0, 255, 190, 0.14) !important;
+          border-color: rgba(148,163,184,0.18) !important;
           background:
             linear-gradient(145deg, rgba(20, 20, 28, 0.96), rgba(8, 8, 13, 0.98)) !important;
         }
@@ -3159,8 +3153,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           height: 6px;
           flex: 0 0 6px;
           border-radius: 50%;
-          background: #00e7b0;
-          box-shadow: 0 0 14px rgba(0, 231, 176, 0.42);
+          background: var(--mhidas-clubber-action);
+          box-shadow: none;
         }
 
         .event-quick-guide__value {
@@ -3402,14 +3396,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             background:
               linear-gradient(
                 180deg,
-                rgba(20, 184, 166, 0.13),
-                rgba(20, 184, 166, 0.035)
+                rgba(148,163,184,0.18),
+                rgba(148,163,184,0.18)
               );
           }
 
           .event-journey-mobile-nav__button--active::before {
-            background: #14b8a6;
-            box-shadow: 0 0 14px rgba(20, 184, 166, 0.38);
+            background: var(--mhidas-clubber-action);
+            box-shadow: none;
           }
 
           .event-journey-mobile-nav__label {
@@ -3445,7 +3439,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             .event-journey-mobile-nav__label,
           .event-journey-mobile-nav__button--active
             .event-journey-mobile-nav__action {
-            color: #5eead4;
+            color: var(--mhidas-clubber-action);
           }
 
           .event-ticket-journey[data-mobile-panel="social"]
@@ -4339,7 +4333,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         <section
           id="event-social-radar-summary"
           className="event-persisted-radar"
-          aria-label="Estados sociais compartilhados no evento"
+          hidden aria-hidden="true" aria-label="Estados sociais compartilhados no evento"
         >
           <div className="event-persisted-radar__heading">
             <div className="event-persisted-radar__copy">
@@ -4491,22 +4485,6 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
 
 
-      {eventGroup?.group_id ? (
-        <EventTribeHub
-          eventGroupId={eventGroup.group_id}
-          eventReturnTo={eventReturnPath}
-          isAuthenticated={Boolean(authenticatedUser)}
-        />
-      ) : null}
-
-      {eventGroup?.group_id ? (
-        <StructuredRideMeetHub
-          eventGroupId={eventGroup.group_id}
-          eventReturnTo={eventReturnPath}
-          isAuthenticated={Boolean(authenticatedUser)}
-        />
-      ) : null}
-
       {attendees.length === 0 ? (
         <section id="event-social-radar" style={sectionStyle("purple")}>
           <div style={emptyCardStyle()}>
@@ -4532,15 +4510,56 @@ export default async function EventPage({ params, searchParams }: PageProps) {
               actionLabel=""
             />
 
-            <EventParticipantsFilter
-              attendees={attendees}
-              eventReturnTo={eventReturnPath}
-              officialEventUrl={heroOfficialUrl}
-            />
+            <details
+              style={{
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+                paddingTop: 12,
+              }}
+            >
+              <summary
+                style={{
+                  minHeight: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  color: "#F8FAFC",
+                }}
+              >
+                <span>Ver Clubbers e filtros</span>
+                <span
+                  style={{
+                    color: "#2A8694",
+                    fontWeight: 950,
+                  }}
+                >
+                  {attendees.length}
+                </span>
+              </summary>
+
+              <div style={{ paddingTop: 14 }}>
+                <EventParticipantsFilter
+                  attendees={attendees}
+                  eventReturnTo={eventReturnPath}
+                  officialEventUrl={heroOfficialUrl}
+                />
+              </div>
+            </details>
           </section>
 
         </>
       )}
+
+      {eventGroup?.group_id ? (
+        <EventSocialActionsHub
+          eventGroupId={eventGroup.group_id}
+          eventReturnTo={eventReturnPath}
+          isAuthenticated={Boolean(authenticatedUser)}
+        />
+      ) : null}
+
     </main>
   );
 }

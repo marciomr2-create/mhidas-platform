@@ -28,7 +28,7 @@ function heroStyle() {
     padding: "24px 18px",
     borderRadius: 28,
     border: "1px solid rgba(148,163,184,0.18)",
-    background: "linear-gradient(135deg, #0B1020, #111827)",
+    background: "var(--mhidas-card-dark)",
     display: "grid",
     gap: 12,
     boxShadow: "0 24px 74px rgba(5,7,13,0.38)",
@@ -41,11 +41,11 @@ function panelStyle(highlight = false) {
     padding: 17,
     borderRadius: 22,
     border: highlight
-      ? "1px solid rgba(20,184,166,0.22)"
+      ? "1px solid rgba(42,134,148,0.28)"
       : "1px solid rgba(148,163,184,0.18)",
     background: highlight
-      ? "linear-gradient(135deg, #0B1020, #111827)"
-      : "linear-gradient(135deg, #0B1020, #111827)",
+      ? "var(--mhidas-card-dark)"
+      : "var(--mhidas-card-dark)",
     display: "grid",
     gap: 14,
     boxShadow: "0 16px 42px rgba(5,7,13,0.27)",
@@ -58,11 +58,11 @@ function modePanelStyle(mode: "club" | "pro") {
     borderRadius: 20,
     border:
       mode === "club"
-        ? "1px solid rgba(20,184,166,0.22)"
+        ? "1px solid rgba(42,134,148,0.28)"
         : "1px solid rgba(29,78,216,0.34)",
     background:
       mode === "club"
-        ? "#0B1020"
+        ? "var(--mhidas-card-dark)"
         : "linear-gradient(145deg, #0F172A, rgba(79,70,229,0.16))",
     display: "grid",
     gap: 11,
@@ -97,15 +97,15 @@ function buttonStyle(tone: "secondary" | "clubber" | "pro" = "secondary") {
     minHeight: 46,
     borderRadius: 14,
     border: isClubber
-      ? "1px solid rgba(13,148,136,0.52)"
+      ? "1px solid rgba(36,124,136,0.52)"
       : isPro
         ? "1px solid rgba(29,78,216,0.52)"
         : "1px solid rgba(148,163,184,0.18)",
     background: isClubber
-      ? "#0D9488"
+      ? "var(--mhidas-clubber-action-strong)"
       : isPro
         ? "#1D4ED8"
-        : "#111827",
+        : "var(--mhidas-card-secondary)",
     color: "#F8FAFC",
     textDecoration: "none",
     fontWeight: 900,
@@ -114,7 +114,7 @@ function buttonStyle(tone: "secondary" | "clubber" | "pro" = "secondary") {
     boxSizing: "border-box",
     textAlign: "center",
     boxShadow: isClubber
-      ? "0 10px 24px rgba(13,148,136,0.16)"
+      ? "none"
       : isPro
         ? "0 10px 24px rgba(29,78,216,0.16)"
         : "none",
@@ -124,7 +124,7 @@ function buttonStyle(tone: "secondary" | "clubber" | "pro" = "secondary") {
 function labelStyle() {
   return {
     width: "fit-content",
-    color: "#14B8A6",
+    color: "var(--mhidas-clubber-action)",
     fontSize: 11,
     fontWeight: 950,
     letterSpacing: "0.055em",
@@ -145,7 +145,7 @@ function statusLineStyle(active = false) {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    color: active ? "#14B8A6" : "rgba(255,255,255,0.70)",
+    color: active ? "var(--mhidas-clubber-action)" : "rgba(255,255,255,0.70)",
     fontSize: 13,
     fontWeight: 800,
   } as const;
@@ -156,8 +156,8 @@ function statusDotStyle(active = false) {
     width: 8,
     height: 8,
     borderRadius: 999,
-    background: active ? "#14B8A6" : "rgba(255,255,255,0.42)",
-    boxShadow: active ? "0 0 14px rgba(20,184,166,0.34)" : "none",
+    background: active ? "var(--mhidas-clubber-action)" : "rgba(255,255,255,0.42)",
+    boxShadow: active ? "none" : "none",
   } as const;
 }
 

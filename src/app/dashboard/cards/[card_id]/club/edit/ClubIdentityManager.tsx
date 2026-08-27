@@ -114,10 +114,10 @@ function buttonStyle(primary = false, disabled = false) {
     padding: "10px 15px",
     borderRadius: 12,
     border: primary
-      ? "1px solid rgba(124,92,255,0.55)"
+      ? "1px solid rgba(42,134,148,0.52)"
       : "1px solid rgba(255,255,255,0.14)",
     background: primary
-      ? "linear-gradient(135deg, rgba(91,72,235,0.95), rgba(124,92,255,0.95))"
+      ? "var(--mhidas-clubber-action-strong)"
       : "rgba(255,255,255,0.055)",
     color: "#fff",
     cursor: disabled ? "not-allowed" : "pointer",
@@ -131,9 +131,9 @@ function suggestionStyle(active = false) {
     padding: "8px 10px",
     borderRadius: 999,
     border: active
-      ? "1px solid rgba(124,92,255,0.52)"
+      ? "1px solid rgba(42,134,148,0.52)"
       : "1px solid rgba(255,255,255,0.12)",
-    background: active ? "rgba(124,92,255,0.16)" : "rgba(255,255,255,0.045)",
+    background: active ? "rgba(42,134,148,0.12)" : "rgba(255,255,255,0.045)",
     color: "#fff",
     cursor: "pointer",
     fontSize: 12,
@@ -449,8 +449,8 @@ export default function ClubIdentityManager({ cardId, initialLabel }: Props) {
           style={{
             padding: "11px 13px",
             borderRadius: 12,
-            border: "1px solid rgba(124,92,255,0.28)",
-            background: "rgba(124,92,255,0.09)",
+            border: "1px solid rgba(42,134,148,0.28)",
+            background: "rgba(42,134,148,0.08)",
             lineHeight: 1.5,
           }}
         >
@@ -608,10 +608,11 @@ export default function ClubIdentityManager({ cardId, initialLabel }: Props) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "8px 10px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(124,92,255,0.28)",
-                  background: "rgba(124,92,255,0.10)",
+                  padding: "4px 0",
+                  borderRadius: 0,
+                  border: "0",
+                  background: "transparent",
+                  color: "var(--mhidas-clubber-action)",
                   fontSize: 12,
                   fontWeight: 750,
                 }}

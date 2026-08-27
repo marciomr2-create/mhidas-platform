@@ -826,7 +826,7 @@ function TribeEditForm({
         <label
           htmlFor={`event-tribe-edit-name-${tribe.tribe_id}`}
         >
-          Nome da tribo
+          Nome do grupo
         </label>
         <input
           id={`event-tribe-edit-name-${tribe.tribe_id}`}
@@ -1196,7 +1196,7 @@ export default function EventTribeHub({
           message:
             error instanceof Error
               ? error.message
-              : "Não foi possível carregar as tribos.",
+              : "Não foi possível carregar os grupos.",
         });
         return false;
       } finally {
@@ -1306,7 +1306,7 @@ export default function EventTribeHub({
       setFeedback({
         tone: "error",
         message:
-          "O nome da tribo deve ter entre 3 e 80 caracteres.",
+          "O nome do grupo deve ter entre 3 e 80 caracteres.",
       });
       return;
     }
@@ -1352,7 +1352,7 @@ export default function EventTribeHub({
         rules: normalizeText(rules) || null,
         expires_at: normalizedExpiresAt,
       },
-      "Tribo criada e vinculada a este evento."
+      "Grupo criado e vinculada a este evento."
     );
 
     if (!payload) {
@@ -1441,11 +1441,9 @@ export default function EventTribeHub({
           margin: 22px 0 0 50%;
           transform: translateX(-50%);
           padding: 24px;
-          border-top: 1px solid rgba(20,184,166,0.34);
+          border-top: 1px solid var(--mhidas-border);
           border-bottom: 1px solid rgba(255,255,255,0.10);
-          background:
-            radial-gradient(circle at top left, rgba(20,184,166,0.10), transparent 32%),
-            rgba(8,12,19,0.76);
+          background: var(--mhidas-card-dark);
           box-sizing: border-box;
         }
 
@@ -1465,7 +1463,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__eyebrow {
-          color: #14B8A6;
+          color: var(--mhidas-clubber-action);
           font-size: 10px;
           line-height: 1.2;
           font-weight: 950;
@@ -1495,9 +1493,9 @@ export default function EventTribeHub({
           min-height: 38px;
           padding: 0 2px 5px;
           border: 0;
-          border-bottom: 1px solid rgba(20,184,166,0.55);
+          border-bottom: 1px solid var(--mhidas-border);
           background: transparent;
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font: inherit;
           font-size: 12px;
           font-weight: 900;
@@ -1536,8 +1534,8 @@ export default function EventTribeHub({
           align-items: center;
           justify-content: center;
           padding: 0 18px;
-          border: 1px solid rgba(20,184,166,0.54);
-          background: rgba(20,184,166,0.12);
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-border);
           color: #fff;
           text-decoration: none;
           font-size: 13px;
@@ -1554,7 +1552,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__feedback[data-tone="success"] {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
         }
 
         .event-tribe-hub__feedback[data-tone="error"] {
@@ -1615,7 +1613,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__filter select option {
-          background: #0B111A;
+          background: var(--mhidas-card-dark);
           color: #fff;
         }
 
@@ -1642,7 +1640,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__composer summary::after {
           content: "+";
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 20px;
           font-weight: 600;
         }
@@ -1701,11 +1699,11 @@ export default function EventTribeHub({
         .event-tribe-hub__field input:focus,
         .event-tribe-hub__field select:focus,
         .event-tribe-hub__field textarea:focus {
-          border-bottom-color: #14B8A6;
+          border-bottom-color: var(--mhidas-clubber-action);
         }
 
         .event-tribe-hub__field select option {
-          background: #0B111A;
+          background: var(--mhidas-card-dark);
           color: #fff;
         }
 
@@ -1719,8 +1717,8 @@ export default function EventTribeHub({
         .event-tribe-hub__submit {
           grid-column: 1 / -1;
           min-height: 44px;
-          border: 1px solid rgba(20,184,166,0.54);
-          background: #0D9488;
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-clubber-action-strong);
           color: #fff;
           font: inherit;
           font-size: 13px;
@@ -1777,11 +1775,11 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__card[data-highlighted="true"] {
-          outline: 2px solid rgba(94,234,212,0.86);
+          outline: 2px solid var(--mhidas-text-secondary);
           background:
             linear-gradient(
               145deg,
-              rgba(20,184,166,0.12),
+              var(--mhidas-border),
               rgba(4,8,14,0.88)
             );
         }
@@ -1800,7 +1798,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__kicker {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           line-height: 1.35;
           font-weight: 950;
@@ -1840,10 +1838,10 @@ export default function EventTribeHub({
           align-items: center;
           min-height: 28px;
           box-sizing: border-box;
-          padding: 5px 9px;
-          border: 1px solid rgba(255,255,255,0.09);
-          border-radius: 999px;
-          background: rgba(255,255,255,0.035);
+          padding: 0;
+          border: none;
+          border-radius: 0;
+          background: transparent;
           overflow-wrap: anywhere;
         }
 
@@ -1856,7 +1854,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__creator-label {
           padding-left: 2px;
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.08em;
@@ -1883,8 +1881,8 @@ export default function EventTribeHub({
           place-items: center;
           overflow: hidden;
           border-radius: 50%;
-          border: 1px solid rgba(20,184,166,0.38);
-          background: rgba(20,184,166,0.10);
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-border);
           color: #fff;
           font-size: 13px;
           font-weight: 950;
@@ -1915,7 +1913,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__rules summary::after {
           content: "›";
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 18px;
           line-height: 1;
           transform: rotate(90deg);
@@ -2011,7 +2009,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__edit-composer summary::after {
           content: "›";
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 20px;
           font-weight: 800;
           line-height: 1;
@@ -2072,7 +2070,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__edit-savebar[data-status="saved"]
           .event-tribe-hub__edit-status {
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
         }
 
         .event-tribe-hub__edit-savebar[data-status="invalid"]
@@ -2096,8 +2094,8 @@ export default function EventTribeHub({
         .event-tribe-hub__edit-submit,
         .event-tribe-hub__edit-retry {
           min-height: 42px;
-          border: 1px solid rgba(20,184,166,0.54);
-          background: #0D9488;
+          border: 1px solid var(--mhidas-border);
+          background: var(--mhidas-clubber-action-strong);
           color: #fff;
           font: inherit;
           font-size: 12px;
@@ -2120,9 +2118,9 @@ export default function EventTribeHub({
         .event-tribe-hub__action {
           min-height: 42px;
           box-sizing: border-box;
-          border: 1px solid rgba(20,184,166,0.42);
+          border: 1px solid var(--mhidas-border);
           border-radius: 12px;
-          background: rgba(20,184,166,0.10);
+          background: var(--mhidas-border);
           color: #fff;
           font: inherit;
           font-size: 12px;
@@ -2133,8 +2131,8 @@ export default function EventTribeHub({
 
         .event-tribe-hub__action--primary {
           border-color: rgba(45,212,191,0.72);
-          background: #0D9488;
-          box-shadow: 0 10px 24px rgba(13,148,136,0.16);
+          background: var(--mhidas-clubber-action-strong);
+          box-shadow: 0 10px 24px var(--mhidas-border);
         }
 
         .event-tribe-hub__action--secondary {
@@ -2182,12 +2180,12 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__request-composer {
-          border: 1px solid rgba(20,184,166,0.28);
+          border: 1px solid var(--mhidas-border);
           border-radius: 16px;
           background:
             linear-gradient(
               145deg,
-              rgba(20,184,166,0.10),
+              var(--mhidas-border),
               rgba(15,23,42,0.30)
             );
           overflow: hidden;
@@ -2208,7 +2206,7 @@ export default function EventTribeHub({
         .event-tribe-hub__request-composer summary::after {
           content: "›";
           flex: 0 0 auto;
-          color: #5EEAD4;
+          color: var(--mhidas-text-secondary);
           font-size: 22px;
           font-weight: 900;
           line-height: 1;
@@ -2268,7 +2266,7 @@ export default function EventTribeHub({
 
         .event-tribe-hub__request-form textarea:focus {
           border-color: rgba(45,212,191,0.58);
-          box-shadow: 0 0 0 3px rgba(20,184,166,0.08);
+          box-shadow: 0 0 0 3px var(--mhidas-border);
         }
 
         .event-tribe-hub__request-list {
@@ -2301,10 +2299,10 @@ export default function EventTribeHub({
 
         .event-tribe-hub__management-heading span {
           flex: 0 0 auto;
-          padding: 4px 8px;
-          border-radius: 999px;
-          background: rgba(20,184,166,0.10);
-          color: #5EEAD4;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 900;
         }
@@ -2372,11 +2370,11 @@ export default function EventTribeHub({
           align-items: center;
           min-height: 28px;
           box-sizing: border-box;
-          padding: 5px 9px;
-          border: 1px solid rgba(45,212,191,0.30);
-          border-radius: 999px;
-          background: rgba(20,184,166,0.10);
-          color: #5EEAD4;
+          padding: 0;
+          border: none;
+          border-radius: 0;
+          background: transparent;
+          color: var(--mhidas-text-secondary);
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.04em;
@@ -2484,19 +2482,20 @@ export default function EventTribeHub({
       <header className="event-tribe-hub__header">
         <div className="event-tribe-hub__heading">
           <span className="event-tribe-hub__eyebrow">
-            Afinidade com propósito
+            Conexões no evento
           </span>
           <h2
             id="event-tribe-hub-title"
             className="event-tribe-hub__title"
           >
-            Tribos temporárias do evento
+            Grupos do evento
           </h2>
           <p className="event-tribe-hub__subtitle">
-            Crie ou participe de uma organização por vertente,
-            artista, palco, cidade, experiência, perfil social,
-            hospedagem ou comunidade. Cada tribo existe apenas neste
-            evento.
+            Crie ou participe de um grupo por estilo musical,
+            artista, palco, cidade, experiência, interesses,
+            hospedagem ou comunidade.
+            <br />
+            Cada grupo existe apenas neste evento.
           </p>
         </div>
 
@@ -2516,9 +2515,8 @@ export default function EventTribeHub({
         <div className="event-tribe-hub__login">
           <strong>Entre para visualizar e participar.</strong>
           <p>
-            As tribos temporárias são exibidas apenas para Clubbers
-            autenticados. A entrada depende da aprovação do gestor da
-            tribo.
+            Os grupos deste evento são exibidos apenas para Clubbers
+            autenticados. A entrada depende da aprovação do responsável pelo grupo.
           </p>
           <Link
             href={loginHref}
@@ -2543,11 +2541,11 @@ export default function EventTribeHub({
             <div className="event-tribe-hub__summary">
               <strong>
                 {activeTribes.length === 1
-                  ? "1 tribo ativa"
-                  : `${activeTribes.length} tribos ativas`}
+                  ? "1 grupo ativo"
+                  : `${activeTribes.length} grupos ativos`}
               </strong>
               <span>
-                Afinidades do radar não criam uma tribo automaticamente.
+                Sugestões de afinidade não criam um grupo automaticamente.
                 Aqui estão os grupos organizados por Clubbers.
               </span>
             </div>
@@ -2593,8 +2591,8 @@ export default function EventTribeHub({
                   tribe.creator_user_id === viewerUserId &&
                   tribe.status === "active"
               )
-                ? "Criar outra tribo"
-                : "Criar uma tribo"}
+                ? "Criar outro grupo"
+                : "Criar um grupo"}
             </summary>
 
             <form
@@ -2603,7 +2601,7 @@ export default function EventTribeHub({
             >
               <div className="event-tribe-hub__field">
                 <label htmlFor="event-tribe-name">
-                  Nome da tribo
+                  Nome do grupo
                 </label>
                 <input
                   id="event-tribe-name"
@@ -2653,7 +2651,7 @@ export default function EventTribeHub({
                     setDescription(event.target.value)
                   }
                   maxLength={360}
-                  placeholder="Explique quem a tribo pretende reunir e qual é o objetivo."
+                  placeholder="Explique quem o grupo pretende reunir e qual é o objetivo."
                 />
               </div>
 
@@ -2679,9 +2677,9 @@ export default function EventTribeHub({
                   </option>
                 </select>
                 <p className="event-tribe-hub__hint">
-                  Tribos públicas podem receber solicitações. Tribos
+                  Grupos públicos podem receber solicitações. Grupos
                   privadas ficam visíveis somente para membros e
-                  gestores.
+                  responsáveis.
                 </p>
               </div>
 
@@ -2743,7 +2741,7 @@ export default function EventTribeHub({
               >
                 {busyKey === "create-tribe"
                   ? "Criando..."
-                  : "Criar tribo neste evento"}
+                  : "Criar grupo neste evento"}
               </button>
             </form>
           </details>
@@ -2754,13 +2752,13 @@ export default function EventTribeHub({
           >
             {loading && tribes.length === 0 ? (
               <p className="event-tribe-hub__empty">
-                Carregando tribos temporárias...
+                Carregando grupos...
               </p>
             ) : visibleTribes.length === 0 ? (
               <p className="event-tribe-hub__empty">
                 {categoryFilter === "all"
-                  ? "Ainda não há tribos organizadas para este evento."
-                  : "Nenhuma tribo encontrada neste tema."}
+                  ? "Ainda não há grupos organizadas para este evento."
+                  : "Nenhum grupo encontrada neste tema."}
               </p>
             ) : (
               visibleTribes.map((tribe) => {
@@ -2870,7 +2868,7 @@ export default function EventTribeHub({
                           : `Até ${tribe.max_members} participantes`}
                       </span>
                       <span>
-                        Entrada mediante aprovação do gestor
+                        Entrada mediante aprovação do responsável
                       </span>
                       {expiresLabel ? (
                         <span>
@@ -2881,14 +2879,14 @@ export default function EventTribeHub({
 
                     {tribe.rules ? (
                       <details className="event-tribe-hub__rules">
-                        <summary>Regras da tribo</summary>
+                        <summary>Regras do grupo</summary>
                         <p>{tribe.rules}</p>
                       </details>
                     ) : null}
 
                     <div className="event-tribe-hub__creator-section">
                       <span className="event-tribe-hub__creator-label">
-                        Criador da tribo
+                        Criador do grupo
                       </span>
                       <div className="event-tribe-hub__creator">
                         <span
@@ -2932,7 +2930,7 @@ export default function EventTribeHub({
                           onClick={() => {
                             if (
                               !window.confirm(
-                                "Sair desta tribo?"
+                                "Sair deste grupo?"
                               )
                             ) {
                               return;
@@ -2944,11 +2942,11 @@ export default function EventTribeHub({
                                 action: "leave",
                                 tribe_id: tribe.tribe_id,
                               },
-                              "Você saiu da tribo."
+                              "Você saiu do grupo."
                             );
                           }}
                         >
-                          Sair da tribo
+                          Sair do grupo
                         </button>
                       ) : null}
 
@@ -2981,13 +2979,13 @@ export default function EventTribeHub({
                             <span className="event-tribe-hub__request-entry-copy">
                               <span className="event-tribe-hub__request-entry-title">
                                 {capacityReached
-                                  ? "Tribo lotada"
-                                  : "Entrar nesta tribo"}
+                                  ? "Grupo lotado"
+                                  : "Entrar neste grupo"}
                               </span>
                               <span className="event-tribe-hub__request-entry-subtitle">
                                 {capacityReached
                                   ? "A capacidade máxima foi atingida."
-                                  : "Solicite participação ao gestor da tribo."}
+                                  : "Solicite participação ao responsável pelo grupo."}
                               </span>
                             </span>
                           </summary>
@@ -3004,7 +3002,7 @@ export default function EventTribeHub({
                                 )
                               }
                               maxLength={500}
-                              placeholder="Mensagem opcional para o gestor da tribo."
+                              placeholder="Mensagem opcional para o responsável pelo grupo."
                               disabled={capacityReached}
                             />
                             <button
@@ -3025,7 +3023,7 @@ export default function EventTribeHub({
                                         requestMessage
                                       ) || null,
                                   },
-                                  "Solicitação enviada ao gestor da tribo."
+                                  "Solicitação enviada ao responsável pelo grupo."
                                 )
                               }
                             >
@@ -3045,16 +3043,16 @@ export default function EventTribeHub({
                             {getRoleLabel(viewerMembership.role)}
                           </span>
                           <span className="event-tribe-hub__status">
-                            Seu papel nesta tribo
+                            Seu papel neste grupo
                           </span>
                         </div>
                       ) : viewerPendingRequest ? (
                         <span className="event-tribe-hub__status">
-                          Solicitação aguardando decisão do gestor.
+                          Solicitação aguardando decisão do responsável.
                         </span>
                       ) : !active ? (
                         <span className="event-tribe-hub__status">
-                          Esta tribo não aceita novas solicitações.
+                          Este grupo não aceita novas solicitações.
                         </span>
                       ) : null}
                     </div>
@@ -3192,7 +3190,7 @@ export default function EventTribeHub({
                                       onClick={() => {
                                         if (
                                           !window.confirm(
-                                            `Remover ${memberPerson.label} desta tribo?`
+                                            `Remover ${memberPerson.label} deste grupo?`
                                           )
                                         ) {
                                           return;
@@ -3209,7 +3207,7 @@ export default function EventTribeHub({
                                               member.user_id,
                                             block: false,
                                           },
-                                          "Membro removido da tribo."
+                                          "Membro removido do grupo."
                                         );
                                       }}
                                     >
@@ -3242,7 +3240,7 @@ export default function EventTribeHub({
                                               member.user_id,
                                             block: true,
                                           },
-                                          "Membro bloqueado na tribo."
+                                          "Membro bloqueado no grupo."
                                         );
                                       }}
                                     >
@@ -3376,7 +3374,7 @@ export default function EventTribeHub({
                     {canControlLifecycle ? (
                       <div className="event-tribe-hub__settings-footer">
                         <details className="event-tribe-hub__edit-composer">
-                          <summary>Configurações da tribo</summary>
+                          <summary>Configurações do grupo</summary>
 
                           <TribeEditForm
                             tribe={tribe}
@@ -3397,7 +3395,7 @@ export default function EventTribeHub({
                                   if (
                                     active &&
                                     !window.confirm(
-                                      "Encerrar esta tribo? Novas solicitações deixarão de ser aceitas."
+                                      "Encerrar este grupo? Novas solicitações deixarão de ser aceitas."
                                     )
                                   ) {
                                     return;
@@ -3415,8 +3413,8 @@ export default function EventTribeHub({
                                         : "active",
                                     },
                                     active
-                                      ? "Tribo encerrada."
-                                      : "Tribo reaberta."
+                                      ? "Grupo encerrado."
+                                      : "Grupo reaberto."
                                   );
                                 }}
                               >
@@ -3426,8 +3424,8 @@ export default function EventTribeHub({
                                 }-tribe-${tribe.tribe_id}`
                                   ? "Salvando..."
                                   : active
-                                    ? "Encerrar tribo"
-                                    : "Reabrir tribo"}
+                                    ? "Encerrar grupo"
+                                    : "Reabrir grupo"}
                               </button>
 
                               {canCancel ? (
@@ -3438,7 +3436,7 @@ export default function EventTribeHub({
                                   onClick={() => {
                                     if (
                                       !window.confirm(
-                                        "Cancelar esta tribo? Ela deixará de aparecer e solicitações pendentes serão encerradas."
+                                        "Cancelar este grupo? Ele deixará de aparecer e solicitações pendentes serão encerradas."
                                       )
                                     ) {
                                       return;
@@ -3451,11 +3449,11 @@ export default function EventTribeHub({
                                         tribe_id: tribe.tribe_id,
                                         status: "cancelled",
                                       },
-                                      "Tribo cancelada."
+                                      "Grupo cancelado."
                                     );
                                   }}
                                 >
-                                  Cancelar tribo
+                                  Cancelar grupo
                                 </button>
                               ) : null}
                             </div>
