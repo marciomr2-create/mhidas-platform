@@ -1,13 +1,21 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Cropper from "react-easy-crop";
 import { createBrowserClient } from "@/utils/supabase/client";
 
 type Props = {
   cardId: string;
   initialLabel: string;
   initialPhotoUrl: string;
+};
+
+type CropArea = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 const CLUB_BUCKET = "club-photos";
@@ -52,12 +60,7 @@ async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   }
 }
 
-async function cropPhoto(
-  file: File,
-  cropX: number,
-  cropY: number,
-  zoom: number
-): Promise<File> {
+async function cropPhoto(file: File, cropArea: CropArea): Promise<File> {
   const image = await loadImageFromFile(file);
 
   const sourceWidth = image.naturalWidth;
@@ -67,25 +70,22 @@ async function cropPhoto(
     throw new Error("Não foi possível identificar o tamanho da imagem.");
   }
 
-  let baseCropWidth: number;
-  let baseCropHeight: number;
-
-  if (sourceWidth / sourceHeight > TARGET_ASPECT) {
-    baseCropHeight = sourceHeight;
-    baseCropWidth = sourceHeight * TARGET_ASPECT;
-  } else {
-    baseCropWidth = sourceWidth;
-    baseCropHeight = sourceWidth / TARGET_ASPECT;
-  }
-
-  const cropWidth = baseCropWidth / zoom;
-  const cropHeight = baseCropHeight / zoom;
-
-  const maxSourceX = Math.max(sourceWidth - cropWidth, 0);
-  const maxSourceY = Math.max(sourceHeight - cropHeight, 0);
-
-  const sourceX = maxSourceX * (cropX / 100);
-  const sourceY = maxSourceY * (cropY / 100);
+  const sourceX = Math.max(
+    0,
+    Math.min(Math.round(cropArea.x), Math.max(sourceWidth - 1, 0))
+  );
+  const sourceY = Math.max(
+    0,
+    Math.min(Math.round(cropArea.y), Math.max(sourceHeight - 1, 0))
+  );
+  const sourceCropWidth = Math.max(
+    1,
+    Math.min(Math.round(cropArea.width), sourceWidth - sourceX)
+  );
+  const sourceCropHeight = Math.max(
+    1,
+    Math.min(Math.round(cropArea.height), sourceHeight - sourceY)
+  );
 
   const canvas = document.createElement("canvas");
   canvas.width = CROP_WIDTH;
@@ -97,12 +97,15 @@ async function cropPhoto(
     throw new Error("Não foi possível preparar o enquadramento.");
   }
 
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
   context.drawImage(
     image,
     sourceX,
     sourceY,
-    cropWidth,
-    cropHeight,
+    sourceCropWidth,
+    sourceCropHeight,
     0,
     0,
     CROP_WIDTH,
@@ -148,13 +151,20 @@ export default function ClubProfileBasicsManager({
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [localPhotoPreview, setLocalPhotoPreview] = useState("");
   const [photoTouched, setPhotoTouched] = useState(false);
-  const [cropX, setCropX] = useState(50);
-  const [cropY, setCropY] = useState(50);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const photoPreview = localPhotoPreview || photoUrl;
+
+  const onCropComplete = useCallback(
+    (_croppedArea: CropArea, nextCroppedAreaPixels: CropArea) => {
+      setCroppedAreaPixels(nextCroppedAreaPixels);
+    },
+    []
+  );
 
   async function handlePhotoSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -177,10 +187,12 @@ export default function ClubProfileBasicsManager({
       setSelectedPhotoFile(file);
       setLocalPhotoPreview(preview);
       setPhotoTouched(true);
-      setCropX(50);
-      setCropY(50);
+      setCrop({ x: 0, y: 0 });
       setZoom(1);
-      setMessage("Nova foto selecionada. Ajuste o enquadramento e salve para concluir.");
+      setCroppedAreaPixels(null);
+      setMessage(
+        "Nova foto selecionada. Arraste para enquadrar e salve para concluir."
+      );
     } catch {
       setMessage("Não foi possível preparar a imagem.");
     }
@@ -191,31 +203,34 @@ export default function ClubProfileBasicsManager({
     setLocalPhotoPreview("");
     setPhotoUrl("");
     setPhotoTouched(true);
-    setCropX(50);
-    setCropY(50);
+    setCrop({ x: 0, y: 0 });
     setZoom(1);
+    setCroppedAreaPixels(null);
     setMessage("Foto removida. Salve para concluir.");
   }
 
   function resetCrop() {
-    setCropX(50);
-    setCropY(50);
+    setCrop({ x: 0, y: 0 });
     setZoom(1);
+    setCroppedAreaPixels(null);
   }
 
   async function uploadPhoto(userId: string) {
     if (!photoTouched) return normalizeText(photoUrl);
     if (!selectedPhotoFile) return "";
 
-    const adjustedPhoto = await cropPhoto(
-      selectedPhotoFile,
-      cropX,
-      cropY,
-      zoom
-    );
+    if (!croppedAreaPixels) {
+      throw new Error("Aguarde o enquadramento da foto carregar e tente novamente.");
+    }
 
-    const sanitized = sanitizeFileName(adjustedPhoto.name || "clubber-profile-adjusted.jpg");
-    const extension = sanitized.includes(".") ? sanitized.split(".").pop() : "jpg";
+    const adjustedPhoto = await cropPhoto(selectedPhotoFile, croppedAreaPixels);
+
+    const sanitized = sanitizeFileName(
+      adjustedPhoto.name || "clubber-profile-adjusted.jpg"
+    );
+    const extension = sanitized.includes(".")
+      ? sanitized.split(".").pop()
+      : "jpg";
     const path = `${userId}/${Date.now()}-${Math.random()
       .toString(36)
       .slice(2)}.${extension}`;
@@ -267,7 +282,9 @@ export default function ClubProfileBasicsManager({
         .single();
 
       if (cardError || !updatedCard) {
-        throw new Error(cardError?.message || "Não foi possível atualizar o nome do perfil.");
+        throw new Error(
+          cardError?.message || "Não foi possível atualizar o nome do perfil."
+        );
       }
 
       const profilePayload = {
@@ -284,10 +301,12 @@ export default function ClubProfileBasicsManager({
       if (updateError) throw updateError;
 
       if (!Array.isArray(updatedProfiles) || updatedProfiles.length === 0) {
-        const { error: insertError } = await supabase.from("club_profiles").insert({
-          user_id: user.id,
-          ...profilePayload,
-        });
+        const { error: insertError } = await supabase
+          .from("club_profiles")
+          .insert({
+            user_id: user.id,
+            ...profilePayload,
+          });
 
         if (insertError) throw insertError;
       }
@@ -297,17 +316,22 @@ export default function ClubProfileBasicsManager({
       setSelectedPhotoFile(null);
       setLocalPhotoPreview("");
       setPhotoTouched(false);
-      setCropX(50);
-      setCropY(50);
+      setCrop({ x: 0, y: 0 });
       setZoom(1);
+      setCroppedAreaPixels(null);
       setMessage("Foto e nome salvos com sucesso.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível salvar agora.");
+      setMessage(
+        error instanceof Error ? error.message : "Não foi possível salvar agora."
+      );
     } finally {
       setSaving(false);
     }
   }
+
+  const saveDisabled =
+    saving || Boolean(selectedPhotoFile && !croppedAreaPixels);
 
   return (
     <div className="edit-basics-manager">
@@ -321,26 +345,43 @@ export default function ClubProfileBasicsManager({
         <div className="edit-photo-block">
           <p className="edit-field-label">Foto do perfil</p>
 
-          <div className="edit-photo-preview">
-            {photoPreview ? (
-              <img
-                src={photoPreview}
-                alt="Foto do Perfil Clubber"
-                style={
-                  selectedPhotoFile
-                    ? {
-                        objectPosition: `${cropX}% ${cropY}%`,
-                        transform: `scale(${zoom})`,
-                        transformOrigin: `${cropX}% ${cropY}%`,
-                        transition: "transform 100ms ease",
-                      }
-                    : undefined
-                }
+          {selectedPhotoFile && localPhotoPreview ? (
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                aspectRatio: "16 / 9",
+                overflow: "hidden",
+                borderRadius: 18,
+                background: "#0B1117",
+                touchAction: "none",
+              }}
+            >
+              <Cropper
+                image={localPhotoPreview}
+                crop={crop}
+                zoom={zoom}
+                aspect={TARGET_ASPECT}
+                minZoom={1}
+                maxZoom={3}
+                cropShape="rect"
+                showGrid={false}
+                objectFit="cover"
+                zoomWithScroll
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
               />
-            ) : (
-              <span>Nenhuma foto selecionada</span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="edit-photo-preview">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Foto do Perfil Clubber" />
+              ) : (
+                <span>Nenhuma foto selecionada</span>
+              )}
+            </div>
+          )}
 
           {selectedPhotoFile ? (
             <div
@@ -377,57 +418,26 @@ export default function ClubProfileBasicsManager({
                 </button>
               </div>
 
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ color: "#CBD5E1", fontSize: 12 }}>
-                  Horizontal
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={cropX}
-                  onChange={(event) => setCropX(Number(event.target.value))}
-                  disabled={saving}
-                  style={rangeStyle()}
-                />
-              </label>
+              <p className="edit-helper" style={{ margin: 0 }}>
+                Arraste a foto com o dedo ou mouse. No celular, use pinça para
+                aproximar. No computador, use a roda do mouse ou o controle de
+                zoom abaixo.
+              </p>
 
               <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ color: "#CBD5E1", fontSize: 12 }}>
-                  Vertical
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={cropY}
-                  onChange={(event) => setCropY(Number(event.target.value))}
-                  disabled={saving}
-                  style={rangeStyle()}
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ color: "#CBD5E1", fontSize: 12 }}>
-                  Zoom
-                </span>
+                <span style={{ color: "#CBD5E1", fontSize: 12 }}>Zoom</span>
                 <input
                   type="range"
                   min="1"
-                  max="2.2"
+                  max="3"
                   step="0.05"
                   value={zoom}
                   onChange={(event) => setZoom(Number(event.target.value))}
                   disabled={saving}
+                  aria-label="Zoom da foto"
                   style={rangeStyle()}
                 />
               </label>
-
-              <p className="edit-helper">
-                Ajuste a posição e o zoom até a foto ficar como você quer no Perfil Clubber.
-              </p>
             </div>
           ) : photoPreview ? (
             <p className="edit-helper">
@@ -489,7 +499,7 @@ export default function ClubProfileBasicsManager({
             type="button"
             className="edit-primary-button"
             onClick={save}
-            disabled={saving}
+            disabled={saveDisabled}
           >
             {saving ? "Salvando..." : "Salvar foto e nome"}
           </button>
