@@ -500,7 +500,9 @@ const pageCss = `
   }
 
   .club-hero-image {
-    min-height: 380px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 0;
     padding: 30px;
     display: grid;
     align-content: end;
@@ -1151,7 +1153,6 @@ const pageCss = `
     }
 
     .club-hero-image {
-      min-height: 218px;
       padding: 16px;
     }
 
@@ -1302,10 +1303,6 @@ const pageCss = `
 
     .club-back-link {
       font-size: 11px;
-    }
-
-    .club-hero-image {
-      min-height: 205px;
     }
 
     .club-hero-copy h2 {
