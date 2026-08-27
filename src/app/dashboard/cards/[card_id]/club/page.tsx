@@ -158,7 +158,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
   const rideMeetEventSlug = toEventSlug(rideMeetEventName);
 
   const overviewHref = "/dashboard/cards";
-  const editHref = `/dashboard/cards/${card.card_id}/club/identity`;
+  const editHref = `/dashboard/cards/${card.card_id}/club/edit`;
   const identityHref = `/dashboard/cards/${card.card_id}/club/identity`;
 
   const publicHref = card.slug ? `/${card.slug}?mode=club` : overviewHref;
