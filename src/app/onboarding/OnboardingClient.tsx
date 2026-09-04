@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
+import { getSafePostOnboardingPath } from "@/lib/navigation/safeInternalNextPath";
 
 type Props = {
   email: string;
@@ -12,6 +13,7 @@ type Props = {
   initialUsername: string;
   initialCityBase: string;
   initialAvatarUrl: string;
+  returnTo: string;
 };
 
 type AvailabilityRow = {
@@ -48,24 +50,41 @@ function availabilityMessage(reason: string): string {
 }
 
 function creationErrorMessage(value: string): string {
-  if (value.includes("username_unavailable")) return "Este @username não está mais disponível.";
-  if (value.includes("username_reserved")) return "Este @username é reservado.";
-  if (value.includes("identity_already_exists")) return "Sua identidade Clubber já foi criada com outro @username.";
-  if (value.includes("multiple_cards_require_manual_resolution")) return "Sua conta possui mais de uma identidade antiga e precisa de revisão segura.";
-  if (value.includes("display_name_too_short")) return "Informe seu nome público.";
-  return "Não foi possível criar seu perfil Clubber.";
+  if (value.includes("username_unavailable")) {
+    return "Este @username não está mais disponível.";
+  }
+  if (value.includes("username_reserved")) {
+    return "Este @username é reservado.";
+  }
+  if (value.includes("identity_already_exists")) {
+    return "Sua Identidade Clubber já foi criada com outro @username.";
+  }
+  if (value.includes("multiple_cards_require_manual_resolution")) {
+    return "Sua conta possui mais de uma identidade antiga e precisa de revisão segura.";
+  }
+  if (value.includes("display_name_too_short")) {
+    return "Informe seu nome público.";
+  }
+  return "Não foi possível criar sua Identidade Clubber.";
 }
 
 const fieldStyle: React.CSSProperties = {
   width: "100%",
+  minHeight: 52,
   boxSizing: "border-box",
-  padding: "14px 0 12px",
-  border: 0,
-  borderBottom: "1px solid rgba(255,255,255,0.18)",
-  background: "transparent",
-  color: "#ffffff",
+  padding: "0 14px",
+  border: "1px solid rgba(255,255,255,0.14)",
+  borderRadius: 14,
+  background: "#111111",
+  color: "#f8fafc",
   outline: "none",
-  fontSize: 17,
+  fontSize: 16,
+};
+
+const helperStyle: React.CSSProperties = {
+  color: "#94a3b8",
+  fontSize: 12,
+  lineHeight: 1.45,
 };
 
 export default function OnboardingClient({
@@ -74,20 +93,31 @@ export default function OnboardingClient({
   initialUsername,
   initialCityBase,
   initialAvatarUrl,
+  returnTo,
 }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserClient(), []);
+  const safeReturnTo = useMemo(
+    () => getSafePostOnboardingPath(returnTo),
+    [returnTo]
+  );
 
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [username, setUsername] = useState(initialUsername);
   const [cityBase, setCityBase] = useState(initialCityBase);
-  const [useImportedPhoto, setUseImportedPhoto] = useState(Boolean(initialAvatarUrl));
-  const [availability, setAvailability] = useState<AvailabilityRow | null>(null);
+  const [useImportedPhoto, setUseImportedPhoto] = useState(
+    Boolean(initialAvatarUrl)
+  );
+  const [availability, setAvailability] =
+    useState<AvailabilityRow | null>(null);
   const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const normalizedUsername = useMemo(() => normalizeUsername(username), [username]);
+  const normalizedUsername = useMemo(
+    () => normalizeUsername(username),
+    [username]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +162,9 @@ export default function OnboardingClient({
     setErrorMsg(null);
 
     if (!availability?.available) {
-      setErrorMsg("Escolha um @username disponível antes de continuar.");
+      setErrorMsg(
+        "Escolha um @username disponível antes de continuar."
+      );
       return;
     }
 
@@ -154,7 +186,7 @@ export default function OnboardingClient({
       const rows = (data ?? []) as IdentityRow[];
       if (!rows[0]?.card_id) throw new Error("identity_not_created");
 
-      router.replace("/dashboard/cards");
+      router.replace(safeReturnTo || "/dashboard/cards");
       router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "unknown";
@@ -165,29 +197,49 @@ export default function OnboardingClient({
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 24 }}>
+    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 20 }}>
       {errorMsg ? (
         <div
           role="alert"
           style={{
-            padding: "13px 0",
-            borderTop: "1px solid rgba(248,113,113,0.46)",
-            borderBottom: "1px solid rgba(248,113,113,0.20)",
+            padding: "12px 14px",
+            border: "1px solid rgba(248,113,113,0.42)",
+            borderRadius: 12,
+            background: "rgba(127,29,29,0.14)",
+            color: "#fecaca",
+            fontSize: 13,
+            lineHeight: 1.45,
           }}
         >
           {errorMsg}
         </div>
       ) : null}
 
-      <div style={{ display: "grid", gap: 5 }}>
-        <span style={{ color: "rgba(255,255,255,0.54)", fontSize: 12, fontWeight: 800 }}>
+      <div
+        style={{
+          display: "grid",
+          gap: 5,
+          paddingBottom: 18,
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <span
+          style={{
+            color: "#64748b",
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: "0.10em",
+          }}
+        >
           CONTA
         </span>
-        <strong>{email}</strong>
+        <strong style={{ color: "#cbd5e1", fontSize: 14 }}>{email}</strong>
       </div>
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontWeight: 900 }}>Seu nome público</span>
+      <label style={{ display: "grid", gap: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 14 }}>
+          Seu nome público
+        </span>
         <input
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
@@ -195,16 +247,18 @@ export default function OnboardingClient({
           maxLength={80}
           required
           autoComplete="name"
-          placeholder="Ex.: Marcio MR2"
+          placeholder="Ex.: nome que você quer mostrar no seu perfil"
           style={fieldStyle}
         />
-        <small style={{ color: "rgba(255,255,255,0.58)" }}>
-          Pode se repetir. É o nome que as pessoas verão no seu perfil.
+        <small style={helperStyle}>
+          É o nome que as pessoas verão na sua Identidade Clubber.
         </small>
       </label>
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontWeight: 900 }}>Seu @username único</span>
+      <label style={{ display: "grid", gap: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 14 }}>
+          Seu @username único
+        </span>
         <input
           value={username}
           onChange={(event) => setUsername(event.target.value)}
@@ -216,23 +270,24 @@ export default function OnboardingClient({
           spellCheck={false}
           style={fieldStyle}
         />
+
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            gap: 12,
+            gap: 10,
             flexWrap: "wrap",
-            fontSize: 13,
+            alignItems: "center",
           }}
         >
-          <span style={{ color: "rgba(255,255,255,0.58)" }}>
+          <span style={helperStyle}>
             useclubbers.com.br/{normalizedUsername || "seu-nome"}
           </span>
+
           <strong
             style={{
-              color: availability?.available
-                ? "#5eead4"
-                : "rgba(255,255,255,0.64)",
+              color: availability?.available ? "#2A8694" : "#94a3b8",
+              fontSize: 12,
             }}
           >
             {checking
@@ -240,14 +295,22 @@ export default function OnboardingClient({
               : availabilityMessage(availability?.reason ?? "")}
           </strong>
         </div>
-        <small style={{ color: "rgba(255,255,255,0.58)" }}>
-          Esta é apenas uma sugestão. Você pode usar o @username pelo qual já é
-          conhecido em outras plataformas, se estiver disponível.
+
+        <small style={helperStyle}>
+          Você pode usar o mesmo @username que já usa no Instagram ou em outra
+          rede social, se ele ainda estiver disponível no USECLUBBERS.
+        </small>
+
+        <small style={helperStyle}>
+          Este é o seu identificador público e universal dentro do
+          USECLUBBERS.
         </small>
       </label>
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontWeight: 900 }}>Cidade e estado</span>
+      <label style={{ display: "grid", gap: 8 }}>
+        <span style={{ fontWeight: 800, fontSize: 14 }}>
+          Cidade e estado
+        </span>
         <input
           value={cityBase}
           onChange={(event) => setCityBase(event.target.value)}
@@ -256,6 +319,9 @@ export default function OnboardingClient({
           autoComplete="address-level2"
           style={fieldStyle}
         />
+        <small style={helperStyle}>
+          Sua cidade ajuda a aproximar pessoas e experiências da sua cena.
+        </small>
       </label>
 
       {initialAvatarUrl ? (
@@ -264,9 +330,10 @@ export default function OnboardingClient({
             display: "flex",
             alignItems: "center",
             gap: 12,
-            padding: "14px 0",
-            borderTop: "1px solid rgba(255,255,255,0.10)",
-            borderBottom: "1px solid rgba(255,255,255,0.10)",
+            padding: 14,
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 14,
+            background: "#111111",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -275,59 +342,77 @@ export default function OnboardingClient({
             alt="Foto encontrada na sua conta"
             width={48}
             height={48}
-            style={{ borderRadius: 999, objectFit: "cover" }}
+            style={{
+              borderRadius: 12,
+              objectFit: "cover",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
           />
+
           <input
             type="checkbox"
             checked={useImportedPhoto}
             onChange={(event) => setUseImportedPhoto(event.target.checked)}
+            style={{ accentColor: "#2A8694" }}
           />
-          <span>Usar a foto encontrada na minha conta</span>
+
+          <span style={{ color: "#cbd5e1", fontSize: 13 }}>
+            Usar a foto encontrada na minha conta
+          </span>
         </label>
       ) : null}
 
       <div
         style={{
-          padding: "15px 0",
-          borderTop: "1px solid rgba(255,255,255,0.10)",
-          color: "rgba(255,255,255,0.64)",
-          lineHeight: 1.55,
-          fontSize: 13,
+          padding: "14px 0",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          color: "#94a3b8",
+          lineHeight: 1.5,
+          fontSize: 12,
         }}
       >
-        Ao continuar, você confirma que estes dados representam você e que não
-        está se passando por outra pessoa, artista ou marca.
+        Ao continuar, você confirma que estes dados representam você e
+        que não está se passando por outra pessoa, artista ou marca.
       </div>
 
       <button
         type="submit"
         disabled={loading || checking || !availability?.available}
         style={{
-          minHeight: 56,
-          borderRadius: 18,
-          border: "1px solid rgba(45,212,191,0.46)",
+          minHeight: 54,
+          borderRadius: 14,
+          border: "1px solid #2A8694",
           background:
-            loading || !availability?.available
-              ? "rgba(45,212,191,0.18)"
-              : "linear-gradient(135deg, #14b8a6, #059669)",
-          color: "#ffffff",
-          fontWeight: 950,
-          fontSize: 17,
-          cursor: loading ? "wait" : "pointer",
+            loading || checking || !availability?.available
+              ? "rgba(42,134,148,0.12)"
+              : "#2A8694",
+          color: "#f8fafc",
+          fontWeight: 900,
+          fontSize: 15,
+          cursor:
+            loading || checking || !availability?.available
+              ? "not-allowed"
+              : "pointer",
+          opacity:
+            loading || checking || !availability?.available ? 0.72 : 1,
         }}
       >
-        {loading ? "Criando seu perfil..." : "Criar meu perfil Clubber"}
+        {loading
+          ? "Criando sua Identidade Clubber..."
+          : "Criar minha Identidade Clubber"}
       </button>
 
       <p
         style={{
           margin: 0,
-          color: "rgba(255,255,255,0.58)",
-          fontSize: 13,
+          color: "#64748b",
+          fontSize: 11,
+          lineHeight: 1.45,
           textAlign: "center",
         }}
       >
-        Nenhum NFC será criado ou exigido. Você poderá vinculá-lo depois.
+        Seu NFC é opcional e poderá ser vinculado depois.
       </p>
     </form>
   );

@@ -8,6 +8,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { createPublicClient } from "@/utils/supabase/public";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 import OwnerClubToolbar from "./OwnerClubToolbar";
 import RemoveClubTokenButton from "./RemoveClubTokenButton";
 import RemoveClubArtistButton from "./RemoveClubArtistButton";
@@ -19,6 +20,7 @@ import MoveClubArtistButton from "./MoveClubArtistButton";
 import ClubOwnerEmptyBlock from "./ClubOwnerEmptyBlock";
 import ClubOwnerEmptySceneSection from "./ClubOwnerEmptySceneSection";
 import ClubQuickAddMenu from "./ClubQuickAddMenu";
+import ClubberConnectButton from "../clubbers/ClubberConnectButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -1812,6 +1814,79 @@ function CatalogRailCard({
   );
 }
 
+
+type PublicConnectionState =
+  | "none"
+  | "unauthorized"
+  | "outgoing_pending"
+  | "incoming_pending"
+  | "connected"
+  | "blocked"
+  | "suspended";
+
+type PublicConnectionRow = {
+  requester_user_id: string;
+  target_user_id: string;
+  status: string;
+};
+
+type PublicRelationshipControlRow = {
+  owner_user_id: string;
+  target_user_id: string;
+  status: string;
+};
+
+function resolvePublicConnectionState(
+  viewerUserId: string,
+  targetUserId: string,
+  connections: PublicConnectionRow[],
+  controls: PublicRelationshipControlRow[],
+): PublicConnectionState {
+  const relatedControls = controls.filter(
+    (row) =>
+      (row.owner_user_id === viewerUserId &&
+        row.target_user_id === targetUserId) ||
+      (row.owner_user_id === targetUserId &&
+        row.target_user_id === viewerUserId),
+  );
+
+  if (relatedControls.some((row) => row.status === "blocked")) {
+    return "blocked";
+  }
+
+  if (relatedControls.some((row) => row.status === "suspended")) {
+    return "suspended";
+  }
+
+  const relatedConnections = connections.filter(
+    (row) =>
+      (row.requester_user_id === viewerUserId &&
+        row.target_user_id === targetUserId) ||
+      (row.requester_user_id === targetUserId &&
+        row.target_user_id === viewerUserId),
+  );
+
+  const relation =
+    relatedConnections.find((row) => row.status === "accepted") ||
+    relatedConnections.find((row) => row.status === "pending") ||
+    relatedConnections[0];
+
+  if (!relation) {
+    return "none";
+  }
+
+  if (relation.status === "accepted") {
+    return "connected";
+  }
+
+  if (relation.status === "pending") {
+    return relation.requester_user_id === viewerUserId
+      ? "outgoing_pending"
+      : "incoming_pending";
+  }
+
+  return "none";
+}
 export default async function PublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const sp = searchParams ? await searchParams : undefined;
@@ -1831,6 +1906,10 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   }
 
   const supabase = createPublicClient();
+  const authSupabase = await createServerSupabaseClient();
+  const {
+    data: { user: authenticatedUser },
+  } = await authSupabase.auth.getUser();
 
   const { data: card } = await supabase
     .from("cards")
@@ -1876,6 +1955,33 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   }
 
   const ownerControlsUserId = isPublicView ? "" : card.user_id;
+  let initialConnectionState: PublicConnectionState = authenticatedUser
+    ? "none"
+    : "unauthorized";
+
+  if (authenticatedUser && authenticatedUser.id !== card.user_id) {
+    const [connectionsResult, controlsResult] = await Promise.all([
+      authSupabase
+        .from("clubber_connections")
+        .select("requester_user_id,target_user_id,status")
+        .or(
+          `requester_user_id.eq.${authenticatedUser.id},target_user_id.eq.${authenticatedUser.id}`,
+        ),
+      authSupabase
+        .from("clubber_relationship_controls")
+        .select("owner_user_id,target_user_id,status")
+        .or(
+          `owner_user_id.eq.${authenticatedUser.id},target_user_id.eq.${authenticatedUser.id}`,
+        ),
+    ]);
+
+    initialConnectionState = resolvePublicConnectionState(
+      authenticatedUser.id,
+      card.user_id,
+      (connectionsResult.data ?? []) as PublicConnectionRow[],
+      (controlsResult.data ?? []) as PublicRelationshipControlRow[],
+    );
+  }
 
   const { data: clubProfile } = await supabase
     .from("club_profiles")
@@ -2541,7 +2647,80 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
           transform: translateY(1px);
         }
 
+        .uc-clubber-connect {
+          width: min(100%, 290px);
+          margin-top: 2px;
+        }
+
+        .uc-clubber-connect .clubber-connect-actions {
+          display: grid;
+          gap: 8px;
+        }
+
+        .uc-clubber-connect .clubber-connect-button {
+          width: 100%;
+          min-height: 46px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 11px 15px;
+          border: 1px solid #2A8694;
+          border-radius: 12px;
+          background: transparent;
+          color: #F8FAFC;
+          font: inherit;
+          font-size: 13px;
+          line-height: 1.2;
+          font-weight: 900;
+          text-decoration: none;
+          cursor: pointer;
+          transition:
+            transform 160ms ease,
+            border-color 160ms ease,
+            background 160ms ease;
+        }
+
+        .uc-clubber-connect .clubber-connect-button--secondary {
+          border-color: rgba(255,255,255,0.18);
+          color: rgba(248,250,252,0.82);
+        }
+
+        .uc-clubber-connect .clubber-connect-status {
+          display: block;
+          color: rgba(248,250,252,0.82);
+          font-size: 13px;
+          line-height: 1.4;
+          font-weight: 850;
+        }
+
+        .uc-clubber-connect .clubber-connect-status--success {
+          color: #2A8694;
+        }
+
+        .uc-clubber-connect .clubber-connect-status--neutral {
+          color: rgba(203,213,225,0.70);
+        }
+
+        .uc-clubber-connect .clubber-connect-message {
+          margin: 0;
+          color: #fecaca;
+          font-size: 11px;
+          line-height: 1.45;
+          font-weight: 750;
+        }
+
+        @media (hover: hover) {
+          .uc-clubber-connect .clubber-connect-button:hover {
+            border-color: #247C88;
+            background: rgba(42,134,148,0.08);
+            transform: translateY(-1px);
+          }
+        }
         @media (max-width: 760px) {
+          .uc-clubber-connect {
+            width: 100%;
+            max-width: none;
+          }
           .uc-page-title {
             font-size: 27px !important;
           }
@@ -2757,6 +2936,16 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
               ))}
             </div>
 
+            {authenticatedUser?.id !== card.user_id ? (
+              <div className="uc-clubber-connect">
+                <ClubberConnectButton
+                  targetUserId={card.user_id}
+                  initialState={initialConnectionState}
+                  isAuthenticated={Boolean(authenticatedUser)}
+                  loginReturnTo={`/${card.slug}?mode=club`}
+                />
+              </div>
+            ) : null}
             {streamingUrl ? (
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <a

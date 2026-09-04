@@ -15,7 +15,7 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "clamp(24px, 6vw, 72px) 20px",
-        background: "#05070D",
+        background: "#050505",
       }}
     >
       <section
@@ -25,17 +25,17 @@ export default function LoginPage() {
           boxSizing: "border-box",
           padding: "clamp(24px, 5vw, 40px)",
           borderRadius: 28,
-          border: "1px solid rgba(148,163,184,0.18)",
+          border: "1px solid rgba(255,255,255,0.10)",
           background:
-            "linear-gradient(145deg, #0B1020, #111827)",
-          boxShadow: "0 28px 80px rgba(5,7,13,0.42)",
+            "#0E0E0E",
+          boxShadow: "0 28px 80px rgba(0,0,0,0.42)",
         }}
       >
         <header>
           <p
             style={{
               margin: 0,
-              color: "#14B8A6",
+              color: "#2A8694",
               fontSize: 12,
               fontWeight: 900,
               letterSpacing: "0.14em",

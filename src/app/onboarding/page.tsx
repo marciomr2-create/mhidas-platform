@@ -3,6 +3,10 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import OnboardingClient from "./OnboardingClient";
+import {
+  buildOnboardingPath,
+  getSafePostOnboardingPath,
+} from "@/lib/navigation/safeInternalNextPath";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,13 +34,24 @@ function usernameSuggestion(value: string): string {
     .slice(0, 30);
 }
 
-export default async function OnboardingPage() {
+type OnboardingPageProps = {
+  searchParams?: Promise<{
+    return_to?: string;
+  }>;
+};
+
+export default async function OnboardingPage({
+  searchParams,
+}: OnboardingPageProps) {
+  const sp = searchParams ? await searchParams : undefined;
+  const returnTo = getSafePostOnboardingPath(sp?.return_to);
+  const onboardingPath = buildOnboardingPath(returnTo);
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login?next=/onboarding");
+  if (!user) redirect(`/login?next=${encodeURIComponent(onboardingPath)}`);
 
   const { data: cards, error: cardsError } = await supabase
     .from("cards")
@@ -45,7 +60,7 @@ export default async function OnboardingPage() {
     .limit(2);
 
   if (cardsError) throw new Error(cardsError.message);
-  if ((cards ?? []).length > 0) redirect("/dashboard/cards");
+  if ((cards ?? []).length > 0) redirect(returnTo || "/dashboard/cards");
 
   const [{ data: profile }, { data: clubProfile }] = await Promise.all([
     supabase
@@ -87,62 +102,30 @@ export default async function OnboardingPage() {
   const initialCityBase = String(clubProfile?.city_base ?? "").trim();
 
   return (
-    <main
-      style={{
-        minHeight: "100svh",
-        padding: "clamp(22px, 5vw, 64px) 16px",
-        boxSizing: "border-box",
-        color: "#ffffff",
-        background:
-          "radial-gradient(circle at 10% 0%, rgba(20,184,166,0.20), transparent 34%), radial-gradient(circle at 100% 8%, rgba(124,58,237,0.20), transparent 32%), #050506",
-      }}
-    >
-      <section
-        style={{
-          width: "min(100%, 720px)",
-          margin: "0 auto",
-          padding: "clamp(24px, 5vw, 44px)",
-          boxSizing: "border-box",
-          borderRadius: 30,
-          border: "1px solid rgba(255,255,255,0.11)",
-          background:
-            "linear-gradient(145deg, rgba(15,20,25,0.98), rgba(5,12,14,0.98))",
-          boxShadow: "0 28px 84px rgba(0,0,0,0.44)",
-        }}
-      >
-        <span
-          style={{
-            color: "#5eead4",
-            fontSize: 11,
-            fontWeight: 950,
-            letterSpacing: "0.13em",
-          }}
-        >
-          SUA IDENTIDADE CLUBBER
-        </span>
+    <main className="uc-onboarding-shell">
+      <style>{pageCss}</style>
 
-        <h1
-          style={{
-            margin: "12px 0 0",
-            fontSize: "clamp(35px, 9vw, 58px)",
-            lineHeight: 0.98,
-            letterSpacing: "-0.055em",
-          }}
-        >
-          Crie seu lugar na cena.
-        </h1>
+      <section className="uc-onboarding-card">
+        <header className="uc-onboarding-header">
+          <span className="uc-onboarding-eyebrow">
+            SUA IDENTIDADE CLUBBER
+          </span>
 
-        <p
-          style={{
-            margin: "17px 0 30px",
-            color: "rgba(255,255,255,0.70)",
-            lineHeight: 1.6,
-            maxWidth: 590,
-          }}
-        >
-          Este é o perfil-base da sua conta. Depois você poderá completar sua
-          experiência, ativar o perfil Pro e vincular seus produtos NFC.
-        </p>
+          <h1>Crie sua Identidade Clubber.</h1>
+
+          <p>
+            Seu perfil representa quem você é na cena. Comece pelo essencial:
+            nome, @username e cidade. Depois você completa seu som, artistas,
+            lugares, eventos e experiências.
+          </p>
+
+          {returnTo ? (
+            <div className="uc-return-context">
+              Depois de criar sua Identidade Clubber, você volta ao perfil que
+              estava conhecendo.
+            </div>
+          ) : null}
+        </header>
 
         <OnboardingClient
           email={user.email ?? ""}
@@ -150,8 +133,112 @@ export default async function OnboardingPage() {
           initialUsername={initialUsername}
           initialCityBase={initialCityBase}
           initialAvatarUrl={initialAvatarUrl}
+          returnTo={returnTo}
         />
+
+        <div className="uc-mobile-end-space" aria-hidden="true" />
       </section>
     </main>
   );
 }
+
+const pageCss = `
+  * {
+    box-sizing: border-box;
+  }
+
+  .uc-onboarding-shell {
+    min-height: 100svh;
+    padding: clamp(24px, 6vw, 72px) 16px;
+    color: #f8fafc;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(42, 134, 148, 0.10), transparent 30%),
+      #050505;
+  }
+
+  .uc-onboarding-card {
+    width: min(100%, 620px);
+    margin: 0 auto;
+    padding: clamp(24px, 5vw, 40px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 26px;
+    background: #0e0e0e;
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.38);
+  }
+
+  .uc-onboarding-header {
+    margin-bottom: 28px;
+  }
+
+  .uc-onboarding-eyebrow {
+    display: block;
+    color: #2a8694;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+  }
+
+  .uc-onboarding-header h1 {
+    margin: 12px 0 0;
+    max-width: 520px;
+    font-size: clamp(36px, 8vw, 54px);
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+    font-weight: 500;
+  }
+
+  .uc-onboarding-header p {
+    margin: 18px 0 0;
+    max-width: 540px;
+    color: #cbd5e1;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .uc-return-context {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-left: 2px solid #2a8694;
+    color: #cbd5e1;
+    background: #111111;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .uc-mobile-end-space {
+    display: none;
+  }
+
+  @media (max-width: 560px) {
+    .uc-onboarding-shell {
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      padding:
+        max(18px, env(safe-area-inset-top))
+        12px
+        calc(24px + env(safe-area-inset-bottom));
+    }
+
+    .uc-onboarding-card {
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 18px 24px;
+      border-radius: 22px;
+    }
+
+    .uc-onboarding-header h1 {
+      font-size: clamp(34px, 11vw, 46px);
+    }
+
+    .uc-mobile-end-space {
+      display: block;
+      width: 100%;
+      height: calc(96px + env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+  }
+`;

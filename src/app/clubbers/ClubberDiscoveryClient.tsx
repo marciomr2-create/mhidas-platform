@@ -3,7 +3,6 @@
 // src/app/clubbers/ClubberDiscoveryClient.tsx
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import ClubberConnectButton from "./ClubberConnectButton";
 
 export type InitialConnectionState =
   | "none"
@@ -521,7 +520,7 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
                   style={{
                     backgroundImage: item.club_photo_url
                       ? `url(${item.club_photo_url})`
-                      : "linear-gradient(135deg, rgba(20,184,166,0.30), rgba(13,148,136,0.14))",
+                      : "linear-gradient(135deg, #111111, #0E0E0E)",
                   }}
                 />
 
@@ -570,20 +569,15 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
               </div>
 
               <div className="clubber-discovery-actions">
-                <ClubberConnectButton
-                  targetUserId={item.user_id}
-                  initialState={item.initial_connection_state}
-                  isAuthenticated={viewer.is_authenticated}
-                  loginReturnTo="/clubbers"
-                />
-
                 <Link
                   href={`/${item.slug}?mode=club&return_to=${encodeURIComponent(
                     "/clubbers",
                   )}`}
                   className="clubber-discovery-profile-link"
+                  aria-label={`Ver Perfil Clubber de ${item.label}`}
                 >
-                  Ver Perfil Clubber
+                  <span>Ver Perfil Clubber</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
             </article>
@@ -1018,17 +1012,23 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
           gap: 9px;
         }
 
-        .clubber-discovery-profile-link {
-          min-height: 44px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(148, 163, 184, 0.18);
-          border-radius: 14px;
-          color: rgba(255, 255, 255, 0.88);
-          background: #111111;
+        :global(.clubber-discovery-profile-link) {
+          width: 100%;
+          min-height: 46px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+          padding: 11px 14px;
+          border: 1px solid #2A8694;
+          border-radius: 12px;
+          color: #F8FAFC;
+          background: transparent;
           font-size: 13px;
+          line-height: 1.2;
           font-weight: 850;
           text-decoration: none;
+          white-space: nowrap;
           transition:
             transform 160ms ease,
             border-color 160ms ease,
@@ -1104,15 +1104,14 @@ export default function ClubberDiscoveryClient({ items, viewer }: Props) {
             box-shadow: 0 28px 66px rgba(0, 0, 0, 0.3);
           }
 
-          :global(.clubber-connect-button--primary:hover),
-          .clubber-discovery-profile-link:hover,
+          :global(.clubber-discovery-profile-link:hover),
           .clubber-discovery-empty a:hover {
             transform: translateY(-1px);
           }
 
-          .clubber-discovery-profile-link:hover {
-            border-color: rgba(148, 163, 184, 0.30);
-            background: #111111;
+          :global(.clubber-discovery-profile-link:hover) {
+            border-color: #2A8694;
+            background: rgba(42, 134, 148, 0.08);
           }
         }
 

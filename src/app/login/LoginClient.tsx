@@ -6,80 +6,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
-
-const RESERVED_NEXT_SLUGS = new Set([
-  "api",
-  "auth",
-  "clubbers",
-  "dashboard",
-  "event",
-  "invalid",
-  "login",
-  "network",
-  "onboarding",
-  "pro",
-  "r",
-  "signup",
-  "t",
-  "u",
-]);
-
-function getSafeNextPath(value: string | null): string {
-  const candidate = String(value || "").trim();
-
-  if (
-    !candidate.startsWith("/") ||
-    candidate.startsWith("//") ||
-    candidate.includes("\\") ||
-    /[\u0000-\u001F\u007F]/.test(candidate)
-  ) {
-    return "";
-  }
-
-  let parsedUrl: URL;
-
-  try {
-    parsedUrl = new URL(candidate, "https://useclubbers.local");
-  } catch {
-    return "";
-  }
-
-  const pathname = parsedUrl.pathname;
-  const search = parsedUrl.search;
-
-  if (pathname === "/dashboard") return "/dashboard";
-  if (pathname === "/dashboard/cards") return "/dashboard/cards";
-  if (pathname === "/clubbers") return "/clubbers";
-  if (pathname === "/onboarding") return "/onboarding";
-
-  if (/^\/event\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
-    return `${pathname}${search}`;
-  }
-
-  if (/^\/[a-z0-9][a-z0-9_-]*$/i.test(pathname)) {
-    const slug = pathname.slice(1).toLowerCase();
-
-    if (RESERVED_NEXT_SLUGS.has(slug)) {
-      return "";
-    }
-
-    const query = new URLSearchParams(search);
-
-    if (query.size === 1 && query.get("mode") === "club") {
-      return `${pathname}?mode=club`;
-    }
-  }
-
-  return "";
-}
+import { getSafeInternalNextPath } from "@/lib/navigation/safeInternalNextPath";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "15px 16px",
   borderRadius: 14,
-  border: "1px solid rgba(148,163,184,0.18)",
-  background: "#111827",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#111111",
   color: "#F8FAFC",
   outline: "none",
   fontSize: 16,
@@ -90,8 +25,8 @@ const secondaryButtonStyle: React.CSSProperties = {
   boxSizing: "border-box",
   padding: "15px 18px",
   borderRadius: 14,
-  border: "1px solid rgba(148,163,184,0.18)",
-  background: "#111827",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#111111",
   color: "#F8FAFC",
   fontWeight: 850,
   fontSize: 16,
@@ -105,20 +40,24 @@ export default function LoginClient() {
   const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   const safeRedirectPath = useMemo(() => {
-    const safeNextPath = getSafeNextPath(searchParams.get("next"));
+    const safeNextPath = getSafeInternalNextPath(searchParams.get("next"));
 
     if (safeNextPath) {
       return safeNextPath;
     }
 
-    return getSafeNextPath(searchParams.get("return_to"));
+    return getSafeInternalNextPath(searchParams.get("return_to"));
   }, [searchParams]);
 
   const redirectPath = safeRedirectPath || "/dashboard";
+  const signupHref = safeRedirectPath
+    ? `/signup?return_to=${encodeURIComponent(safeRedirectPath)}`
+    : "/signup";
   const callbackError = searchParams.get("auth_error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -278,14 +217,36 @@ export default function LoginClient() {
 
       <label style={{ display: "grid", gap: 8 }}>
         <span style={{ fontWeight: 700 }}>Senha</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-          style={inputStyle}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            type={showPassword ? "text" : "password"}
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ ...inputStyle, paddingRight: 92 }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((value) => !value)}
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            style={{
+              position: "absolute",
+              top: "50%",
+              right: 12,
+              transform: "translateY(-50%)",
+              border: 0,
+              background: "transparent",
+              color: "#2A8694",
+              fontWeight: 900,
+              fontSize: 13,
+              cursor: "pointer",
+              padding: "8px 4px",
+            }}
+          >
+            {showPassword ? "Ocultar" : "Mostrar"}
+          </button>
+        </div>
       </label>
 
       <button
@@ -296,15 +257,15 @@ export default function LoginClient() {
           boxSizing: "border-box",
           padding: "16px 18px",
           borderRadius: 14,
-          border: "1px solid rgba(13,148,136,0.52)",
+          border: "1px solid #2A8694",
           background: loading
-            ? "rgba(13,148,136,0.22)"
-            : "#0D9488",
+            ? "rgba(42,134,148,0.28)"
+            : "#2A8694",
           color: "#F8FAFC",
           fontWeight: 850,
           fontSize: 17,
           cursor: loading ? "not-allowed" : "pointer",
-          boxShadow: loading ? "none" : "0 10px 24px rgba(13,148,136,0.16)",
+          boxShadow: "none",
         }}
       >
         {loading ? "Entrando..." : "Entrar"}
@@ -315,8 +276,8 @@ export default function LoginClient() {
           Ainda não tem uma conta?
         </span>
         <Link
-          href="/signup"
-          style={{ color: "#14B8A6", fontWeight: 900, textDecoration: "none" }}
+          href={signupHref}
+          style={{ color: "#2A8694", fontWeight: 900, textDecoration: "none" }}
         >
           Criar minha conta Clubber
         </Link>

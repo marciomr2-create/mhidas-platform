@@ -1,0 +1,50 @@
+-- USECLUBBERS IDENTITY & GOVERNANCE FOUNDATION
+-- DRAFT ONLY - DO NOT APPLY
+-- This file is intentionally stored under docs/sql, not supabase/migrations.
+-- It describes the target schema for review before a real migration is generated.
+
+-- TARGET TABLES
+--
+-- 1) public.account_entry_intents
+-- 2) public.official_entities
+-- 3) public.public_identity_handles
+-- 4) public.entity_memberships
+-- 5) public.entity_verification_requests
+-- 6) public.entity_verification_evidence
+-- 7) public.entity_verification_documents
+-- 8) public.entity_verification_audit_log
+-- 9) public.platform_admin_memberships
+-- 10) public.verification_email_outbox
+--
+-- SECURITY TARGET
+--
+-- RLS enabled on every new public table.
+-- No anonymous writes.
+-- Sensitive tables deny direct client write.
+-- Verification/admin decisions are server-controlled.
+-- Service role never reaches browser.
+-- Document bucket remains private.
+-- Audit is append-only.
+-- User metadata entry intent is UX-only and never grants authorization.
+--
+-- STORAGE TARGET
+--
+-- Private bucket: useclubbers-verification-private
+-- No anonymous access.
+-- No direct authenticated object read/write policy.
+-- Upload/download via guarded server-side routes and short-lived signed URLs.
+--
+-- ADMIN TARGET
+--
+-- Do not reuse mhidas_is_useclubbers_admin_v1() as authority because current
+-- implementation is intentionally fail-closed and returns false.
+--
+-- NOTIFICATION TARGET
+--
+-- Reuse public.notification_type_registry / notification_events /
+-- notification_recipients / notification_deliveries for in_app, badge,
+-- governed push and digest.
+--
+-- Current notification_delivery_channel does not include email.
+-- Verification email must use a dedicated transactional outbox/provider layer
+-- until email is formally introduced into the platform-wide delivery enum.
