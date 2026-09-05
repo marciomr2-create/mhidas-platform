@@ -76,7 +76,21 @@ export default function ResetPasswordClient({
         password,
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        const normalizedMessage = error.message.toLowerCase();
+
+        if (
+          normalizedMessage.includes(
+            "new password should be different from the old password"
+          )
+        ) {
+          setErrorMsg("A nova senha deve ser diferente da senha anterior.");
+        } else {
+          setErrorMsg("Não foi possível atualizar sua senha. Tente novamente.");
+        }
+
+        return;
+      }
 
       await fetch("/auth/recovery-complete", {
         method: "POST",
@@ -85,12 +99,8 @@ export default function ResetPasswordClient({
       setPassword("");
       setPasswordConfirmation("");
       setSuccess(true);
-    } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível atualizar sua senha."
-      );
+    } catch {
+      setErrorMsg("Não foi possível atualizar sua senha. Tente novamente.");
     } finally {
       setLoading(false);
     }
