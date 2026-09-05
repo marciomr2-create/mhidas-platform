@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
-import { getSafeInternalNextPath } from "@/lib/navigation/safeInternalNextPath";
+import {
+  buildForgotPasswordPath,
+  getSafeInternalNextPath,
+} from "@/lib/navigation/safeInternalNextPath";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -53,6 +56,7 @@ export default function LoginClient() {
   const signupHref = safeRedirectPath
     ? `/signup?return_to=${encodeURIComponent(safeRedirectPath)}`
     : "/signup";
+  const forgotPasswordHref = buildForgotPasswordPath(safeRedirectPath);
   const callbackError = searchParams.get("auth_error");
 
   const [email, setEmail] = useState("");
@@ -247,6 +251,19 @@ export default function LoginClient() {
             {showPassword ? "Ocultar" : "Mostrar"}
           </button>
         </div>
+
+        <Link
+          href={forgotPasswordHref}
+          style={{
+            justifySelf: "end",
+            color: "#2A8694",
+            fontSize: 13,
+            fontWeight: 900,
+            textDecoration: "none",
+          }}
+        >
+          Esqueci minha senha
+        </Link>
       </label>
 
       <button
@@ -258,9 +275,7 @@ export default function LoginClient() {
           padding: "16px 18px",
           borderRadius: 14,
           border: "1px solid #2A8694",
-          background: loading
-            ? "rgba(42,134,148,0.28)"
-            : "#2A8694",
+          background: loading ? "rgba(42,134,148,0.28)" : "#2A8694",
           color: "#F8FAFC",
           fontWeight: 850,
           fontSize: 17,
@@ -279,7 +294,7 @@ export default function LoginClient() {
           href={signupHref}
           style={{ color: "#2A8694", fontWeight: 900, textDecoration: "none" }}
         >
-          Criar minha conta Clubber
+          Criar minha Conta USECLUBBERS
         </Link>
       </div>
 

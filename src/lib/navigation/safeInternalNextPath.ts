@@ -5,12 +5,14 @@ const RESERVED_NEXT_SLUGS = new Set([
   "clubbers",
   "dashboard",
   "event",
+  "forgot-password",
   "invalid",
   "login",
   "network",
   "onboarding",
   "pro",
   "r",
+  "reset-password",
   "signup",
   "t",
   "u",
@@ -70,7 +72,11 @@ function sanitizeInternalPath(
       return "/onboarding";
     }
 
-    if (query.size === 1 && query.has("return_to")) {
+    if (
+      query.size === 1 &&
+      query.has("return_to") &&
+      query.getAll("return_to").length === 1
+    ) {
       const safeReturnTo = sanitizeInternalPath(
         query.get("return_to"),
         false,
@@ -162,6 +168,12 @@ export function getSafePostOnboardingPath(
   return sanitizeInternalPath(value, false, false);
 }
 
+export function getSafeRecoveryReturnPath(
+  value: string | null | undefined
+): string {
+  return sanitizeInternalPath(value, true, true);
+}
+
 export function buildOnboardingPath(
   returnTo: string | null | undefined
 ): string {
@@ -192,4 +204,36 @@ export function buildAccountStartPath(
   }
 
   return `/account/start?${query.toString()}`;
+}
+
+export function buildForgotPasswordPath(
+  returnTo: string | null | undefined
+): string {
+  const safeReturnTo = getSafeRecoveryReturnPath(returnTo);
+
+  if (!safeReturnTo) {
+    return "/forgot-password";
+  }
+
+  const query = new URLSearchParams({
+    return_to: safeReturnTo,
+  });
+
+  return `/forgot-password?${query.toString()}`;
+}
+
+export function buildPasswordResetPath(
+  returnTo: string | null | undefined
+): string {
+  const safeReturnTo = getSafeRecoveryReturnPath(returnTo);
+
+  if (!safeReturnTo) {
+    return "/reset-password";
+  }
+
+  const query = new URLSearchParams({
+    return_to: safeReturnTo,
+  });
+
+  return `/reset-password?${query.toString()}`;
 }
