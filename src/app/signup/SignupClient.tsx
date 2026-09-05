@@ -142,6 +142,7 @@ export default function SignupClient() {
       const accountStartPath = getAccountStartPath();
       const callbackUrl = new URL("/auth/callback", window.location.origin);
       callbackUrl.searchParams.set("next", accountStartPath);
+      callbackUrl.searchParams.set("flow", "signup");
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -231,6 +232,18 @@ export default function SignupClient() {
               oficial será criado ou verificado apenas pela confirmação do e-mail.
             </p>
           )}
+
+          <p
+            style={{
+              margin: "12px 0 0",
+              color: "#94A3B8",
+              fontSize: 13,
+              lineHeight: 1.55,
+            }}
+          >
+            Por segurança, abra o link de confirmação no mesmo navegador em que
+            você criou sua conta.
+          </p>
         </div>
 
         <Link

@@ -66,9 +66,11 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(
-    callbackError === "callback_failed"
-      ? "Não foi possível concluir o acesso. Tente novamente."
-      : null
+    callbackError === "email_confirmation_failed"
+      ? "Não foi possível confirmar este e-mail. Use o link mais recente e abra-o no mesmo navegador em que você criou sua conta."
+      : callbackError === "callback_failed"
+        ? "Não foi possível concluir o acesso. Tente novamente."
+        : null
   );
 
   useEffect(() => {
