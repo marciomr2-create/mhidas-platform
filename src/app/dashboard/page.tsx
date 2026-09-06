@@ -488,13 +488,23 @@ export default async function DashboardPage() {
         </article>
 
         <article className="mhidas-dashboard-card" style={glassCardStyle()}>
-          <h2 style={{ margin: 0, fontSize: 22 }}>Segurança da conta</h2>
+          <h2 style={{ margin: 0, fontSize: 22 }}>Controles de interação</h2>
           <p style={mutedTextStyle()}>
             {suspendedCount} suspenso(s) · {blockedCount} bloqueado(s)
           </p>
           <p style={mutedTextStyle()}>
             Controle para manter suas interações saudáveis.
           </p>
+        </article>
+
+        <article className="mhidas-dashboard-card" style={glassCardStyle()}>
+          <h2 style={{ margin: 0, fontSize: 22 }}>Conta e segurança</h2>
+          <p style={mutedTextStyle()}>
+            Gerencie seu e-mail, método de acesso, recuperação de senha e sessão.
+          </p>
+          <Link href="/account/security" style={buttonStyle()}>
+            Gerenciar conta
+          </Link>
         </article>
       </section>
     </main>

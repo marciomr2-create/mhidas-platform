@@ -1,6 +1,8 @@
 /*
-  MHIDAS / USECLUBBERS — VISUAL STANDARD LOCK V1
-  Fonte canônica aprovada. Não adicionar cores de marca diretamente em componentes.
+  MHIDAS / USECLUBBERS — VISUAL STANDARD LOCK V2
+  Fonte canônica aprovada.
+  Cores e medidas-base compartilhadas devem nascer aqui.
+  Não adicionar cores de marca diretamente em componentes.
 */
 
 :root {
@@ -10,7 +12,9 @@
 
   --mhidas-text-primary: #F8FAFC;
   --mhidas-text-secondary: #CBD5E1;
+  --mhidas-text-muted: #94A3B8;
   --mhidas-border: rgba(255,255,255,0.10);
+  --mhidas-border-strong: rgba(255,255,255,0.16);
 
   --mhidas-clubber-action: #2A8694;
   --mhidas-clubber-action-strong: #247C88;
@@ -18,6 +22,12 @@
   --mhidas-pro-blue: #1D4ED8;
   --mhidas-pro-deep: #0F172A;
   --mhidas-pro-indigo: #4F46E5;
+
+  --mhidas-page-max: 920px;
+  --mhidas-page-max-wide: 1120px;
+  --mhidas-radius-lg: 20px;
+  --mhidas-radius-md: 14px;
+  --mhidas-control-min-height: 44px;
 }
 
 [data-mhidas-mode="clubber"] {

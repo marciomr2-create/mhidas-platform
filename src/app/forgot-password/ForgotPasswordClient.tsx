@@ -65,15 +65,14 @@ export default function ForgotPasswordClient() {
         }
       );
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg("Não foi possível solicitar a recuperação agora. Aguarde um momento e tente novamente.");
+        return;
+      }
 
       setSent(true);
-    } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível solicitar a recuperação agora."
-      );
+    } catch {
+      setErrorMsg("Não foi possível solicitar a recuperação agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
