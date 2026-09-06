@@ -349,3 +349,111 @@
     font-size: 15px;
   }
 }
+/* USECLUBBERS ACCOUNT FORM PRIMITIVES V1 */
+
+.uc-ui-subtitle {
+  margin: 8px 0 0;
+  color: var(--mhidas-text-primary);
+  font-size: 20px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.uc-ui-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.uc-ui-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.uc-ui-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.uc-ui-field > span {
+  color: var(--mhidas-text-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.uc-ui-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--mhidas-border-strong);
+  border-radius: var(--mhidas-radius-md);
+  outline: none;
+  background: var(--mhidas-card-secondary);
+  color: var(--mhidas-text-primary);
+  font: inherit;
+  font-size: 16px;
+}
+
+.uc-ui-input::placeholder {
+  color: var(--mhidas-text-muted);
+  opacity: 0.72;
+}
+
+.uc-ui-input:focus {
+  border-color: var(--mhidas-mode-action, var(--mhidas-clubber-action));
+}
+
+.uc-ui-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.uc-ui-notice {
+  margin-top: 14px;
+  padding: 12px 13px;
+  border: 1px solid var(--mhidas-border);
+  border-radius: var(--mhidas-radius-md);
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.uc-ui-notice--success {
+  border-color: color-mix(
+    in srgb,
+    var(--mhidas-mode-action, var(--mhidas-clubber-action)) 48%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--mhidas-mode-action, var(--mhidas-clubber-action)) 10%,
+    transparent
+  );
+}
+
+.uc-ui-notice--error {
+  border-color: rgba(248,113,113,0.35);
+  background: rgba(248,113,113,0.08);
+  color: var(--mhidas-text-primary);
+}
+
+@media (min-width: 721px) {
+  .uc-ui-subtitle {
+    font-size: 21px;
+  }
+
+  .uc-ui-fields--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .uc-ui-form {
+    gap: 16px;
+    margin-top: 18px;
+  }
+}

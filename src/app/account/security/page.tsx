@@ -1,12 +1,25 @@
 // src/app/account/security/page.tsx
 
 import { redirect } from "next/navigation";
+import ChangeAccountEmailForm from "@/components/account/ChangeAccountEmailForm";
 import UseclubbersPageShell from "@/components/layout/UseclubbersPageShell";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import AccountSecurityClient from "./AccountSecurityClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+type EmailChangeCallbackStatus =
+  | "awaiting_other"
+  | "confirmed"
+  | "failed"
+  | null;
+
+type AccountSecurityPageProps = {
+  searchParams: Promise<{
+    email_change?: string | string[];
+  }>;
+};
 
 function getAccessMethod(appMetadata: Record<string, unknown>): string {
   const providerSet = new Set<string>();
@@ -35,7 +48,25 @@ function getAccessMethod(appMetadata: Record<string, unknown>): string {
   return "Conta USECLUBBERS";
 }
 
-export default async function AccountSecurityPage() {
+function getEmailChangeCallbackStatus(
+  value: string | string[] | undefined
+): EmailChangeCallbackStatus {
+  const normalized = Array.isArray(value) ? value[0] : value;
+
+  if (
+    normalized === "awaiting_other" ||
+    normalized === "confirmed" ||
+    normalized === "failed"
+  ) {
+    return normalized;
+  }
+
+  return null;
+}
+
+export default async function AccountSecurityPage({
+  searchParams,
+}: AccountSecurityPageProps) {
   const supabase = await createServerSupabaseClient();
 
   const {
@@ -45,6 +76,11 @@ export default async function AccountSecurityPage() {
   if (!user) {
     redirect("/login?next=%2Faccount%2Fsecurity");
   }
+
+  const resolvedSearchParams = await searchParams;
+  const emailChangeCallbackStatus = getEmailChangeCallbackStatus(
+    resolvedSearchParams.email_change
+  );
 
   const email = user.email ?? "";
   const emailConfirmed = Boolean(user.email_confirmed_at);
@@ -85,6 +121,11 @@ export default async function AccountSecurityPage() {
           </p>
         </article>
       </section>
+
+      <ChangeAccountEmailForm
+        currentEmail={email}
+        callbackStatus={emailChangeCallbackStatus}
+      />
 
       <AccountSecurityClient />
 
