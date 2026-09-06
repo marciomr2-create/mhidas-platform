@@ -58,6 +58,23 @@ export default function AccountSecurityClient() {
 
       <article className="uc-ui-surface uc-ui-action">
         <div className="uc-ui-action-copy">
+          <span className="uc-ui-label">Identidades oficiais</span>
+          <h2>Central de Verificação</h2>
+          <p>
+            Crie ou reivindique perfis oficiais e acompanhe suas solicitações dentro da sua Conta USECLUBBERS.
+          </p>
+        </div>
+
+        <Link
+          href="/account/verification"
+          className="uc-ui-button uc-ui-button--primary"
+        >
+          Abrir Central
+        </Link>
+      </article>
+
+      <article className="uc-ui-surface uc-ui-action">
+        <div className="uc-ui-action-copy">
           <span className="uc-ui-label">Sessão atual</span>
           <h2>Sair deste navegador</h2>
           <p>

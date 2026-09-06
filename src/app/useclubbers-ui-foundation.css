@@ -457,3 +457,554 @@
     margin-top: 18px;
   }
 }
+/* R8E-H CENTRAL VERIFICACAO REQUESTER START */
+.uc-verification-section {
+  display: grid;
+  gap: 18px;
+}
+
+.uc-verification-section-heading {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+}
+
+.uc-verification-section-heading h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(22px, 5vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.uc-verification-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.uc-verification-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.uc-verification-field--full {
+  grid-column: 1 / -1;
+}
+
+.uc-verification-label {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.uc-verification-help {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.uc-verification-control {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 13px;
+  outline: none;
+  background: #111111;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.uc-verification-control:focus {
+  border-color: rgba(42, 134, 148, 0.78);
+  box-shadow: 0 0 0 3px rgba(42, 134, 148, 0.12);
+}
+
+.uc-verification-control:disabled,
+.uc-verification-choice:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+
+.uc-verification-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.uc-verification-choice {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  background: #111111;
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uc-verification-choice.is-active {
+  border-color: var(--mhidas-mode-action, var(--mhidas-clubber-action));
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.uc-verification-choice strong {
+  font-size: 14px;
+}
+
+.uc-verification-choice span {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.uc-verification-actions,
+.uc-verification-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.uc-verification-alert {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 2px solid #2a8694;
+  background: #111111;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.uc-verification-alert--error {
+  border-left-color: #f87171;
+  color: #fecaca;
+}
+
+.uc-verification-request-list {
+  display: grid;
+  gap: 12px;
+}
+
+.uc-verification-request-card {
+  display: grid;
+  gap: 14px;
+}
+
+.uc-verification-request-head {
+  display: grid;
+  gap: 12px;
+}
+
+.uc-verification-request-head > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.uc-verification-request-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.uc-verification-request-note {
+  margin: 0;
+  padding: 11px 12px;
+  border-left: 2px solid rgba(42, 134, 148, 0.72);
+  background: #111111;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (min-width: 720px) {
+  .uc-verification-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .uc-verification-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .uc-verification-request-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+}
+/* R8E-H CENTRAL VERIFICACAO REQUESTER END */
+/* R8E-H R3C VERIFICATION MOBILE-FIRST PAGE-SCOPED START
+   Scope: Central de Verificação only.
+   Desktop >= 720px remains unchanged. */
+@media (max-width: 719px) {
+  .uc-verification-page-shell {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      calc(34px + env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .uc-verification-page-shell .uc-ui-page {
+    width: min(100%, 560px);
+  }
+
+  .uc-verification-page-shell .uc-ui-header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  .uc-verification-page-shell .uc-ui-header-copy {
+    min-width: 0;
+  }
+
+  .uc-verification-page-shell .uc-ui-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .uc-verification-page-shell .uc-ui-title {
+    margin-top: 5px;
+    font-size: clamp(27px, 7.8vw, 31px);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+
+  .uc-verification-page-shell .uc-ui-description {
+    margin-top: 7px;
+    max-width: 33rem;
+    font-size: 11.5px;
+    line-height: 1.38;
+  }
+
+  .uc-verification-page-shell .uc-ui-header > .uc-ui-button {
+    width: auto;
+    min-height: 34px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+
+  .uc-verification-page-shell .uc-ui-section {
+    margin-top: 9px;
+  }
+
+  .uc-verification-page-shell .uc-verification-intro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .uc-verification-page-shell .uc-verification-intro-grid .uc-ui-surface {
+    padding: 9px;
+    border-radius: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-intro-grid .uc-ui-label {
+    font-size: 8px;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+  }
+
+  .uc-verification-page-shell .uc-verification-intro-grid .uc-ui-value {
+    margin-top: 3px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .uc-verification-page-shell .uc-verification-intro-grid .uc-ui-copy {
+    margin-top: 3px;
+    font-size: 9.5px;
+    line-height: 1.32;
+  }
+
+  .uc-verification-page-shell .uc-verification-section {
+    gap: 8px;
+  }
+
+  .uc-verification-page-shell .uc-verification-section-heading {
+    gap: 3px;
+  }
+
+  .uc-verification-page-shell .uc-verification-section-heading .uc-ui-label {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .uc-verification-page-shell .uc-verification-section-heading h2 {
+    font-size: 18px;
+    line-height: 1.05;
+  }
+
+  .uc-verification-page-shell .uc-verification-section-heading .uc-ui-copy {
+    margin-top: 1px;
+    font-size: 10px;
+    line-height: 1.33;
+  }
+
+  .uc-verification-page-shell .uc-verification-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-field {
+    gap: 3px;
+  }
+
+  .uc-verification-page-shell .uc-verification-label {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .uc-verification-page-shell .uc-verification-help {
+    font-size: 8.5px;
+    line-height: 1.3;
+  }
+
+  .uc-verification-page-shell .uc-verification-control {
+    min-height: 38px;
+    padding: 0 9px;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice {
+    min-height: 62px;
+    gap: 3px;
+    padding: 8px 9px;
+    border-radius: 9px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice strong {
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice span {
+    font-size: 8.5px;
+    line-height: 1.25;
+  }
+
+  .uc-verification-page-shell .uc-verification-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .uc-verification-page-shell .uc-verification-actions .uc-ui-button {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 6px;
+    border-radius: 9px;
+    font-size: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-alert {
+    padding: 8px 9px;
+    font-size: 9.5px;
+    line-height: 1.32;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-list {
+    gap: 7px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-card {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 7px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-head .uc-ui-label {
+    font-size: 8px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-head .uc-ui-value {
+    margin-top: 2px;
+    font-size: 12px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-meta {
+    gap: 3px 8px;
+    font-size: 9px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-note {
+    padding: 7px 8px;
+    font-size: 9.5px;
+    line-height: 1.32;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-actions .uc-ui-button {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 6px;
+    font-size: 9.5px;
+  }
+
+  .uc-verification-page-shell .uc-ui-trust {
+    margin-top: 11px;
+    padding-top: 10px;
+  }
+
+  .uc-verification-page-shell .uc-ui-trust strong {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .uc-verification-page-shell .uc-ui-trust p {
+    margin-top: 4px;
+    font-size: 9.5px;
+    line-height: 1.32;
+  }
+}
+/* R8E-H R3C VERIFICATION MOBILE-FIRST PAGE-SCOPED END */
+/* R8E-H R3E VERIFICATION MOBILE FORM READABILITY START
+   Final mobile form rule:
+   - primary form fields use full width;
+   - choice cards and action buttons may remain two-column;
+   - interactive controls use 16px to avoid iOS focus zoom;
+   - desktop remains untouched. */
+@media (max-width: 719px) {
+  .uc-verification-page-shell .uc-verification-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-form > .uc-verification-field {
+    grid-column: 1 / -1;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice {
+    min-height: 68px;
+    padding: 9px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice strong {
+    font-size: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-choice span {
+    font-size: 9.5px;
+    line-height: 1.3;
+  }
+
+  .uc-verification-page-shell .uc-verification-label {
+    font-size: 12px;
+  }
+
+  .uc-verification-page-shell .uc-verification-help {
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  .uc-verification-page-shell .uc-verification-control {
+    min-height: 44px;
+    padding: 0 11px;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .uc-verification-page-shell select.uc-verification-control {
+    padding-right: 34px;
+  }
+
+  .uc-verification-page-shell .uc-verification-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .uc-verification-page-shell .uc-verification-actions .uc-ui-button {
+    min-height: 42px;
+    font-size: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-request-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+}
+/* R8E-H R3E VERIFICATION MOBILE FORM READABILITY END */
+/* R8E-H R3K CENTRAL VERIFICACAO CANONICAL INTERACTION START
+   Reuses the approved Clubber interaction language:
+   neutral rest state + Clubber accent on interaction. */
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button,
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #111111;
+  color: #f8fafc;
+  box-shadow: none;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:active:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:active:not(:disabled) {
+  border-color: rgba(42, 134, 148, 0.58);
+  background: rgba(42, 134, 148, 0.08);
+  color: #ffffff;
+}
+
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-choice:focus-visible:not(:disabled) {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 134, 148, 0.12);
+}
+
+.uc-verification-page-shell .uc-verification-choice:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-choice:focus-visible:not(:disabled) {
+  border-color: var(--mhidas-mode-action, var(--mhidas-clubber-action));
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.uc-verification-page-shell .uc-verification-choice.is-active strong {
+  color: var(--mhidas-mode-action, var(--mhidas-clubber-action));
+}
+/* R8E-H R3K CENTRAL VERIFICACAO CANONICAL INTERACTION END */

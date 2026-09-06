@@ -63,6 +63,7 @@ function sanitizeInternalPath(
 
   if (pathname === "/dashboard" && !search) return "/dashboard";
   if (pathname === "/account/security" && !search) return "/account/security";
+  if (pathname === "/account/verification" && !search) return "/account/verification";
   if (pathname === "/dashboard/cards" && !search) return "/dashboard/cards";
   if (pathname === "/clubbers" && !search) return "/clubbers";
 

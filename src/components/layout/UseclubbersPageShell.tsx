@@ -12,6 +12,7 @@ type UseclubbersPageShellProps = {
   backLabel?: string;
   mode?: "clubber" | "pro";
   wide?: boolean;
+  pageClassName?: string;
 };
 
 export default function UseclubbersPageShell({
@@ -23,9 +24,14 @@ export default function UseclubbersPageShell({
   backLabel = "Voltar",
   mode = "clubber",
   wide = false,
+  pageClassName = "",
 }: UseclubbersPageShellProps) {
+  const shellClassName = pageClassName
+    ? `uc-ui-shell ${pageClassName}`
+    : "uc-ui-shell";
+
   return (
-    <main className="uc-ui-shell" data-mhidas-mode={mode}>
+    <main className={shellClassName} data-mhidas-mode={mode}>
       <section className={wide ? "uc-ui-page uc-ui-page--wide" : "uc-ui-page"}>
         <header className="uc-ui-header">
           <div className="uc-ui-header-copy">

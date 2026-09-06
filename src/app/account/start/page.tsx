@@ -237,8 +237,8 @@ export default async function AccountStartPage({
           </p>
         ) : null}
 
-        <Link href="/clubbers" className="uc-account-start-link">
-          Explorar a cena
+        <Link href="/account/verification" className="uc-account-start-link">
+          Abrir Central de Verificação
         </Link>
       </section>
     </main>
