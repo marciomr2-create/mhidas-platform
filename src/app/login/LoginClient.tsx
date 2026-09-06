@@ -7,6 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
 import {
+  getLoginErrorMessage,
+  getOAuthErrorMessage,
+} from "@/lib/auth/userFacingAuthError";
+import {
   buildForgotPasswordPath,
   getSafeInternalNextPath,
 } from "@/lib/navigation/safeInternalNextPath";
@@ -112,12 +116,15 @@ export default function LoginClient() {
         password,
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg(getLoginErrorMessage(error));
+        return;
+      }
 
       router.push(redirectPath);
       router.refresh();
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "Falha ao entrar.");
+      setErrorMsg(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -139,13 +146,13 @@ export default function LoginClient() {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg(getOAuthErrorMessage(error, "login"));
+        setGoogleLoading(false);
+        return;
+      }
     } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível entrar com Google."
-      );
+      setErrorMsg(getOAuthErrorMessage(err, "login"));
       setGoogleLoading(false);
     }
   }

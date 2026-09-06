@@ -7,6 +7,10 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/utils/supabase/client";
 import {
+  getOAuthErrorMessage,
+  getSignupErrorMessage,
+} from "@/lib/auth/userFacingAuthError";
+import {
   buildAccountStartPath,
   getSafePostOnboardingPath,
   type AccountEntryIntent,
@@ -150,7 +154,10 @@ export default function SignupClient() {
         options: { emailRedirectTo: callbackUrl.toString() },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg(getSignupErrorMessage(error));
+        return;
+      }
 
       if (data.session) {
         router.replace(accountStartPath);
@@ -160,9 +167,7 @@ export default function SignupClient() {
 
       setConfirmationSent(true);
     } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error ? err.message : "Não foi possível criar a conta."
-      );
+      setErrorMsg(getSignupErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -191,13 +196,13 @@ export default function SignupClient() {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        setErrorMsg(getOAuthErrorMessage(error, "signup"));
+        setGoogleLoading(false);
+        return;
+      }
     } catch (err: unknown) {
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível continuar com Google."
-      );
+      setErrorMsg(getOAuthErrorMessage(err, "signup"));
       setGoogleLoading(false);
     }
   }
