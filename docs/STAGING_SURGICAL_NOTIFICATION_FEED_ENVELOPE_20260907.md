@@ -102,3 +102,84 @@ Remote WIP branch:
 `origin/main` remained unchanged during the recovery workflow.
 
 No production deployment, tag, or production database change was part of this recovery.
+## R8E-I final readback
+
+Environment: STAGING only
+
+Execution mode: read-only transaction
+
+Controlled request:
+
+`R8E-I TESTE REVISAO ARTISTA 20260906`
+
+Final request id:
+
+`d89004f0-b252-42e5-ab28-942ad4257af6`
+
+Final status:
+
+`rejected`
+
+Readback result:
+
+- requester account count = 1
+- reviewer account count = 1
+- target request count = 1
+- request kind = create
+- requested entity type = artist
+- submitted_at = present
+- reviewed_at = present
+- reviewed_by_user_id = expected reviewer
+- decision_reason = present
+- entity_id = null
+- email_signal_status = unassessed
+- professional_email_domain = null
+- evidence count = 0
+- document count = 0
+- official entity side effect count = 0
+- entity membership side effect count = 0
+- public handle side effect count = 0
+- verification email outbox count = 0
+- audit row count = 6
+- requester audit actors = 2
+- reviewer audit actors = 4
+- active verification_reviewer membership = 1
+- target request remaining in review queue = 0
+
+Audit sequence:
+
+1. `verification.request_draft_created`
+2. `verification.request_submitted`
+3. `verification.request_review_started`
+4. `verification.request_more_info_requested`
+5. `verification.request_review_resumed`
+6. `verification.request_rejected`
+
+Actor-kind sequence:
+
+1. user
+2. user
+3. reviewer
+4. reviewer
+5. reviewer
+6. reviewer
+
+More-info reason:
+
+`Envie o site oficial ou outro canal público que confirme sua relação com esta identidade.`
+
+Final rejection reason:
+
+`Não foi possível confirmar a relação legítima com esta identidade com as informações apresentadas.`
+
+Final classification:
+
+`R8E_I_REVIEWER_REJECTION_FLOW=PASS`
+
+Important scope note:
+
+Final approval remains intentionally unimplemented in this macroblock. No official entity, entity membership, universal public handle, verification email, or approval side effect was created.
+
+Database writes during this readback: NO
+
+Production accessed: NO
