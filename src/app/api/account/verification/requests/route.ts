@@ -208,46 +208,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, entities: [] });
   }
 
-  const admin = adminClient();
-
-  if (!admin) {
-    return responseError(
-      503,
-      "A Central de Verificação está temporariamente indisponível."
-    );
-  }
-
   const baseSelect =
     "entity_id,entity_type,organization_type,display_name,public_handle,lifecycle_status,verification_status";
 
   const normalizedQuery = normalizeHandle(query);
 
-  const byDisplayName = admin
+  const byDisplayName = auth
     .from("official_entities")
     .select(baseSelect)
-    .in("lifecycle_status", ["pending_review", "active"])
-    .in("verification_status", [
-      "unverified",
-      "pending",
-      "in_review",
-      "verified",
-    ])
+    .eq("lifecycle_status", "active")
+    .eq("verification_status", "verified")
     .not("public_handle", "is", null)
     .ilike("display_name", `%${query}%`)
     .order("display_name", { ascending: true })
     .limit(8);
 
   const byHandle = normalizedQuery
-    ? admin
+    ? auth
         .from("official_entities")
         .select(baseSelect)
-        .in("lifecycle_status", ["pending_review", "active"])
-        .in("verification_status", [
-          "unverified",
-          "pending",
-          "in_review",
-          "verified",
-        ])
+        .eq("lifecycle_status", "active")
+        .eq("verification_status", "verified")
         .not("public_handle", "is", null)
         .ilike("public_handle", `%${normalizedQuery}%`)
         .order("display_name", { ascending: true })
@@ -360,19 +341,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { data: targetEntity, error: targetError } = await admin
+      const { data: targetEntity, error: targetError } = await auth
         .from("official_entities")
         .select(
           "entity_id,entity_type,organization_type,display_name,public_handle,lifecycle_status,verification_status"
         )
         .eq("entity_id", requestedEntityId)
-        .in("lifecycle_status", ["pending_review", "active"])
-        .in("verification_status", [
-          "unverified",
-          "pending",
-          "in_review",
-          "verified",
-        ])
+        .eq("lifecycle_status", "active")
+        .eq("verification_status", "verified")
         .not("public_handle", "is", null)
         .maybeSingle();
 
