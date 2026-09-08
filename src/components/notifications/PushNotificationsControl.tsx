@@ -740,7 +740,30 @@ export default function PushNotificationsControl() {
             width: 100%;
           }
         }
-      `}</style>
+              /* USECLUBBERS DASHBOARD PUSH ACTION CONTRACT V1 */
+        .mhidas-push-button,
+        .mhidas-push-button[data-action="deactivate"] {
+          background: transparent !important;
+          color: #FFFFFF !important;
+          border-color: rgba(148, 163, 184, 0.28) !important;
+          box-shadow: none !important;
+          filter: none !important;
+          outline: none;
+        }
+
+        .mhidas-push-button:hover:not(:disabled),
+        .mhidas-push-button:focus:not(:disabled),
+        .mhidas-push-button:focus-visible:not(:disabled),
+        .mhidas-push-button:active:not(:disabled) {
+          background: transparent !important;
+          color: #FFFFFF !important;
+          border-color: #2A8694 !important;
+          box-shadow: none !important;
+          filter: none !important;
+          outline: none;
+          transform: none !important;
+        }
+`}</style>
 
       <div className="mhidas-push-copy">
         <p className="mhidas-push-title">

@@ -48,6 +48,7 @@ export default function UseclubbersPageShell({
         </header>
 
         {children}
+        <div className="uc-ui-mobile-end-space" aria-hidden="true" />
       </section>
     </main>
   );

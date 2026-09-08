@@ -169,7 +169,7 @@ export default function ChangeAccountEmailForm({
           <button
             type="submit"
             disabled={loading}
-            className="uc-ui-button uc-ui-button--primary"
+            className="uc-ui-button uc-ui-button--quiet"
           >
             {loading ? "Enviando..." : "Enviar confirmação"}
           </button>

@@ -1008,3 +1008,127 @@
   color: var(--mhidas-mode-action, var(--mhidas-clubber-action));
 }
 /* R8E-H R3K CENTRAL VERIFICACAO CANONICAL INTERACTION END */
+
+/* Canonical mobile scroll contract for UseclubbersPageShell */
+.uc-ui-mobile-end-space {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .uc-ui-shell {
+    height: 100svh;
+    min-height: 100svh;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding:
+      max(18px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      calc(24px + env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+  }
+
+  .uc-ui-mobile-end-space {
+    display: block;
+    width: 100%;
+    height: calc(96px + env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+}
+/* USECLUBBERS CANONICAL BUTTON + END-OF-PAGE CONTRACT V1
+   FINAL AUTHORITY FOR CANONICAL ACTION CAPSULES.
+   Product rule:
+   - white text;
+   - transparent background at rest and interaction;
+   - neutral border at rest;
+   - petroleum-blue border on hover/focus/touch/selected state;
+   - border is the only color signal;
+   - no filled action backgrounds;
+   - Desktop and Mobile share the same interaction contract;
+   - shared pages always keep visible clearance after the final content.
+*/
+.uc-ui-button,
+.uc-ui-button--primary,
+.uc-ui-button--quiet {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: var(--mhidas-border-strong) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.uc-ui-button:hover:not(:disabled),
+.uc-ui-button:focus:not(:disabled),
+.uc-ui-button:focus-visible:not(:disabled),
+.uc-ui-button:active:not(:disabled),
+.uc-ui-button.is-active:not(:disabled),
+.uc-ui-button[aria-pressed="true"]:not(:disabled),
+.uc-ui-button[aria-current="page"]:not(:disabled) {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: #2a8694 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  outline: none;
+  transform: none !important;
+}
+
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button,
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: var(--mhidas-border-strong) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus:not(:disabled),
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-actions .uc-ui-button:active:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:hover:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus-visible:not(:disabled),
+.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:active:not(:disabled) {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: #2a8694 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  outline: none;
+}
+
+.uc-verification-choice {
+  background: transparent !important;
+  border-color: var(--mhidas-border-strong) !important;
+  box-shadow: none !important;
+}
+
+.uc-verification-choice:hover:not(:disabled),
+.uc-verification-choice:focus:not(:disabled),
+.uc-verification-choice:focus-visible:not(:disabled),
+.uc-verification-choice:active:not(:disabled),
+.uc-verification-choice.is-active:not(:disabled) {
+  background: transparent !important;
+  border-color: #2a8694 !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.uc-ui-mobile-end-space {
+  display: block !important;
+  width: 100%;
+  height: 72px;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .uc-ui-mobile-end-space {
+    height: calc(96px + env(safe-area-inset-bottom));
+  }
+}

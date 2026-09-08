@@ -708,7 +708,45 @@ export default function DashboardNotificationsPanel() {
             white-space: normal;
           }
         }
-      `}</style>
+              /* USECLUBBERS DASHBOARD NOTIFICATION ACTION CONTRACT V1 */
+        .mhidas-notifications-action,
+        .mhidas-notifications-filter,
+        .mhidas-notifications-retry,
+        .mhidas-notification-button {
+          background: transparent !important;
+          color: #FFFFFF !important;
+          border-color: rgba(148, 163, 184, 0.28) !important;
+          box-shadow: none !important;
+          filter: none !important;
+          outline: none;
+        }
+
+        .mhidas-notifications-action:hover:not(:disabled),
+        .mhidas-notifications-action:focus:not(:disabled),
+        .mhidas-notifications-action:focus-visible:not(:disabled),
+        .mhidas-notifications-action:active:not(:disabled),
+        .mhidas-notifications-filter:hover:not(:disabled),
+        .mhidas-notifications-filter:focus:not(:disabled),
+        .mhidas-notifications-filter:focus-visible:not(:disabled),
+        .mhidas-notifications-filter:active:not(:disabled),
+        .mhidas-notifications-filter[aria-pressed="true"]:not(:disabled),
+        .mhidas-notifications-retry:hover:not(:disabled),
+        .mhidas-notifications-retry:focus:not(:disabled),
+        .mhidas-notifications-retry:focus-visible:not(:disabled),
+        .mhidas-notifications-retry:active:not(:disabled),
+        .mhidas-notification-button:hover:not(:disabled),
+        .mhidas-notification-button:focus:not(:disabled),
+        .mhidas-notification-button:focus-visible:not(:disabled),
+        .mhidas-notification-button:active:not(:disabled) {
+          background: transparent !important;
+          color: #FFFFFF !important;
+          border-color: #2A8694 !important;
+          box-shadow: none !important;
+          filter: none !important;
+          outline: none;
+          transform: none !important;
+        }
+`}</style>
 
       <div className="mhidas-notifications-header">
         <div>

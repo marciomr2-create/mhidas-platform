@@ -176,24 +176,13 @@ export default async function DashboardPage() {
     } as const;
   }
 
-  function buttonStyle(tone: "secondary" | "clubber" | "pro" = "secondary") {
-    const isClubber = tone === "clubber";
-    const isPro = tone === "pro";
-
+  function buttonStyle() {
     return {
       minHeight: 46,
       padding: "12px 15px",
       borderRadius: 14,
-      border: isClubber
-        ? "1px solid rgba(36,124,136,0.52)"
-        : isPro
-          ? "1px solid rgba(29,78,216,0.52)"
-          : "1px solid rgba(148,163,184,0.18)",
-      background: isClubber
-        ? "var(--mhidas-clubber-action-strong)"
-        : isPro
-          ? "#1D4ED8"
-          : "var(--mhidas-card-secondary)",
+      border: "1px solid rgba(148,163,184,0.18)",
+      background: "transparent",
       color: "#F8FAFC",
       textDecoration: "none",
       fontWeight: 900,
@@ -204,11 +193,7 @@ export default async function DashboardPage() {
       maxWidth: "100%",
       minWidth: 0,
       boxSizing: "border-box",
-      boxShadow: isClubber
-        ? "none"
-        : isPro
-          ? "0 10px 24px rgba(29,78,216,0.16)"
-          : "none",
+      boxShadow: "none",
       textAlign: "center",
       whiteSpace: "normal",
       overflowWrap: "anywhere",
@@ -216,6 +201,11 @@ export default async function DashboardPage() {
     } as const;
   }
 
+  function buttonClassName(tone: "secondary" | "clubber" | "pro" = "secondary") {
+    return tone === "pro"
+      ? "mhidas-dashboard-action mhidas-dashboard-action--pro"
+      : "mhidas-dashboard-action mhidas-dashboard-action--clubber";
+  }
   function labelStyle() {
     return {
       width: "fit-content",
@@ -264,6 +254,34 @@ export default async function DashboardPage() {
           overflow-wrap: anywhere;
         }
 
+        /* Dashboard canonical action contract:
+           same rest state; border color communicates Clubber vs Pro interaction. */
+        .mhidas-dashboard-action {
+          background: transparent !important;
+          color: #F8FAFC !important;
+          border-color: rgba(148,163,184,0.18) !important;
+          box-shadow: none !important;
+          outline: none;
+          transition: border-color 150ms ease;
+        }
+
+        .mhidas-dashboard-action--clubber:hover,
+        .mhidas-dashboard-action--clubber:focus,
+        .mhidas-dashboard-action--clubber:focus-visible,
+        .mhidas-dashboard-action--clubber:active {
+          background: transparent !important;
+          border-color: #2A8694 !important;
+          box-shadow: none !important;
+        }
+
+        .mhidas-dashboard-action--pro:hover,
+        .mhidas-dashboard-action--pro:focus,
+        .mhidas-dashboard-action--pro:focus-visible,
+        .mhidas-dashboard-action--pro:active {
+          background: transparent !important;
+          border-color: #1D4ED8 !important;
+          box-shadow: none !important;
+        }
         @media (max-width: 640px) {
           .mhidas-dashboard-shell {
             width: 100dvw !important;
@@ -335,24 +353,24 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mhidas-dashboard-actions" style={actionGridStyle()}>
-          <Link href={profileHubHref} style={buttonStyle("clubber")}>
+          <Link href={profileHubHref} className={buttonClassName("clubber")} style={buttonStyle()}>
             {hasProfiles ? "Abrir meus perfis" : "Criar meu perfil Clubber"}
           </Link>
 
           {firstPublishedClubProfile?.slug ? (
-            <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} style={buttonStyle()}>
+            <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} className={buttonClassName()} style={buttonStyle()}>
               Ver meu perfil Clubber
             </Link>
           ) : null}
 
           {hasClubberProfile ? (
-            <Link href="/dashboard/organizations" style={buttonStyle("clubber")}>
+            <Link href="/dashboard/organizations" className={buttonClassName("clubber")} style={buttonStyle()}>
               Minhas organizações
             </Link>
           ) : null}
 
           {hasClubberProfile ? (
-            <Link href={proHubHref} style={buttonStyle("pro")}>
+            <Link href={proHubHref} className={buttonClassName("pro")} style={buttonStyle()}>
               {hasProfessionalProfile
                 ? "Ver oportunidades Pro"
                 : "Ativar perfil profissional"}
@@ -420,12 +438,12 @@ export default async function DashboardPage() {
           </p>
 
           <div className="mhidas-dashboard-actions" style={actionGridStyle(180)}>
-            <Link href={profileHubHref} style={buttonStyle("clubber")}>
+            <Link href={profileHubHref} className={buttonClassName("clubber")} style={buttonStyle()}>
               {hasProfiles ? "Editar meu perfil" : "Criar meu perfil Clubber"}
             </Link>
 
             {firstPublishedClubProfile?.slug ? (
-              <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} style={buttonStyle()}>
+              <Link href={`/${firstPublishedClubProfile.slug}?mode=club`} className={buttonClassName()} style={buttonStyle()}>
                 Abrir perfil público
               </Link>
             ) : null}
@@ -444,15 +462,15 @@ export default async function DashboardPage() {
           </p>
 
           <div className="mhidas-dashboard-actions" style={actionGridStyle(180)}>
-            <Link href="/clubbers" style={buttonStyle("clubber")}>
+            <Link href="/clubbers" className={buttonClassName("clubber")} style={buttonStyle()}>
               Descobrir Clubbers
             </Link>
 
-            <Link href="/event/ame-club" style={buttonStyle()}>
+            <Link href="/event/ame-club" className={buttonClassName()} style={buttonStyle()}>
               Eventos no radar
             </Link>
 
-            <Link href="/network/connections" style={buttonStyle()}>
+            <Link href="/network/connections" className={buttonClassName()} style={buttonStyle()}>
               Ver conexões
             </Link>
           </div>
@@ -465,7 +483,7 @@ export default async function DashboardPage() {
           <p style={mutedTextStyle()}>
             Música, eventos, artistas, lugares favoritos, pertencimento na cena e descoberta de eventos.
           </p>
-          <Link href={profileHubHref} style={buttonStyle("clubber")}>
+          <Link href={profileHubHref} className={buttonClassName("clubber")} style={buttonStyle()}>
             {hasProfiles ? "Gerenciar Clubber" : "Criar meu perfil Clubber"}
           </Link>
         </article>
@@ -478,7 +496,7 @@ export default async function DashboardPage() {
             ele funciona como seu cartão de visitas profissional e pode ser
             compartilhado com um toque NFC.
           </p>
-          <Link href={proHubHref} style={buttonStyle("pro")}>
+          <Link href={proHubHref} className={buttonClassName("pro")} style={buttonStyle()}>
             {hasProfessionalProfile
               ? "Gerenciar Pro"
               : hasClubberProfile
@@ -502,7 +520,7 @@ export default async function DashboardPage() {
           <p style={mutedTextStyle()}>
             Gerencie seu e-mail, método de acesso, recuperação de senha e sessão.
           </p>
-          <Link href="/account/security" style={buttonStyle()}>
+          <Link href="/account/security" className={buttonClassName()} style={buttonStyle()}>
             Gerenciar conta
           </Link>
         </article>

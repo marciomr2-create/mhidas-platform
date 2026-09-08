@@ -50,7 +50,7 @@ export default function AccountSecurityClient() {
 
         <Link
           href={recoveryHref}
-          className="uc-ui-button uc-ui-button--primary"
+          className="uc-ui-button uc-ui-button--quiet"
         >
           Redefinir senha
         </Link>
@@ -67,7 +67,7 @@ export default function AccountSecurityClient() {
 
         <Link
           href="/account/verification"
-          className="uc-ui-button uc-ui-button--primary"
+          className="uc-ui-button uc-ui-button--quiet"
         >
           Abrir Central
         </Link>
