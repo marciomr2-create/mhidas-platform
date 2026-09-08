@@ -9,15 +9,19 @@ export const runtime = "nodejs";
 
 type EntityType = "artist" | "club" | "festival" | "organization";
 type RequestKind = "create" | "claim";
-
 type JsonObject = Record<string, unknown>;
 
-const ENTITY_TYPES = new Set<EntityType>([
-  "artist",
-  "club",
-  "festival",
-  "organization",
-]);
+type ClaimEntityRow = {
+  entity_id: string;
+  entity_type: EntityType;
+  organization_type: string | null;
+  display_name: string;
+  public_handle: string | null;
+  lifecycle_status: string;
+  verification_status: string;
+};
+
+const ENTITY_TYPES = new Set<EntityType>(["artist", "club", "festival", "organization"]);
 const REQUEST_KINDS = new Set<RequestKind>(["create", "claim"]);
 const ORGANIZATION_TYPES = new Set([
   "producer",
@@ -41,12 +45,20 @@ const PERSONAL_EMAIL_DOMAINS = new Set([
   "proton.me",
   "protonmail.com",
 ]);
+
 const WITHDRAWABLE_STATUSES = new Set([
   "draft",
   "submitted",
   "in_review",
   "more_info_required",
 ]);
+
+const OPEN_REQUEST_STATUSES = [
+  "draft",
+  "submitted",
+  "in_review",
+  "more_info_required",
+] as const;
 
 function responseError(status: number, message: string) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -90,19 +102,24 @@ function validEmail(value: string): boolean {
 function professionalDomain(email: string): string | null {
   const at = email.lastIndexOf("@");
   if (at < 1) return null;
+
   const domain = email.slice(at + 1).trim().toLowerCase();
+
   if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(domain)) return null;
   if (domain.length < 3 || domain.length > 253) return null;
+
   return domain;
 }
 
 function parseHttpsUrl(value: unknown, allowedHosts?: string[]): string | null {
   const raw = cleanText(value, 2048);
+
   if (!raw) return null;
   if (hasControlCharacters(raw)) return null;
 
   try {
     const url = new URL(raw);
+
     if (url.protocol !== "https:") return null;
     if (!url.hostname) return null;
 
@@ -111,6 +128,7 @@ function parseHttpsUrl(value: unknown, allowedHosts?: string[]): string | null {
       const matches = allowedHosts.some(
         (allowed) => host === allowed || host.endsWith(`.${allowed}`)
       );
+
       if (!matches) return null;
     }
 
@@ -118,6 +136,12 @@ function parseHttpsUrl(value: unknown, allowedHosts?: string[]): string | null {
   } catch {
     return null;
   }
+}
+
+function validUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
 }
 
 function requestOriginAllowed(request: NextRequest): boolean {
@@ -160,21 +184,120 @@ async function rollbackCreatedRequest(
   await admin.from("entity_verification_requests").delete().eq("request_id", requestId);
 }
 
+export async function GET(request: NextRequest) {
+  const auth = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await auth.auth.getUser();
+
+  if (userError || !user) {
+    return responseError(401, "Entre na sua Conta USECLUBBERS para continuar.");
+  }
+
+  const action = cleanText(request.nextUrl.searchParams.get("action"), 40);
+
+  if (action !== "search_claim_entities") {
+    return responseError(400, "Consulta inválida.");
+  }
+
+  const query = cleanText(request.nextUrl.searchParams.get("q"), 120);
+
+  if (query.length < 2) {
+    return NextResponse.json({ ok: true, entities: [] });
+  }
+
+  const admin = adminClient();
+
+  if (!admin) {
+    return responseError(
+      503,
+      "A Central de Verificação está temporariamente indisponível."
+    );
+  }
+
+  const baseSelect =
+    "entity_id,entity_type,organization_type,display_name,public_handle,lifecycle_status,verification_status";
+
+  const normalizedQuery = normalizeHandle(query);
+
+  const byDisplayName = admin
+    .from("official_entities")
+    .select(baseSelect)
+    .eq("lifecycle_status", "active")
+    .eq("verification_status", "verified")
+    .not("public_handle", "is", null)
+    .ilike("display_name", `%${query}%`)
+    .order("display_name", { ascending: true })
+    .limit(8);
+
+  const byHandle = normalizedQuery
+    ? admin
+        .from("official_entities")
+        .select(baseSelect)
+        .eq("lifecycle_status", "active")
+        .eq("verification_status", "verified")
+        .not("public_handle", "is", null)
+        .ilike("public_handle", `%${normalizedQuery}%`)
+        .order("display_name", { ascending: true })
+        .limit(8)
+    : Promise.resolve({ data: [], error: null });
+
+  const [displayResult, handleResult] = await Promise.all([
+    byDisplayName,
+    byHandle,
+  ]);
+
+  if (displayResult.error || handleResult.error) {
+    return responseError(500, "Não foi possível buscar identidades oficiais agora.");
+  }
+
+  const merged = new Map<string, ClaimEntityRow>();
+
+  for (const row of [
+    ...(displayResult.data ?? []),
+    ...(handleResult.data ?? []),
+  ]) {
+    const typed = row as ClaimEntityRow;
+
+    if (!typed.entity_id || !typed.public_handle) continue;
+
+    merged.set(typed.entity_id, typed);
+
+    if (merged.size >= 8) break;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    entities: [...merged.values()],
+  });
+}
+
 export async function POST(request: NextRequest) {
   if (!requestOriginAllowed(request)) {
-    return responseError(403, "A solicitação não pôde ser validada com segurança.");
+    return responseError(
+      403,
+      "A solicitação não pôde ser validada com segurança."
+    );
   }
 
   let body: JsonObject;
+
   try {
     const raw = await request.json();
-    if (!isObject(raw)) return responseError(400, "Solicitação inválida.");
+
+    if (!isObject(raw)) {
+      return responseError(400, "Solicitação inválida.");
+    }
+
     body = raw;
   } catch {
     return responseError(400, "Solicitação inválida.");
   }
 
   const auth = await createServerSupabaseClient();
+
   const {
     data: { user },
     error: userError,
@@ -185,71 +308,216 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = adminClient();
+
   if (!admin) {
-    return responseError(503, "A Central de Verificação está temporariamente indisponível.");
+    return responseError(
+      503,
+      "A Central de Verificação está temporariamente indisponível."
+    );
   }
 
   const action = cleanText(body.action, 40);
 
   if (action === "create_request") {
     const requestKind = cleanText(body.request_kind, 20) as RequestKind;
-    const entityType = cleanText(body.requested_entity_type, 30) as EntityType;
-    const organizationType = cleanText(body.requested_organization_type, 40);
-    const displayName = cleanText(body.requested_display_name, 120);
+    const requestedEntityId = cleanText(body.entity_id, 80);
+
+    let entityType = cleanText(body.requested_entity_type, 30) as EntityType;
+    let organizationType = cleanText(body.requested_organization_type, 40);
+    let displayName = cleanText(body.requested_display_name, 120);
+
     const rawHandle = cleanText(body.requested_handle, 80);
-    const requestedHandle = normalizeHandle(rawHandle);
+    let requestedHandle = normalizeHandle(rawHandle);
+
     const contactEmail = cleanText(body.contact_email, 320).toLowerCase();
     const professionalEmail = cleanText(body.professional_email, 320).toLowerCase();
     const submit = body.submit === true;
 
     if (!REQUEST_KINDS.has(requestKind)) {
-      return responseError(400, "Escolha se deseja criar ou reivindicar um perfil.");
-    }
-    if (!ENTITY_TYPES.has(entityType)) {
-      return responseError(400, "Escolha um tipo de identidade válido.");
-    }
-    if (
-      entityType === "organization" &&
-      !ORGANIZATION_TYPES.has(organizationType)
-    ) {
-      return responseError(400, "Escolha o tipo da organização.");
-    }
-    if (displayName.length < 2 || hasControlCharacters(displayName)) {
-      return responseError(400, "Informe o nome público da identidade.");
-    }
-    if (rawHandle && (requestedHandle.length < 3 || requestedHandle.length > 30)) {
-      return responseError(400, "O @ desejado deve ter entre 3 e 30 caracteres válidos.");
-    }
-    if (!validEmail(contactEmail)) {
-      return responseError(400, "Informe um e-mail de contato válido.");
-    }
-
-    let professionalEmailDomain: string | null = null;
-    if (professionalEmail) {
-      if (!validEmail(professionalEmail)) {
-        return responseError(400, "Informe um e-mail profissional válido ou deixe o campo vazio.");
-      }
-      professionalEmailDomain = professionalDomain(professionalEmail);
-      if (!professionalEmailDomain) {
-        return responseError(400, "O domínio do e-mail profissional não é válido.");
-      }
-    }
-
-    if (requestKind === "create" && requestedHandle) {
-      const { data: availabilityData, error: availabilityError } = await auth.rpc(
-        "mhidas_check_public_handle_availability_v1",
-        { p_handle: requestedHandle }
+      return responseError(
+        400,
+        "Escolha se deseja criar ou reivindicar um perfil."
       );
+    }
+
+    let targetEntityId: string | null = null;
+
+    if (requestKind === "claim") {
+      if (!validUuid(requestedEntityId)) {
+        return responseError(
+          400,
+          "Escolha uma identidade oficial existente antes de continuar."
+        );
+      }
+
+      const { data: targetEntity, error: targetError } = await admin
+        .from("official_entities")
+        .select(
+          "entity_id,entity_type,organization_type,display_name,public_handle,lifecycle_status,verification_status"
+        )
+        .eq("entity_id", requestedEntityId)
+        .eq("lifecycle_status", "active")
+        .eq("verification_status", "verified")
+        .not("public_handle", "is", null)
+        .maybeSingle();
+
+      if (targetError) {
+        return responseError(
+          500,
+          "Não foi possível validar a identidade escolhida agora."
+        );
+      }
+
+      if (!targetEntity?.entity_id || !targetEntity.public_handle) {
+        return responseError(
+          409,
+          "Esta identidade não está disponível para reivindicação."
+        );
+      }
+
+      targetEntityId = String(targetEntity.entity_id);
+      entityType = String(targetEntity.entity_type) as EntityType;
+      organizationType = String(targetEntity.organization_type ?? "");
+      displayName = String(targetEntity.display_name);
+      requestedHandle = normalizeHandle(String(targetEntity.public_handle));
+
+      const { data: existingMembership, error: membershipError } = await admin
+        .from("entity_memberships")
+        .select("role,status")
+        .eq("entity_id", targetEntityId)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (membershipError) {
+        return responseError(500, "Não foi possível validar seus vínculos atuais.");
+      }
+
+      if (existingMembership) {
+        return responseError(
+          409,
+          "Sua conta já possui um vínculo ativo com esta identidade."
+        );
+      }
+
+      const { data: duplicateClaim, error: duplicateClaimError } = await admin
+        .from("entity_verification_requests")
+        .select("request_id")
+        .eq("requester_user_id", user.id)
+        .eq("entity_id", targetEntityId)
+        .in("status", [...OPEN_REQUEST_STATUSES])
+        .limit(1);
+
+      if (duplicateClaimError) {
+        return responseError(
+          500,
+          "Não foi possível validar solicitações existentes."
+        );
+      }
+
+      if ((duplicateClaim ?? []).length > 0) {
+        return responseError(
+          409,
+          "Já existe uma solicitação aberta para esta identidade."
+        );
+      }
+    } else {
+      if (!ENTITY_TYPES.has(entityType)) {
+        return responseError(400, "Escolha um tipo de identidade válido.");
+      }
+
+      if (
+        entityType === "organization" &&
+        !ORGANIZATION_TYPES.has(organizationType)
+      ) {
+        return responseError(400, "Escolha o tipo da organização.");
+      }
+
+      if (displayName.length < 2 || hasControlCharacters(displayName)) {
+        return responseError(400, "Informe o nome público da identidade.");
+      }
+
+      if (!rawHandle) {
+        return responseError(
+          400,
+          "Informe o @ universal desejado para a nova identidade."
+        );
+      }
+
+      if (requestedHandle.length < 3 || requestedHandle.length > 30) {
+        return responseError(
+          400,
+          "O @ desejado deve ter entre 3 e 30 caracteres válidos."
+        );
+      }
+
+      const { data: availabilityData, error: availabilityError } =
+        await auth.rpc("mhidas_check_public_handle_availability_v1", {
+          p_handle: requestedHandle,
+        });
 
       if (availabilityError) {
-        return responseError(503, "Não foi possível validar o @ agora. Tente novamente.");
+        return responseError(
+          503,
+          "Não foi possível validar o @ agora. Tente novamente."
+        );
       }
 
       const availability = Array.isArray(availabilityData)
         ? availabilityData[0]
         : availabilityData;
+
       if (!availability?.available) {
-        return responseError(409, "Este @ não está disponível para um novo perfil.");
+        return responseError(
+          409,
+          "Este @ não está disponível para um novo perfil."
+        );
+      }
+
+      const { data: duplicateCreate, error: duplicateCreateError } = await admin
+        .from("entity_verification_requests")
+        .select("request_id")
+        .eq("requester_user_id", user.id)
+        .eq("requested_handle", requestedHandle)
+        .in("status", [...OPEN_REQUEST_STATUSES])
+        .limit(1);
+
+      if (duplicateCreateError) {
+        return responseError(
+          500,
+          "Não foi possível validar solicitações existentes."
+        );
+      }
+
+      if ((duplicateCreate ?? []).length > 0) {
+        return responseError(
+          409,
+          "Já existe uma solicitação aberta usando este @."
+        );
+      }
+    }
+
+    if (!validEmail(contactEmail)) {
+      return responseError(400, "Informe um e-mail de contato válido.");
+    }
+
+    let professionalEmailDomain: string | null = null;
+
+    if (professionalEmail) {
+      if (!validEmail(professionalEmail)) {
+        return responseError(
+          400,
+          "Informe um e-mail profissional válido ou deixe o campo vazio."
+        );
+      }
+
+      professionalEmailDomain = professionalDomain(professionalEmail);
+
+      if (!professionalEmailDomain) {
+        return responseError(
+          400,
+          "O domínio do e-mail profissional não é válido."
+        );
       }
     }
 
@@ -282,7 +550,13 @@ export async function POST(request: NextRequest) {
 
     for (const spec of evidenceSpecs) {
       if (spec.provided && !spec.url) {
-        return responseError(400, `Revise o campo ${spec.key.replace(/_/g, " ")}. Use uma URL HTTPS oficial.`);
+        return responseError(
+          400,
+          `Revise o campo ${spec.key.replace(
+            /_/g,
+            " "
+          )}. Use uma URL HTTPS oficial.`
+        );
       }
     }
 
@@ -294,12 +568,12 @@ export async function POST(request: NextRequest) {
       .insert({
         request_kind: requestKind,
         requester_user_id: user.id,
-        entity_id: null,
+        entity_id: targetEntityId,
         requested_entity_type: entityType,
         requested_organization_type:
           entityType === "organization" ? organizationType : null,
         requested_display_name: displayName,
-        requested_handle: requestedHandle || null,
+        requested_handle: requestedHandle,
         source_catalog_kind: null,
         source_catalog_key: null,
         contact_email: contactEmail,
@@ -335,6 +609,7 @@ export async function POST(request: NextRequest) {
 
     for (const spec of evidenceSpecs) {
       if (!spec.url) continue;
+
       evidenceRows.push({
         request_id: requestId,
         evidence_type: spec.type,
@@ -352,7 +627,11 @@ export async function POST(request: NextRequest) {
 
       if (evidenceError) {
         await rollbackCreatedRequest(admin, requestId);
-        return responseError(500, "Não foi possível salvar as evidências agora.");
+
+        return responseError(
+          500,
+          "Não foi possível salvar as evidências agora."
+        );
       }
     }
 
@@ -360,7 +639,7 @@ export async function POST(request: NextRequest) {
       .from("entity_verification_audit_log")
       .insert({
         request_id: requestId,
-        entity_id: null,
+        entity_id: targetEntityId,
         actor_user_id: user.id,
         actor_kind: "user",
         action: submit
@@ -374,7 +653,11 @@ export async function POST(request: NextRequest) {
 
     if (auditError) {
       await rollbackCreatedRequest(admin, requestId);
-      return responseError(500, "Não foi possível registrar a solicitação com segurança.");
+
+      return responseError(
+        500,
+        "Não foi possível registrar a solicitação com segurança."
+      );
     }
 
     return NextResponse.json({ ok: true, request_id: requestId, status });
@@ -382,13 +665,16 @@ export async function POST(request: NextRequest) {
 
   if (action === "submit_request" || action === "withdraw_request") {
     const requestId = cleanText(body.request_id, 80);
-    if (!/^[0-9a-f-]{36}$/i.test(requestId)) {
+
+    if (!validUuid(requestId)) {
       return responseError(400, "Solicitação inválida.");
     }
 
     const { data: current, error: currentError } = await admin
       .from("entity_verification_requests")
-      .select("request_id,requester_user_id,status,submitted_at")
+      .select(
+        "request_id,requester_user_id,request_kind,entity_id,requested_handle,status,submitted_at"
+      )
       .eq("request_id", requestId)
       .eq("requester_user_id", user.id)
       .maybeSingle();
@@ -401,10 +687,31 @@ export async function POST(request: NextRequest) {
 
     if (action === "submit_request") {
       if (previousStatus !== "draft") {
-        return responseError(409, "Somente um rascunho pode ser enviado para análise.");
+        return responseError(
+          409,
+          "Somente um rascunho pode ser enviado para análise."
+        );
+      }
+
+      if (current.request_kind === "create" && !current.requested_handle) {
+        return responseError(
+          409,
+          "Este rascunho precisa de um @ universal. Retire-o e crie uma nova solicitação."
+        );
+      }
+
+      if (
+        current.request_kind === "claim" &&
+        (!current.entity_id || !current.requested_handle)
+      ) {
+        return responseError(
+          409,
+          "Este rascunho não possui uma identidade oficial vinculada. Retire-o e inicie uma nova reivindicação."
+        );
       }
 
       const submittedAt = new Date().toISOString();
+
       const { error: updateError } = await admin
         .from("entity_verification_requests")
         .update({ status: "submitted", submitted_at: submittedAt })
@@ -412,14 +719,17 @@ export async function POST(request: NextRequest) {
         .eq("requester_user_id", user.id);
 
       if (updateError) {
-        return responseError(500, "Não foi possível enviar a solicitação agora.");
+        return responseError(
+          500,
+          "Não foi possível enviar a solicitação agora."
+        );
       }
 
       const { error: auditError } = await admin
         .from("entity_verification_audit_log")
         .insert({
           request_id: requestId,
-          entity_id: null,
+          entity_id: current.entity_id,
           actor_user_id: user.id,
           actor_kind: "user",
           action: "verification.request_submitted",
@@ -435,14 +745,25 @@ export async function POST(request: NextRequest) {
           .update({ status: previousStatus, submitted_at: current.submitted_at })
           .eq("request_id", requestId)
           .eq("requester_user_id", user.id);
-        return responseError(500, "Não foi possível registrar a mudança com segurança.");
+
+        return responseError(
+          500,
+          "Não foi possível registrar a mudança com segurança."
+        );
       }
 
-      return NextResponse.json({ ok: true, request_id: requestId, status: "submitted" });
+      return NextResponse.json({
+        ok: true,
+        request_id: requestId,
+        status: "submitted",
+      });
     }
 
     if (!WITHDRAWABLE_STATUSES.has(previousStatus)) {
-      return responseError(409, "Esta solicitação não pode mais ser retirada por este fluxo.");
+      return responseError(
+        409,
+        "Esta solicitação não pode mais ser retirada por este fluxo."
+      );
     }
 
     const { error: withdrawError } = await admin
@@ -452,14 +773,17 @@ export async function POST(request: NextRequest) {
       .eq("requester_user_id", user.id);
 
     if (withdrawError) {
-      return responseError(500, "Não foi possível retirar a solicitação agora.");
+      return responseError(
+        500,
+        "Não foi possível retirar a solicitação agora."
+      );
     }
 
     const { error: auditError } = await admin
       .from("entity_verification_audit_log")
       .insert({
         request_id: requestId,
-        entity_id: null,
+        entity_id: current.entity_id,
         actor_user_id: user.id,
         actor_kind: "user",
         action: "verification.request_withdrawn",
@@ -475,10 +799,18 @@ export async function POST(request: NextRequest) {
         .update({ status: previousStatus })
         .eq("request_id", requestId)
         .eq("requester_user_id", user.id);
-      return responseError(500, "Não foi possível registrar a mudança com segurança.");
+
+      return responseError(
+        500,
+        "Não foi possível registrar a mudança com segurança."
+      );
     }
 
-    return NextResponse.json({ ok: true, request_id: requestId, status: "withdrawn" });
+    return NextResponse.json({
+      ok: true,
+      request_id: requestId,
+      status: "withdrawn",
+    });
   }
 
   return responseError(400, "Ação inválida.");

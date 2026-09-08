@@ -43,7 +43,11 @@ export type ReviewerRequest = {
   request_kind: "create" | "claim";
   requester_user_id: string;
   entity_id: string | null;
-  requested_entity_type: "artist" | "club" | "festival" | "organization";
+  requested_entity_type:
+    | "artist"
+    | "club"
+    | "festival"
+    | "organization";
   requested_organization_type: string | null;
   requested_display_name: string;
   requested_handle: string | null;
@@ -52,7 +56,10 @@ export type ReviewerRequest = {
   contact_email: string;
   professional_email_domain: string | null;
   email_signal_status: string;
-  status: "submitted" | "in_review" | "more_info_required";
+  status:
+    | "submitted"
+    | "in_review"
+    | "more_info_required";
   submitted_at: string | null;
   reviewed_by_user_id: string | null;
   reviewed_at: string | null;
@@ -68,6 +75,7 @@ type ReviewerAction =
   | "start_review"
   | "request_more_info"
   | "resume_review"
+  | "approve_request"
   | "reject_request";
 
 type VerificationReviewerClientProps = {
@@ -75,13 +83,19 @@ type VerificationReviewerClientProps = {
   initialRequests: ReviewerRequest[];
 };
 
-const STATUS_LABELS: Record<ReviewerRequest["status"], string> = {
+const STATUS_LABELS: Record<
+  ReviewerRequest["status"],
+  string
+> = {
   submitted: "Enviado para análise",
   in_review: "Em revisão",
   more_info_required: "Mais informações necessárias",
 };
 
-const ENTITY_LABELS: Record<ReviewerRequest["requested_entity_type"], string> = {
+const ENTITY_LABELS: Record<
+  ReviewerRequest["requested_entity_type"],
+  string
+> = {
   artist: "Artista / DJ / Projeto musical",
   club: "Club / Venue",
   festival: "Festival",
@@ -97,11 +111,15 @@ const EVIDENCE_LABELS: Record<string, string> = {
   youtube: "YouTube",
   booking_agency: "Agência / booking",
   business_registry: "Registro empresarial",
-  representative_authorization: "Autorização de representação",
+  representative_authorization:
+    "Autorização de representação",
   other: "Outra evidência",
 };
 
-const AUTHORITY_ROLE_LABELS: Record<VerificationAuthorityRole, string> = {
+const AUTHORITY_ROLE_LABELS: Record<
+  VerificationAuthorityRole,
+  string
+> = {
   verification_reviewer: "Revisor de verificação",
   verification_admin: "Administrador de verificação",
   platform_admin: "Administrador da plataforma",
@@ -110,8 +128,10 @@ const AUTHORITY_ROLE_LABELS: Record<VerificationAuthorityRole, string> = {
 const EMAIL_SIGNAL_LABELS: Record<string, string> = {
   unassessed: "Não avaliado",
   personal: "E-mail pessoal",
-  professional_unverified: "E-mail profissional não confirmado",
-  professional_confirmed: "E-mail profissional confirmado",
+  professional_unverified:
+    "E-mail profissional não confirmado",
+  professional_confirmed:
+    "E-mail profissional confirmado",
   mismatch: "E-mail não corresponde à identidade",
 };
 
@@ -130,11 +150,15 @@ const AUDIT_ACTOR_LABELS: Record<string, string> = {
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
   "verification.request_draft_created": "Rascunho criado",
-  "verification.request_submitted": "Solicitação enviada para análise",
-  "verification.request_withdrawn": "Solicitação retirada",
+  "verification.request_submitted":
+    "Solicitação enviada para análise",
+  "verification.request_withdrawn":
+    "Solicitação retirada",
   "verification.request_review_started": "Revisão iniciada",
-  "verification.request_more_info_requested": "Mais informações solicitadas",
+  "verification.request_more_info_requested":
+    "Mais informações solicitadas",
   "verification.request_review_resumed": "Revisão retomada",
+  "verification.request_approved": "Solicitação aprovada",
   "verification.request_rejected": "Solicitação rejeitada",
 };
 
@@ -150,7 +174,9 @@ const AUDIT_STATUS_LABELS: Record<string, string> = {
   revoked: "Revogado",
 };
 
-function authorityRoleLabel(role: VerificationAuthorityRole): string {
+function authorityRoleLabel(
+  role: VerificationAuthorityRole
+): string {
   return AUTHORITY_ROLE_LABELS[role];
 }
 
@@ -193,13 +219,39 @@ function formatDate(value: string | null): string {
 function formatFileSize(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "—";
   if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+
+  if (value < 1024 * 1024) {
+    return `${Math.round(value / 1024)} KB`;
+  }
 
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function actionNeedsReason(action: ReviewerAction): boolean {
-  return action === "request_more_info" || action === "reject_request";
+  return (
+    action === "request_more_info" ||
+    action === "reject_request"
+  );
+}
+
+function approvalBlockedReason(
+  request: ReviewerRequest
+): string | null {
+  if (
+    request.request_kind === "create" &&
+    !request.requested_handle
+  ) {
+    return "Aprovação bloqueada: esta criação não possui @ universal.";
+  }
+
+  if (
+    request.request_kind === "claim" &&
+    (!request.entity_id || !request.requested_handle)
+  ) {
+    return "Aprovação bloqueada: esta reivindicação não possui identidade oficial e @ vinculados.";
+  }
+
+  return null;
 }
 
 export default function VerificationReviewerClient({
@@ -208,27 +260,60 @@ export default function VerificationReviewerClient({
 }: VerificationReviewerClientProps) {
   const router = useRouter();
 
-  const [busyRequestId, setBusyRequestId] = useState<string | null>(null);
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [busyRequestId, setBusyRequestId] =
+    useState<string | null>(null);
+
+  const [reasons, setReasons] =
+    useState<Record<string, string>>({});
+
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null);
+
+  const [successMessage, setSuccessMessage] =
+    useState<string | null>(null);
 
   const requestCount = useMemo(
     () => initialRequests.length,
     [initialRequests.length]
   );
 
-  async function runAction(requestId: string, action: ReviewerAction) {
+  async function runAction(
+    request: ReviewerRequest,
+    action: ReviewerAction
+  ) {
+    const requestId = request.request_id;
     const reason = String(reasons[requestId] || "").trim();
 
     if (actionNeedsReason(action) && reason.length < 3) {
       setSuccessMessage(null);
+
       setErrorMessage(
         action === "request_more_info"
           ? "Explique o que precisa ser enviado antes de pedir mais informações."
           : "Informe um motivo objetivo antes de rejeitar a solicitação."
       );
+
       return;
+    }
+
+    if (action === "approve_request") {
+      const blocked = approvalBlockedReason(request);
+
+      if (blocked) {
+        setSuccessMessage(null);
+        setErrorMessage(blocked);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        request.request_kind === "create"
+          ? `Aprovar ${request.requested_display_name}? A identidade oficial, o vínculo de proprietário e @${request.requested_handle} serão concluídos em uma única operação atômica.`
+          : `Aprovar a reivindicação de ${request.requested_display_name}? O vínculo de proprietário sobre @${request.requested_handle} será concluído em uma única operação atômica.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
     }
 
     setBusyRequestId(requestId);
@@ -236,19 +321,24 @@ export default function VerificationReviewerClient({
     setSuccessMessage(null);
 
     try {
-      const response = await fetch("/api/admin/verification/requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          request_id: requestId,
-          action,
-          reason: reason || null,
-        }),
-      });
+      const response = await fetch(
+        "/api/admin/verification/requests",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            request_id: requestId,
+            action,
+            reason: reason || null,
+          }),
+        }
+      );
 
-      const payload = (await response.json().catch(() => null)) as
+      const payload = (await response
+        .json()
+        .catch(() => null)) as
         | { ok?: boolean; message?: string }
         | null;
 
@@ -261,7 +351,8 @@ export default function VerificationReviewerClient({
       }
 
       setSuccessMessage(
-        payload.message || "A revisão foi atualizada com segurança."
+        payload.message ||
+          "A revisão foi atualizada com segurança."
       );
 
       setReasons((current) => ({
@@ -287,12 +378,17 @@ export default function VerificationReviewerClient({
         <p className="uc-ui-copy">
           {requestCount === 0
             ? "A fila está vazia neste momento."
-            : `${requestCount} solicitação(ões) disponível(is) para ${authorityRoleLabel(authorityRole)}.`}
+            : `${requestCount} solicitação(ões) disponível(is) para ${authorityRoleLabel(
+                authorityRole
+              )}.`}
         </p>
       </div>
 
       {errorMessage ? (
-        <p className="uc-verification-alert uc-verification-alert--error" role="alert">
+        <p
+          className="uc-verification-alert uc-verification-alert--error"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
@@ -310,17 +406,22 @@ export default function VerificationReviewerClient({
             Nenhuma solicitação aguardando revisão.
           </strong>
           <p className="uc-ui-copy">
-            Solicitações enviadas aparecerão aqui sem expor a autoridade
-            administrativa ao navegador do solicitante.
+            Solicitações enviadas aparecerão aqui sem expor a
+            autoridade administrativa ao navegador do solicitante.
           </p>
         </article>
       ) : (
         <div className="uc-verification-request-list">
           {initialRequests.map((request) => {
-            const requestBusy = busyRequestId === request.request_id;
+            const requestBusy =
+              busyRequestId === request.request_id;
+
             const hasDecisionActions =
               request.status === "in_review" ||
               request.status === "more_info_required";
+
+            const blockedApproval =
+              approvalBlockedReason(request);
 
             return (
               <article
@@ -371,7 +472,8 @@ export default function VerificationReviewerClient({
                       {request.contact_email}
                     </strong>
                     <p className="uc-ui-copy">
-                      Sinal de e-mail: {emailSignalLabel(request.email_signal_status)}
+                      Sinal de e-mail:{" "}
+                      {emailSignalLabel(request.email_signal_status)}
                       {request.professional_email_domain
                         ? ` · ${request.professional_email_domain}`
                         : ""}
@@ -379,17 +481,22 @@ export default function VerificationReviewerClient({
                   </article>
 
                   <article className="uc-ui-surface">
-                    <span className="uc-ui-label">Contexto da solicitação</span>
+                    <span className="uc-ui-label">
+                      Contexto da solicitação
+                    </span>
                     <strong className="uc-ui-value">
                       {request.entity_id
                         ? "Entidade existente vinculada"
-                        : "Sem entidade oficial criada"}
+                        : request.request_kind === "create"
+                        ? "Nova entidade será criada somente na aprovação"
+                        : "Sem entidade oficial vinculada"}
                     </strong>
                     <p className="uc-ui-copy">
-                      {request.source_catalog_kind || request.source_catalog_key
-                        ? `Catálogo: ${request.source_catalog_kind || "—"} · ${
-                            request.source_catalog_key || "—"
-                          }`
+                      {request.source_catalog_kind ||
+                      request.source_catalog_key
+                        ? `Catálogo: ${
+                            request.source_catalog_kind || "—"
+                          } · ${request.source_catalog_key || "—"}`
                         : "Nenhuma origem de catálogo vinculada."}
                     </p>
                   </article>
@@ -397,7 +504,9 @@ export default function VerificationReviewerClient({
 
                 <section className="uc-ui-stack">
                   <div>
-                    <span className="uc-ui-label">Evidências públicas</span>
+                    <span className="uc-ui-label">
+                      Evidências públicas
+                    </span>
                     <p className="uc-ui-copy">
                       {request.evidence.length === 0
                         ? "Nenhuma evidência pública foi enviada."
@@ -406,7 +515,10 @@ export default function VerificationReviewerClient({
                   </div>
 
                   {request.evidence.map((evidence) => (
-                    <article key={evidence.evidence_id} className="uc-ui-surface">
+                    <article
+                      key={evidence.evidence_id}
+                      className="uc-ui-surface"
+                    >
                       <span className="uc-ui-label">
                         {EVIDENCE_LABELS[evidence.evidence_type] ||
                           "Outra evidência"}
@@ -436,7 +548,9 @@ export default function VerificationReviewerClient({
 
                 <section className="uc-ui-stack">
                   <div>
-                    <span className="uc-ui-label">Documentos privados</span>
+                    <span className="uc-ui-label">
+                      Documentos privados
+                    </span>
                     <p className="uc-ui-copy">
                       {request.documents.length === 0
                         ? "Nenhum documento privado foi anexado."
@@ -445,8 +559,13 @@ export default function VerificationReviewerClient({
                   </div>
 
                   {request.documents.map((document) => (
-                    <article key={document.document_id} className="uc-ui-surface">
-                      <span className="uc-ui-label">{document.document_type}</span>
+                    <article
+                      key={document.document_id}
+                      className="uc-ui-surface"
+                    >
+                      <span className="uc-ui-label">
+                        {document.document_type}
+                      </span>
                       <strong className="uc-ui-value">
                         {document.original_filename}
                       </strong>
@@ -469,7 +588,10 @@ export default function VerificationReviewerClient({
                     </div>
 
                     {request.audit.map((entry) => (
-                      <p key={entry.audit_id} className="uc-verification-request-note">
+                      <p
+                        key={entry.audit_id}
+                        className="uc-verification-request-note"
+                      >
                         {formatDate(entry.created_at)} ·{" "}
                         {auditActorLabel(entry.actor_kind)} ·{" "}
                         {auditActionLabel(entry.action)}
@@ -501,11 +623,12 @@ export default function VerificationReviewerClient({
                         }))
                       }
                       disabled={requestBusy}
-                      placeholder="Use este campo para pedir informações adicionais ou registrar o motivo de uma rejeição."
+                      placeholder="Use este campo para pedir informações adicionais, registrar uma observação de aprovação ou informar o motivo de uma rejeição."
                     />
                     <span className="uc-verification-help">
-                      O motivo é obrigatório para pedir mais informações ou
-                      rejeitar.
+                      O motivo é obrigatório para pedir mais
+                      informações ou rejeitar. Na aprovação, é
+                      opcional.
                     </span>
                   </label>
                 ) : null}
@@ -517,10 +640,12 @@ export default function VerificationReviewerClient({
                       className="uc-ui-button uc-ui-button--quiet"
                       disabled={busyRequestId !== null}
                       onClick={() =>
-                        void runAction(request.request_id, "start_review")
+                        void runAction(request, "start_review")
                       }
                     >
-                      {requestBusy ? "Processando..." : "Iniciar revisão"}
+                      {requestBusy
+                        ? "Processando..."
+                        : "Iniciar revisão"}
                     </button>
                   ) : null}
 
@@ -530,7 +655,10 @@ export default function VerificationReviewerClient({
                       className="uc-ui-button uc-ui-button--quiet"
                       disabled={busyRequestId !== null}
                       onClick={() =>
-                        void runAction(request.request_id, "request_more_info")
+                        void runAction(
+                          request,
+                          "request_more_info"
+                        )
                       }
                     >
                       {requestBusy
@@ -545,10 +673,27 @@ export default function VerificationReviewerClient({
                       className="uc-ui-button uc-ui-button--quiet"
                       disabled={busyRequestId !== null}
                       onClick={() =>
-                        void runAction(request.request_id, "resume_review")
+                        void runAction(request, "resume_review")
                       }
                     >
-                      {requestBusy ? "Processando..." : "Retomar revisão"}
+                      {requestBusy
+                        ? "Processando..."
+                        : "Retomar revisão"}
+                    </button>
+                  ) : null}
+
+                  {hasDecisionActions && !blockedApproval ? (
+                    <button
+                      type="button"
+                      className="uc-ui-button uc-ui-button--quiet"
+                      disabled={busyRequestId !== null}
+                      onClick={() =>
+                        void runAction(request, "approve_request")
+                      }
+                    >
+                      {requestBusy
+                        ? "Processando..."
+                        : "Aprovar solicitação"}
                     </button>
                   ) : null}
 
@@ -558,18 +703,20 @@ export default function VerificationReviewerClient({
                       className="uc-ui-button uc-ui-button--quiet"
                       disabled={busyRequestId !== null}
                       onClick={() =>
-                        void runAction(request.request_id, "reject_request")
+                        void runAction(request, "reject_request")
                       }
                     >
-                      {requestBusy ? "Processando..." : "Rejeitar solicitação"}
+                      {requestBusy
+                        ? "Processando..."
+                        : "Rejeitar solicitação"}
                     </button>
                   ) : null}
                 </div>
 
                 <p className="uc-verification-request-note">
-                  Aprovar não está disponível nesta etapa. A aprovação final
-                  precisa criar ou vincular a entidade, conceder o vínculo
-                  administrativo e reservar o @ universal de forma atômica.
+                  {blockedApproval
+                    ? blockedApproval
+                    : "A aprovação final é executada server-side em uma única operação atômica. Nenhum estado approved é gravado sem identidade oficial, vínculo de proprietário e @ universal válidos."}
                 </p>
               </article>
             );

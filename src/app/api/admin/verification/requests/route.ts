@@ -15,6 +15,7 @@ type ReviewerAction =
   | "start_review"
   | "request_more_info"
   | "resume_review"
+  | "approve_request"
   | "reject_request";
 
 type RequestBody = {
@@ -26,6 +27,9 @@ type RequestBody = {
 type CurrentRequest = {
   request_id: string;
   requester_user_id: string;
+  request_kind: string;
+  entity_id: string | null;
+  requested_handle: string | null;
   status: string;
   submitted_at: string | null;
   reviewed_by_user_id: string | null;
@@ -76,13 +80,14 @@ function isReviewerAction(value: string): value is ReviewerAction {
     "start_review",
     "request_more_info",
     "resume_review",
+    "approve_request",
     "reject_request",
   ].includes(value);
 }
 
 function nextStatusFor(
   currentStatus: string,
-  action: ReviewerAction
+  action: Exclude<ReviewerAction, "approve_request">
 ): string | null {
   if (action === "start_review" && currentStatus === "submitted") {
     return "in_review";
@@ -112,7 +117,9 @@ function nextStatusFor(
   return null;
 }
 
-function auditActionFor(action: ReviewerAction): string {
+function auditActionFor(
+  action: Exclude<ReviewerAction, "approve_request">
+): string {
   if (action === "start_review") {
     return "verification.request_review_started";
   }
@@ -128,7 +135,9 @@ function auditActionFor(action: ReviewerAction): string {
   return "verification.request_rejected";
 }
 
-function successMessageFor(action: ReviewerAction): string {
+function successMessageFor(
+  action: Exclude<ReviewerAction, "approve_request">
+): string {
   if (action === "start_review") {
     return "A solicitação entrou em revisão.";
   }
@@ -183,7 +192,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!authority) {
-    return responseError(403, "Esta conta não possui autoridade de revisão.");
+    return responseError(
+      403,
+      "Esta conta não possui autoridade de revisão."
+    );
   }
 
   let body: RequestBody;
@@ -221,7 +233,7 @@ export async function POST(request: NextRequest) {
   const { data: current, error: currentError } = await admin
     .from("entity_verification_requests")
     .select(
-      "request_id,requester_user_id,status,submitted_at,reviewed_by_user_id,reviewed_at,decision_reason"
+      "request_id,requester_user_id,request_kind,entity_id,requested_handle,status,submitted_at,reviewed_by_user_id,reviewed_at,decision_reason"
     )
     .eq("request_id", requestId)
     .maybeSingle();
@@ -238,7 +250,89 @@ export async function POST(request: NextRequest) {
   }
 
   const typedCurrent = current as CurrentRequest;
-  const nextStatus = nextStatusFor(typedCurrent.status, action);
+
+  if (action === "approve_request") {
+    if (
+      !["in_review", "more_info_required"].includes(typedCurrent.status)
+    ) {
+      return responseError(
+        409,
+        "Esta solicitação mudou de estado e não aceita mais aprovação."
+      );
+    }
+
+    if (
+      typedCurrent.request_kind === "create" &&
+      !typedCurrent.requested_handle
+    ) {
+      return responseError(
+        409,
+        "A criação não possui @ universal e não pode ser aprovada."
+      );
+    }
+
+    if (
+      typedCurrent.request_kind === "claim" &&
+      (!typedCurrent.entity_id || !typedCurrent.requested_handle)
+    ) {
+      return responseError(
+        409,
+        "A reivindicação não possui uma identidade oficial completa vinculada."
+      );
+    }
+
+    const { data: approvalData, error: approvalError } = await admin.rpc(
+      "mhidas_approve_entity_verification_request_v1",
+      {
+        p_request_id: requestId,
+        p_actor_user_id: user.id,
+        p_decision_reason: reason || null,
+      }
+    );
+
+    if (approvalError) {
+      const status = approvalError.code === "P0001" ? 409 : 500;
+
+      return responseError(
+        status,
+        status === 409
+          ? "A aprovação não pôde ser concluída porque o estado da identidade mudou. Atualize a fila e revise novamente."
+          : "Não foi possível concluir a aprovação atômica agora."
+      );
+    }
+
+    const approval =
+      approvalData &&
+      typeof approvalData === "object" &&
+      !Array.isArray(approvalData)
+        ? approvalData
+        : null;
+
+    return json({
+      ok: true,
+      request_id: requestId,
+      previous_status: typedCurrent.status,
+      status: "approved",
+      action,
+      message:
+        "Solicitação aprovada. Identidade, vínculo administrativo e @ universal foram concluídos atomicamente.",
+      final_approval_performed: true,
+      official_entity_created: typedCurrent.request_kind === "create",
+      membership_created: true,
+      public_handle_reserved: true,
+      approval,
+    });
+  }
+
+  const nonApprovalAction = action as Exclude<
+    ReviewerAction,
+    "approve_request"
+  >;
+
+  const nextStatus = nextStatusFor(
+    typedCurrent.status,
+    nonApprovalAction
+  );
 
   if (!nextStatus) {
     return responseError(
@@ -254,7 +348,8 @@ export async function POST(request: NextRequest) {
     reviewed_by_user_id: user.id,
     reviewed_at: now,
     decision_reason:
-      action === "request_more_info" || action === "reject_request"
+      nonApprovalAction === "request_more_info" ||
+      nonApprovalAction === "reject_request"
         ? reason
         : null,
   };
@@ -284,14 +379,15 @@ export async function POST(request: NextRequest) {
     .from("entity_verification_audit_log")
     .insert({
       request_id: requestId,
-      entity_id: null,
+      entity_id: typedCurrent.entity_id,
       actor_user_id: user.id,
       actor_kind: "reviewer",
-      action: auditActionFor(action),
+      action: auditActionFor(nonApprovalAction),
       previous_status: typedCurrent.status,
       new_status: nextStatus,
       reason:
-        action === "request_more_info" || action === "reject_request"
+        nonApprovalAction === "request_more_info" ||
+        nonApprovalAction === "reject_request"
           ? reason
           : null,
       metadata: {
@@ -325,7 +421,7 @@ export async function POST(request: NextRequest) {
     previous_status: typedCurrent.status,
     status: nextStatus,
     action,
-    message: successMessageFor(action),
+    message: successMessageFor(nonApprovalAction),
     final_approval_performed: false,
     official_entity_created: false,
     membership_created: false,
