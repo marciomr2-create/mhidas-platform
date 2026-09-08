@@ -262,8 +262,16 @@ begin
         message = 'claim_entity_not_found';
     end if;
 
-    if v_entity.lifecycle_status <> 'active'
-       or v_entity.verification_status <> 'verified' then
+    if v_entity.lifecycle_status not in (
+         'pending_review',
+         'active'
+       )
+       or v_entity.verification_status not in (
+         'unverified',
+         'pending',
+         'in_review',
+         'verified'
+       ) then
       raise exception using
         errcode = 'P0001',
         message = 'claim_entity_not_claimable';

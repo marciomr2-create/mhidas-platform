@@ -225,8 +225,13 @@ export async function GET(request: NextRequest) {
   const byDisplayName = admin
     .from("official_entities")
     .select(baseSelect)
-    .eq("lifecycle_status", "active")
-    .eq("verification_status", "verified")
+    .in("lifecycle_status", ["pending_review", "active"])
+    .in("verification_status", [
+      "unverified",
+      "pending",
+      "in_review",
+      "verified",
+    ])
     .not("public_handle", "is", null)
     .ilike("display_name", `%${query}%`)
     .order("display_name", { ascending: true })
@@ -236,8 +241,13 @@ export async function GET(request: NextRequest) {
     ? admin
         .from("official_entities")
         .select(baseSelect)
-        .eq("lifecycle_status", "active")
-        .eq("verification_status", "verified")
+        .in("lifecycle_status", ["pending_review", "active"])
+        .in("verification_status", [
+          "unverified",
+          "pending",
+          "in_review",
+          "verified",
+        ])
         .not("public_handle", "is", null)
         .ilike("public_handle", `%${normalizedQuery}%`)
         .order("display_name", { ascending: true })
@@ -356,8 +366,13 @@ export async function POST(request: NextRequest) {
           "entity_id,entity_type,organization_type,display_name,public_handle,lifecycle_status,verification_status"
         )
         .eq("entity_id", requestedEntityId)
-        .eq("lifecycle_status", "active")
-        .eq("verification_status", "verified")
+        .in("lifecycle_status", ["pending_review", "active"])
+        .in("verification_status", [
+          "unverified",
+          "pending",
+          "in_review",
+          "verified",
+        ])
         .not("public_handle", "is", null)
         .maybeSingle();
 
