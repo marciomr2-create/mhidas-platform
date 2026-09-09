@@ -318,8 +318,8 @@ export default function VerificationReviewerClient({
 
       const confirmed = window.confirm(
         request.request_kind === "create"
-          ? `Aprovar ${request.requested_display_name}? A identidade oficial, o vínculo de proprietário e @${request.requested_handle} serão concluídos em uma única operação atômica.`
-          : `Aprovar a reivindicação de ${request.requested_display_name}? O vínculo de proprietário sobre @${request.requested_handle} será concluído em uma única operação atômica.`
+          ? `Aprovar ${request.requested_display_name}? A identidade, o responsável e @${request.requested_handle} serão confirmados juntos.`
+          : `Aprovar a reivindicação de ${request.requested_display_name}? O vínculo de responsável sobre @${request.requested_handle} será confirmado.`
       );
 
       if (!confirmed) {
@@ -422,8 +422,7 @@ export default function VerificationReviewerClient({
             Nenhuma solicitação aguardando revisão.
           </strong>
           <p className="uc-ui-copy">
-            Solicitações enviadas aparecerão aqui sem expor a
-            autoridade administrativa ao navegador do solicitante.
+            Novas solicitações enviadas aparecerão aqui para análise.
           </p>
         </article>
       ) : (
@@ -487,7 +486,7 @@ export default function VerificationReviewerClient({
                       {request.contact_email}
                     </strong>
                     <p className="uc-ui-copy">
-                      Sinal de e-mail:{" "}
+                      E-mail:{" "}
                       {emailSignalLabel(request.email_signal_status)}
                       {request.professional_email_domain
                         ? ` · ${request.professional_email_domain}`
@@ -509,10 +508,10 @@ export default function VerificationReviewerClient({
                     <p className="uc-ui-copy">
                       {request.source_catalog_kind ||
                       request.source_catalog_key
-                        ? `Catálogo: ${
+                        ? `Origem: ${
                             request.source_catalog_kind || "—"
                           } · ${request.source_catalog_key || "—"}`
-                        : "Nenhuma origem de catálogo vinculada."}
+                        : "Nenhuma referência de origem disponível."}
                     </p>
                   </article>
                 </section>
@@ -569,7 +568,7 @@ export default function VerificationReviewerClient({
                     <p className="uc-ui-copy">
                       {request.documents.length === 0
                         ? "Nenhum documento privado foi anexado."
-                        : `${request.documents.length} documento(s) com metadata disponível(is).`}
+                        : `${request.documents.length} documento(s) anexado(s).`}
                     </p>
                   </div>
 
@@ -596,9 +595,9 @@ export default function VerificationReviewerClient({
                 {request.audit.length > 0 ? (
                   <section className="uc-ui-stack">
                     <div>
-                      <span className="uc-ui-label">Auditoria</span>
+                      <span className="uc-ui-label">Histórico</span>
                       <p className="uc-ui-copy">
-                        Histórico interno imutável desta solicitação.
+                        Todas as mudanças desta solicitação ficam registradas aqui.
                       </p>
                     </div>
 
@@ -737,7 +736,7 @@ export default function VerificationReviewerClient({
                 >
                   {blockedApproval
                     ? blockedApproval
-                    : "A aprovação final é executada server-side em uma única operação atômica. Nenhum estado approved é gravado sem identidade oficial, vínculo de proprietário e @ universal válidos."}
+                    : "A aprovação só é concluída quando a identidade, o responsável e o @ estão corretos."}
                 </p>
               </article>
             );

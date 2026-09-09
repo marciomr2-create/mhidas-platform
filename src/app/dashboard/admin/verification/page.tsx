@@ -149,22 +149,21 @@ export default async function VerificationReviewerPage() {
 
   return (
     <UseclubbersPageShell
-      eyebrow="GOVERNANÇA INTERNA"
+      eyebrow="REVISÃO DE IDENTIDADES"
       title="Fila de verificação"
-      description="Revise solicitações oficiais sem misturar autoridade administrativa com a experiência pública do Clubber. Toda mudança de estado é controlada no servidor e registrada em auditoria."
+      description="Acompanhe solicitações, registre orientações e tome decisões de revisão em um só lugar."
       backHref="/dashboard"
       backLabel="Voltar ao início"
       pageClassName="uc-verification-page-shell"
     >
       <section className="uc-ui-grid uc-ui-grid--2 uc-ui-section">
         <article className="uc-ui-surface">
-          <span className="uc-ui-label">Autoridade ativa</span>
+          <span className="uc-ui-label">Seu acesso</span>
           <strong className="uc-ui-value">
             {AUTHORITY_ROLE_LABELS[authority.role]}
           </strong>
           <p className="uc-ui-copy">
-            Este papel é interno, controlado pelo servidor e não é concedido por
-            dados do perfil ou pelo navegador.
+            Esta conta pode revisar e decidir solicitações desta fila.
           </p>
         </article>
 
@@ -184,12 +183,10 @@ export default async function VerificationReviewerPage() {
       />
 
       <section className="uc-ui-trust">
-        <strong>Aprovação final protegida por operação atômica.</strong>
+        <strong>Aprovação segura e completa.</strong>
         <p>
-          Quando uma aprovação é confirmada, a identidade oficial, o vínculo
-          administrativo e o @ universal precisam terminar consistentes na
-          mesma transação. Se qualquer parte falhar, nenhum estado approved
-          parcial é mantido.
+          Ao aprovar, a identidade, o responsável e o @ são confirmados juntos.
+          Se alguma informação não estiver correta, a aprovação não é concluída.
         </p>
       </section>
     </UseclubbersPageShell>

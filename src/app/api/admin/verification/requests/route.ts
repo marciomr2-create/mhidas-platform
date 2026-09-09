@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
   if (!requestOriginAllowed(request)) {
     return responseError(
       403,
-      "A ação administrativa não pôde ser validada com segurança."
+      "Não foi possível validar esta ação. Atualize a página e tente novamente."
     );
   }
 
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
   if (!admin) {
     return responseError(
       503,
-      "A governança de verificação está temporariamente indisponível."
+      "A revisão está temporariamente indisponível."
     );
   }
 
@@ -187,14 +187,14 @@ export async function POST(request: NextRequest) {
   } catch {
     return responseError(
       503,
-      "Não foi possível validar a autoridade de revisão agora."
+      "Não foi possível confirmar sua permissão de revisão agora."
     );
   }
 
   if (!authority) {
     return responseError(
       403,
-      "Esta conta não possui autoridade de revisão."
+      "Esta conta não possui permissão para revisar solicitações."
     );
   }
 
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
         status,
         status === 409
           ? "A aprovação não pôde ser concluída porque o estado da identidade mudou. Atualize a fila e revise novamente."
-          : "Não foi possível concluir a aprovação atômica agora."
+          : "Não foi possível concluir a aprovação agora."
       );
     }
 
@@ -315,7 +315,7 @@ export async function POST(request: NextRequest) {
       status: "approved",
       action,
       message:
-        "Solicitação aprovada. Identidade, vínculo administrativo e @ universal foram concluídos atomicamente.",
+        "Solicitação aprovada. A identidade, o responsável e o @ foram confirmados com sucesso.",
       final_approval_performed: true,
       official_entity_created: typedCurrent.request_kind === "create",
       membership_created: true,
@@ -411,7 +411,7 @@ export async function POST(request: NextRequest) {
 
     return responseError(
       500,
-      "Não foi possível registrar a mudança de revisão com segurança."
+      "Não foi possível registrar esta mudança de revisão."
     );
   }
 
