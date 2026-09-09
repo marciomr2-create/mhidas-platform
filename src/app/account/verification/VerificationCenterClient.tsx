@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import VerificationDocumentUploader from "./VerificationDocumentUploader";
 
 type EntityType = "artist" | "club" | "festival" | "organization";
 type RequestKind = "create" | "claim";
@@ -499,6 +500,11 @@ export default function VerificationCenterClient({
             <p>{request.decision_reason}</p>
           </section>
         ) : null}
+
+        <VerificationDocumentUploader
+          requestId={request.request_id}
+          status={request.status}
+        />
 
         {canSubmit || canWithdraw ? (
           <div className="uc-verification-request-actions">

@@ -588,6 +588,17 @@ export default function VerificationReviewerClient({
                         {formatFileSize(document.file_size_bytes)} ·{" "}
                         {reviewStatusLabel(document.review_status)}
                       </p>
+
+                      <a
+                        className="uc-ui-button uc-ui-button--quiet"
+                        href={`/api/admin/verification/documents?document_id=${encodeURIComponent(
+                          document.document_id
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Abrir documento
+                      </a>
                     </article>
                   ))}
                 </section>
