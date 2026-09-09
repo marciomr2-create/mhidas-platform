@@ -1132,3 +1132,107 @@
     height: calc(96px + env(safe-area-inset-bottom));
   }
 }
+/* R8E-J UI-01/02 REVIEWER STATUS + SEMANTIC MESSAGES START */
+.uc-verification-page-shell .uc-verification-state {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--mhidas-border);
+  border-left: 3px solid var(--mhidas-border-strong);
+  border-radius: 12px;
+  background: transparent;
+}
+
+.uc-verification-page-shell .uc-verification-state > strong {
+  color: var(--mhidas-text-primary);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.uc-verification-page-shell .uc-verification-state > p {
+  margin: 0;
+  color: var(--mhidas-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.uc-verification-page-shell .uc-verification-state--in_review {
+  border-left-color: #2a8694;
+  border-color: color-mix(in srgb, #2a8694 58%, var(--mhidas-border));
+}
+
+.uc-verification-page-shell .uc-verification-state--in_review .uc-ui-label {
+  color: #2a8694;
+}
+
+.uc-verification-page-shell .uc-verification-state--more_info_required {
+  border-left-color: #f87171;
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
+.uc-verification-page-shell
+  .uc-verification-state--more_info_required
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-state--more_info_required
+  > strong {
+  color: #fecaca;
+}
+
+.uc-verification-page-shell .uc-verification-alert--success {
+  border-left-color: #2a8694;
+  color: var(--mhidas-text-primary);
+}
+
+.uc-verification-page-shell .uc-verification-alert--error {
+  border-left-color: #f87171;
+  color: #fecaca;
+}
+
+.uc-verification-page-shell .uc-verification-alert__label {
+  display: block;
+  margin: 0;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+}
+
+.uc-verification-page-shell .uc-verification-alert__copy {
+  margin: 4px 0 0;
+  color: inherit;
+}
+
+.uc-verification-page-shell .uc-verification-request-note--critical {
+  border-left-color: #f87171;
+  color: #fecaca;
+}
+
+@media (max-width: 719px) {
+  .uc-verification-page-shell .uc-verification-state {
+    gap: 3px;
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-state > strong {
+    font-size: 15px;
+  }
+
+  .uc-verification-page-shell .uc-verification-state > p {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .uc-verification-page-shell .uc-verification-alert__label {
+    font-size: 8px;
+  }
+
+  .uc-verification-page-shell .uc-verification-alert__copy {
+    margin-top: 3px;
+  }
+}
+/* R8E-J UI-01/02 REVIEWER STATUS + SEMANTIC MESSAGES END */

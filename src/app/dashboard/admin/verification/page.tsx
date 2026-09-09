@@ -159,7 +159,9 @@ export default async function VerificationReviewerPage() {
       <section className="uc-ui-grid uc-ui-grid--2 uc-ui-section">
         <article className="uc-ui-surface">
           <span className="uc-ui-label">Autoridade ativa</span>
-          <strong className="uc-ui-value">{AUTHORITY_ROLE_LABELS[authority.role]}</strong>
+          <strong className="uc-ui-value">
+            {AUTHORITY_ROLE_LABELS[authority.role]}
+          </strong>
           <p className="uc-ui-copy">
             Este papel é interno, controlado pelo servidor e não é concedido por
             dados do perfil ou pelo navegador.
@@ -182,12 +184,12 @@ export default async function VerificationReviewerPage() {
       />
 
       <section className="uc-ui-trust">
-        <strong>Aprovação final permanece bloqueada nesta etapa.</strong>
+        <strong>Aprovação final protegida por operação atômica.</strong>
         <p>
-          O painel pode triar, iniciar revisão, pedir informações, retomar e
-          rejeitar. A aprovação só será habilitada quando a transação atômica de
-          criação ou reivindicação estiver conectada à entidade, ao vínculo
-          administrativo e ao @ universal, sem estados oficiais incompletos.
+          Quando uma aprovação é confirmada, a identidade oficial, o vínculo
+          administrativo e o @ universal precisam terminar consistentes na
+          mesma transação. Se qualquer parte falhar, nenhum estado approved
+          parcial é mantido.
         </p>
       </section>
     </UseclubbersPageShell>

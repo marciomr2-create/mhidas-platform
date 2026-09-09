@@ -92,6 +92,17 @@ const STATUS_LABELS: Record<
   more_info_required: "Mais informações necessárias",
 };
 
+const STATUS_DESCRIPTIONS: Record<
+  ReviewerRequest["status"],
+  string
+> = {
+  submitted: "A solicitação está aguardando o início da revisão.",
+  in_review:
+    "A análise está ativa. Este é o estado atual antes de uma decisão ou pedido de informação.",
+  more_info_required:
+    "A revisão está aguardando informações adicionais antes de continuar.",
+};
+
 const ENTITY_LABELS: Record<
   ReviewerRequest["requested_entity_type"],
   string
@@ -385,18 +396,23 @@ export default function VerificationReviewerClient({
       </div>
 
       {errorMessage ? (
-        <p
+        <div
           className="uc-verification-alert uc-verification-alert--error"
           role="alert"
         >
-          {errorMessage}
-        </p>
+          <strong className="uc-verification-alert__label">ATENÇÃO</strong>
+          <p className="uc-verification-alert__copy">{errorMessage}</p>
+        </div>
       ) : null}
 
       {successMessage ? (
-        <p className="uc-verification-alert" role="status">
-          {successMessage}
-        </p>
+        <div
+          className="uc-verification-alert uc-verification-alert--success"
+          role="status"
+        >
+          <strong className="uc-verification-alert__label">CONCLUÍDO</strong>
+          <p className="uc-verification-alert__copy">{successMessage}</p>
+        </div>
       ) : null}
 
       {initialRequests.length === 0 ? (
@@ -453,17 +469,16 @@ export default function VerificationReviewerClient({
                       </span>
                     </div>
                   </div>
-
-                  <span
-                    className={
-                      request.status === "in_review"
-                        ? "uc-ui-status uc-ui-status--accent"
-                        : "uc-ui-status"
-                    }
-                  >
-                    {STATUS_LABELS[request.status]}
-                  </span>
                 </div>
+
+                <aside
+                  className={`uc-verification-state uc-verification-state--${request.status}`}
+                  aria-label={`Status da solicitação: ${STATUS_LABELS[request.status]}`}
+                >
+                  <span className="uc-ui-label">STATUS DA SOLICITAÇÃO</span>
+                  <strong>{STATUS_LABELS[request.status]}</strong>
+                  <p>{STATUS_DESCRIPTIONS[request.status]}</p>
+                </aside>
 
                 <section className="uc-ui-grid uc-ui-grid--2">
                   <article className="uc-ui-surface">
@@ -713,7 +728,13 @@ export default function VerificationReviewerClient({
                   ) : null}
                 </div>
 
-                <p className="uc-verification-request-note">
+                <p
+                  className={
+                    blockedApproval
+                      ? "uc-verification-request-note uc-verification-request-note--critical"
+                      : "uc-verification-request-note"
+                  }
+                >
                   {blockedApproval
                     ? blockedApproval
                     : "A aprovação final é executada server-side em uma única operação atômica. Nenhum estado approved é gravado sem identidade oficial, vínculo de proprietário e @ universal válidos."}
