@@ -56,32 +56,11 @@ export default async function VerificationCenterPage() {
     <UseclubbersPageShell
       eyebrow="SUA CONTA USECLUBBERS"
       title="Central de Verificação"
-      description="Crie ou reivindique perfis oficiais e acompanhe cada solicitação dentro da sua Conta USECLUBBERS. A Central é a fonte da verdade do processo."
+      description="Veja com clareza o que está acontecendo agora, o que você precisa fazer e o histórico das suas solicitações de identidades oficiais."
       backHref="/dashboard"
       backLabel="Voltar ao início"
       pageClassName="uc-verification-page-shell"
     >
-      <section className="uc-ui-grid uc-ui-grid--2 uc-ui-section uc-verification-intro-grid">
-        <article className="uc-ui-surface">
-          <span className="uc-ui-label">O que a verificação confirma</span>
-          <strong className="uc-ui-value">Relação legítima com a identidade</strong>
-          <p className="uc-ui-copy">
-            A USECLUBBERS verifica a relação entre a identidade pública e seu
-            responsável ou representante. Não é selo de popularidade, qualidade ou
-            recomendação.
-          </p>
-        </article>
-
-        <article className="uc-ui-surface">
-          <span className="uc-ui-label">Canal oficial</span>
-          <strong className="uc-ui-value">O processo acontece aqui</strong>
-          <p className="uc-ui-copy">
-            E-mails oficiais podem avisar sobre uma atualização, mas nenhuma
-            verificação importante é concluída apenas por e-mail.
-          </p>
-        </article>
-      </section>
-
       <VerificationCenterClient
         accountEmail={user.email ?? ""}
         initialEntityType={initialEntityType(intentResult.data?.current_intent)}

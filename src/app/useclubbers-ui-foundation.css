@@ -1236,3 +1236,456 @@
   }
 }
 /* R8E-J UI-01/02 REVIEWER STATUS + SEMANTIC MESSAGES END */
+/* R8E-J REQUESTER GUIDED VERIFICATION CENTER START */
+.uc-verification-page-shell .uc-verification-requester-current-list {
+  display: grid;
+  gap: 14px;
+}
+
+.uc-verification-page-shell .uc-verification-requester-current {
+  display: grid;
+  gap: 14px;
+  background: var(--mhidas-card-dark);
+}
+
+.uc-verification-page-shell .uc-verification-requester-current__head {
+  min-width: 0;
+}
+
+.uc-verification-page-shell .uc-verification-requester-current__head h3 {
+  margin: 7px 0 0;
+  color: var(--mhidas-text-primary);
+  font-size: clamp(20px, 4vw, 28px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.uc-verification-page-shell .uc-verification-requester-state,
+.uc-verification-page-shell .uc-verification-requester-next,
+.uc-verification-page-shell .uc-verification-requester-reason {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid var(--mhidas-border);
+  border-left: 3px solid var(--mhidas-border-strong);
+  border-radius: 12px;
+  background: transparent;
+}
+
+.uc-verification-page-shell .uc-verification-requester-state > strong,
+.uc-verification-page-shell .uc-verification-requester-next > strong {
+  color: var(--mhidas-text-primary);
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.uc-verification-page-shell .uc-verification-requester-state > p,
+.uc-verification-page-shell .uc-verification-requester-next > p,
+.uc-verification-page-shell .uc-verification-requester-reason > p {
+  margin: 0;
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.48;
+}
+
+.uc-verification-page-shell .uc-verification-requester-state--progress,
+.uc-verification-page-shell .uc-verification-requester-next--progress,
+.uc-verification-page-shell .uc-verification-requester-reason--progress {
+  border-left-color: #2a8694;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-state--progress
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-requester-next--progress
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-requester-reason--progress
+  .uc-ui-label {
+  color: #2a8694;
+}
+
+.uc-verification-page-shell .uc-verification-requester-state--critical,
+.uc-verification-page-shell .uc-verification-requester-next--critical,
+.uc-verification-page-shell .uc-verification-requester-reason--critical {
+  border-color: rgba(248, 113, 113, 0.42);
+  border-left-color: #f87171;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-state--critical
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-requester-next--critical
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-requester-reason--critical
+  .uc-ui-label,
+.uc-verification-page-shell
+  .uc-verification-requester-state--critical
+  > strong {
+  color: #fecaca;
+}
+
+.uc-verification-page-shell .uc-verification-requester-empty {
+  border-left: 3px solid var(--mhidas-border-strong);
+}
+
+.uc-verification-page-shell .uc-verification-requester-guide {
+  display: grid;
+  gap: 14px;
+}
+
+.uc-verification-page-shell .uc-verification-requester-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.uc-verification-page-shell .uc-verification-requester-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--mhidas-border);
+  border-radius: 12px;
+  background: var(--mhidas-card-dark);
+}
+
+.uc-verification-page-shell .uc-verification-requester-steps li > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #2a8694;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.uc-verification-page-shell .uc-verification-requester-steps strong {
+  display: block;
+  color: var(--mhidas-text-primary);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.uc-verification-page-shell .uc-verification-requester-steps p {
+  margin: 5px 0 0;
+  color: var(--mhidas-text-muted);
+  font-size: 12px;
+  line-height: 1.42;
+}
+
+.uc-verification-page-shell .uc-verification-requester-close-form {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mhidas-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.uc-verification-page-shell .uc-verification-requester-selected {
+  border-left: 3px solid #2a8694;
+  background: transparent;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history {
+  border-top: 1px solid var(--mhidas-border);
+  border-bottom: 1px solid var(--mhidas-border);
+}
+
+.uc-verification-page-shell .uc-verification-requester-history > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  color: var(--mhidas-text-primary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history
+  > summary::-webkit-details-marker {
+  display: none;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history
+  > summary
+  > span:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history
+  > summary
+  strong {
+  font-size: 17px;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history
+  > summary
+  small {
+  color: var(--mhidas-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history
+  > summary
+  > span:last-child {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--mhidas-border-strong);
+  border-radius: 50%;
+  color: var(--mhidas-text-primary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 0 16px;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--mhidas-border);
+  border-left: 3px solid var(--mhidas-border-strong);
+  border-radius: 12px;
+  background: var(--mhidas-card-dark);
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-card--progress {
+  border-left-color: #2a8694;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-card--critical {
+  border-left-color: #f87171;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-card > div:first-child {
+  min-width: 0;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-card
+  > div:first-child
+  > strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--mhidas-text-primary);
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-card
+  > div:first-child
+  > p {
+  margin: 5px 0 0;
+  color: var(--mhidas-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-status {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 130px;
+  text-align: right;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-status > span {
+  color: var(--mhidas-text-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-status > strong {
+  color: var(--mhidas-text-primary);
+  font-size: 13px;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-status--critical
+  > strong {
+  color: #fecaca;
+}
+
+.uc-verification-page-shell
+  .uc-verification-requester-history-status--progress
+  > strong {
+  color: #9fd9e0;
+}
+
+.uc-verification-page-shell .uc-verification-requester-history-reason {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--mhidas-border);
+  color: var(--mhidas-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 860px) {
+  .uc-verification-page-shell .uc-verification-requester-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 719px) {
+  .uc-verification-page-shell .uc-verification-requester-current-list {
+    gap: 9px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-current {
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-current__head h3 {
+    font-size: 17px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-state,
+  .uc-verification-page-shell .uc-verification-requester-next,
+  .uc-verification-page-shell .uc-verification-requester-reason {
+    gap: 3px;
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-state > strong,
+  .uc-verification-page-shell .uc-verification-requester-next > strong {
+    font-size: 15px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-state > p,
+  .uc-verification-page-shell .uc-verification-requester-next > p,
+  .uc-verification-page-shell .uc-verification-requester-reason > p {
+    font-size: 10.5px;
+    line-height: 1.38;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-steps {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-steps li {
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-steps li > span {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-steps strong {
+    font-size: 11px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-steps p {
+    margin-top: 3px;
+    font-size: 9.5px;
+    line-height: 1.35;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-close-form {
+    font-size: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-history > summary {
+    padding: 12px 0;
+  }
+
+  .uc-verification-page-shell
+    .uc-verification-requester-history
+    > summary
+    strong {
+    font-size: 13px;
+  }
+
+  .uc-verification-page-shell
+    .uc-verification-requester-history
+    > summary
+    small {
+    font-size: 9.5px;
+  }
+
+  .uc-verification-page-shell
+    .uc-verification-requester-history
+    > summary
+    > span:last-child {
+    min-width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-history-card {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .uc-verification-page-shell .uc-verification-requester-history-status {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .uc-verification-page-shell
+    .uc-verification-requester-history-card
+    > div:first-child
+    > strong {
+    font-size: 12px;
+  }
+
+  .uc-verification-page-shell
+    .uc-verification-requester-history-card
+    > div:first-child
+    > p,
+  .uc-verification-page-shell .uc-verification-requester-history-reason {
+    font-size: 9.5px;
+  }
+}
+/* R8E-J REQUESTER GUIDED VERIFICATION CENTER END */
