@@ -9,6 +9,7 @@ import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import EventSocialActionsHub from "./EventSocialActionsHub";
+import EventSocialAgenda from "./EventSocialAgenda";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
 import TicketNetworkAvailability from "./TicketNetworkAvailability";
@@ -697,8 +698,8 @@ function heroStyle(
     backgroundColor: "#07070b",
     backgroundImage: heroImage
       ? usesBalancedCanonicalImage
-        ? `linear-gradient(90deg, rgba(5,5,8,0.78) 0%, rgba(5,5,8,0.54) 42%, rgba(5,5,8,0.14) 70%, rgba(5,5,8,0.03) 100%), linear-gradient(180deg, rgba(5,5,8,0.01) 0%, rgba(5,5,8,0.20) 100%), url(${heroImage})`
-        : `linear-gradient(90deg, rgba(5,5,8,0.96) 0%, rgba(5,5,8,0.84) 48%, rgba(5,5,8,0.34) 100%), linear-gradient(180deg, rgba(5,5,8,0.12) 0%, rgba(5,5,8,0.78) 100%), url(${heroImage})`
+        ? `linear-gradient(90deg, rgba(5,5,8,0.56) 0%, rgba(5,5,8,0.30) 42%, rgba(5,5,8,0.08) 70%, rgba(5,5,8,0.01) 100%), linear-gradient(180deg, rgba(5,5,8,0.00) 0%, rgba(5,5,8,0.10) 100%), url(${heroImage})`
+        : `linear-gradient(90deg, rgba(5,5,8,0.72) 0%, rgba(5,5,8,0.48) 48%, rgba(5,5,8,0.16) 100%), linear-gradient(180deg, rgba(5,5,8,0.04) 0%, rgba(5,5,8,0.30) 100%), url(${heroImage})`
       : "linear-gradient(135deg, rgba(17,17,24,0.98), rgba(36,28,68,0.84), rgba(0,78,70,0.54))",
     backgroundSize: usesBalancedCanonicalImage
       ? "100% 100%, 100% 100%, auto 100%"
@@ -719,11 +720,11 @@ function badgeStyle() {
     gap: 6,
     padding: "7px 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.075)",
+    border: "1px solid rgba(42,134,148,0.48)",
+    background: "rgba(42,134,148,0.14)",
     fontSize: 11,
     fontWeight: 900,
-    color: "#fff",
+    color: "#9FD9E0",
   } as const;
 }
 
@@ -848,9 +849,9 @@ function emptyCardStyle() {
   return {
     padding: 22,
     borderRadius: 22,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.035)",
-    opacity: 0.88,
+    border: "1px solid rgba(42,134,148,0.26)",
+    background: "linear-gradient(135deg, rgba(42,134,148,0.13), rgba(255,255,255,0.025))",
+    opacity: 1,
     lineHeight: 1.7,
   } as const;
 }
@@ -1944,11 +1945,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         .event-hero__title {
           margin: 0;
           max-width: 720px;
+          min-width: 0;
           color: #f7f7fb;
           font-size: clamp(42px, 6vw, 72px);
           line-height: 0.94;
           letter-spacing: -0.055em;
           font-weight: 950;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
 
         .event-hero__description {
@@ -2138,10 +2142,13 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           font-size: 11px;
           line-height: 1.25;
           font-weight: 750;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
+          white-space: normal;
+          overflow: visible;
+          text-overflow: clip;
+
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
         .event-hero__tribes {
           grid-column: 1 / -1;
@@ -2451,6 +2458,38 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           transform: translateX(-50%);
           padding: clamp(18px, 2.4vw, 26px) !important;
           gap: 18px !important;
+        }
+
+        .event-social-radar--empty {
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        .event-social-radar--empty > div {
+          width: 100%;
+          box-sizing: border-box;
+          margin: 0;
+          padding: 18px 0 4px 18px !important;
+          border: 0 !important;
+          border-left: 3px solid #2A8694 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+          opacity: 1 !important;
+        }
+
+        .event-social-radar--empty > div strong {
+          color: #F8FAFC !important;
+          font-size: 16px;
+          line-height: 1.35;
+        }
+
+        .event-social-radar--empty > div > div {
+          margin-top: 4px;
+          color: rgba(203, 213, 225, 0.74);
+          line-height: 1.55;
         }
 
         .event-ticket-journey {
@@ -3009,14 +3048,17 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-social-journey__group-preference-heading span {
           min-width: 0;
-          overflow: hidden;
+          overflow: visible;
           color: rgba(203, 213, 225, 0.58);
           font-size: 9px;
           line-height: 1.2;
           font-weight: 800;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+          text-overflow: clip;
+          white-space: normal;
+
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
         .event-social-journey__group-preference-options {
           min-width: 0;
@@ -3288,12 +3330,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-persisted-radar__empty {
-            overflow: hidden;
+            overflow: visible;
             font-size: 7.5px;
             line-height: 1.1;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
+            text-overflow: clip;
+            white-space: normal;
+
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
           .event-persisted-radar__groups {
             padding: 0 14px;
@@ -3301,14 +3346,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-persisted-radar__notice {
-            display: -webkit-box;
-            overflow: hidden;
             padding: 0 14px;
             font-size: 8.5px;
             line-height: 1.3;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-          }
+
+          display: block;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
           .event-social-radar {
             width: 100%;
@@ -3417,14 +3463,17 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
           .event-journey-mobile-nav__value {
             min-width: 0;
-            overflow: hidden;
+            overflow: visible;
             color: #f8fafc;
             font-size: 11px;
             line-height: 1.22;
             font-weight: 950;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
+            text-overflow: clip;
+            white-space: normal;
+
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
           .event-journey-mobile-nav__action {
             color: rgba(203, 213, 225, 0.46);
@@ -3739,11 +3788,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         @media (max-width: 760px) {
           .event-hero {
-            width: auto;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
             margin-left: 0;
             transform: none;
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
             min-height: 0;
+            box-sizing: border-box;
+            overflow: hidden;
             background-position: center 24%;
           }
 
@@ -3760,25 +3813,24 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-hero__title {
-            display: -webkit-box;
             max-width: 100%;
-            overflow: hidden;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
             font-size: clamp(27px, 7.8vw, 32px);
             line-height: 0.98;
             letter-spacing: -0.04em;
+            overflow-wrap: anywhere;
+            word-break: break-word;
           }
 
           .event-hero__description {
-            display: -webkit-box;
             max-width: 100%;
-            overflow: hidden;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 1;
             font-size: 12px;
             line-height: 1.3;
-          }
+
+          display: block;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
           .event-hero__actions {
             display: grid;
@@ -3804,12 +3856,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-hero__stats {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 7px;
-            overflow-x: auto;
-            overscroll-behavior-inline: contain;
-            scroll-snap-type: inline mandatory;
-            scroll-padding-inline: 14px;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
             border-top: 1px solid rgba(255,255,255,0.10);
             border-left: 0;
             padding: 8px 14px 10px;
@@ -3819,12 +3873,11 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-hero__stat,
           .event-hero__stat:nth-child(2n),
           .event-hero__stat:nth-last-child(-n + 2) {
-            flex: 0 0 126px;
-            min-height: 62px;
+            min-width: 0;
+            min-height: 68px;
             padding: 8px 10px;
             gap: 5px;
             align-content: space-between;
-            scroll-snap-align: start;
             border: 1px solid rgba(255,255,255,0.10);
             border-radius: 12px;
             background: rgba(13, 15, 22, 0.78);
@@ -3907,7 +3960,36 @@ export default async function EventPage({ params, searchParams }: PageProps) {
             text-overflow: clip;
             white-space: normal;
           }
+
+
+        /* SOCIAL-4H R8: mobile hero without mid-word splitting */
+        .event-hero {
+          background-size: 100% 100%, 100% 100%, 100% auto !important;
+          background-position: center, center, center top !important;
+          background-repeat: no-repeat !important;
         }
+
+        .event-hero__title {
+          max-width: 100%;
+          font-size: clamp(20px, 5.4vw, 23px) !important;
+          line-height: 1.08 !important;
+          letter-spacing: -0.015em !important;
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+          white-space: normal !important;
+          text-wrap: balance;
+        }
+
+        .event-hero__description {
+          max-width: 34ch !important;
+          font-size: 14px !important;
+          line-height: 1.5 !important;
+          overflow: visible !important;
+          display: block !important;
+          text-wrap: pretty;
+        }
+
+      }
 
         .event-hero > .event-quick-guide {
           grid-column: 1 / -1;
@@ -3993,11 +4075,12 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         .event-hero > .event-quick-guide .event-quick-guide__detail,
         .event-hero > .event-quick-guide .event-quick-guide__note {
-          display: -webkit-box;
-          overflow: hidden;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
-        }
+
+          display: block;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
         .event-hero > .event-quick-guide .event-quick-guide__note {
           display: none;
@@ -4034,16 +4117,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-hero > .event-quick-guide .event-quick-guide__grid {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 7px;
             width: 100%;
+            min-width: 0;
             max-width: 100%;
             box-sizing: border-box;
-            overflow-x: auto;
-            overscroll-behavior-x: contain;
-            scroll-snap-type: x mandatory;
-            scroll-padding-inline: 0;
-            scrollbar-width: none;
+            overflow: hidden;
             padding: 0 0 1px;
           }
 
@@ -4055,17 +4136,15 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(even),
           .event-hero > .event-quick-guide .event-quick-guide__item:nth-child(odd),
           .event-hero > .event-quick-guide .event-quick-guide__item:first-child {
-            flex: 0 0 126px;
-            width: 126px;
+            width: auto;
+            min-width: 0;
             min-height: 50px;
-            padding: 5px 6px;
+            padding: 6px 7px;
             gap: 1px;
             align-content: center;
             border: 1px solid rgba(255,255,255,0.09);
             border-radius: 8px;
             background: rgba(13,15,22,0.72);
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
           }
 
           .event-hero > .event-quick-guide .event-quick-guide__label {
@@ -4081,13 +4160,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-hero > .event-quick-guide .event-quick-guide__value {
-            display: -webkit-box;
-            overflow: hidden;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
             font-size: 8.5px;
             line-height: 1.12;
-          }
+
+          display: block;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+}
 
           .event-hero > .event-quick-guide .event-quick-guide__detail,
           .event-hero > .event-quick-guide .event-quick-guide__note,
@@ -4329,6 +4409,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
         ) : null}
       </section>
 
+      {canonicalEvent?.id ? (
+        <EventSocialAgenda canonicalEventId={canonicalEvent.id} />
+      ) : null}
+
       {eventGroup?.group_id ? (
         <section
           id="event-social-radar-summary"
@@ -4485,20 +4569,9 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
 
 
-      {attendees.length === 0 ? (
-        <section id="event-social-radar" style={sectionStyle("purple")}>
-          <div style={emptyCardStyle()}>
-            <strong style={{ display: "block", marginBottom: 10 }}>
-              Ainda não há Clubbers vinculados a este evento.
-            </strong>
-            <div>
-              Participantes, caronas e encontros aparecerão aqui conforme forem informados.
-            </div>
-          </div>
-        </section>
-      ) : (
+      {attendees.length === 0 ? null : (
         <>
-          <section
+<section
             id="event-social-radar"
             className="event-social-radar"
             style={sectionStyle("purple")}
