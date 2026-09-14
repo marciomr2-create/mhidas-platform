@@ -441,3 +441,48 @@
     font-size: 1rem;
   }
 }
+
+/* SOCIAL-4I — conflitos calculados, não persistidos */
+.conflictNotice {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(42, 134, 148, 0.4);
+  border-radius: 14px;
+  background: rgba(42, 134, 148, 0.08);
+}
+
+.conflictNotice strong {
+  color: #2A8694;
+  line-height: 1.3;
+}
+
+.conflictNotice span {
+  line-height: 1.45;
+  opacity: 0.86;
+  overflow-wrap: anywhere;
+}
+
+.savedStage {
+  grid-column: 2;
+  color: #CBD5E1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.savedConflict {
+  grid-column: 2;
+  color: #2A8694;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .savedStage,
+  .savedConflict {
+    grid-column: 1;
+  }
+}

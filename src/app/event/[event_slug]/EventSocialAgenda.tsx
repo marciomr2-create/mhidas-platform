@@ -129,6 +129,59 @@ function sortSets(sets: AgendaSet[]) {
   });
 }
 
+function getSetBounds(set: AgendaSet) {
+  const start = new Date(set.starts_at).getTime();
+  const end = set.ends_at ? new Date(set.ends_at).getTime() : Number.NaN;
+
+  if (
+    Number.isNaN(start) ||
+    Number.isNaN(end) ||
+    end <= start
+  ) {
+    return null;
+  }
+
+  return { start, end };
+}
+
+function setsOverlap(a: AgendaSet, b: AgendaSet) {
+  const aBounds = getSetBounds(a);
+  const bBounds = getSetBounds(b);
+
+  if (!aBounds || !bBounds) return false;
+
+  return (
+    aBounds.start < bBounds.end &&
+    bBounds.start < aBounds.end
+  );
+}
+
+function buildConflictMap(sets: AgendaSet[]) {
+  const activeSets = sets.filter((set) => !isCancelled(set));
+  const map = new Map<string, string[]>();
+
+  for (let i = 0; i < activeSets.length; i += 1) {
+    for (let j = i + 1; j < activeSets.length; j += 1) {
+      const left = activeSets[i];
+      const right = activeSets[j];
+
+      if (!setsOverlap(left, right)) continue;
+
+      map.set(left.set_id, [
+        ...(map.get(left.set_id) ?? []),
+        right.set_id,
+      ]);
+
+      map.set(right.set_id, [
+        ...(map.get(right.set_id) ?? []),
+        left.set_id,
+      ]);
+    }
+  }
+
+  return map;
+}
+
 export default function EventSocialAgenda({
   canonicalEventId,
 }: EventSocialAgendaProps) {
@@ -233,6 +286,25 @@ export default function EventSocialAgenda({
   const savedSets = allSets.filter((set) =>
     savedSetIds.includes(set.set_id)
   );
+
+  const savedSetById = new Map(
+    savedSets.map((set) => [set.set_id, set])
+  );
+
+  const stageNameById = new Map(
+    stages.map((stage) => [
+      stage.stage_id,
+      stage.name.trim() || "Programação",
+    ])
+  );
+
+  const conflictMap = buildConflictMap(savedSets);
+
+  const conflictPairCount =
+    Array.from(conflictMap.values()).reduce(
+      (total, conflictIds) => total + conflictIds.length,
+      0
+    ) / 2;
 
   const hasOfficialSets = allSets.length > 0;
 
@@ -526,6 +598,20 @@ export default function EventSocialAgenda({
           ) : null}
         </div>
 
+        {!loading && !authRequired && conflictPairCount > 0 ? (
+          <div className={styles.conflictNotice} role="status">
+            <strong>
+              {conflictPairCount === 1
+                ? "1 conflito de horário"
+                : `${conflictPairCount} conflitos de horário`}
+            </strong>
+            <span>
+              Você pode manter todos na sua agenda. Confira os horários e
+              escolha no evento qual acompanhar.
+            </span>
+          </div>
+        ) : null}
+
         {loading ? (
           <p className={styles.stateText}>
             Sincronizando suas escolhas…
@@ -543,14 +629,50 @@ export default function EventSocialAgenda({
           </div>
         ) : savedSets.length > 0 ? (
           <ol className={styles.savedList}>
-            {savedSets.map((set) => (
-              <li className={styles.savedItem} key={set.set_id}>
-                <span className={styles.savedTime}>
-                  {formatInterval(set)}
-                </span>
-                <strong>{getSetLabel(set)}</strong>
-              </li>
-            ))}
+            {savedSets.map((set) => {
+              const conflictIds = conflictMap.get(set.set_id) ?? [];
+              const stageName = set.stage_id
+                ? stageNameById.get(set.stage_id) ?? "Palco / área a confirmar"
+                : "Sem palco definido";
+
+              const conflictLabels = conflictIds
+                .map((conflictId) => savedSetById.get(conflictId))
+                .filter(
+                  (conflictSet): conflictSet is AgendaSet =>
+                    Boolean(conflictSet)
+                )
+                .map((conflictSet) => {
+                  const conflictStageName = conflictSet.stage_id
+                    ? stageNameById.get(conflictSet.stage_id) ??
+                      "Palco / área a confirmar"
+                    : "Sem palco definido";
+
+                  return `${getSetLabel(
+                    conflictSet
+                  )} · ${conflictStageName} (${formatInterval(
+                    conflictSet
+                  )})`;
+                });
+
+              return (
+                <li className={styles.savedItem} key={set.set_id}>
+                  <span className={styles.savedTime}>
+                    {formatInterval(set)}
+                  </span>
+                  <strong>{getSetLabel(set)}</strong>
+
+                  <span className={styles.savedStage}>
+                    Palco / área: {stageName}
+                  </span>
+
+                  {conflictLabels.length > 0 ? (
+                    <span className={styles.savedConflict}>
+                      Conflita com {conflictLabels.join(" · ")}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
         ) : (
           <p className={styles.stateText}>
