@@ -70,6 +70,8 @@ type RideRequestRow = {
 type MeetupRow = {
   meetup_id: string;
   event_group_id: string;
+  canonical_event_id: string | null;
+  set_id: string | null;
   creator_user_id: string;
   name: string;
   description: string | null;
@@ -131,6 +133,22 @@ type RideReadPayload = {
   people?: ClubberPersonRow[];
 };
 
+type MeetupSetContext = {
+  set_id: string;
+  canonical_event_id: string;
+  stage_id: string | null;
+  set_title: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  lifecycle_status: string;
+  stage_name: string | null;
+  performers: Array<{
+    display_name: string;
+    role: string;
+    sort_order: number;
+  }>;
+};
+
 type MeetupReadPayload = {
   ok: boolean;
   message?: string;
@@ -140,6 +158,7 @@ type MeetupReadPayload = {
   members?: MeetupMemberRow[];
   requests?: MeetupRequestRow[];
   people?: ClubberPersonRow[];
+  set_contexts?: MeetupSetContext[];
 };
 
 type MutationPayload = {
@@ -450,6 +469,9 @@ export default function StructuredRideMeetHub({
   const [meetupRequests, setMeetupRequests] = useState<
     MeetupRequestRow[]
   >([]);
+  const [meetupSetContexts, setMeetupSetContexts] = useState<
+    MeetupSetContext[]
+  >([]);
 
   const [rideMode, setRideMode] =
     useState<RideRow["mode"]>("offer");
@@ -531,6 +553,7 @@ export default function StructuredRideMeetHub({
       setMeetups(meetupPayload.meetups ?? []);
       setMeetupMembers(meetupPayload.members ?? []);
       setMeetupRequests(meetupPayload.requests ?? []);
+      setMeetupSetContexts(meetupPayload.set_contexts ?? []);
     } catch (error) {
       setFeedback({
         tone: "error",
@@ -1269,6 +1292,38 @@ export default function StructuredRideMeetHub({
           color: rgba(255,255,255,0.72);
           font-size: 12px;
           line-height: 1.5;
+        }
+
+        .structured-social__set-context {
+          display: grid;
+          gap: 4px;
+          padding: 11px 0;
+          border-top: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .structured-social__set-context-label {
+          color: var(--mhidas-clubber-action);
+          font-size: 10px;
+          line-height: 1.3;
+          font-weight: 950;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+        .structured-social__set-context-title {
+          color: #fff;
+          font-size: 13px;
+          line-height: 1.4;
+          font-weight: 900;
+          overflow-wrap: anywhere;
+        }
+
+        .structured-social__set-context-meta {
+          color: rgba(255,255,255,0.62);
+          font-size: 11px;
+          line-height: 1.45;
+          overflow-wrap: anywhere;
         }
 
         .structured-social__creator-block {
@@ -2561,6 +2616,14 @@ export default function StructuredRideMeetHub({
                   activeMeetups.map((meetup) => {
                     const isCreator =
                       meetup.creator_user_id === viewerUserId;
+                    const setContext = meetup.set_id
+                      ? meetupSetContexts.find(
+                          (context) =>
+                            context.set_id === meetup.set_id &&
+                            context.canonical_event_id ===
+                              meetup.canonical_event_id
+                        )
+                      : undefined;
                     const approvedMembers =
                       meetupMembers.filter(
                         (member) =>
@@ -2626,6 +2689,40 @@ export default function StructuredRideMeetHub({
                           <h3 className="structured-social__card-title">
                             {meetup.name}
                           </h3>
+
+                          {setContext ? (
+                            <div className="structured-social__set-context">
+                              <span className="structured-social__set-context-label">
+                                Encontro ligado a este set
+                              </span>
+                              <strong className="structured-social__set-context-title">
+                                {setContext.performers
+                                  .map((performer) =>
+                                    normalizeText(
+                                      performer.display_name
+                                    )
+                                  )
+                                  .filter(Boolean)
+                                  .join(" · ") ||
+                                  normalizeText(
+                                    setContext.set_title
+                                  ) ||
+                                  "Set oficial"}
+                              </strong>
+                              <span className="structured-social__set-context-meta">
+                                {[
+                                  formatDateTime(
+                                    setContext.starts_at
+                                  ),
+                                  normalizeText(
+                                    setContext.stage_name
+                                  ),
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
+                            </div>
+                          ) : null}
 
                           <div className="structured-social__meta">
                             <span>

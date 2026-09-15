@@ -3411,7 +3411,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-journey-mobile-nav__button {
             position: relative;
             min-width: 0;
-            min-height: 58px;
+            min-height: 56px;
             padding: 8px 9px 7px;
             display: grid;
             align-content: center;
@@ -3475,19 +3475,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           word-break: break-word;
 }
 
-          .event-journey-mobile-nav__action {
-            color: rgba(203, 213, 225, 0.46);
-            font-size: 7px;
-            line-height: 1.1;
-            font-weight: 950;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-          }
-
           .event-journey-mobile-nav__button--active
-            .event-journey-mobile-nav__label,
-          .event-journey-mobile-nav__button--active
-            .event-journey-mobile-nav__action {
+            .event-journey-mobile-nav__label {
             color: var(--mhidas-clubber-action);
           }
 
@@ -3513,23 +3502,20 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-ticket-journey__actions {
             margin-inline: 0;
             padding: 10px var(--journey-inline-pad) 12px;
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            overscroll-behavior-inline: contain;
-            scroll-snap-type: inline mandatory;
-            scroll-padding-inline: var(--journey-inline-pad);
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            overflow: visible;
             border-top: 0;
           }
 
           .event-ticket-journey__action {
-            flex: 0 0 132px;
-            width: auto;
-            min-height: 58px;
-            padding: 9px 9px;
+            width: 100%;
+            min-width: 0;
+            min-height: 66px;
+            padding: 10px;
             grid-template-columns: auto minmax(0, 1fr);
             gap: 7px;
-            scroll-snap-align: start;
             border: 1px solid rgba(255, 255, 255, 0.09);
             border-radius: 12px;
           }
@@ -3550,6 +3536,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           .event-ticket-journey__action-title {
             font-size: 12px;
             line-height: 1.22;
+            white-space: normal;
+            overflow-wrap: anywhere;
           }
 
           .event-ticket-journey__action-state {
@@ -3573,22 +3561,20 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-social-journey__modes {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 7px;
-            overflow-x: auto;
-            overscroll-behavior-inline: contain;
-            scroll-snap-type: inline mandatory;
-            scroll-padding-inline: var(--journey-inline-pad);
+            overflow: visible;
             border-top: 0;
             border-bottom: 0;
           }
 
           .event-social-journey__mode {
-            flex: 0 0 132px;
-            min-height: 72px;
+            width: 100%;
+            min-width: 0;
+            min-height: 84px;
             padding: 10px 9px;
             gap: 4px;
-            scroll-snap-align: start;
             border: 1px solid rgba(148, 163, 184, 0.16);
             border-radius: 12px;
           }
@@ -3598,8 +3584,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-social-journey__mode-title {
-            font-size: 12px;
+            font-size: 11px;
             line-height: 1.25;
+            white-space: normal;
+            overflow-wrap: anywhere;
           }
 
           .event-social-journey__mode-detail {
@@ -3684,27 +3672,22 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           }
 
           .event-social-journey__group-preference-options {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 4px;
-            overflow-x: auto;
-            overscroll-behavior-x: contain;
-            scroll-snap-type: x proximity;
-            scrollbar-width: none;
-          }
-
-          .event-social-journey__group-preference-options::-webkit-scrollbar {
-            display: none;
+            overflow: visible;
           }
 
           .event-social-journey__group-preference-option {
-            flex: 0 0 auto;
-            min-width: 58px;
-            min-height: 23px;
+            width: 100%;
+            min-width: 0;
+            min-height: 28px;
             padding: 4px 6px;
             border-radius: 6px;
-            font-size: 7.5px;
+            font-size: 8px;
             line-height: 1.1;
-            scroll-snap-align: start;
+            white-space: normal;
+            overflow-wrap: anywhere;
           }
 
           .event-social-journey__feedback {

@@ -1122,12 +1122,14 @@ export default function TicketIntentButton({
           {
             key: "moment" as const,
             label: "Momento",
-            value: statusLabel,
+            value: status ? statusLabel : "Não informado",
           },
           {
             key: "social" as const,
             label: "Como vou",
-            value: socialParticipationLabel,
+            value: socialJourney?.active
+              ? socialParticipationLabel
+              : "Não informado",
           },
           {
             key: "preferences" as const,
@@ -1139,7 +1141,7 @@ export default function TicketIntentButton({
                       ? "escolha"
                       : "escolhas"
                   }`
-                : "Nada ainda",
+                : "Não definido",
           },
         ].map((panel) => {
           const isActive = mobileJourneyPanel === panel.key;
@@ -1170,12 +1172,6 @@ export default function TicketIntentButton({
               >
                 {panel.value}
               </strong>
-              <span
-                className="event-journey-mobile-nav__action"
-                aria-hidden="true"
-              >
-                {isActive ? "Aberto" : "Abrir"}
-              </span>
             </button>
           );
         })}
