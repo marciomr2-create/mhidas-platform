@@ -33,6 +33,8 @@ type JsonRecord = Record<string, unknown>;
 type MeetupPayload = {
   action?: unknown;
   event_group_id?: unknown;
+  canonical_event_id?: unknown;
+  set_id?: unknown;
   meetup_id?: unknown;
   request_id?: unknown;
   name?: unknown;
@@ -184,7 +186,9 @@ function getRpcFailureStatus(message: string): number {
   if (
     normalized.includes("invalid") ||
     normalized.includes("must be") ||
-    normalized.includes("between")
+    normalized.includes("between") ||
+    normalized.includes("provided together") ||
+    normalized.includes("does not match")
   ) {
     return 400;
   }
@@ -229,7 +233,7 @@ export async function GET(request: NextRequest) {
   const { data: meetupsData, error: meetupsError } = await supabase
     .from("event_meetups")
     .select(
-      "meetup_id,event_group_id,creator_user_id,name,description,meeting_point_label,meeting_point_reference,starts_at,ends_at,max_members,rules,visibility,status,expires_at,closed_at,archived_at,cancelled_at,created_at,updated_at"
+      "meetup_id,event_group_id,canonical_event_id,set_id,creator_user_id,name,description,meeting_point_label,meeting_point_reference,starts_at,ends_at,max_members,rules,visibility,status,expires_at,closed_at,archived_at,cancelled_at,created_at,updated_at"
     )
     .eq("event_group_id", eventGroupId)
     .order("starts_at", { ascending: true });
@@ -256,6 +260,7 @@ export async function GET(request: NextRequest) {
       members: [],
       requests: [],
       people: [],
+      set_contexts: [],
     });
   }
 
@@ -291,6 +296,143 @@ export async function GET(request: NextRequest) {
       "Could not load event meetup requests.",
       requestsError.message
     );
+  }
+
+  const linkedSetIds = Array.from(
+    new Set(
+      (meetupsData ?? [])
+        .map((meetup) => normalizeText(meetup.set_id, 64))
+        .filter((setId) => Boolean(setId) && isUuidLike(setId))
+    )
+  );
+
+  const setContexts: Array<{
+    set_id: string;
+    canonical_event_id: string;
+    stage_id: string | null;
+    set_title: string | null;
+    starts_at: string;
+    ends_at: string | null;
+    lifecycle_status: string;
+    stage_name: string | null;
+    performers: Array<{
+      display_name: string;
+      role: string;
+      sort_order: number;
+    }>;
+  }> = [];
+
+  if (linkedSetIds.length > 0) {
+    const { data: setsData, error: setsError } = await supabase
+      .from("canonical_event_sets")
+      .select(
+        "set_id,canonical_event_id,stage_id,set_title,starts_at,ends_at,lifecycle_status"
+      )
+      .in("set_id", linkedSetIds);
+
+    if (setsError) {
+      return buildSupabaseErrorResponse(
+        "Could not load official set context for event meetups.",
+        setsError.message
+      );
+    }
+
+    const stageIds = Array.from(
+      new Set(
+        (setsData ?? [])
+          .map((setRow) => normalizeText(setRow.stage_id, 64))
+          .filter((stageId) => Boolean(stageId) && isUuidLike(stageId))
+      )
+    );
+
+    const [
+      { data: stagesData, error: stagesError },
+      { data: performersData, error: performersError },
+    ] = await Promise.all([
+      stageIds.length > 0
+        ? supabase
+            .from("canonical_event_stages")
+            .select("stage_id,name")
+            .in("stage_id", stageIds)
+        : Promise.resolve({ data: [], error: null }),
+      supabase
+        .from("canonical_event_set_performers")
+        .select("set_id,display_name,role,sort_order")
+        .in("set_id", linkedSetIds)
+        .order("sort_order", { ascending: true }),
+    ]);
+
+    if (stagesError) {
+      return buildSupabaseErrorResponse(
+        "Could not load official stage context for event meetups.",
+        stagesError.message
+      );
+    }
+
+    if (performersError) {
+      return buildSupabaseErrorResponse(
+        "Could not load official performer context for event meetups.",
+        performersError.message
+      );
+    }
+
+    const stageNameById = new Map(
+      (stagesData ?? []).map((stageRow) => [
+        String(stageRow.stage_id),
+        normalizeText(stageRow.name, 120) || "Programação",
+      ])
+    );
+
+    const performersBySetId = new Map<
+      string,
+      Array<{
+        display_name: string;
+        role: string;
+        sort_order: number;
+      }>
+    >();
+
+    for (const performer of performersData ?? []) {
+      const setId = String(performer.set_id || "");
+      const current = performersBySetId.get(setId) ?? [];
+
+      current.push({
+        display_name:
+          normalizeText(performer.display_name, 180) || "Artista",
+        role: normalizeText(performer.role, 32) || "primary",
+        sort_order: Number(performer.sort_order || 0),
+      });
+
+      performersBySetId.set(setId, current);
+    }
+
+    for (const setRow of setsData ?? []) {
+      const setId = String(setRow.set_id || "");
+      const stageId = setRow.stage_id
+        ? String(setRow.stage_id)
+        : null;
+
+      if (!setId) {
+        continue;
+      }
+
+      setContexts.push({
+        set_id: setId,
+        canonical_event_id: String(setRow.canonical_event_id || ""),
+        stage_id: stageId,
+        set_title: setRow.set_title
+          ? normalizeText(setRow.set_title, 180)
+          : null,
+        starts_at: String(setRow.starts_at || ""),
+        ends_at: setRow.ends_at ? String(setRow.ends_at) : null,
+        lifecycle_status:
+          normalizeText(setRow.lifecycle_status, 32) || "scheduled",
+        stage_name: stageId
+          ? stageNameById.get(stageId) ?? "Palco / área a confirmar"
+          : null,
+        performers: performersBySetId.get(setId) ?? [],
+      });
+    }
   }
 
   const personUserIds = Array.from(
@@ -389,6 +531,7 @@ export async function GET(request: NextRequest) {
     members: membersData ?? [],
     requests: requestsData ?? [],
     people,
+    set_contexts: setContexts,
   });
 }
 
@@ -415,6 +558,11 @@ export async function POST(request: NextRequest) {
 
   if (action === "create") {
     const eventGroupId = normalizeText(payload.event_group_id, 64);
+    const canonicalEventId = normalizeText(
+      payload.canonical_event_id,
+      64
+    );
+    const setId = normalizeText(payload.set_id, 64);
     const name = normalizeText(payload.name, 80);
     const meetingPointLabel = normalizeText(
       payload.meeting_point_label,
@@ -428,6 +576,26 @@ export async function POST(request: NextRequest) {
     if (!eventGroupId || !isUuidLike(eventGroupId)) {
       return buildErrorResponse(
         "Valid event_group_id is required.",
+        400
+      );
+    }
+
+    const hasCanonicalEventId = Boolean(canonicalEventId);
+    const hasSetId = Boolean(setId);
+
+    if (hasCanonicalEventId !== hasSetId) {
+      return buildErrorResponse(
+        "canonical_event_id and set_id must be provided together.",
+        400
+      );
+    }
+
+    if (
+      (hasCanonicalEventId && !isUuidLike(canonicalEventId)) ||
+      (hasSetId && !isUuidLike(setId))
+    ) {
+      return buildErrorResponse(
+        "Valid canonical_event_id and set_id are required.",
         400
       );
     }
@@ -502,6 +670,8 @@ export async function POST(request: NextRequest) {
 
     const rpcArgs: JsonRecord = {
       p_event_group_id: eventGroupId,
+      p_canonical_event_id: canonicalEventId || null,
+      p_set_id: setId || null,
       p_name: name,
       p_description: asNullableText(payload.description, 500),
       p_meeting_point_label: meetingPointLabel,
@@ -535,6 +705,8 @@ export async function POST(request: NextRequest) {
       scope: "event-meetups",
       mode: "create",
       meetup_id: data,
+      canonical_event_id: canonicalEventId || null,
+      set_id: setId || null,
     });
   }
 
