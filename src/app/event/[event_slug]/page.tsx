@@ -4613,6 +4613,7 @@ export default async function EventPage({ params, searchParams }: PageProps) {
           eventGroupId={eventGroup.group_id}
           eventReturnTo={eventReturnPath}
           isAuthenticated={Boolean(authenticatedUser)}
+          canonicalEventId={canonicalEvent?.id ?? null}
         />
       ) : null}
 

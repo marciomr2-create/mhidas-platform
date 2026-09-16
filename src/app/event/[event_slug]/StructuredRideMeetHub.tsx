@@ -15,6 +15,7 @@ type StructuredRideMeetHubProps = {
   eventGroupId: string;
   eventReturnTo: string;
   isAuthenticated: boolean;
+  canonicalEventId?: string | null;
   initialPanel?: "rides" | "meetups";
   focusedPanel?: "rides" | "meetups";
 };
@@ -149,6 +150,40 @@ type MeetupSetContext = {
   }>;
 };
 
+type OfficialAgendaSet = {
+  set_id: string;
+  set_title: string | null;
+  starts_at: string;
+  lifecycle_status: string;
+  performers: Array<{
+    display_name: string;
+  }>;
+};
+
+type OfficialAgendaStage = {
+  name: string;
+  sets: OfficialAgendaSet[];
+};
+
+type OfficialAgendaResponse = {
+  ok?: boolean;
+  agenda?: {
+    stages?: OfficialAgendaStage[];
+    unassigned_sets?: OfficialAgendaSet[];
+    summary?: {
+      stage_count?: number;
+    };
+  };
+};
+
+type MeetupSetOption = {
+  set_id: string;
+  stage_name: string | null;
+  set_title: string | null;
+  starts_at: string;
+  performers: string[];
+};
+
 type MeetupReadPayload = {
   ok: boolean;
   message?: string;
@@ -179,6 +214,11 @@ type FeedbackState = {
 const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
+});
+
+const TIME_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 function normalizeText(value: unknown): string {
@@ -320,6 +360,124 @@ function formatDateTime(value: string | null): string {
   return DATE_FORMATTER.format(date);
 }
 
+function formatClock(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return TIME_FORMATTER.format(date);
+}
+
+function getMeetupSetOptionLabel(
+  option: MeetupSetOption
+): string {
+  const artist =
+    option.performers.join(" · ") ||
+    normalizeText(option.set_title) ||
+    "Set oficial";
+
+  return [
+    formatClock(option.starts_at),
+    artist,
+    normalizeText(option.stage_name),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+async function fetchMeetupSetOptions(
+  canonicalEventId: string
+): Promise<MeetupSetOption[]> {
+  const normalizedEventId = normalizeText(canonicalEventId);
+
+  if (!normalizedEventId) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `/api/official-events/canonical/agenda?canonicalEventId=${encodeURIComponent(
+        normalizedEventId
+      )}`,
+      {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const payload =
+      await readJsonResponse<OfficialAgendaResponse>(response);
+    const agenda = payload.agenda;
+
+    if (
+      !payload.ok ||
+      !agenda ||
+      Number(agenda.summary?.stage_count ?? 0) < 2
+    ) {
+      return [];
+    }
+
+    const stageOptions = (agenda.stages ?? []).flatMap(
+      (stage) =>
+        (stage.sets ?? [])
+          .filter(
+            (setRow) =>
+              normalizeText(setRow.lifecycle_status).toLowerCase() !==
+              "cancelled"
+          )
+          .map((setRow) => ({
+            set_id: setRow.set_id,
+            stage_name: normalizeText(stage.name) || null,
+            set_title: setRow.set_title,
+            starts_at: setRow.starts_at,
+            performers: (setRow.performers ?? [])
+              .map((performer) =>
+                normalizeText(performer.display_name)
+              )
+              .filter(Boolean),
+          }))
+    );
+
+    const unassignedOptions = (
+      agenda.unassigned_sets ?? []
+    )
+      .filter(
+        (setRow) =>
+          normalizeText(setRow.lifecycle_status).toLowerCase() !==
+          "cancelled"
+      )
+      .map((setRow) => ({
+        set_id: setRow.set_id,
+        stage_name: null,
+        set_title: setRow.set_title,
+        starts_at: setRow.starts_at,
+        performers: (setRow.performers ?? [])
+          .map((performer) =>
+            normalizeText(performer.display_name)
+          )
+          .filter(Boolean),
+      }));
+
+    return [...stageOptions, ...unassignedOptions].sort(
+      (left, right) =>
+        new Date(left.starts_at).getTime() -
+        new Date(right.starts_at).getTime()
+    );
+  } catch {
+    return [];
+  }
+}
+
 function getLoginHref(returnTo: string): string {
   const safeReturnTo = normalizeText(returnTo);
 
@@ -435,6 +593,7 @@ export default function StructuredRideMeetHub({
   eventGroupId,
   eventReturnTo,
   isAuthenticated,
+  canonicalEventId = null,
   initialPanel = "rides",
   focusedPanel,
 }: StructuredRideMeetHubProps) {
@@ -472,6 +631,9 @@ export default function StructuredRideMeetHub({
   const [meetupSetContexts, setMeetupSetContexts] = useState<
     MeetupSetContext[]
   >([]);
+  const [meetupSetOptions, setMeetupSetOptions] = useState<
+    MeetupSetOption[]
+  >([]);
 
   const [rideMode, setRideMode] =
     useState<RideRow["mode"]>("offer");
@@ -502,6 +664,7 @@ export default function StructuredRideMeetHub({
   const [meetupRules, setMeetupRules] = useState("");
   const [meetupVisibility, setMeetupVisibility] =
     useState<"public" | "private">("public");
+  const [meetupSetId, setMeetupSetId] = useState("");
 
   const loginHref = useMemo(
     () => getLoginHref(eventReturnTo),
@@ -521,14 +684,18 @@ export default function StructuredRideMeetHub({
         event_group_id: eventGroupId,
       });
 
-      const [ridePayload, meetupPayload] = await Promise.all([
-        fetchReadPayload<RideReadPayload>(
-          `/api/event-rides?${query.toString()}`
-        ),
-        fetchReadPayload<MeetupReadPayload>(
-          `/api/event-meetups?${query.toString()}`
-        ),
-      ]);
+      const [ridePayload, meetupPayload, officialSetOptions] =
+        await Promise.all([
+          fetchReadPayload<RideReadPayload>(
+            `/api/event-rides?${query.toString()}`
+          ),
+          fetchReadPayload<MeetupReadPayload>(
+            `/api/event-meetups?${query.toString()}`
+          ),
+          canonicalEventId
+            ? fetchMeetupSetOptions(canonicalEventId)
+            : Promise.resolve([]),
+        ]);
 
       const resolvedViewer =
         normalizeText(ridePayload.viewer_user_id) ||
@@ -554,6 +721,7 @@ export default function StructuredRideMeetHub({
       setMeetupMembers(meetupPayload.members ?? []);
       setMeetupRequests(meetupPayload.requests ?? []);
       setMeetupSetContexts(meetupPayload.set_contexts ?? []);
+      setMeetupSetOptions(officialSetOptions);
     } catch (error) {
       setFeedback({
         tone: "error",
@@ -565,7 +733,7 @@ export default function StructuredRideMeetHub({
     } finally {
       setLoading(false);
     }
-  }, [eventGroupId, isAuthenticated]);
+  }, [canonicalEventId, eventGroupId, isAuthenticated]);
 
   useEffect(() => {
     void loadData();
@@ -738,6 +906,21 @@ export default function StructuredRideMeetHub({
       return;
     }
 
+    const selectedSet = meetupSetId
+      ? meetupSetOptions.find(
+          (option) => option.set_id === meetupSetId
+        )
+      : null;
+
+    if (meetupSetId && (!selectedSet || !canonicalEventId)) {
+      setFeedback({
+        tone: "error",
+        message:
+          "O set selecionado não está mais disponível. Escolha outro set ou use encontro geral.",
+      });
+      return;
+    }
+
     const startsAtMs = new Date(startsAt).getTime();
     const endsAtMs = endsAt ? new Date(endsAt).getTime() : null;
 
@@ -764,6 +947,10 @@ export default function StructuredRideMeetHub({
         await postMutation("/api/event-meetups", {
           action: "create",
           event_group_id: eventGroupId,
+          canonical_event_id: selectedSet
+            ? canonicalEventId
+            : null,
+          set_id: selectedSet?.set_id ?? null,
           name: meetupName,
           description: meetupDescription || null,
           meeting_point_label: meetupPoint,
@@ -784,6 +971,7 @@ export default function StructuredRideMeetHub({
         setMeetupEndsAt("");
         setMeetupMaxMembers("20");
         setMeetupRules("");
+        setMeetupSetId("");
       },
       "Ponto de encontro publicado com sucesso."
     );
@@ -2432,6 +2620,39 @@ export default function StructuredRideMeetHub({
                   className="structured-social__form"
                   onSubmit={handleCreateMeetup}
                 >
+                  {canonicalEventId &&
+                  meetupSetOptions.length > 0 ? (
+                    <div className="structured-social__field structured-social__field--wide">
+                      <label htmlFor="structured-meetup-set">
+                        Set do festival (opcional)
+                      </label>
+                      <select
+                        id="structured-meetup-set"
+                        value={meetupSetId}
+                        onChange={(event) =>
+                          setMeetupSetId(event.target.value)
+                        }
+                      >
+                        <option value="">
+                          Encontro geral no evento
+                        </option>
+                        {meetupSetOptions.map((option) => (
+                          <option
+                            key={option.set_id}
+                            value={option.set_id}
+                          >
+                            {getMeetupSetOptionLabel(option)}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="structured-social__field-help">
+                        Disponível quando a programação oficial tem
+                        múltiplos palcos. O horário do encontro continua
+                        independente do set.
+                      </span>
+                    </div>
+                  ) : null}
+
                   <div className="structured-social__field">
                     <label htmlFor="structured-meetup-name">
                       Nome

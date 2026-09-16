@@ -8,6 +8,7 @@ type EventSocialActionsHubProps = {
   eventGroupId: string;
   eventReturnTo: string;
   isAuthenticated: boolean;
+  canonicalEventId?: string | null;
 };
 
 type ActiveView = "groups" | "rides" | "meetups" | null;
@@ -33,6 +34,7 @@ export default function EventSocialActionsHub({
   eventGroupId,
   eventReturnTo,
   isAuthenticated,
+  canonicalEventId = null,
 }: EventSocialActionsHubProps) {
   const [activeView, setActiveView] = useState<ActiveView>(null);
 
@@ -189,6 +191,7 @@ export default function EventSocialActionsHub({
               eventGroupId={eventGroupId}
               eventReturnTo={eventReturnTo}
               isAuthenticated={isAuthenticated}
+              canonicalEventId={canonicalEventId}
               initialPanel="meetups"
               focusedPanel="meetups"
             />
