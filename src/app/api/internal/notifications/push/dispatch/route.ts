@@ -1,4 +1,3 @@
-// src/app/api/internal/notifications/push/dispatch/route.ts
 import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
@@ -30,6 +29,33 @@ function isAuthorized(request: NextRequest): boolean {
 
   if (!configuredSecret || !receivedSecret) return false;
   return secretsMatch(receivedSecret, configuredSecret);
+}
+
+function configuredSupabaseProjectRef(): string | null {
+  const configuredUrl = normalizeText(process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+  if (!configuredUrl) return null;
+
+  try {
+    const hostname = new URL(configuredUrl).hostname.toLowerCase();
+    const suffix = ".supabase.co";
+
+    if (!hostname.endsWith(suffix)) return null;
+
+    const projectRef = hostname.slice(0, -suffix.length);
+
+    if (!/^[a-z0-9]{8,64}$/.test(projectRef)) return null;
+
+    return projectRef;
+  } catch {
+    return null;
+  }
+}
+
+function expectedSupabaseProjectRef(request: NextRequest): string {
+  return normalizeText(
+    request.headers.get("x-mhidas-expected-supabase-project-ref")
+  ).toLowerCase();
 }
 
 async function readBatchSize(request: NextRequest): Promise<number | undefined> {
@@ -65,6 +91,39 @@ export async function POST(request: NextRequest) {
       },
       { status: 401 }
     );
+  }
+
+  const expectedProjectRef = expectedSupabaseProjectRef(request);
+
+  if (expectedProjectRef) {
+    if (!/^[a-z0-9]{8,64}$/.test(expectedProjectRef)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          scope: "notification-push-dispatcher",
+          code: "invalid_expected_project_ref",
+          sensitiveValuesReturned: false,
+        },
+        { status: 400 }
+      );
+    }
+
+    const configuredProjectRef = configuredSupabaseProjectRef();
+
+    if (
+      !configuredProjectRef ||
+      configuredProjectRef !== expectedProjectRef
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          scope: "notification-push-dispatcher",
+          code: "dispatcher_environment_mismatch",
+          sensitiveValuesReturned: false,
+        },
+        { status: 409 }
+      );
+    }
   }
 
   try {
