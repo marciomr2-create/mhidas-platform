@@ -29,6 +29,17 @@ type PushSubscriptionRow = {
   endpoint_fingerprint: string;
 };
 
+type PushPolicyRow = {
+  is_agenda: boolean;
+  policy_action: "enqueue" | "defer" | "suppress" | "expire";
+  available_at: string | null;
+  reason_code: string | null;
+  notification_type: string;
+  push_title: string;
+  push_body: string;
+  internal_url: string;
+};
+
 type DispatcherConfig = {
   supabaseUrl: string;
   serviceRoleKey: string;
@@ -79,6 +90,7 @@ export type PushDispatchSummary = {
   retriedJobs: number;
   permanentlyFailedJobs: number;
   cancelledJobs: number;
+  expiredJobs: number;
   deliveredDevices: number;
   revokedSubscriptions: number;
   transientDeviceErrors: number;
@@ -162,13 +174,33 @@ function endpointFingerprint(endpoint: string): string {
   return createHash("sha256").update(endpoint, "utf8").digest("hex");
 }
 
-function buildPayload(job: PushJob): string {
+function buildPayload(job: PushJob, policy: PushPolicyRow | null): string {
+  const isAgenda = policy?.is_agenda === true;
+
+  const title = isAgenda
+    ? normalizeText(policy?.push_title).slice(0, 120) || "USECLUBBERS"
+    : "USECLUBBERS";
+
+  const body = isAgenda
+    ? normalizeText(policy?.push_body).slice(0, 280) ||
+      "Você tem uma atualização na sua Agenda."
+    : "Você tem uma nova notificação.";
+
+  const requestedUrl = isAgenda
+    ? normalizeText(policy?.internal_url)
+    : "/dashboard";
+
+  const safeUrl =
+    requestedUrl.startsWith("/") && !requestedUrl.startsWith("//")
+      ? requestedUrl
+      : "/dashboard";
+
   return JSON.stringify({
-    title: "USECLUBBERS",
-    body: "Você tem uma nova notificação.",
+    title,
+    body,
     tag: `mhidas-${job.notification_delivery_id}`,
     data: {
-      url: "/dashboard",
+      url: safeUrl,
     },
   });
 }
@@ -176,6 +208,34 @@ function buildPayload(job: PushJob): string {
 function buildTopic(job: PushJob): string {
   const compact = job.notification_delivery_id.replace(/[^A-Za-z0-9_-]/g, "");
   return compact.slice(-32) || "mhidas-notification";
+}
+
+async function resolvePushPolicy(
+  supabase: AdminSupabaseClient,
+  job: PushJob
+): Promise<PushPolicyRow> {
+  const { data, error } = await callRpc<PushPolicyRow[]>(
+    supabase,
+    "mhidas_resolve_notification_push_policy_v1",
+    {
+      p_notification_delivery_id: job.notification_delivery_id,
+      p_reference_time: new Date().toISOString(),
+    }
+  );
+
+  if (error) {
+    throw new Error(
+      `push_policy_lookup_failed:${sanitizeCode(error.code, "rpc_error")}`
+    );
+  }
+
+  const policy = Array.isArray(data) ? data[0] : null;
+
+  if (!policy) {
+    throw new Error("push_policy_missing");
+  }
+
+  return policy;
 }
 
 function getHttpStatus(error: unknown): number | null {
@@ -328,6 +388,89 @@ async function processJob(params: {
 }) {
   const { config, supabase, job } = params;
 
+  const pushPolicy = await resolvePushPolicy(supabase, job);
+
+  if (pushPolicy.is_agenda) {
+    const action = normalizeText(pushPolicy.policy_action);
+    const reasonCode = sanitizeCode(
+      pushPolicy.reason_code,
+      "agenda_push_policy"
+    ).toLowerCase();
+
+    if (action === "defer") {
+      const availableAt = normalizeText(pushPolicy.available_at);
+
+      if (!availableAt || Number.isNaN(Date.parse(availableAt))) {
+        throw new Error("agenda_push_defer_time_invalid");
+      }
+
+      const { error: deferError } = await callRpc<boolean>(
+        supabase,
+        "mhidas_defer_notification_push_job_v1",
+        {
+          p_push_job_id: job.job_id,
+          p_available_at: availableAt,
+          p_reason_code: reasonCode,
+        }
+      );
+
+      if (deferError) {
+        throw new Error(
+          `agenda_push_defer_failed:${sanitizeCode(
+            deferError.code,
+            "rpc_error"
+          )}`
+        );
+      }
+
+      return {
+        outcome: "retry" as const,
+        deliveredDevices: 0,
+        revokedSubscriptions: 0,
+        transientDeviceErrors: 0,
+        permanentDeviceErrors: 0,
+      };
+    }
+
+    if (action === "suppress") {
+      await finishJob({
+        supabase,
+        jobId: job.job_id,
+        outcome: "cancelled",
+        errorCode: reasonCode,
+      });
+
+      return {
+        outcome: "cancelled" as const,
+        deliveredDevices: 0,
+        revokedSubscriptions: 0,
+        transientDeviceErrors: 0,
+        permanentDeviceErrors: 0,
+      };
+    }
+
+    if (action === "expire") {
+      await finishJob({
+        supabase,
+        jobId: job.job_id,
+        outcome: "expired",
+        errorCode: reasonCode,
+      });
+
+      return {
+        outcome: "expired" as const,
+        deliveredDevices: 0,
+        revokedSubscriptions: 0,
+        transientDeviceErrors: 0,
+        permanentDeviceErrors: 0,
+      };
+    }
+
+    if (action !== "enqueue") {
+      throw new Error("agenda_push_policy_invalid");
+    }
+  }
+
   const { data, error } = await callRpc<PushSubscriptionRow[]>(
     supabase,
     "mhidas_get_active_notification_push_subscriptions",
@@ -358,7 +501,7 @@ async function processJob(params: {
     };
   }
 
-  const payload = buildPayload(job);
+  const payload = buildPayload(job, pushPolicy);
   let deliveredDevices = 0;
   let revokedSubscriptions = 0;
   let transientDeviceErrors = 0;
@@ -569,6 +712,7 @@ export async function dispatchPushBatch(input?: { batchSize?: number }): Promise
     retriedJobs: 0,
     permanentlyFailedJobs: 0,
     cancelledJobs: 0,
+    expiredJobs: 0,
     deliveredDevices: 0,
     revokedSubscriptions: 0,
     transientDeviceErrors: 0,
@@ -605,6 +749,7 @@ export async function dispatchPushBatch(input?: { batchSize?: number }): Promise
       if (result.outcome === "retry") summary.retriedJobs += 1;
       if (result.outcome === "failed_permanent") summary.permanentlyFailedJobs += 1;
       if (result.outcome === "cancelled") summary.cancelledJobs += 1;
+      if (result.outcome === "expired") summary.expiredJobs += 1;
     } catch (error: unknown) {
       summary.ok = false;
       summary.errors.push(
