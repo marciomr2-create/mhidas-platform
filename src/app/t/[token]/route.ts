@@ -1,59 +1,113 @@
 // src/app/t/[token]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
-import { createSupabaseAuthServer } from "@/lib/supabaseServer";
+import { createPublicClient } from "@/utils/supabase/public";
 
-function getClientIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+type CardTokenProfileMode = "clubber" | "professional";
+
+type ResolvedCardToken = {
+  card_id: string;
+  user_id: string;
+  card_status: string;
+  token_id: string;
+  profile_mode: CardTokenProfileMode;
+  slug: string;
+};
+
+function notFoundResponse() {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "not_found",
+    },
+    {
+      status: 404,
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
 }
 
-function getUserAgent(req: NextRequest): string {
-  return req.headers.get("user-agent") || "";
+function getResolvedRow(data: unknown): ResolvedCardToken | null {
+  if (!Array.isArray(data) || data.length !== 1) {
+    return null;
+  }
+
+  const row = data[0] as Partial<ResolvedCardToken> | null;
+
+  if (!row) {
+    return null;
+  }
+
+  const slug = String(row.slug || "").trim().toLowerCase();
+  const profileMode = String(row.profile_mode || "").trim().toLowerCase();
+
+  if (!slug) {
+    return null;
+  }
+
+  if (profileMode !== "clubber" && profileMode !== "professional") {
+    return null;
+  }
+
+  return {
+    card_id: String(row.card_id || ""),
+    user_id: String(row.user_id || ""),
+    card_status: String(row.card_status || ""),
+    token_id: String(row.token_id || ""),
+    profile_mode: profileMode,
+    slug,
+  };
 }
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
-  const { token } = await ctx.params;
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ token: string }> }
+) {
+  const { token: rawToken } = await ctx.params;
+  const token = String(rawToken || "").trim();
 
-  if (!token || token.length < 10) {
-    return NextResponse.json({ ok: false, error: "invalid_token" }, { status: 400 });
+  if (token.length < 10 || token.length > 512) {
+    return notFoundResponse();
   }
 
-  const supabase = await createSupabaseAuthServer();
+  const supabase = createPublicClient();
 
-  // Exemplo de lookup do token na tabela (ajuste para o seu schema real)
-  const { data: row, error: findErr } = await supabase
-    .from("short_tokens")
-    .select("id, url, card_id, link_id")
-    .eq("token", token)
-    .single();
+  const { data, error } = await supabase.rpc(
+    "mhidas_resolve_card_token_v2",
+    {
+      p_token: token,
+    }
+  );
 
-  if (findErr || !row?.url) {
-    return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  if (error) {
+    return notFoundResponse();
   }
 
-  // Log do evento (opcional e seguro)
-  const ip = getClientIp(req);
-  const ua = getUserAgent(req);
-  const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex") : null;
+  const resolved = getResolvedRow(data);
 
-  // Se você já possui tracking implementado, mantenha apenas o insert correto na sua tabela existente.
-  // Este bloco NÃO deve quebrar se a tabela não existir: em caso de erro, seguimos com redirect.
-  try {
-    await supabase.from("audit_events").insert({
-      kind: "token_redirect",
-      token,
-      card_id: row.card_id ?? null,
-      link_id: row.link_id ?? null,
-      ip_hash: ipHash,
-      user_agent: ua,
-      referer: req.headers.get("referer") || null,
-    });
-  } catch {
-    // Não interromper redirect por falha de logging
+  if (!resolved) {
+    return notFoundResponse();
   }
 
-  return NextResponse.redirect(row.url, 302);
+  const safeSlug = encodeURIComponent(resolved.slug);
+
+  const destination =
+    resolved.profile_mode === "professional"
+      ? `/pro/${safeSlug}`
+      : `/${safeSlug}?mode=club`;
+
+  const response = NextResponse.redirect(
+    new URL(destination, req.nextUrl.origin),
+    302
+  );
+
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+
+  return response;
 }
