@@ -10,7 +10,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 export const runtime = "nodejs";
 
-const ROUTE_VERSION = "mvp2-qr-nfc-lifecycle-v1";
+const ROUTE_VERSION = "mvp2-qr-nfc-lifecycle-v2";
 
 const ALLOWED_ACTIONS = ["issue", "rotate", "revoke"] as const;
 const ALLOWED_PROFILE_MODES = ["clubber", "professional"] as const;
@@ -22,6 +22,14 @@ type CardTokenPayload = {
   action?: unknown;
   card_id?: unknown;
   profile_mode?: unknown;
+};
+
+type CardTokenStatusRow = {
+  profile_mode: string;
+  active: boolean;
+  created_at: string | null;
+  rotated_at: string | null;
+  revoked_at: string | null;
 };
 
 function normalizeText(value: unknown, maxLength = 256): string {
@@ -153,6 +161,81 @@ function getRpcFailure(
     message: "Could not complete the NFC operation.",
     status: 500,
   };
+}
+
+export async function GET(request: NextRequest) {
+  const cardId = normalizeText(
+    request.nextUrl.searchParams.get("card_id"),
+    64
+  );
+
+  if (!cardId || !isUuidLike(cardId)) {
+    return errorResponse(
+      "INVALID_CARD",
+      "Valid card_id is required.",
+      400
+    );
+  }
+
+  const supabase =
+    await createServerSupabaseClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user?.id) {
+    return errorResponse(
+      "AUTH_REQUIRED",
+      "Authentication required.",
+      401
+    );
+  }
+
+  const { data, error } = await supabase.rpc(
+    "mhidas_read_card_token_status_v1",
+    {
+      p_card_id: cardId,
+    }
+  );
+
+  if (error) {
+    const failure = getRpcFailure(error.message);
+
+    return errorResponse(
+      failure.code,
+      failure.message,
+      failure.status
+    );
+  }
+
+  const rows = Array.isArray(data)
+    ? (data as CardTokenStatusRow[])
+    : [];
+
+  const statuses = ALLOWED_PROFILE_MODES.map((profileMode) => {
+    const row = rows.find(
+      (item) => item.profile_mode === profileMode
+    );
+
+    return {
+      profile_mode: profileMode,
+      active: row?.active === true,
+      created_at: row?.created_at ?? null,
+      rotated_at: row?.rotated_at ?? null,
+      revoked_at: row?.revoked_at ?? null,
+    };
+  });
+
+  return jsonNoStore({
+    ok: true,
+    version: ROUTE_VERSION,
+    scope: "card-tokens",
+    card_id: cardId,
+    statuses,
+    database_write_performed: false,
+  });
 }
 
 export async function POST(request: NextRequest) {
