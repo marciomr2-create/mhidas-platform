@@ -129,7 +129,7 @@ export default function ClubProfileOverviewActions({
           aria-haspopup="dialog"
           disabled={!hasPublicProfile}
         >
-          Ver NFC e QR Code
+          Ver QR Code
         </button>
 
         {hasPublicProfile ? (
@@ -168,7 +168,7 @@ export default function ClubProfileOverviewActions({
             <div className="club-qr-dialog-header">
               <div>
                 <p className="club-eyebrow">Meu acesso Clubber</p>
-                <h2 id="club-qr-dialog-title">NFC e QR Code</h2>
+                <h2 id="club-qr-dialog-title">QR Code</h2>
               </div>
 
               <button

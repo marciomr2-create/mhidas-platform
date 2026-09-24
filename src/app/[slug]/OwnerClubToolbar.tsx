@@ -132,7 +132,7 @@ export default function OwnerClubToolbar({
           rel="noopener noreferrer"
           style={buttonStyle}
         >
-          QR / NFC
+          QR Code
         </Link>
 
         <Link href={`/${slug}?mode=club&view=public`} style={buttonStyle}>

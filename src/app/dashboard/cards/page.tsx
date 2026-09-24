@@ -334,6 +334,14 @@ export default async function ProfileHubPage() {
                   </div>
                 </div>
               </div>
+
+              <Link
+                href={`/dashboard/cards/${card.card_id}`}
+                className="uc-ui-button uc-ui-button--quiet"
+                style={{ width: "100%" }}
+              >
+                Gerenciar NFC
+              </Link>
             </article>
           );
         })

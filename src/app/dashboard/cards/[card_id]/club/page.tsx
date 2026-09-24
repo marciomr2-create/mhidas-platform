@@ -395,7 +395,7 @@ export default async function ClubProfileOverviewPage({ params }: PageProps) {
         <section className="club-nfc-panel">
           <div>
             <p className="club-eyebrow">Presença física e digital</p>
-            <h2>Meu NFC e QR Code</h2>
+            <h2>Meu QR Code</h2>
             <p>
               Compartilhe seu Perfil Clubber presencialmente e mantenha a conexão depois
               do encontro.
