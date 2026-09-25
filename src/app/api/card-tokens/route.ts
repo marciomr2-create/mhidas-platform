@@ -39,6 +39,36 @@ function normalizeText(value: unknown, maxLength = 256): string {
     .slice(0, maxLength);
 }
 
+function getCanonicalNfcOrigin(): string | null {
+  const configuredOrigin = normalizeText(
+    process.env.MHIDAS_NFC_CANONICAL_ORIGIN,
+    2048
+  );
+
+  if (!configuredOrigin) {
+    return null;
+  }
+
+  try {
+    const url = new URL(configuredOrigin);
+
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.pathname !== "/" ||
+      url.search ||
+      url.hash
+    ) {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
@@ -373,6 +403,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const nfcOrigin = getCanonicalNfcOrigin();
+
+  if (!nfcOrigin) {
+    return errorResponse(
+      "NFC_CANONICAL_ORIGIN_INVALID",
+      "NFC canonical origin is not configured correctly.",
+      503
+    );
+  }
+
   const rawToken = generateRawToken();
   const tokenHash = hashRawToken(rawToken);
 
@@ -417,7 +457,7 @@ export async function POST(request: NextRequest) {
   const tokenPath = `/t/${rawToken}`;
   const nfcUrl = new URL(
     tokenPath,
-    request.nextUrl.origin
+    nfcOrigin
   ).toString();
 
   return jsonNoStore({
