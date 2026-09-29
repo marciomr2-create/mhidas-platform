@@ -2,14 +2,22 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  NFC_GUEST_SESSION_COOKIE,
+  getNfcGuestSessionCookieOptions,
+  recordNfcGuestPending,
+} from "@/lib/clubberEncounters/nfcGuestSession";
 import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
+export const runtime = "nodejs";
 
-type CardTokenProfileMode = "clubber" | "professional";
+type CardTokenProfileMode =
+  | "clubber"
+  | "professional";
 
 type ResolvedCardToken = {
   card_id: string;
@@ -35,25 +43,38 @@ function notFoundResponse() {
   );
 }
 
-function getResolvedRow(data: unknown): ResolvedCardToken | null {
+function getResolvedRow(
+  data: unknown
+): ResolvedCardToken | null {
   if (!Array.isArray(data) || data.length !== 1) {
     return null;
   }
 
-  const row = data[0] as Partial<ResolvedCardToken> | null;
+  const row =
+    data[0] as Partial<ResolvedCardToken> | null;
 
   if (!row) {
     return null;
   }
 
-  const slug = String(row.slug || "").trim().toLowerCase();
-  const profileMode = String(row.profile_mode || "").trim().toLowerCase();
+  const slug = String(row.slug || "")
+    .trim()
+    .toLowerCase();
+
+  const profileMode = String(
+    row.profile_mode || ""
+  )
+    .trim()
+    .toLowerCase();
 
   if (!slug) {
     return null;
   }
 
-  if (profileMode !== "clubber" && profileMode !== "professional") {
+  if (
+    profileMode !== "clubber" &&
+    profileMode !== "professional"
+  ) {
     return null;
   }
 
@@ -71,102 +92,141 @@ function redirectToResolvedProfile(
   request: NextRequest,
   resolved: ResolvedCardToken
 ) {
-  const safeSlug = encodeURIComponent(resolved.slug);
+  const safeSlug =
+    encodeURIComponent(resolved.slug);
 
   const destination =
     resolved.profile_mode === "professional"
       ? `/pro/${safeSlug}`
       : `/${safeSlug}?mode=club`;
 
-  const response = NextResponse.redirect(
-    new URL(destination, request.nextUrl.origin),
-    302
-  );
+  const response =
+    NextResponse.redirect(
+      new URL(
+        destination,
+        request.nextUrl.origin
+      ),
+      302
+    );
 
-  response.headers.set("Cache-Control", "no-store, max-age=0");
+  response.headers.set(
+    "Cache-Control",
+    "no-store, max-age=0"
+  );
 
   return response;
 }
 
-async function recordAuthenticatedClubberEncounter(
-  token: string
-): Promise<void> {
-  try {
-    const supabase = await createServerSupabaseClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user?.id) {
-      return;
-    }
-
-    /*
-     * The governed RPC resolves the raw token only in memory,
-     * applies self/block/profile checks and persists only
-     * internal token/card references in the encounter.
-     *
-     * Profile navigation must remain available even if the
-     * social side effect cannot be completed at this moment.
-     */
-    await supabase.rpc("mhidas_record_nfc_encounter_v1", {
-      p_token: token,
-    });
-  } catch {
-    /*
-     * Social Encounter is a secondary effect of opening the
-     * physical NFC. Do not expose infrastructure errors and
-     * do not prevent the public profile from opening.
-     */
-  }
-}
-
 export async function GET(
   request: NextRequest,
-  ctx: { params: Promise<{ token: string }> }
+  ctx: {
+    params: Promise<{
+      token: string;
+    }>;
+  }
 ) {
-  const { token: rawToken } = await ctx.params;
-  const token = String(rawToken || "").trim();
+  const { token: rawToken } =
+    await ctx.params;
 
-  if (token.length < 10 || token.length > 512) {
+  const token =
+    String(rawToken || "").trim();
+
+  if (
+    token.length < 10 ||
+    token.length > 512
+  ) {
     return notFoundResponse();
   }
 
-  const publicSupabase = createPublicClient();
+  const publicSupabase =
+    createPublicClient();
 
-  const { data, error } = await publicSupabase.rpc(
-    "mhidas_resolve_card_token_v2",
-    {
-      p_token: token,
-    }
-  );
+  const { data, error } =
+    await publicSupabase.rpc(
+      "mhidas_resolve_card_token_v2",
+      {
+        p_token: token,
+      }
+    );
 
   if (error) {
     return notFoundResponse();
   }
 
-  const resolved = getResolvedRow(data);
+  const resolved =
+    getResolvedRow(data);
 
   if (!resolved) {
     return notFoundResponse();
   }
 
-  /*
-   * Professional NFC remains independent from the Clubber
-   * Social Encounter model.
-   */
-  if (resolved.profile_mode === "professional") {
-    return redirectToResolvedProfile(request, resolved);
+  if (
+    resolved.profile_mode === "professional"
+  ) {
+    return redirectToResolvedProfile(
+      request,
+      resolved
+    );
   }
 
-  /*
-   * Authenticated Clubbers can turn the NFC opening into a
-   * governed Social Encounter. Anonymous pending recovery
-   * is implemented separately in the next C6-E substep.
-   */
-  await recordAuthenticatedClubberEncounter(token);
+  const authSupabase =
+    await createServerSupabaseClient();
 
-  return redirectToResolvedProfile(request, resolved);
+  const {
+    data: {
+      user: authenticatedUser,
+    },
+  } = await authSupabase.auth.getUser();
+
+  if (authenticatedUser?.id) {
+    try {
+      await authSupabase.rpc(
+        "mhidas_record_nfc_encounter_v1",
+        {
+          p_token: token,
+        }
+      );
+    } catch {
+    }
+
+    return redirectToResolvedProfile(
+      request,
+      resolved
+    );
+  }
+
+  let guestSessionSecret = "";
+
+  try {
+    const currentSecret =
+      request.cookies.get(
+        NFC_GUEST_SESSION_COOKIE
+      )?.value ?? null;
+
+    const pending =
+      await recordNfcGuestPending({
+        token,
+        currentSecret,
+      });
+
+    guestSessionSecret =
+      pending.secret;
+  } catch {
+  }
+
+  const response =
+    redirectToResolvedProfile(
+      request,
+      resolved
+    );
+
+  if (guestSessionSecret) {
+    response.cookies.set(
+      NFC_GUEST_SESSION_COOKIE,
+      guestSessionSecret,
+      getNfcGuestSessionCookieOptions()
+    );
+  }
+
+  return response;
 }
