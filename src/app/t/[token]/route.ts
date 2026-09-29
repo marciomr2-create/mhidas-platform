@@ -3,9 +3,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createPublicClient } from "@/utils/supabase/public";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 type CardTokenProfileMode = "clubber" | "professional";
 
@@ -65,8 +67,64 @@ function getResolvedRow(data: unknown): ResolvedCardToken | null {
   };
 }
 
+function redirectToResolvedProfile(
+  request: NextRequest,
+  resolved: ResolvedCardToken
+) {
+  const safeSlug = encodeURIComponent(resolved.slug);
+
+  const destination =
+    resolved.profile_mode === "professional"
+      ? `/pro/${safeSlug}`
+      : `/${safeSlug}?mode=club`;
+
+  const response = NextResponse.redirect(
+    new URL(destination, request.nextUrl.origin),
+    302
+  );
+
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+
+  return response;
+}
+
+async function recordAuthenticatedClubberEncounter(
+  token: string
+): Promise<void> {
+  try {
+    const supabase = await createServerSupabaseClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user?.id) {
+      return;
+    }
+
+    /*
+     * The governed RPC resolves the raw token only in memory,
+     * applies self/block/profile checks and persists only
+     * internal token/card references in the encounter.
+     *
+     * Profile navigation must remain available even if the
+     * social side effect cannot be completed at this moment.
+     */
+    await supabase.rpc("mhidas_record_nfc_encounter_v1", {
+      p_token: token,
+    });
+  } catch {
+    /*
+     * Social Encounter is a secondary effect of opening the
+     * physical NFC. Do not expose infrastructure errors and
+     * do not prevent the public profile from opening.
+     */
+  }
+}
+
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   ctx: { params: Promise<{ token: string }> }
 ) {
   const { token: rawToken } = await ctx.params;
@@ -76,9 +134,9 @@ export async function GET(
     return notFoundResponse();
   }
 
-  const supabase = createPublicClient();
+  const publicSupabase = createPublicClient();
 
-  const { data, error } = await supabase.rpc(
+  const { data, error } = await publicSupabase.rpc(
     "mhidas_resolve_card_token_v2",
     {
       p_token: token,
@@ -95,19 +153,20 @@ export async function GET(
     return notFoundResponse();
   }
 
-  const safeSlug = encodeURIComponent(resolved.slug);
+  /*
+   * Professional NFC remains independent from the Clubber
+   * Social Encounter model.
+   */
+  if (resolved.profile_mode === "professional") {
+    return redirectToResolvedProfile(request, resolved);
+  }
 
-  const destination =
-    resolved.profile_mode === "professional"
-      ? `/pro/${safeSlug}`
-      : `/${safeSlug}?mode=club`;
+  /*
+   * Authenticated Clubbers can turn the NFC opening into a
+   * governed Social Encounter. Anonymous pending recovery
+   * is implemented separately in the next C6-E substep.
+   */
+  await recordAuthenticatedClubberEncounter(token);
 
-  const response = NextResponse.redirect(
-    new URL(destination, req.nextUrl.origin),
-    302
-  );
-
-  response.headers.set("Cache-Control", "no-store, max-age=0");
-
-  return response;
+  return redirectToResolvedProfile(request, resolved);
 }
