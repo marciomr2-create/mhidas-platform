@@ -29,5 +29,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(loginErrorUrl);
   }
 
-  return NextResponse.redirect(new URL(nextPath, request.nextUrl.origin));
+  const postLoginUrl = new URL(
+    "/auth/post-login",
+    request.nextUrl.origin
+  );
+
+  postLoginUrl.searchParams.set(
+    "next",
+    nextPath
+  );
+
+  return NextResponse.redirect(postLoginUrl);
 }
