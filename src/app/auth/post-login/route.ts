@@ -6,6 +6,11 @@ import {
   isValidNfcGuestSessionSecret,
 } from "@/lib/clubberEncounters/nfcGuestSession";
 import {
+  QR_GUEST_SESSION_COOKIE,
+  hashQrGuestSessionSecret,
+  isValidQrGuestSessionSecret,
+} from "@/lib/clubberEncounters/qrGuestSession";
+import {
   buildOnboardingPath,
   getSafeInternalNextPath,
   getSafePostOnboardingPath,
@@ -34,22 +39,18 @@ function redirectNoStore(url: URL) {
   return response;
 }
 
-function clearGuestSessionCookie(
-  response: NextResponse
+function clearGuestCookie(
+  response: NextResponse,
+  cookieName: string
 ) {
-  response.cookies.set(
-    NFC_GUEST_SESSION_COOKIE,
-    "",
-    {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV !== "development",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    }
-  );
+  response.cookies.set(cookieName, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== "development",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
 
 function getOnboardingReturnTo(
@@ -74,6 +75,36 @@ function getOnboardingReturnTo(
   } catch {
     return "";
   }
+}
+
+function getClaimStates(data: unknown): string[] {
+  const rows = Array.isArray(data)
+    ? (data as ClaimRow[])
+    : [];
+
+  return rows.map((row) =>
+    String(row.state || "")
+      .trim()
+      .toLowerCase()
+  );
+}
+
+function shouldClearAfterClaim(
+  states: string[]
+): boolean {
+  if (states.length === 0) {
+    return true;
+  }
+
+  if (states.some((state) => state === "claimed")) {
+    return false;
+  }
+
+  return states.every(
+    (state) =>
+      state === "confirmed" ||
+      state === "invalidated"
+  );
 }
 
 export async function GET(
@@ -105,12 +136,17 @@ export async function GET(
     return redirectNoStore(loginUrl);
   }
 
-  const guestSessionSecret =
+  const nfcSecret =
     request.cookies.get(
       NFC_GUEST_SESSION_COOKIE
     )?.value ?? "";
 
-  if (!guestSessionSecret) {
+  const qrSecret =
+    request.cookies.get(
+      QR_GUEST_SESSION_COOKIE
+    )?.value ?? "";
+
+  if (!nfcSecret && !qrSecret) {
     return redirectNoStore(
       new URL(
         nextPath,
@@ -119,108 +155,116 @@ export async function GET(
     );
   }
 
-  if (
-    !isValidNfcGuestSessionSecret(
-      guestSessionSecret
-    )
-  ) {
-    const response = redirectNoStore(
-      new URL(
-        nextPath,
-        request.nextUrl.origin
+  let nfcStates: string[] = [];
+  let qrStates: string[] = [];
+
+  let clearNfc = false;
+  let clearQr = false;
+
+  if (nfcSecret) {
+    if (
+      !isValidNfcGuestSessionSecret(
+        nfcSecret
       )
-    );
+    ) {
+      clearNfc = true;
+    } else {
+      try {
+        const hash =
+          hashNfcGuestSessionSecret(
+            nfcSecret
+          );
 
-    clearGuestSessionCookie(response);
+        const { data, error } =
+          await supabase.rpc(
+            "mhidas_claim_nfc_encounters_v1",
+            {
+              p_guest_session_hash: hash,
+            }
+          );
 
-    return response;
-  }
-
-  try {
-    const guestSessionHash =
-      hashNfcGuestSessionSecret(
-        guestSessionSecret
-      );
-
-    const { data, error } =
-      await supabase.rpc(
-        "mhidas_claim_nfc_encounters_v1",
-        {
-          p_guest_session_hash:
-            guestSessionHash,
+        if (!error) {
+          nfcStates = getClaimStates(data);
+          clearNfc =
+            shouldClearAfterClaim(
+              nfcStates
+            );
         }
-      );
-
-    if (error) {
-      return redirectNoStore(
-        new URL(
-          nextPath,
-          request.nextUrl.origin
-        )
-      );
+      } catch {
+      }
     }
+  }
 
-    const rows = Array.isArray(data)
-      ? (data as ClaimRow[])
-      : [];
+  if (qrSecret) {
+    if (
+      !isValidQrGuestSessionSecret(
+        qrSecret
+      )
+    ) {
+      clearQr = true;
+    } else {
+      try {
+        const hash =
+          hashQrGuestSessionSecret(
+            qrSecret
+          );
 
-    const states = rows.map((row) =>
-      String(row.state || "")
-        .trim()
-        .toLowerCase()
-    );
+        const { data, error } =
+          await supabase.rpc(
+            "mhidas_claim_qr_encounters_v1",
+            {
+              p_guest_session_hash: hash,
+            }
+          );
 
-    const profileRequired =
-      states.some(
-        (state) => state === "claimed"
-      );
+        if (!error) {
+          qrStates = getClaimStates(data);
+          clearQr =
+            shouldClearAfterClaim(
+              qrStates
+            );
+        }
+      } catch {
+      }
+    }
+  }
 
-    const finalStatesOnly =
-      states.every(
-        (state) =>
-          state === "confirmed" ||
-          state === "invalidated"
-      );
+  const profileRequired = [
+    ...nfcStates,
+    ...qrStates,
+  ].some(
+    (state) => state === "claimed"
+  );
 
-    const shouldClearCookie =
-      rows.length === 0 ||
-      (
-        !profileRequired &&
-        finalStatesOnly
-      );
-
-    const destination =
-      profileRequired
-        ? buildOnboardingPath(
-            getOnboardingReturnTo(
-              nextPath
-            )
+  const destination =
+    profileRequired
+      ? buildOnboardingPath(
+          getOnboardingReturnTo(
+            nextPath
           )
-        : nextPath;
+        )
+      : nextPath;
 
-    const response = redirectNoStore(
-      new URL(
-        destination,
-        request.nextUrl.origin
-      )
-    );
+  const response = redirectNoStore(
+    new URL(
+      destination,
+      request.nextUrl.origin
+    )
+  );
 
-    if (shouldClearCookie) {
-      clearGuestSessionCookie(response);
-    }
-
-    return response;
-  } catch {
-    /*
-     * A falha do claim não pode impedir
-     * o usuário de continuar o fluxo.
-     * O cookie é preservado para nova tentativa.
-     */
-    return redirectNoStore(
-      new URL(
-        nextPath,
-        request.nextUrl.origin
-      )
+  if (clearNfc) {
+    clearGuestCookie(
+      response,
+      NFC_GUEST_SESSION_COOKIE
     );
   }
+
+  if (clearQr) {
+    clearGuestCookie(
+      response,
+      QR_GUEST_SESSION_COOKIE
+    );
+  }
+
+  return response;
 }
