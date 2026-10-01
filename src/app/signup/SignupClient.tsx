@@ -29,36 +29,36 @@ const ENTRY_OPTIONS: EntryOption[] = [
     value: "clubber",
     title: "Clubber",
     description:
-      "Quero criar minha Identidade Clubber, expressar meu estilo de vida, meus sons e experiÃªncias e ampliar meu grupo de amigos com pessoas que compartilham as mesmas afinidades.",
+      "Quero criar minha Identidade Clubber, expressar meu estilo de vida, meus sons e experiências e ampliar meu grupo de amigos com pessoas que compartilham as mesmas afinidades.",
   },
   {
     value: "artist",
     title: "Artista / DJ / Projeto musical",
     description:
       "Quero criar ou reivindicar o perfil de um Artista, DJ ou Projeto musical.",
-    verificationNote: "Perfis oficiais passam por verificaÃ§Ã£o.",
+    verificationNote: "Perfis oficiais passam por verificação.",
   },
   {
     value: "club",
     title: "Club / Venue",
     description:
-      "Tenho ou represento um Club ou Venue â€” uma casa ou espaÃ§o fÃ­sico com endereÃ§o prÃ³prio e programaÃ§Ã£o recorrente de mÃºsica eletrÃ´nica â€” e quero criar ou reivindicar seu perfil.",
-    verificationNote: "Perfis oficiais passam por verificaÃ§Ã£o.",
+      "Tenho ou represento um Club ou Venue — uma casa ou espaço físico com endereço próprio e programação recorrente de música eletrônica — e quero criar ou reivindicar seu perfil.",
+    verificationNote: "Perfis oficiais passam por verificação.",
     guidanceNote:
-      "Se vocÃª organiza festas ou eventos, mas nÃ£o possui um espaÃ§o fÃ­sico prÃ³prio, escolha OrganizaÃ§Ã£o / Parceiro.",
+      "Se você organiza festas ou eventos, mas não possui um espaço físico próprio, escolha Organização / Parceiro.",
   },
   {
     value: "festival",
     title: "Festival",
     description: "Quero criar ou reivindicar o perfil de um Festival.",
-    verificationNote: "Perfis oficiais passam por verificaÃ§Ã£o.",
+    verificationNote: "Perfis oficiais passam por verificação.",
   },
   {
     value: "organization",
-    title: "OrganizaÃ§Ã£o / Parceiro",
+    title: "Organização / Parceiro",
     description:
-      "Represento uma produtora, promoter, agÃªncia, ticketing, marca ou organizaÃ§Ã£o responsÃ¡vel por festas, eventos ou serviÃ§os da mÃºsica eletrÃ´nica.",
-    verificationNote: "OrganizaÃ§Ãµes oficiais passam por verificaÃ§Ã£o.",
+      "Represento uma produtora, promoter, agência, ticketing, marca ou organização responsável por festas, eventos ou serviços da música eletrônica.",
+    verificationNote: "Organizações oficiais passam por verificação.",
   },
 ];
 
@@ -115,7 +115,7 @@ export default function SignupClient() {
 
   function getAccountStartPath(): string {
     if (!entryIntent) {
-      throw new Error("Escolha como vocÃª faz parte da cena eletrÃ´nica.");
+      throw new Error("Escolha como você faz parte da cena eletrônica.");
     }
 
     return buildAccountStartPath(entryIntent, safeReturnTo);
@@ -126,7 +126,7 @@ export default function SignupClient() {
     setErrorMsg(null);
 
     if (!entryIntent) {
-      setErrorMsg("Escolha como vocÃª faz parte da cena eletrÃ´nica.");
+      setErrorMsg("Escolha como você faz parte da cena eletrônica.");
       return;
     }
 
@@ -136,7 +136,7 @@ export default function SignupClient() {
     }
 
     if (password !== passwordConfirmation) {
-      setErrorMsg("As senhas nÃ£o coincidem.");
+      setErrorMsg("As senhas não coincidem.");
       return;
     }
 
@@ -179,7 +179,7 @@ export default function SignupClient() {
     setErrorMsg(null);
 
     if (!entryIntent) {
-      setErrorMsg("Escolha como vocÃª faz parte da cena eletrÃ´nica.");
+      setErrorMsg("Escolha como você faz parte da cena eletrônica.");
       return;
     }
 
@@ -227,16 +227,16 @@ export default function SignupClient() {
 
           {entryIntent === "clubber" ? (
             <p style={{ color: "rgba(255,255,255,0.70)", lineHeight: 1.6 }}>
-              Enviamos um link de confirmaÃ§Ã£o para <strong>{email.trim()}</strong>.
+              Enviamos um link de confirmação para <strong>{email.trim()}</strong>.
               Abra o e-mail e confirme sua conta para criar sua Identidade Clubber
-              e continuar de onde vocÃª parou.
+              e continuar de onde você parou.
             </p>
           ) : (
             <p style={{ color: "rgba(255,255,255,0.70)", lineHeight: 1.6 }}>
-              Enviamos um link de confirmaÃ§Ã£o para <strong>{email.trim()}</strong>.
+              Enviamos um link de confirmação para <strong>{email.trim()}</strong>.
               Abra o e-mail e confirme sua Conta USECLUBBERS para continuar pelo
               caminho <strong>{intentLabel(entryIntent)}</strong>. Nenhum perfil
-              oficial serÃ¡ criado ou verificado apenas pela confirmaÃ§Ã£o do e-mail.
+              oficial será criado ou verificado apenas pela confirmação do e-mail.
             </p>
           )}
 
@@ -248,8 +248,8 @@ export default function SignupClient() {
               lineHeight: 1.55,
             }}
           >
-            Por seguranÃ§a, abra o link de confirmaÃ§Ã£o no mesmo navegador em que
-            vocÃª criou sua conta.
+            Por segurança, abra o link de confirmação no mesmo navegador em que
+            você criou sua conta.
           </p>
         </div>
 
@@ -300,7 +300,7 @@ export default function SignupClient() {
             color: "#F8FAFC",
           }}
         >
-          Como vocÃª faz parte da cena eletrÃ´nica?
+          Como você faz parte da cena eletrônica?
         </legend>
 
         {ENTRY_OPTIONS.map((option) => {
@@ -396,8 +396,8 @@ export default function SignupClient() {
           lineHeight: 1.55,
         }}
       >
-        Sua Conta USECLUBBERS Ã© Ãºnica. VocÃª poderÃ¡ ter sua Identidade Clubber e
-        tambÃ©m administrar perfis de Artistas, Clubs, Festivais ou OrganizaÃ§Ãµes.
+        Sua Conta USECLUBBERS é única. Você poderá ter sua Identidade Clubber e
+        também administrar perfis de Artistas, Clubs, Festivais ou Organizações.
       </div>
 
       {isOfficialPath ? (
@@ -414,9 +414,9 @@ export default function SignupClient() {
           <strong style={{ display: "block", color: "#F8FAFC", marginBottom: 4 }}>
             Use seu e-mail profissional, se tiver.
           </strong>
-          E-mails vinculados ao domÃ­nio oficial do artista, Club, festival ou
-          organizaÃ§Ã£o podem ajudar a agilizar a verificaÃ§Ã£o. E-mail corporativo
-          aumenta a confianÃ§a, mas nÃ£o substitui a validaÃ§Ã£o da identidade ou da
+          E-mails vinculados ao domínio oficial do artista, Club, festival ou
+          organização podem ajudar a agilizar a verificação. E-mail corporativo
+          aumenta a confiança, mas não substitui a validação da identidade ou da
           propriedade da entidade.
         </div>
       ) : null}
@@ -549,7 +549,7 @@ export default function SignupClient() {
           textAlign: "center",
         }}
       >
-        VocÃª nÃ£o precisa ter cartÃ£o, pulseira, pingente ou tag NFC.
+        Você não precisa ter cartão, pulseira, pingente ou tag NFC.
       </p>
 
       <Link
@@ -561,7 +561,7 @@ export default function SignupClient() {
           textDecoration: "none",
         }}
       >
-        JÃ¡ tenho uma conta
+        Já tenho uma conta
       </Link>
     </form>
   );

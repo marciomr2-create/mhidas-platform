@@ -72,9 +72,9 @@ export default function LoginClient() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(
     callbackError === "email_confirmation_failed"
-      ? "NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel confirmar este e-mail. Use o link mais recente e abra-o no mesmo navegador em que vocÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âª criou sua conta."
+      ? "Não foi possível confirmar este e-mail. Use o link mais recente e abra-o no mesmo navegador em que você criou sua conta."
       : callbackError === "callback_failed"
-        ? "NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel concluir o acesso. Tente novamente."
+        ? "Não foi possível concluir o acesso. Tente novamente."
         : null
   );
 
@@ -298,7 +298,7 @@ export default function LoginClient() {
 
       <div style={{ display: "grid", gap: 8, textAlign: "center" }}>
         <span style={{ color: "#CBD5E1", fontSize: 14 }}>
-          Ainda nÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o tem uma conta?
+          Ainda não tem uma conta?
         </span>
         <Link
           href={signupHref}
@@ -317,7 +317,7 @@ export default function LoginClient() {
           textAlign: "center",
         }}
       >
-        O NFC ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© opcional e poderÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ ser vinculado depois.
+        O NFC é opcional e poderá ser vinculado depois.
       </p>
     </form>
   );

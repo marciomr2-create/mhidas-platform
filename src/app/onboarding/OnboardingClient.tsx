@@ -40,32 +40,32 @@ function normalizeUsername(value: string): string {
 }
 
 function availabilityMessage(reason: string): string {
-  if (reason === "available") return "DisponÃ­vel";
+  if (reason === "available") return "Disponível";
   if (reason === "too_short") return "Use pelo menos 3 caracteres";
-  if (reason === "too_long") return "Use no mÃ¡ximo 30 caracteres";
+  if (reason === "too_long") return "Use no máximo 30 caracteres";
   if (reason === "reserved") return "Nome reservado pela plataforma";
-  if (reason === "held_by_history") return "Nome protegido pelo histÃ³rico";
-  if (reason === "already_used") return "Este nome jÃ¡ pertence a outra pessoa";
-  return "NÃ£o foi possÃ­vel validar agora";
+  if (reason === "held_by_history") return "Nome protegido pelo histórico";
+  if (reason === "already_used") return "Este nome já pertence a outra pessoa";
+  return "Não foi possível validar agora";
 }
 
 function creationErrorMessage(value: string): string {
   if (value.includes("username_unavailable")) {
-    return "Este @username nÃ£o estÃ¡ mais disponÃ­vel.";
+    return "Este @username não está mais disponível.";
   }
   if (value.includes("username_reserved")) {
-    return "Este @username Ã© reservado.";
+    return "Este @username é reservado.";
   }
   if (value.includes("identity_already_exists")) {
-    return "Sua Identidade Clubber jÃ¡ foi criada com outro @username.";
+    return "Sua Identidade Clubber já foi criada com outro @username.";
   }
   if (value.includes("multiple_cards_require_manual_resolution")) {
-    return "Sua conta possui mais de uma identidade antiga e precisa de revisÃ£o segura.";
+    return "Sua conta possui mais de uma identidade antiga e precisa de revisão segura.";
   }
   if (value.includes("display_name_too_short")) {
-    return "Informe seu nome pÃºblico.";
+    return "Informe seu nome público.";
   }
-  return "NÃ£o foi possÃ­vel criar sua Identidade Clubber.";
+  return "Não foi possível criar sua Identidade Clubber.";
 }
 
 const fieldStyle: React.CSSProperties = {
@@ -163,7 +163,7 @@ export default function OnboardingClient({
 
     if (!availability?.available) {
       setErrorMsg(
-        "Escolha um @username disponÃ­vel antes de continuar."
+        "Escolha um @username disponível antes de continuar."
       );
       return;
     }
@@ -244,7 +244,7 @@ export default function OnboardingClient({
 
       <label style={{ display: "grid", gap: 8 }}>
         <span style={{ fontWeight: 800, fontSize: 14 }}>
-          Seu nome pÃºblico
+          Seu nome público
         </span>
         <input
           value={displayName}
@@ -253,17 +253,17 @@ export default function OnboardingClient({
           maxLength={80}
           required
           autoComplete="name"
-          placeholder="Ex.: nome que vocÃª quer mostrar no seu perfil"
+          placeholder="Ex.: seu nome público"
           style={fieldStyle}
         />
         <small style={helperStyle}>
-          Ã‰ o nome que as pessoas verÃ£o na sua Identidade Clubber.
+          É o nome que as pessoas verão na sua Identidade Clubber.
         </small>
       </label>
 
       <label style={{ display: "grid", gap: 8 }}>
         <span style={{ fontWeight: 800, fontSize: 14 }}>
-          Seu @username Ãºnico
+          Seu @username único
         </span>
         <input
           value={username}
@@ -303,12 +303,12 @@ export default function OnboardingClient({
         </div>
 
         <small style={helperStyle}>
-          VocÃª pode usar o mesmo @username que jÃ¡ usa no Instagram ou em outra
-          rede social, se ele ainda estiver disponÃ­vel no USECLUBBERS.
+          Você pode usar o mesmo @username que já usa no Instagram ou em outra
+          rede social, se ele ainda estiver disponível no USECLUBBERS.
         </small>
 
         <small style={helperStyle}>
-          Este Ã© o seu identificador pÃºblico e universal dentro do
+          Este é o seu identificador público e universal dentro do
           USECLUBBERS.
         </small>
       </label>
@@ -321,12 +321,12 @@ export default function OnboardingClient({
           value={cityBase}
           onChange={(event) => setCityBase(event.target.value)}
           maxLength={120}
-          placeholder="Ex.: SÃ£o Paulo - SP"
+          placeholder="Ex.: São Paulo - SP"
           autoComplete="address-level2"
           style={fieldStyle}
         />
         <small style={helperStyle}>
-          Sua cidade ajuda a aproximar pessoas e experiÃªncias da sua cena.
+          Sua cidade ajuda a aproximar pessoas e experiências da sua cena.
         </small>
       </label>
 
@@ -378,8 +378,8 @@ export default function OnboardingClient({
           fontSize: 12,
         }}
       >
-        Ao continuar, vocÃª confirma que estes dados representam vocÃª e
-        que nÃ£o estÃ¡ se passando por outra pessoa, artista ou marca.
+        Ao continuar, você confirma que estes dados representam você e
+        que não está se passando por outra pessoa, artista ou marca.
       </div>
 
       <button
@@ -418,7 +418,7 @@ export default function OnboardingClient({
           textAlign: "center",
         }}
       >
-        Seu NFC Ã© opcional e poderÃ¡ ser vinculado depois.
+        Seu NFC é opcional e poderá ser vinculado depois.
       </p>
     </form>
   );
