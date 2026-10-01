@@ -1,18 +1,28 @@
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { extname } from "node:path";
 
 const TEXT_EXTENSIONS = new Set([
-  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
-  ".json", ".css", ".scss", ".sql", ".html", ".yml", ".yaml"
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".json",
+  ".css",
+  ".scss",
+  ".sql",
+  ".html",
+  ".yml",
+  ".yaml",
 ]);
 
 const HISTORICAL_EXCEPTIONS = new Map([
   [
     "supabase/migrations/20260913210000_event_meetup_set_context_foundation_mvp2.sql",
-    "88769FAB4E232D5F80EC5B645D02D2120F54C342D0A980EB35365C033E341E8D"
-  ]
+    "365d6129b749c7bea33e33647ca567a24a9f596d",
+  ],
 ]);
 
 const SUSPICIOUS_PATTERNS = [
@@ -23,7 +33,7 @@ const SUSPICIOUS_PATTERNS = [
   /\u00E2[\u0080-\u00BF\u20AC\u2122]/u,
   /\u00C6\u2019/u,
   /\u00EF\u00BF\u00BD/u,
-  /\u00F0\u0178/u
+  /\u00F0\u0178/u,
 ];
 
 const listed = execFileSync(
@@ -47,13 +57,30 @@ for (const file of files) {
   const bytes = readFileSync(file);
 
   if (HISTORICAL_EXCEPTIONS.has(file)) {
-    const expectedHash = HISTORICAL_EXCEPTIONS.get(file);
-    const actualHash = createHash("sha256")
-      .update(bytes)
-      .digest("hex")
-      .toUpperCase();
+    const expectedBlob = HISTORICAL_EXCEPTIONS.get(file);
 
-    if (actualHash === expectedHash) {
+    let actualBlob = "";
+    let worktreeClean = false;
+
+    try {
+      actualBlob = execFileSync(
+        "git",
+        ["rev-parse", `HEAD:${file}`],
+        { encoding: "utf8" }
+      ).trim();
+
+      execFileSync(
+        "git",
+        ["diff", "--quiet", "HEAD", "--", file],
+        { stdio: "ignore" }
+      );
+
+      worktreeClean = true;
+    } catch {
+      worktreeClean = false;
+    }
+
+    if (actualBlob === expectedBlob && worktreeClean) {
       historicalExceptionCount += 1;
       continue;
     }
@@ -85,8 +112,10 @@ for (const file of files) {
   }
 }
 
-const mojibakeLineCount = [...mojibakeFiles.values()]
-  .reduce((total, lines) => total + lines.length, 0);
+const mojibakeLineCount = [...mojibakeFiles.values()].reduce(
+  (total, lines) => total + lines.length,
+  0
+);
 
 const failed =
   invalidUtf8Files.length > 0 ||
@@ -99,7 +128,9 @@ console.log("INVALID_UTF8_FILE_COUNT=" + invalidUtf8Files.length);
 console.log("MOJIBAKE_FILE_COUNT=" + mojibakeFiles.size);
 console.log("MOJIBAKE_LINE_COUNT=" + mojibakeLineCount);
 console.log("HISTORICAL_EXCEPTION_COUNT=" + historicalExceptionCount);
-console.log("EXCEPTION_HASH_MISMATCH_COUNT=" + exceptionHashMismatch.length);
+console.log(
+  "EXCEPTION_HASH_MISMATCH_COUNT=" + exceptionHashMismatch.length
+);
 
 for (const file of mojibakeFiles.keys()) {
   console.log("ISSUE_FILE=" + file);
