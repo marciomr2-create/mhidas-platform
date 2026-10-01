@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "prebuild": "npm run check:encoding",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
