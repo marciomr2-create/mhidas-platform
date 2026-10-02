@@ -10,6 +10,82 @@ const DEFAULT_TITLE = "USECLUBBERS";
 const DEFAULT_BODY = "Você tem uma nova notificação.";
 const DEFAULT_URL = "/dashboard";
 
+const STATIC_SHELL_CACHE =
+  "mhidas-static-shell-v1";
+
+const STATIC_SHELL_PREFIX =
+  "/_next/static/";
+
+function isSafeStaticShellRequest(
+  request
+) {
+  if (
+    !request ||
+    request.method !== "GET"
+  ) {
+    return false;
+  }
+
+  let url;
+
+  try {
+    url = new URL(
+      request.url
+    );
+  } catch {
+    return false;
+  }
+
+  if (
+    url.origin !==
+      self.location.origin ||
+    url.pathname.startsWith(
+      "/api/"
+    ) ||
+    !url.pathname.startsWith(
+      STATIC_SHELL_PREFIX
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+async function readStaticShell(
+  request
+) {
+  const cache =
+    await caches.open(
+      STATIC_SHELL_CACHE
+    );
+
+  const cached =
+    await cache.match(
+      request
+    );
+
+  if (cached) {
+    return cached;
+  }
+
+  const response =
+    await fetch(request);
+
+  if (
+    response &&
+    response.ok &&
+    response.type === "basic"
+  ) {
+    await cache.put(
+      request,
+      response.clone()
+    );
+  }
+
+  return response;
+}
+
 function normalizeText(value, maxLength) {
   return String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, "")
@@ -79,7 +155,45 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      caches
+        .keys()
+        .then((names) =>
+          Promise.all(
+            names
+              .filter(
+                (name) =>
+                  name.startsWith(
+                    "mhidas-static-shell-"
+                  ) &&
+                  name !==
+                    STATIC_SHELL_CACHE
+              )
+              .map((name) =>
+                caches.delete(name)
+              )
+          )
+        ),
+    ])
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  if (
+    !isSafeStaticShellRequest(
+      event.request
+    )
+  ) {
+    return;
+  }
+
+  event.respondWith(
+    readStaticShell(
+      event.request
+    )
+  );
 });
 
 self.addEventListener("push", (event) => {

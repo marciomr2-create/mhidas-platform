@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import EventPresenceStatusHub from "./EventPresenceStatusHub";
+import EventReunionHub from "./EventReunionHub";
 import EventTribeHub from "./EventTribeHub";
 import StructuredRideMeetHub from "./StructuredRideMeetHub";
 
@@ -14,6 +15,7 @@ type EventSocialActionsHubProps = {
 
 type ActiveView =
   | "presence"
+  | "reunion"
   | "groups"
   | "rides"
   | "meetups"
@@ -193,6 +195,40 @@ export default function EventSocialActionsHub({
             type="button"
             aria-pressed={
               activeView ===
+              "reunion"
+            }
+            onClick={() =>
+              toggleView(
+                "reunion"
+              )
+            }
+            style={actionStyle(
+              activeView ===
+                "reunion"
+            )}
+          >
+            <strong
+              style={{
+                fontSize: 16,
+              }}
+            >
+              ME PERDI!
+            </strong>
+
+            <span
+              style={{
+                color:
+                  "#CBD5E1",
+                fontSize: 12,
+              }}
+            >
+              Encontre uma pessoa ou sua turma
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-pressed={
+              activeView ===
               "groups"
             }
             onClick={() =>
@@ -298,6 +334,20 @@ export default function EventSocialActionsHub({
               paddingTop: 14,
             }}
           >
+            {activeView ===
+            "reunion" ? (
+              <EventReunionHub
+                eventGroupId={
+                  eventGroupId
+                }
+                eventReturnTo={
+                  eventReturnTo
+                }
+                isAuthenticated={
+                  isAuthenticated
+                }
+              />
+            ) : null}
             {activeView ===
             "presence" ? (
               <EventPresenceStatusHub

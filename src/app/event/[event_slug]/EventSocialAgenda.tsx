@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createBrowserClient } from "@/utils/supabase/client";
+import {
+  mergeEventOfflinePackagePayload,
+  queueEventOfflineOperation,
+  readEventOfflinePackagePayload,
+} from "@/lib/offline/eventOfflineClient";
 import styles from "./EventSocialAgenda.module.css";
 
 type AgendaPerformer = {
@@ -65,6 +71,7 @@ type OfficialAgendaResponse = {
 
 type PersonalAgendaResponse = {
   ok?: boolean;
+  viewer_user_id?: string;
   saved_set_ids?: string[];
 };
 
@@ -75,7 +82,82 @@ type ActionFeedback = {
 
 type EventSocialAgendaProps = {
   canonicalEventId: string;
+  eventGroupId: string | null;
 };
+
+type AgendaOfflinePayload = {
+  official_agenda?: unknown;
+  personal_agenda_saved_set_ids?: unknown;
+};
+
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function readCachedOfficialAgenda(
+  payload: AgendaOfflinePayload
+): OfficialAgenda | null {
+  const value =
+    payload.official_agenda;
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  if (
+    !Array.isArray(value.stages) ||
+    !Array.isArray(
+      value.unassigned_sets
+    ) ||
+    !Array.isArray(value.all_sets)
+  ) {
+    return null;
+  }
+
+  return value as unknown as OfficialAgenda;
+}
+
+function readCachedSavedSetIds(
+  payload: AgendaOfflinePayload
+): string[] | null {
+  const value =
+    payload.personal_agenda_saved_set_ids;
+
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  return value.filter(
+    (item): item is string =>
+      typeof item === "string" &&
+      item.trim().length > 0
+  );
+}
+
+async function resolveLocalUserId():
+  Promise<string> {
+  try {
+    const supabase =
+      createBrowserClient();
+
+    const {
+      data: { session },
+    } =
+      await supabase.auth.getSession();
+
+    return (
+      session?.user?.id?.trim() ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
 
 function getSetLabel(set: AgendaSet) {
   const performerNames = set.performers
@@ -184,6 +266,7 @@ function buildConflictMap(sets: AgendaSet[]) {
 
 export default function EventSocialAgenda({
   canonicalEventId,
+  eventGroupId,
 }: EventSocialAgendaProps) {
   const [agenda, setAgenda] = useState<OfficialAgenda | null>(null);
   const [savedSetIds, setSavedSetIds] = useState<string[]>([]);
@@ -193,6 +276,9 @@ export default function EventSocialAgenda({
   const [personalReadError, setPersonalReadError] = useState(false);
   const [pendingSetId, setPendingSetId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ActionFeedback>(null);
+  const [viewerUserId, setViewerUserId] = useState("");
+  const [offlineQueuePending, setOfflineQueuePending] =
+    useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -202,6 +288,61 @@ export default function EventSocialAgenda({
       setOfficialError(false);
       setPersonalReadError(false);
       setFeedback(null);
+
+      let localUserId =
+        await resolveLocalUserId();
+
+      let cachedOfficialAgenda:
+        OfficialAgenda | null = null;
+
+      let cachedSavedSetIds:
+        string[] | null = null;
+
+      if (
+        localUserId &&
+        eventGroupId
+      ) {
+        setViewerUserId(
+          localUserId
+        );
+
+        try {
+          const cached =
+            await readEventOfflinePackagePayload(
+              localUserId,
+              eventGroupId
+            );
+
+          if (cached) {
+            cachedOfficialAgenda =
+              readCachedOfficialAgenda(
+                cached
+              );
+
+            cachedSavedSetIds =
+              readCachedSavedSetIds(
+                cached
+              );
+
+            if (cachedOfficialAgenda) {
+              setAgenda(
+                cachedOfficialAgenda
+              );
+            }
+
+            if (cachedSavedSetIds) {
+              setSavedSetIds(
+                cachedSavedSetIds
+              );
+            }
+          }
+        } catch {
+          // Local cache is auxiliary.
+        }
+      }
+
+      let networkOfficialAgenda:
+        OfficialAgenda | null = null;
 
       try {
         const officialResponse = await fetch(
@@ -218,13 +359,46 @@ export default function EventSocialAgenda({
         const officialPayload =
           (await officialResponse.json()) as OfficialAgendaResponse;
 
-        if (!officialResponse.ok || !officialPayload.ok) {
-          setOfficialError(true);
+        if (
+          !officialResponse.ok ||
+          !officialPayload.ok
+        ) {
+          if (!cachedOfficialAgenda) {
+            setOfficialError(true);
+          }
         } else {
-          setAgenda(officialPayload.agenda ?? null);
+          networkOfficialAgenda =
+            officialPayload.agenda ?? null;
+
+          setAgenda(
+            networkOfficialAgenda
+          );
+
+          if (
+            localUserId &&
+            eventGroupId &&
+            networkOfficialAgenda
+          ) {
+            try {
+              await mergeEventOfflinePackagePayload({
+                userId:
+                  localUserId,
+                eventGroupId,
+                patch: {
+                  official_agenda:
+                    networkOfficialAgenda,
+                },
+              });
+            } catch {
+              // Network data remains authoritative.
+            }
+          }
         }
       } catch {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          !cachedOfficialAgenda
+        ) {
           setOfficialError(true);
         }
       }
@@ -241,26 +415,85 @@ export default function EventSocialAgenda({
           }
         );
 
-        if (personalResponse.status === 401) {
+        if (
+          personalResponse.status === 401
+        ) {
           setAuthRequired(true);
-          setSavedSetIds([]);
+
+          if (!cachedSavedSetIds) {
+            setSavedSetIds([]);
+          }
         } else {
           const personalPayload =
             (await personalResponse.json()) as PersonalAgendaResponse;
 
-          if (!personalResponse.ok || !personalPayload.ok) {
-            setPersonalReadError(true);
+          if (
+            !personalResponse.ok ||
+            !personalPayload.ok
+          ) {
+            if (!cachedSavedSetIds) {
+              setPersonalReadError(
+                true
+              );
+            }
           } else {
             setAuthRequired(false);
-            setSavedSetIds(
-              Array.isArray(personalPayload.saved_set_ids)
+
+            const networkSavedSetIds =
+              Array.isArray(
+                personalPayload.saved_set_ids
+              )
                 ? personalPayload.saved_set_ids
-                : []
+                : [];
+
+            setSavedSetIds(
+              networkSavedSetIds
             );
+
+            const serverUserId =
+              personalPayload.viewer_user_id?.trim() ??
+              "";
+
+            if (serverUserId) {
+              localUserId =
+                serverUserId;
+
+              setViewerUserId(
+                serverUserId
+              );
+            }
+
+            if (
+              localUserId &&
+              eventGroupId
+            ) {
+              try {
+                await mergeEventOfflinePackagePayload({
+                  userId:
+                    localUserId,
+                  eventGroupId,
+                  patch: {
+                    personal_agenda_saved_set_ids:
+                      networkSavedSetIds,
+                    ...(networkOfficialAgenda
+                      ? {
+                          official_agenda:
+                            networkOfficialAgenda,
+                        }
+                      : {}),
+                  },
+                });
+              } catch {
+                // Network data remains authoritative.
+              }
+            }
           }
         }
       } catch {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          !cachedSavedSetIds
+        ) {
           setPersonalReadError(true);
         }
       }
@@ -272,8 +505,12 @@ export default function EventSocialAgenda({
 
     void load();
 
-    return () => controller.abort();
-  }, [canonicalEventId]);
+    return () =>
+      controller.abort();
+  }, [
+    canonicalEventId,
+    eventGroupId,
+  ]);
 
   const stages = agenda?.stages ?? [];
   const unassignedSets = sortSets(agenda?.unassigned_sets ?? []);
@@ -309,77 +546,246 @@ export default function EventSocialAgenda({
   const hasOfficialSets = allSets.length > 0;
 
   async function toggleSaved(set: AgendaSet) {
-    if (pendingSetId) return;
+    if (pendingSetId) {
+      return;
+    }
 
-    const currentlySaved = savedSetIds.includes(set.set_id);
-    const action = currentlySaved ? "remove" : "save";
+    const currentlySaved =
+      savedSetIds.includes(
+        set.set_id
+      );
 
-    setPendingSetId(set.set_id);
+    const action =
+      currentlySaved
+        ? "remove"
+        : "save";
+
+    const nextSavedSetIds =
+      currentlySaved
+        ? savedSetIds.filter(
+            (setId) =>
+              setId !== set.set_id
+          )
+        : savedSetIds.includes(
+            set.set_id
+          )
+        ? savedSetIds
+        : [
+            ...savedSetIds,
+            set.set_id,
+          ];
+
+    setPendingSetId(
+      set.set_id
+    );
+
     setFeedback(null);
 
+    async function queueLocally():
+      Promise<boolean> {
+      if (!eventGroupId) {
+        return false;
+      }
+
+      const userId =
+        viewerUserId ||
+        (await resolveLocalUserId());
+
+      if (!userId) {
+        return false;
+      }
+
+      try {
+        const queued =
+          await queueEventOfflineOperation({
+            userId,
+            eventGroupId,
+            operationType:
+              "agenda_set",
+            payload: {
+              action,
+              canonical_event_id:
+                canonicalEventId,
+              set_id:
+                set.set_id,
+            },
+            priority: 0,
+          });
+
+        if (!queued) {
+          return false;
+        }
+
+        await mergeEventOfflinePackagePayload({
+          userId,
+          eventGroupId,
+          patch: {
+            personal_agenda_saved_set_ids:
+              nextSavedSetIds,
+          },
+        });
+
+        setViewerUserId(
+          userId
+        );
+
+        setSavedSetIds(
+          nextSavedSetIds
+        );
+
+        setPersonalReadError(
+          false
+        );
+
+        setOfflineQueuePending(
+          true
+        );
+
+        setFeedback({
+          kind: "success",
+          message:
+            "Altera\u00e7\u00e3o salva neste aparelho. Vamos sincronizar quando a conex\u00e3o voltar.",
+        });
+
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     try {
+      if (
+        typeof navigator !==
+          "undefined" &&
+        !navigator.onLine
+      ) {
+        const queued =
+          await queueLocally();
+
+        if (!queued) {
+          setFeedback({
+            kind: "error",
+            message:
+              "N\u00e3o foi poss\u00edvel salvar esta altera\u00e7\u00e3o offline agora.",
+          });
+        }
+
+        return;
+      }
+
       const response = await fetch(
         "/api/official-events/canonical/agenda/me",
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             action,
-            canonical_event_id: canonicalEventId,
-            set_id: set.set_id,
+            canonical_event_id:
+              canonicalEventId,
+            set_id:
+              set.set_id,
           }),
         }
       );
 
-      if (response.status === 401) {
+      if (
+        response.status === 401
+      ) {
         setAuthRequired(true);
-        setFeedback({
-          kind: "error",
-          message: "Entre na sua conta para montar a sua agenda.",
-        });
-        return;
-      }
 
-      const payload = (await response.json()) as { ok?: boolean };
-
-      if (!response.ok || !payload.ok) {
         setFeedback({
           kind: "error",
           message:
-            "Não foi possível atualizar sua agenda agora. Tente novamente.",
+            "Entre na sua conta para montar a sua agenda.",
         });
+
+        return;
+      }
+
+      if (
+        response.status >= 500
+      ) {
+        const queued =
+          await queueLocally();
+
+        if (queued) {
+          return;
+        }
+      }
+
+      const payload =
+        (await response.json()) as {
+          ok?: boolean;
+        };
+
+      if (
+        !response.ok ||
+        !payload.ok
+      ) {
+        setFeedback({
+          kind: "error",
+          message:
+            "N\u00e3o foi poss\u00edvel atualizar sua agenda agora. Tente novamente.",
+        });
+
         return;
       }
 
       setAuthRequired(false);
 
-      if (currentlySaved) {
-        setSavedSetIds((current) =>
-          current.filter((setId) => setId !== set.set_id)
-        );
+      setSavedSetIds(
+        nextSavedSetIds
+      );
+
+      setOfflineQueuePending(
+        false
+      );
+
+      if (eventGroupId) {
+        const userId =
+          viewerUserId ||
+          (await resolveLocalUserId());
+
+        if (userId) {
+          setViewerUserId(
+            userId
+          );
+
+          try {
+            await mergeEventOfflinePackagePayload({
+              userId,
+              eventGroupId,
+              patch: {
+                personal_agenda_saved_set_ids:
+                  nextSavedSetIds,
+              },
+            });
+          } catch {
+            // Online response was already confirmed.
+          }
+        }
+      }
+
+      setFeedback({
+        kind: "success",
+        message: currentlySaved
+          ? "Removido da sua agenda."
+          : "Adicionado \u00e0 sua agenda.",
+      });
+    } catch {
+      const queued =
+        await queueLocally();
+
+      if (!queued) {
         setFeedback({
-          kind: "success",
-          message: "Removido da sua agenda.",
-        });
-      } else {
-        setSavedSetIds((current) =>
-          current.includes(set.set_id)
-            ? current
-            : [...current, set.set_id]
-        );
-        setFeedback({
-          kind: "success",
-          message: "Adicionado à sua agenda.",
+          kind: "error",
+          message:
+            "N\u00e3o foi poss\u00edvel atualizar sua agenda agora. Tente novamente.",
         });
       }
-    } catch {
-      setFeedback({
-        kind: "error",
-        message:
-          "Não foi possível atualizar sua agenda agora. Tente novamente.",
-      });
     } finally {
       setPendingSetId(null);
     }
@@ -679,6 +1085,15 @@ export default function EventSocialAgenda({
             Toque em “Quero ver” na programação para criar sua agenda.
           </p>
         )}
+
+        {!loading && offlineQueuePending ? (
+          <p
+            className={styles.stateText}
+            role="status"
+          >
+            Sincronização pendente. Sua alteração está salva neste aparelho.
+          </p>
+        ) : null}
 
         {!loading && personalReadError ? (
           <p className={styles.inlineError} role="status">
