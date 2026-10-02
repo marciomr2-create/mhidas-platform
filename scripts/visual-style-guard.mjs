@@ -19,9 +19,38 @@ const canonicalTokens = {
   "--mhidas-pro-indigo": "#4F46E5",
 };
 
+const canonicalBrandColors = [
+  {
+    name: "CLUBBER_ACTION",
+    hex: "#2A8694",
+    rgb: [42, 134, 148],
+  },
+  {
+    name: "CLUBBER_ACTION_STRONG",
+    hex: "#247C88",
+    rgb: [36, 124, 136],
+  },
+  {
+    name: "PRO_BLUE",
+    hex: "#1D4ED8",
+    rgb: [29, 78, 216],
+  },
+  {
+    name: "PRO_DEEP",
+    hex: "#0F172A",
+    rgb: [15, 23, 42],
+  },
+  {
+    name: "PRO_INDIGO",
+    hex: "#4F46E5",
+    rgb: [79, 70, 229],
+  },
+];
+
 const forbiddenHex = [
   "#00FFBE", "#00F5C8", "#00DCEC", "#5EEAD4", "#2DD4BF",
   "#7C5CFF", "#7D5CFF", "#3A227A", "#08717B", "#04171C", "#10091F",
+  "#9FD9E0",
 ];
 
 const greenPattern =
@@ -30,7 +59,48 @@ const greenPattern =
 const purplePattern =
   /(#7C5CFF|#7D5CFF|#3A227A|#10091F|rgba\(\s*(?:124|125|132)\s*,\s*92\s*,\s*255\s*,)/i;
 
-const uiExtensions = new Set([".tsx", ".ts", ".css", ".scss"]);
+const uiExtensions = new Set([
+  ".tsx",
+  ".ts",
+  ".css",
+  ".scss",
+  ".html",
+]);
+
+function hasCanonicalBrandHardcode(
+  line,
+  color
+) {
+  if (
+    line
+      .toUpperCase()
+      .includes(
+        color.hex.toUpperCase()
+      )
+  ) {
+    return true;
+  }
+
+  const [
+    red,
+    green,
+    blue,
+  ] = color.rgb;
+
+  const rgbPattern =
+    new RegExp(
+      "rgba?\\(\\s*" +
+        red +
+        "\\s*,\\s*" +
+        green +
+        "\\s*,\\s*" +
+        blue +
+        "\\s*(?:,|\\))",
+      "i"
+    );
+
+  return rgbPattern.test(line);
+}
 
 function walk(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
@@ -65,6 +135,27 @@ function classifyFile(file) {
     const isBackground = /(background|backgroundColor|background-color)/i.test(line);
     const hasGreen = greenPattern.test(line);
     const hasPurple = purplePattern.test(line);
+
+    if (
+      rel !==
+      "src/app/mhidas-visual-tokens.css"
+    ) {
+      for (
+        const color
+        of canonicalBrandColors
+      ) {
+        if (
+          hasCanonicalBrandHardcode(
+            line,
+            color
+          )
+        ) {
+          violations.add(
+            `BRAND_COLOR_HARDCODE|${index + 1}|${color.name}|${compact}`
+          );
+        }
+      }
+    }
 
     for (const hex of forbiddenHex) {
       if (line.toUpperCase().includes(hex)) {
@@ -106,6 +197,7 @@ function scan() {
   const roots = [
     path.join(root, "src", "app"),
     path.join(root, "src", "components"),
+    path.join(root, "public"),
   ];
 
   const files = roots.flatMap((dir) => walk(dir));
@@ -143,7 +235,7 @@ function totals(snapshot) {
 function writeBaseline(snapshot) {
   fs.mkdirSync(path.dirname(baselinePath), { recursive: true });
   const payload = {
-    visual_standard: "MHIDAS_VISUAL_STANDARD_LOCK_V1",
+    visual_standard: "MHIDAS_VISUAL_STANDARD_LOCK_V2",
     policy: {
       shared: ["#050505", "#0E0E0E", "#111111", "#F8FAFC", "#CBD5E1", "rgba(255,255,255,0.10)"],
       clubber_action: ["#2A8694", "#247C88"],
@@ -151,6 +243,10 @@ function writeBaseline(snapshot) {
       green_large_surfaces: "FORBIDDEN",
       green_dominant_glow: "FORBIDDEN",
       mode_mixing: "FORBIDDEN",
+      brand_color_hardcode:
+        "FORBIDDEN_OUTSIDE_CANONICAL_VISUAL_TOKENS",
+      public_static_visual_scan:
+        "ENABLED",
     },
     debt: snapshot,
   };
@@ -198,7 +294,7 @@ if (regressions.length) {
 }
 
 console.log("VISUAL_GUARD_RESULT=OK");
-console.log("VISUAL_STANDARD=MHIDAS_VISUAL_STANDARD_LOCK_V1");
+console.log("VISUAL_STANDARD=MHIDAS_VISUAL_STANDARD_LOCK_V2");
 console.log(`BASELINE_DEBT_FILES=${baselineTotals.files}`);
 console.log(`CURRENT_DEBT_FILES=${currentTotals.files}`);
 console.log(`BASELINE_VIOLATIONS=${baselineTotals.violations}`);

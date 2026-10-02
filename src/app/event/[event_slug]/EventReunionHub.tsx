@@ -146,13 +146,17 @@ const COPY = {
 } as const;
 
 const buttonStyle: CSSProperties = {
-  minHeight: 44,
+  minHeight:
+    "var(--mhidas-control-min-height)",
   padding: "10px 14px",
   border:
-    "1px solid rgba(255,255,255,0.14)",
-  borderRadius: 10,
-  background: "#111111",
-  color: "#F8FAFC",
+    "1px solid var(--mhidas-border-strong)",
+  borderRadius:
+    "var(--mhidas-radius-md)",
+  background:
+    "var(--mhidas-card-secondary)",
+  color:
+    "var(--mhidas-text-primary)",
   fontWeight: 850,
   cursor: "pointer",
   whiteSpace: "normal",
@@ -2595,14 +2599,14 @@ export default function EventReunionHub({
       <style>{`
         .event-reunion{display:grid;gap:14px;min-width:0}
         .event-reunion__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-        .event-reunion__card{min-width:0;display:grid;gap:10px;padding:14px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(255,255,255,.025);overflow-wrap:anywhere}
-        .event-reunion__pick{width:100%;min-width:0;display:grid;gap:4px;padding:14px;border:1px solid rgba(255,255,255,.10);border-radius:12px;background:#111;color:#F8FAFC;text-align:left;cursor:pointer;white-space:normal;overflow-wrap:anywhere}
-        .event-reunion__pick[data-active="true"]{border-color:rgba(42,134,148,.72);background:rgba(42,134,148,.14)}
-        .event-reunion__muted{color:#CBD5E1;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+        .event-reunion__card{min-width:0;display:grid;gap:10px;padding:14px;border:1px solid var(--mhidas-border);border-radius:var(--mhidas-radius-md);background:var(--mhidas-card-dark);overflow-wrap:anywhere}
+        .event-reunion__pick{width:100%;min-width:0;display:grid;gap:4px;padding:14px;border:1px solid var(--mhidas-border);border-radius:var(--mhidas-radius-md);background:var(--mhidas-card-secondary);color:var(--mhidas-text-primary);text-align:left;cursor:pointer;white-space:normal;overflow-wrap:anywhere}
+        .event-reunion__pick[data-active="true"]{border-color:color-mix(in srgb,var(--mhidas-mode-action,var(--mhidas-clubber-action)) 72%,transparent);background:var(--mhidas-card-secondary);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mhidas-mode-action,var(--mhidas-clubber-action)) 14%,transparent)}
+        .event-reunion__muted{color:var(--mhidas-text-secondary);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
         .event-reunion__actions{display:flex;flex-wrap:wrap;gap:8px}
         .event-reunion__arrow{display:grid;place-items:center;width:110px;height:110px;margin:auto;font-size:76px;line-height:1;transform-origin:center}
-        .event-reunion__distance{text-align:center;color:#F8FAFC;font-size:clamp(30px,8vw,44px);font-weight:950}
-        .event-reunion__status{text-align:center;color:#2A8694;font-size:12px;font-weight:900;text-transform:uppercase}
+        .event-reunion__distance{text-align:center;color:var(--mhidas-text-primary);font-size:clamp(30px,8vw,44px);font-weight:950}
+        .event-reunion__status{text-align:center;color:var(--mhidas-mode-action,var(--mhidas-clubber-action));font-size:12px;font-weight:900;text-transform:uppercase}
         @media(max-width:760px){.event-reunion__grid{grid-template-columns:1fr}.event-reunion__actions{display:grid}.event-reunion__actions button{width:100%}}
       `}</style>
 
@@ -2610,7 +2614,7 @@ export default function EventReunionHub({
         <span
           style={{
             color:
-              "#2A8694",
+              "var(--mhidas-mode-action, var(--mhidas-clubber-action))",
             fontSize: 11,
             fontWeight: 900,
             letterSpacing:
