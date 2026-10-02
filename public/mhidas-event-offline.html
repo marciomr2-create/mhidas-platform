@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+  <meta
+    name="theme-color"
+    content="#050505"
+  >
+  <title>USECLUBBERS - Evento offline</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: #050505;
+      color: #F8FAFC;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #050505;
+      color: #F8FAFC;
+    }
+
+    main {
+      width: min(100% - 28px, 920px);
+      margin: 0 auto;
+      padding:
+        max(24px, env(safe-area-inset-top))
+        0
+        max(40px, env(safe-area-inset-bottom));
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #9FD9E0;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    p {
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 8vw, 44px);
+      line-height: 1.05;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      color: #CBD5E1;
+      line-height: 1.55;
+    }
+
+    .status {
+      display: inline-flex;
+      margin-top: 18px;
+      padding: 7px 10px;
+      border: 1px solid rgba(42,134,148,.55);
+      border-radius: 999px;
+      color: #9FD9E0;
+      background: rgba(42,134,148,.12);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .section {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 20px;
+      background: #0E0E0E;
+    }
+
+    .muted {
+      color: #94A3B8;
+      line-height: 1.5;
+    }
+
+    .value {
+      display: block;
+      margin-top: 8px;
+      color: #F8FAFC;
+      font-weight: 900;
+      line-height: 1.4;
+    }
+
+    button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(42,134,148,.6);
+      border-radius: 14px;
+      background: rgba(42,134,148,.12);
+      color: #F8FAFC;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .secondary {
+      border-color: rgba(255,255,255,.14);
+      background: #111111;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <p class="eyebrow">
+      USECLUBBERS
+    </p>
+
+    <h1 id="event-title">
+      Evento salvo
+    </h1>
+
+    <p class="lead">
+      Voce esta sem conexao. As informacoes essenciais salvas
+      neste aparelho continuam disponiveis.
+    </p>
+
+    <span class="status">
+      MODO OFFLINE
+    </span>
+
+    <section class="section">
+      <h2>ME PERDI</h2>
+
+      <p class="muted">
+        O ponto de encontro salvo continua disponivel mesmo
+        sem internet.
+      </p>
+
+      <span
+        id="meetup-name"
+        class="value"
+      >
+        Carregando turma salva...
+      </span>
+
+      <span
+        id="meeting-point"
+        class="value"
+      ></span>
+    </section>
+
+    <section class="section">
+      <h2>Minha Agenda</h2>
+
+      <p
+        id="agenda-summary"
+        class="muted"
+      >
+        Carregando agenda salva...
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>Sincronizacao</h2>
+
+      <p
+        id="sync-summary"
+        class="muted"
+      >
+        Verificando acoes pendentes...
+      </p>
+    </section>
+
+    <section
+      id="no-cache"
+      class="section"
+      hidden
+    >
+      <h2>Dados locais indisponiveis</h2>
+
+      <p class="muted">
+        Esta pagina abriu offline, mas nenhum pacote valido
+        deste evento foi encontrado neste aparelho.
+      </p>
+    </section>
+
+    <button
+      id="retry"
+      type="button"
+    >
+      TENTAR NOVAMENTE
+    </button>
+
+    <button
+      id="stay"
+      type="button"
+      class="secondary"
+    >
+      CONTINUAR NO MODO OFFLINE
+    </button>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var DB_NAME =
+        "mhidas-event-offline-v1";
+
+      var EVENT_STORE =
+        "event_packages";
+
+      var PENDING_STORE =
+        "pending_operations";
+
+      function text(id, value) {
+        var node =
+          document.getElementById(id);
+
+        if (node) {
+          node.textContent =
+            String(value || "");
+        }
+      }
+
+      function asArray(value) {
+        return Array.isArray(value)
+          ? value
+          : [];
+      }
+
+      function eventSlug() {
+        var marker =
+          "/event/";
+
+        var path =
+          window.location.pathname;
+
+        var index =
+          path.indexOf(marker);
+
+        if (index < 0) {
+          return "";
+        }
+
+        try {
+          return decodeURIComponent(
+            path
+              .slice(
+                index +
+                marker.length
+              )
+              .split("/")[0]
+          );
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function requestPromise(request) {
+        return new Promise(
+          function (resolve, reject) {
+            request.onsuccess =
+              function () {
+                resolve(request.result);
+              };
+
+            request.onerror =
+              function () {
+                reject(
+                  request.error ||
+                  new Error(
+                    "INDEXEDDB_READ_FAILED"
+                  )
+                );
+              };
+          }
+        );
+      }
+
+      function openDatabase() {
+        return new Promise(
+          function (resolve, reject) {
+            var request =
+              indexedDB.open(
+                DB_NAME,
+                1
+              );
+
+            request.onupgradeneeded =
+              function () {
+                try {
+                  request
+                    .transaction
+                    .abort();
+                } catch (_) {
+                }
+              };
+
+            request.onsuccess =
+              function () {
+                resolve(request.result);
+              };
+
+            request.onerror =
+              function () {
+                reject(
+                  request.error ||
+                  new Error(
+                    "INDEXEDDB_OPEN_FAILED"
+                  )
+                );
+              };
+          }
+        );
+      }
+
+      function isValidRecord(record) {
+        if (
+          !record ||
+          !record.payload
+        ) {
+          return false;
+        }
+
+        if (!record.expires_at) {
+          return true;
+        }
+
+        var expires =
+          new Date(
+            record.expires_at
+          ).getTime();
+
+        return (
+          Number.isFinite(expires) &&
+          expires > Date.now()
+        );
+      }
+
+      function findMeetup(
+        payload,
+        record
+      ) {
+        var meetups =
+          asArray(
+            payload.reunion_meetups
+          );
+
+        if (!meetups.length) {
+          meetups =
+            asArray(
+              payload.structured_meetups
+            );
+        }
+
+        var members =
+          asArray(
+            payload.reunion_members
+          );
+
+        if (!members.length) {
+          members =
+            asArray(
+              payload.structured_meetup_members
+            );
+        }
+
+        var viewer =
+          payload.reunion_viewer_user_id ||
+          payload.structured_meetup_viewer_user_id ||
+          record.user_id;
+
+        var ids = {};
+
+        members.forEach(
+          function (member) {
+            if (
+              member &&
+              member.user_id === viewer &&
+              member.status === "approved"
+            ) {
+              ids[
+                member.meetup_id
+              ] = true;
+            }
+          }
+        );
+
+        for (
+          var i = 0;
+          i < meetups.length;
+          i += 1
+        ) {
+          var meetup =
+            meetups[i];
+
+          if (
+            meetup &&
+            meetup.status === "active" &&
+            ids[
+              meetup.meetup_id
+            ]
+          ) {
+            return meetup;
+          }
+        }
+
+        return null;
+      }
+
+      async function load() {
+        var database;
+
+        try {
+          database =
+            await openDatabase();
+
+          if (
+            !database
+              .objectStoreNames
+              .contains(
+                EVENT_STORE
+              )
+          ) {
+            throw new Error(
+              "EVENT_STORE_MISSING"
+            );
+          }
+
+          var transaction =
+            database.transaction(
+              [
+                EVENT_STORE,
+                PENDING_STORE,
+              ],
+              "readonly"
+            );
+
+          var records =
+            await requestPromise(
+              transaction
+                .objectStore(
+                  EVENT_STORE
+                )
+                .getAll()
+            );
+
+          var slug =
+            eventSlug();
+
+          var candidates =
+            asArray(records)
+              .filter(
+                function (record) {
+                  return (
+                    isValidRecord(record) &&
+                    record.payload &&
+                    record.payload
+                      .event_slug ===
+                      slug
+                  );
+                }
+              )
+              .sort(
+                function (a, b) {
+                  return (
+                    new Date(
+                      b.cached_at
+                    ).getTime() -
+                    new Date(
+                      a.cached_at
+                    ).getTime()
+                  );
+                }
+              );
+
+          var record =
+            candidates[0];
+
+          if (!record) {
+            throw new Error(
+              "EVENT_PACKAGE_NOT_FOUND"
+            );
+          }
+
+          var payload =
+            record.payload || {};
+
+          text(
+            "event-title",
+            payload.event_title ||
+            "Evento salvo"
+          );
+
+          var meetup =
+            findMeetup(
+              payload,
+              record
+            );
+
+          if (meetup) {
+            text(
+              "meetup-name",
+              meetup.name ||
+              "Minha turma"
+            );
+
+            text(
+              "meeting-point",
+              meetup
+                .meeting_point_label
+                ? "Ponto de encontro: " +
+                  meetup
+                    .meeting_point_label
+                : "Ponto de encontro salvo indisponivel."
+            );
+          } else {
+            text(
+              "meetup-name",
+              "Nenhuma turma ativa salva neste aparelho."
+            );
+
+            text(
+              "meeting-point",
+              ""
+            );
+          }
+
+          var agenda =
+            payload.official_agenda ||
+            {};
+
+          var allSets =
+            asArray(
+              agenda.all_sets
+            );
+
+          var savedIds =
+            asArray(
+              payload
+                .personal_agenda_saved_set_ids
+            );
+
+          text(
+            "agenda-summary",
+            allSets.length +
+              " sets salvos no evento. " +
+              savedIds.length +
+              " na sua agenda."
+          );
+
+          var pending = [];
+
+          if (
+            database
+              .objectStoreNames
+              .contains(
+                PENDING_STORE
+              )
+          ) {
+            pending =
+              await requestPromise(
+                transaction
+                  .objectStore(
+                    PENDING_STORE
+                  )
+                  .getAll()
+              );
+          }
+
+          var eventPending =
+            asArray(pending).filter(
+              function (operation) {
+                return (
+                  operation &&
+                  operation.user_id ===
+                    record.user_id &&
+                  operation.event_group_id ===
+                    record.event_group_id
+                );
+              }
+            );
+
+          text(
+            "sync-summary",
+            eventPending.length
+              ? eventPending.length +
+                " acao(oes) aguardando sincronizacao."
+              : "Nenhuma acao pendente."
+          );
+        } catch (_) {
+          var noCache =
+            document.getElementById(
+              "no-cache"
+            );
+
+          if (noCache) {
+            noCache.hidden =
+              false;
+          }
+
+          text(
+            "meetup-name",
+            "Dados locais indisponiveis."
+          );
+
+          text(
+            "agenda-summary",
+            "Agenda local indisponivel."
+          );
+
+          text(
+            "sync-summary",
+            "Sincronizacao sera retomada quando a conexao voltar."
+          );
+        } finally {
+          if (database) {
+            database.close();
+          }
+        }
+      }
+
+      document
+        .getElementById("retry")
+        .addEventListener(
+          "click",
+          function () {
+            window.location.reload();
+          }
+        );
+
+      document
+        .getElementById("stay")
+        .addEventListener(
+          "click",
+          function () {
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            });
+          }
+        );
+
+      void load();
+    })();
+  </script>
+</body>
+</html>

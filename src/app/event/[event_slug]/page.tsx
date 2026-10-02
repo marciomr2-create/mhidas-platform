@@ -4615,6 +4615,8 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       {eventGroup?.group_id ? (
         <EventOfflineRuntime
           eventGroupId={eventGroup.group_id}
+          eventSlug={eventSlug}
+          eventTitle={heroTitle}
         />
       ) : null}
 

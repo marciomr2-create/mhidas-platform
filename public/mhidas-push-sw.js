@@ -11,10 +11,16 @@ const DEFAULT_BODY = "Você tem uma nova notificação.";
 const DEFAULT_URL = "/dashboard";
 
 const STATIC_SHELL_CACHE =
-  "mhidas-static-shell-v1";
+  "mhidas-static-shell-v2";
 
 const STATIC_SHELL_PREFIX =
   "/_next/static/";
+
+const EVENT_OFFLINE_CACHE =
+  "mhidas-event-offline-shell-v1";
+
+const EVENT_OFFLINE_FALLBACK_URL =
+  "/mhidas-event-offline.html";
 
 function isSafeStaticShellRequest(
   request
@@ -86,6 +92,57 @@ async function readStaticShell(
   return response;
 }
 
+function isEventNavigationRequest(
+  request
+) {
+  if (
+    !request ||
+    request.method !== "GET" ||
+    request.mode !== "navigate"
+  ) {
+    return false;
+  }
+
+  try {
+    const url =
+      new URL(request.url);
+
+    return (
+      url.origin ===
+        self.location.origin &&
+      url.pathname.startsWith(
+        "/event/"
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function readEventNavigation(
+  request
+) {
+  try {
+    return await fetch(request);
+  } catch {
+    const cache =
+      await caches.open(
+        EVENT_OFFLINE_CACHE
+      );
+
+    const fallback =
+      await cache.match(
+        EVENT_OFFLINE_FALLBACK_URL
+      );
+
+    if (fallback) {
+      return fallback;
+    }
+
+    return Response.error();
+  }
+}
+
 function normalizeText(value, maxLength) {
   return String(value ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, "")
@@ -150,8 +207,21 @@ function readPushPayload(event) {
   return {};
 }
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache =
+        await caches.open(
+          EVENT_OFFLINE_CACHE
+        );
+
+      await cache.add(
+        EVENT_OFFLINE_FALLBACK_URL
+      );
+
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -165,11 +235,20 @@ self.addEventListener("activate", (event) => {
             names
               .filter(
                 (name) =>
-                  name.startsWith(
-                    "mhidas-static-shell-"
-                  ) &&
-                  name !==
-                    STATIC_SHELL_CACHE
+                  (
+                    name.startsWith(
+                      "mhidas-static-shell-"
+                    ) &&
+                    name !==
+                      STATIC_SHELL_CACHE
+                  ) ||
+                  (
+                    name.startsWith(
+                      "mhidas-event-offline-shell-"
+                    ) &&
+                    name !==
+                      EVENT_OFFLINE_CACHE
+                  )
               )
               .map((name) =>
                 caches.delete(name)
@@ -182,18 +261,30 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (
-    !isSafeStaticShellRequest(
+    isEventNavigationRequest(
       event.request
     )
   ) {
+    event.respondWith(
+      readEventNavigation(
+        event.request
+      )
+    );
+
     return;
   }
 
-  event.respondWith(
-    readStaticShell(
+  if (
+    isSafeStaticShellRequest(
       event.request
     )
-  );
+  ) {
+    event.respondWith(
+      readStaticShell(
+        event.request
+      )
+    );
+  }
 });
 
 self.addEventListener("push", (event) => {

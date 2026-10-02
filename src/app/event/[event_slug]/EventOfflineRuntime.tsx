@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { createBrowserClient } from "@/utils/supabase/client";
+import {
+  mergeEventOfflinePackagePayload,
+} from "@/lib/offline/eventOfflineClient";
 import {
   installEventOfflineSyncListeners,
   syncEventOfflineOperations,
@@ -9,6 +13,8 @@ import {
 
 type EventOfflineRuntimeProps = {
   eventGroupId: string;
+  eventSlug: string;
+  eventTitle: string;
 };
 
 export const EVENT_OFFLINE_SYNC_EVENT =
@@ -27,8 +33,68 @@ function publishSyncResult(
   );
 }
 
+async function prepareEventOfflineShell(
+  eventGroupId: string,
+  eventSlug: string,
+  eventTitle: string
+): Promise<void> {
+  if (
+    typeof navigator ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  if (
+    "serviceWorker" in
+    navigator
+  ) {
+    await navigator
+      .serviceWorker
+      .register(
+        "/mhidas-push-sw.js",
+        {
+          scope: "/",
+        }
+      );
+
+    await navigator
+      .serviceWorker
+      .ready;
+  }
+
+  const supabase =
+    createBrowserClient();
+
+  const {
+    data: { session },
+  } =
+    await supabase.auth.getSession();
+
+  const userId =
+    session?.user?.id?.trim() ??
+    "";
+
+  if (!userId) {
+    return;
+  }
+
+  await mergeEventOfflinePackagePayload({
+    userId,
+    eventGroupId,
+    patch: {
+      event_slug:
+        eventSlug,
+      event_title:
+        eventTitle,
+    },
+  });
+}
+
 export default function EventOfflineRuntime({
   eventGroupId,
+  eventSlug,
+  eventTitle,
 }: EventOfflineRuntimeProps) {
   useEffect(() => {
     let active = true;
@@ -42,6 +108,12 @@ export default function EventOfflineRuntime({
 
       publishSyncResult(result);
     };
+
+    void prepareEventOfflineShell(
+      eventGroupId,
+      eventSlug,
+      eventTitle
+    ).catch(() => undefined);
 
     void syncEventOfflineOperations(
       eventGroupId
@@ -59,7 +131,11 @@ export default function EventOfflineRuntime({
       active = false;
       removeListeners();
     };
-  }, [eventGroupId]);
+  }, [
+    eventGroupId,
+    eventSlug,
+    eventTitle,
+  ]);
 
   return null;
 }
