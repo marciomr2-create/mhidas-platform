@@ -259,16 +259,16 @@ function keywordChipStyle(isMatched = false): CSSProperties {
     padding: "7px 10px",
     borderRadius: 999,
     border: isMatched
-      ? "1px solid rgba(45,212,191,0.52)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 52%, transparent)"
       : "1px solid rgba(96,165,250,0.24)",
     background: isMatched
-      ? "linear-gradient(135deg, rgba(20,184,166,0.22), rgba(37,99,235,0.14))"
+      ? "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-indigo) 22%, transparent), rgba(37,99,235,0.14))"
       : "rgba(30,64,175,0.18)",
-    color: isMatched ? "#A7F3D0" : "#BFDBFE",
+    color: isMatched ? "color-mix(in srgb, var(--mhidas-pro-blue) 38%, white)" : "#BFDBFE",
     fontSize: 12,
     fontWeight: 850,
     lineHeight: 1.1,
-    boxShadow: isMatched ? "0 10px 24px rgba(20,184,166,0.12)" : "none",
+    boxShadow: isMatched ? "0 10px 24px color-mix(in srgb, var(--mhidas-pro-indigo) 12%, transparent)" : "none",
   };
 }
 
@@ -381,10 +381,10 @@ function carouselInfoPillStyle(isMatched = false): CSSProperties {
     padding: "4px 7px",
     borderRadius: 999,
     border: isMatched
-      ? "1px solid rgba(45,212,191,0.54)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 54%, transparent)"
       : "1px solid rgba(96,165,250,0.30)",
-    background: isMatched ? "rgba(20,184,166,0.14)" : "rgba(37,99,235,0.13)",
-    color: isMatched ? "#A7F3D0" : "#BFDBFE",
+    background: isMatched ? "color-mix(in srgb, var(--mhidas-pro-indigo) 14%, transparent)" : "rgba(37,99,235,0.13)",
+    color: isMatched ? "color-mix(in srgb, var(--mhidas-pro-blue) 38%, white)" : "#BFDBFE",
     fontSize: 10.5,
     fontWeight: 900,
     lineHeight: 1.12,
@@ -1752,7 +1752,7 @@ Voltar para minha central
                         </strong>
 
                         {matchedKeywords.length > 0 ? (
-                          <span style={{ color: "#A7F3D0", fontSize: 12, fontWeight: 850 }}>
+                          <span style={{ color: "color-mix(in srgb, var(--mhidas-pro-blue) 38%, white)", fontSize: 12, fontWeight: 850 }}>
                             {matchedKeywords.length} termo{matchedKeywords.length > 1 ? "s" : ""} ligado{matchedKeywords.length > 1 ? "s" : ""} à busca
                           </span>
                         ) : null}

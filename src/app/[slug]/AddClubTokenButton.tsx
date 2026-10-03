@@ -390,6 +390,7 @@ export default function AddClubTokenButton({
     <>
       {!hideTrigger ? (
       <button
+        className="uc-ui-interactive"
         type="button"
         onClick={() => {
           updateOpen(true);
@@ -403,9 +404,9 @@ export default function AddClubTokenButton({
           minHeight: compact ? 30 : 36,
           padding: compact ? "7px 10px" : "9px 13px",
           borderRadius: 999,
-          border: "1px solid rgba(0,255,190,0.22)",
+          border: "1px solid var(--mhidas-border-strong)",
           background:
-            "linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))",
+            "var(--mhidas-card-secondary)",
           color: "#fff",
           fontSize: compact ? 11 : 13,
           fontWeight: 900,
@@ -591,15 +592,16 @@ export default function AddClubTokenButton({
               >
                 {manualOnlyClub ? (
                   <button
+                    className="uc-ui-interactive"
                     type="submit"
                     disabled={!canSearch || saving}
                     style={{
                       minHeight: 40,
                       borderRadius: 999,
-                      border: "1px solid rgba(0,255,190,0.28)",
+                      border: "1px solid var(--mhidas-border-strong)",
                       background: !canSearch || saving
                         ? "rgba(255,255,255,0.08)"
-                        : "linear-gradient(135deg, rgba(0,210,190,0.30), rgba(125,92,255,0.24))",
+                        : "var(--mhidas-card-secondary)",
                       color: "#fff",
                       padding: "0 17px",
                       fontWeight: 850,

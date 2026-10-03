@@ -72,11 +72,11 @@ const secondaryStyle: CSSProperties = {
 
 const successStyle: CSSProperties = {
   ...actionBaseStyle,
-  border: "1px solid rgba(45,212,191,0.36)",
-  background: "rgba(20,184,166,0.12)",
-  color: "#99F6E4",
+  border: "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 36%, transparent)",
+  background: "color-mix(in srgb, var(--mhidas-pro-indigo) 12%, transparent)",
+  color: "color-mix(in srgb, var(--mhidas-pro-blue) 42%, white)",
   cursor: "default",
-  boxShadow: "0 0 0 1px rgba(45,212,191,0.05) inset",
+  boxShadow: "0 0 0 1px color-mix(in srgb, var(--mhidas-pro-blue) 5%, transparent) inset",
 };
 
 const disabledStyle: CSSProperties = {

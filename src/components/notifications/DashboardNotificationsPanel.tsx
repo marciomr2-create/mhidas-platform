@@ -547,7 +547,7 @@ export default function DashboardNotificationsPanel() {
           border: 1px solid rgba(42, 134, 148, 0.34);
           border-radius: 12px;
           background: rgba(42, 134, 148, 0.10);
-          color: #CCFBF1;
+          color: var(--mhidas-text-primary);
           font: inherit;
           font-size: 13px;
           font-weight: 900;

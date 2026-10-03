@@ -23,8 +23,8 @@ export const proVisualStandard = {
     textMuted: "#94A3B8",
     accentBlue: "#93C5FD",
     accentCyan: "#67E8F9",
-    successText: "#A7F3D0",
-    successBorder: "rgba(45, 212, 191, 0.36)",
+    successText: "#BFDBFE",
+    successBorder: "rgba(96, 165, 250, 0.36)",
   },
 
   radius: {
@@ -85,7 +85,7 @@ export const proVisualStandard = {
       "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))",
     secondaryBackground: "rgba(15,23,42,0.76)",
     successBackground:
-      "linear-gradient(135deg, rgba(13,148,136,0.24), rgba(15,23,42,0.78))",
+      "linear-gradient(135deg, rgba(37,99,235,0.20), rgba(15,23,42,0.78))",
   },
 
   publicRules: {

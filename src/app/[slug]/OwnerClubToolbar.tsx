@@ -83,8 +83,8 @@ export default function OwnerClubToolbar({
         padding: "10px 12px",
         borderRadius: 18,
         background:
-          "linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))",
-        border: "1px solid rgba(0,255,190,0.14)",
+          "var(--mhidas-card-dark)",
+        border: "1px solid color-mix(in srgb, var(--mhidas-clubber-action) 24%, transparent)",
         boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
         display: "flex",
         alignItems: "center",

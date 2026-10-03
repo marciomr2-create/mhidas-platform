@@ -168,7 +168,6 @@ const PRO_TEXT_SOFT = "#cbd5e1";
 const PRO_TEXT_MUTED = "#94a3b8";
 const PRO_PRIMARY = "#60a5fa";
 const PRO_INDIGO = "#818cf8";
-const PRO_TEAL = "#14b8a6";
 
 
 function sectionStyle() {
@@ -504,13 +503,13 @@ function autosaveStatusStyle(status: AutosaveStatus) {
       ? "1px solid rgba(248,113,113,0.28)"
       : isSaving || isDirty
         ? "1px solid rgba(96,165,250,0.30)"
-        : "1px solid rgba(45,212,191,0.26)",
+        : "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 26%, transparent)",
     background: isError
       ? "rgba(127,29,29,0.16)"
       : isSaving || isDirty
         ? "rgba(30,64,175,0.16)"
-        : "rgba(13,148,136,0.12)",
-    color: isError ? "#fecaca" : isSaving || isDirty ? "#dbeafe" : "#ccfbf1",
+        : "color-mix(in srgb, var(--mhidas-pro-blue) 12%, transparent)",
+    color: isError ? "#fecaca" : isSaving || isDirty ? "#dbeafe" : "color-mix(in srgb, var(--mhidas-pro-blue) 32%, white)",
     fontSize: 13,
     fontWeight: 800,
     lineHeight: 1.45,
@@ -1472,15 +1471,15 @@ export default function ProfessionalProfileManager({
                 borderRadius: 999,
                 border:
                   form.search_keywords.length >= 3
-                    ? "1px solid rgba(20,184,166,0.34)"
+                    ? "1px solid color-mix(in srgb, var(--mhidas-pro-indigo) 34%, transparent)"
                     : PRO_BORDER,
                 background:
                   form.search_keywords.length >= 3
-                    ? "rgba(13,148,136,0.16)"
+                    ? "color-mix(in srgb, var(--mhidas-pro-blue) 16%, transparent)"
                     : PRO_SURFACE_DEEP,
                 color:
                   form.search_keywords.length >= 3
-                    ? "#99f6e4"
+                    ? "color-mix(in srgb, var(--mhidas-pro-blue) 42%, white)"
                     : PRO_TEXT_SOFT,
                 fontWeight: 900,
                 whiteSpace: "nowrap",

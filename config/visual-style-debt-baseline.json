@@ -22,7 +22,12 @@
     "green_dominant_glow": "FORBIDDEN",
     "mode_mixing": "FORBIDDEN",
     "brand_color_hardcode": "FORBIDDEN_OUTSIDE_CANONICAL_VISUAL_TOKENS",
-    "public_static_visual_scan": "ENABLED"
+    "public_static_visual_scan": "ENABLED",
+    "legacy_green_any_usage": "FORBIDDEN",
+    "progress_aux_text": "#9FD9E0_ALLOWED",
+    "interaction_contract": "USECLUBBERS_CANONICAL_INTERACTION_CONTRACT_V2",
+    "legacy_green_complete": "FORBIDDEN",
+    "pro_accent_family": "BLUE_INDIGO"
   },
   "debt": {
     "src/app/account/start/page.tsx": [
@@ -165,41 +170,34 @@
     "src/app/dashboard/cards/[card_id]/pro/page.tsx": [
       "BRAND_COLOR_HARDCODE|49|PRO_DEEP|\"linear-gradient(135deg, rgba(15,23,42,0.98), rgba(17,24,39,0.94))\",",
       "BRAND_COLOR_HARDCODE|61|PRO_DEEP|background: \"rgba(15,23,42,0.88)\",",
-      "BRAND_COLOR_HARDCODE|96|PRO_DEEP|: \"rgba(15,23,42,0.82)\",",
-      "GREEN_GLOW|100|boxShadow: isPrimary ? \"0 14px 34px rgba(13,148,136,0.18)\" : \"none\",",
-      "GREEN_SURFACE|30|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.14), transparent 26%), linear-gradient(180deg, #020617 0%, #050816 46%, #070b14 100%)\",",
-      "GREEN_SURFACE|95|? \"linear-gradient(135deg, rgba(13,148,136,0.98), rgba(20,184,166,0.86))\""
+      "BRAND_COLOR_HARDCODE|96|PRO_DEEP|: \"rgba(15,23,42,0.82)\","
     ],
     "src/app/dashboard/cards/[card_id]/ProfessionalLinksManager.tsx": [
       "BRAND_COLOR_HARDCODE|168|PRO_DEEP|background: \"rgba(15,23,42,0.72)\",",
-      "BRAND_COLOR_HARDCODE|186|PRO_DEEP|? \"linear-gradient(135deg, rgba(13,148,136,0.10), rgba(15,23,42,0.72))\"",
+      "BRAND_COLOR_HARDCODE|186|PRO_DEEP|? \"linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 10%, transparent), rgba(15,23,42,0.72))\"",
       "BRAND_COLOR_HARDCODE|187|PRO_DEEP|: \"rgba(15,23,42,0.62)\",",
       "BRAND_COLOR_HARDCODE|232|PRO_DEEP|let background = \"rgba(15,23,42,0.8)\";",
-      "BRAND_COLOR_HARDCODE|253|PRO_DEEP|background: disabled ? \"rgba(15,23,42,0.45)\" : background,",
-      "FORBIDDEN_COLOR|853|? \"#5EEAD4\"",
-      "GREEN_SURFACE|186|? \"linear-gradient(135deg, rgba(13,148,136,0.10), rgba(15,23,42,0.72))\"",
-      "GREEN_SURFACE|236|background = \"linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)\";",
-      "GREEN_SURFACE|271|background: active ? \"#0D9488\" : \"rgba(51,65,85,0.8)\","
+      "BRAND_COLOR_HARDCODE|253|PRO_DEEP|background: disabled ? \"rgba(15,23,42,0.45)\" : background,"
     ],
     "src/app/dashboard/cards/[card_id]/ProfessionalProfileManager.tsx": [
-      "BRAND_COLOR_HARDCODE|1171|PRO_INDIGO|? \"linear-gradient(90deg, #4f46e5, #818cf8)\"",
-      "BRAND_COLOR_HARDCODE|1198|PRO_DEEP|: \"rgba(15,23,42,0.56)\",",
-      "BRAND_COLOR_HARDCODE|1216|PRO_DEEP|background: \"rgba(15,23,42,0.56)\",",
-      "BRAND_COLOR_HARDCODE|1232|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
-      "BRAND_COLOR_HARDCODE|1290|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
-      "BRAND_COLOR_HARDCODE|1575|PRO_DEEP|background: \"rgba(15,23,42,0.72)\",",
-      "BRAND_COLOR_HARDCODE|1609|PRO_DEEP|background: \"rgba(15,23,42,0.48)\",",
+      "BRAND_COLOR_HARDCODE|1170|PRO_INDIGO|? \"linear-gradient(90deg, #4f46e5, #818cf8)\"",
+      "BRAND_COLOR_HARDCODE|1197|PRO_DEEP|: \"rgba(15,23,42,0.56)\",",
+      "BRAND_COLOR_HARDCODE|1215|PRO_DEEP|background: \"rgba(15,23,42,0.56)\",",
+      "BRAND_COLOR_HARDCODE|1231|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
+      "BRAND_COLOR_HARDCODE|1289|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
+      "BRAND_COLOR_HARDCODE|1574|PRO_DEEP|background: \"rgba(15,23,42,0.72)\",",
+      "BRAND_COLOR_HARDCODE|1608|PRO_DEEP|background: \"rgba(15,23,42,0.48)\",",
       "BRAND_COLOR_HARDCODE|161|PRO_DEEP|const PRO_SURFACE = \"rgba(15,23,42,0.92)\";",
       "BRAND_COLOR_HARDCODE|162|PRO_DEEP|const PRO_SURFACE_SOFT = \"rgba(15,23,42,0.72)\";",
-      "BRAND_COLOR_HARDCODE|1643|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
-      "BRAND_COLOR_HARDCODE|1752|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
-      "BRAND_COLOR_HARDCODE|1838|PRO_DEEP|background: \"rgba(15,23,42,0.56)\",",
-      "BRAND_COLOR_HARDCODE|2024|PRO_DEEP|background: \"rgba(15,23,42,0.70)\",",
-      "BRAND_COLOR_HARDCODE|223|PRO_DEEP|\"linear-gradient(135deg, rgba(15,23,42,0.96), rgba(17,24,39,0.90))\",",
-      "BRAND_COLOR_HARDCODE|238|PRO_DEEP|background: disabled ? \"rgba(15,23,42,0.48)\" : \"rgba(15,23,42,0.82)\",",
-      "BRAND_COLOR_HARDCODE|299|PRO_DEEP|background: active ? \"rgba(30,64,175,0.24)\" : \"rgba(15,23,42,0.70)\",",
-      "BRAND_COLOR_HARDCODE|404|PRO_INDIGO|background: \"rgba(79,70,229,0.20)\",",
-      "BRAND_COLOR_HARDCODE|412|PRO_DEEP|background: \"rgba(15,23,42,0.76)\","
+      "BRAND_COLOR_HARDCODE|1642|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
+      "BRAND_COLOR_HARDCODE|1751|PRO_DEEP|background: \"rgba(15,23,42,0.66)\",",
+      "BRAND_COLOR_HARDCODE|1837|PRO_DEEP|background: \"rgba(15,23,42,0.56)\",",
+      "BRAND_COLOR_HARDCODE|2023|PRO_DEEP|background: \"rgba(15,23,42,0.70)\",",
+      "BRAND_COLOR_HARDCODE|222|PRO_DEEP|\"linear-gradient(135deg, rgba(15,23,42,0.96), rgba(17,24,39,0.90))\",",
+      "BRAND_COLOR_HARDCODE|237|PRO_DEEP|background: disabled ? \"rgba(15,23,42,0.48)\" : \"rgba(15,23,42,0.82)\",",
+      "BRAND_COLOR_HARDCODE|298|PRO_DEEP|background: active ? \"rgba(30,64,175,0.24)\" : \"rgba(15,23,42,0.70)\",",
+      "BRAND_COLOR_HARDCODE|403|PRO_INDIGO|background: \"rgba(79,70,229,0.20)\",",
+      "BRAND_COLOR_HARDCODE|411|PRO_DEEP|background: \"rgba(15,23,42,0.76)\","
     ],
     "src/app/dashboard/cards/[card_id]/SocialLinksManager.tsx": [
       "BRAND_COLOR_HARDCODE|273|CLUBBER_ACTION|color: active ? \"#2A8694\" : \"#CBD5E1\",",
@@ -220,9 +218,7 @@
       "BRAND_COLOR_HARDCODE|311|PRO_DEEP|background: \"rgba(15,23,42,0.52)\",",
       "BRAND_COLOR_HARDCODE|336|PRO_DEEP|background: \"rgba(15,23,42,0.62)\",",
       "BRAND_COLOR_HARDCODE|534|PRO_DEEP|\"linear-gradient(135deg, rgba(37,99,235,0.24), rgba(15,23,42,0.86))\",",
-      "BRAND_COLOR_HARDCODE|88|PRO_INDIGO|\"radial-gradient(circle at top left, rgba(37,99,235,0.16), transparent 28%), radial-gradient(circle at 90% 0%, rgba(79,70,229,0.12), transparent 26%), #020617\",",
-      "GREEN_GLOW|237|boxShadow: \"0 12px 30px rgba(20,184,166,0.16)\",",
-      "GREEN_SURFACE|236|\"linear-gradient(135deg, rgba(20,184,166,0.88), rgba(13,148,136,0.92))\","
+      "BRAND_COLOR_HARDCODE|88|PRO_INDIGO|\"radial-gradient(circle at top left, rgba(37,99,235,0.16), transparent 28%), radial-gradient(circle at 90% 0%, rgba(79,70,229,0.12), transparent 26%), #020617\","
     ],
     "src/app/dashboard/page.tsx": [
       "BRAND_COLOR_HARDCODE|132|CLUBBER_ACTION|? \"1px solid rgba(42,134,148,0.28)\"",
@@ -247,11 +243,6 @@
       "BRAND_COLOR_HARDCODE|399|CLUBBER_ACTION|color: \"#2A8694\",",
       "BRAND_COLOR_HARDCODE|674|CLUBBER_ACTION|: \"linear-gradient(135deg, rgba(42,134,148,0.10), rgba(17,17,17,0.94))\","
     ],
-    "src/app/event/[event_slug]/EventSocialActionsHub.tsx": [
-      "BRAND_COLOR_HARDCODE|113|CLUBBER_ACTION|color: \"#2A8694\",",
-      "BRAND_COLOR_HARDCODE|34|CLUBBER_ACTION|? \"1px solid rgba(42,134,148,0.72)\"",
-      "BRAND_COLOR_HARDCODE|38|CLUBBER_ACTION|? \"rgba(42,134,148,0.14)\""
-    ],
     "src/app/event/[event_slug]/EventSocialAgenda.module.css": [
       "BRAND_COLOR_HARDCODE|117|CLUBBER_ACTION|background: linear-gradient(180deg, var(--agenda-line), rgba(42, 134, 148, 0.06));",
       "BRAND_COLOR_HARDCODE|143|CLUBBER_ACTION|box-shadow: 0 0 0 4px rgba(42, 134, 148, 0.13);",
@@ -272,8 +263,7 @@
       "BRAND_COLOR_HARDCODE|456|CLUBBER_ACTION|color: #2A8694;",
       "BRAND_COLOR_HARDCODE|477|CLUBBER_ACTION|color: #2A8694;",
       "BRAND_COLOR_HARDCODE|5|CLUBBER_ACTION|--agenda-line: rgba(42, 134, 148, 0.34);",
-      "BRAND_COLOR_HARDCODE|86|CLUBBER_ACTION|border-bottom: 1px solid rgba(42, 134, 148, 0.24);",
-      "FORBIDDEN_COLOR|4|--agenda-accent-soft: #9FD9E0;"
+      "BRAND_COLOR_HARDCODE|86|CLUBBER_ACTION|border-bottom: 1px solid rgba(42, 134, 148, 0.24);"
     ],
     "src/app/event/[event_slug]/EventTribeHub.tsx": [
       "BRAND_COLOR_HARDCODE|2189|PRO_DEEP|rgba(15,23,42,0.30)"
@@ -293,8 +283,7 @@
       "BRAND_COLOR_HARDCODE|724|CLUBBER_ACTION|border: \"1px solid rgba(42,134,148,0.48)\",",
       "BRAND_COLOR_HARDCODE|725|CLUBBER_ACTION|background: \"rgba(42,134,148,0.14)\",",
       "BRAND_COLOR_HARDCODE|853|CLUBBER_ACTION|border: \"1px solid rgba(42,134,148,0.26)\",",
-      "BRAND_COLOR_HARDCODE|854|CLUBBER_ACTION|background: \"linear-gradient(135deg, rgba(42,134,148,0.13), rgba(255,255,255,0.025))\",",
-      "FORBIDDEN_COLOR|728|color: \"#9FD9E0\","
+      "BRAND_COLOR_HARDCODE|854|CLUBBER_ACTION|background: \"linear-gradient(135deg, rgba(42,134,148,0.13), rgba(255,255,255,0.025))\","
     ],
     "src/app/event/[event_slug]/RideMeetCards.tsx": [
       "BRAND_COLOR_HARDCODE|1686|CLUBBER_ACTION|color: ${\"#2A8694\"};",
@@ -310,10 +299,6 @@
       "BRAND_COLOR_HARDCODE|59|CLUBBER_ACTION|tealSoft: \"rgba(42,134,148,0.12)\",",
       "BRAND_COLOR_HARDCODE|60|CLUBBER_ACTION|tealBorder: \"rgba(42,134,148,0.28)\",",
       "BRAND_COLOR_HARDCODE|942|CLUBBER_ACTION|color: \"#2A8694\","
-    ],
-    "src/app/event/[event_slug]/ticket-intent-preview/page.tsx": [
-      "GREEN_SURFACE|116|background: \"rgba(0,255,190,0.09)\",",
-      "PURPLE_DRIFT|80|\"radial-gradient(circle at top, rgba(125,92,255,0.28), transparent 36%), #050505\","
     ],
     "src/app/event/[event_slug]/TicketNetworkAvailability.module.css": [
       "PURPLE_DRIFT|224|border-left: 2px solid rgba(125, 92, 255, 0.42);",
@@ -342,8 +327,7 @@
       "BRAND_COLOR_HARDCODE|163|PRO_DEEP|background: \"rgba(15,23,42,0.78)\",",
       "BRAND_COLOR_HARDCODE|228|PRO_DEEP|background: \"rgba(15,23,42,0.9)\",",
       "BRAND_COLOR_HARDCODE|99|PRO_DEEP|\"radial-gradient(circle at 12% 12%, rgba(37,99,235,0.30), transparent 32%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.22), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))\",",
-      "BRAND_COLOR_HARDCODE|99|PRO_INDIGO|\"radial-gradient(circle at 12% 12%, rgba(37,99,235,0.30), transparent 32%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.22), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))\",",
-      "GREEN_SURFACE|80|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 86% 8%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #030712 46%, #050505 100%)\","
+      "BRAND_COLOR_HARDCODE|99|PRO_INDIGO|\"radial-gradient(circle at 12% 12%, rgba(37,99,235,0.30), transparent 32%), radial-gradient(circle at 88% 8%, rgba(79,70,229,0.22), transparent 34%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98))\","
     ],
     "src/app/network/page.tsx": [
       "BRAND_COLOR_HARDCODE|1019|PRO_DEEP|scrollbar-color: rgba(96,165,250,0.42) rgba(15,23,42,0.30);",
@@ -357,10 +341,7 @@
       "BRAND_COLOR_HARDCODE|282|PRO_DEEP|: \"linear-gradient(135deg, rgba(15,23,42,0.72), rgba(255,255,255,0.025))\",",
       "BRAND_COLOR_HARDCODE|294|PRO_DEEP|background: \"rgba(15,23,42,0.64)\",",
       "BRAND_COLOR_HARDCODE|314|PRO_DEEP|background: \"rgba(15,23,42,0.48)\",",
-      "BRAND_COLOR_HARDCODE|337|PRO_DEEP|\"linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.68))\",",
-      "GREEN_GLOW|271|boxShadow: isMatched ? \"0 10px 24px rgba(20,184,166,0.12)\" : \"none\",",
-      "GREEN_SURFACE|265|? \"linear-gradient(135deg, rgba(20,184,166,0.22), rgba(37,99,235,0.14))\"",
-      "GREEN_SURFACE|386|background: isMatched ? \"rgba(20,184,166,0.14)\" : \"rgba(37,99,235,0.13)\","
+      "BRAND_COLOR_HARDCODE|337|PRO_DEEP|\"linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.68))\","
     ],
     "src/app/onboarding/OnboardingClient.tsx": [
       "BRAND_COLOR_HARDCODE|295|CLUBBER_ACTION|color: availability?.available ? \"#2A8694\" : \"#94a3b8\",",
@@ -377,7 +358,7 @@
     "src/app/pro/[slug]/page.tsx": [
       "BRAND_COLOR_HARDCODE|238|PRO_INDIGO|? \"linear-gradient(135deg, rgba(37,99,235,0.94), rgba(79,70,229,0.70))\"",
       "BRAND_COLOR_HARDCODE|239|PRO_DEEP|: \"rgba(15,23,42,0.78)\",",
-      "BRAND_COLOR_HARDCODE|251|PRO_DEEP|background: \"linear-gradient(135deg, rgba(13,148,136,0.22), rgba(15,23,42,0.78))\",",
+      "BRAND_COLOR_HARDCODE|251|PRO_DEEP|background: \"linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 22%, transparent), rgba(15,23,42,0.78))\",",
       "BRAND_COLOR_HARDCODE|266|PRO_DEEP|\"linear-gradient(145deg, rgba(15,23,42,0.98) 0%, rgba(21,33,66,0.96) 48%, rgba(30,64,175,0.64) 100%)\",",
       "BRAND_COLOR_HARDCODE|286|PRO_DEEP|background: \"linear-gradient(135deg, rgba(37,99,235,0.72), rgba(15,23,42,0.86))\",",
       "BRAND_COLOR_HARDCODE|358|PRO_DEEP|background: \"rgba(15,23,42,0.46)\",",
@@ -385,14 +366,8 @@
       "BRAND_COLOR_HARDCODE|416|PRO_DEEP|background: \"rgba(15,23,42,0.74)\",",
       "BRAND_COLOR_HARDCODE|428|PRO_DEEP|background: \"linear-gradient(145deg, rgba(15,23,42,0.90), rgba(17,24,39,0.76))\",",
       "BRAND_COLOR_HARDCODE|515|PRO_DEEP|background: \"linear-gradient(135deg, rgba(30,64,175,0.13), rgba(15,23,42,0.62))\",",
-      "BRAND_COLOR_HARDCODE|583|PRO_DEEP|? \"linear-gradient(135deg, rgba(13,148,136,0.18), rgba(15,23,42,0.78))\"",
-      "BRAND_COLOR_HARDCODE|584|PRO_DEEP|: \"rgba(15,23,42,0.70)\",",
-      "GREEN_GLOW|408|boxShadow: \"0 0 0 1px rgba(45,212,191,0.10) inset, 0 16px 30px rgba(20,184,166,0.16)\",",
-      "GREEN_SURFACE|169|\"radial-gradient(circle at 18% 0%, rgba(37,99,235,0.22), transparent 34%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #050B18 48%, #020617 100%)\",",
-      "GREEN_SURFACE|251|background: \"linear-gradient(135deg, rgba(13,148,136,0.22), rgba(15,23,42,0.78))\",",
-      "GREEN_SURFACE|406|background: \"linear-gradient(135deg, rgba(13,148,136,0.92), rgba(20,184,166,0.62))\",",
-      "GREEN_SURFACE|583|? \"linear-gradient(135deg, rgba(13,148,136,0.18), rgba(15,23,42,0.78))\"",
-      "GREEN_SURFACE|641|background: \"rgba(13,148,136,0.10)\","
+      "BRAND_COLOR_HARDCODE|583|PRO_DEEP|? \"linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 18%, transparent), rgba(15,23,42,0.78))\"",
+      "BRAND_COLOR_HARDCODE|584|PRO_DEEP|: \"rgba(15,23,42,0.70)\","
     ],
     "src/app/reset-password/ResetPasswordClient.tsx": [
       "BRAND_COLOR_HARDCODE|138|CLUBBER_ACTION|color: \"#2A8694\",",
@@ -423,47 +398,22 @@
       "BRAND_COLOR_HARDCODE|558|CLUBBER_ACTION|color: \"#2A8694\","
     ],
     "src/app/useclubbers-ui-foundation.css": [
-      "BRAND_COLOR_HARDCODE|1072|CLUBBER_ACTION|border-color: #2a8694 !important;",
-      "BRAND_COLOR_HARDCODE|1099|CLUBBER_ACTION|border-color: #2a8694 !important;",
-      "BRAND_COLOR_HARDCODE|1118|CLUBBER_ACTION|border-color: #2a8694 !important;",
-      "BRAND_COLOR_HARDCODE|1162|CLUBBER_ACTION|border-left-color: #2a8694;",
-      "BRAND_COLOR_HARDCODE|1163|CLUBBER_ACTION|border-color: color-mix(in srgb, #2a8694 58%, var(--mhidas-border));",
-      "BRAND_COLOR_HARDCODE|1167|CLUBBER_ACTION|color: #2a8694;",
-      "BRAND_COLOR_HARDCODE|1185|CLUBBER_ACTION|border-left-color: #2a8694;",
-      "BRAND_COLOR_HARDCODE|1297|CLUBBER_ACTION|border-left-color: #2a8694;",
-      "BRAND_COLOR_HARDCODE|1309|CLUBBER_ACTION|color: #2a8694;",
-      "BRAND_COLOR_HARDCODE|1368|CLUBBER_ACTION|border: 1px solid #2a8694;",
-      "BRAND_COLOR_HARDCODE|1404|CLUBBER_ACTION|border-left: 3px solid #2a8694;",
-      "BRAND_COLOR_HARDCODE|1491|CLUBBER_ACTION|border-left-color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1247|CLUBBER_ACTION|border-left-color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1248|CLUBBER_ACTION|border-color: color-mix(in srgb, #2a8694 58%, var(--mhidas-border));",
+      "BRAND_COLOR_HARDCODE|1252|CLUBBER_ACTION|color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1270|CLUBBER_ACTION|border-left-color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1382|CLUBBER_ACTION|border-left-color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1394|CLUBBER_ACTION|color: #2a8694;",
+      "BRAND_COLOR_HARDCODE|1453|CLUBBER_ACTION|border: 1px solid #2a8694;",
+      "BRAND_COLOR_HARDCODE|1489|CLUBBER_ACTION|border-left: 3px solid #2a8694;",
+      "BRAND_COLOR_HARDCODE|1576|CLUBBER_ACTION|border-left-color: #2a8694;",
       "BRAND_COLOR_HARDCODE|523|CLUBBER_ACTION|border-color: rgba(42, 134, 148, 0.78);",
       "BRAND_COLOR_HARDCODE|524|CLUBBER_ACTION|box-shadow: 0 0 0 3px rgba(42, 134, 148, 0.12);",
       "BRAND_COLOR_HARDCODE|577|CLUBBER_ACTION|border-left: 2px solid #2a8694;",
       "BRAND_COLOR_HARDCODE|621|CLUBBER_ACTION|border-left: 2px solid rgba(42, 134, 148, 0.72);",
       "BRAND_COLOR_HARDCODE|984|CLUBBER_ACTION|border-color: rgba(42, 134, 148, 0.58);",
       "BRAND_COLOR_HARDCODE|985|CLUBBER_ACTION|background: rgba(42, 134, 148, 0.08);",
-      "BRAND_COLOR_HARDCODE|998|CLUBBER_ACTION|box-shadow: 0 0 0 3px rgba(42, 134, 148, 0.12);",
-      "FORBIDDEN_COLOR|1554|color: #9fd9e0;"
-    ],
-    "src/app/[slug]/AddClubArtistButton.tsx": [
-      "GREEN_SURFACE|281|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
-      "PURPLE_DRIFT|281|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\","
-    ],
-    "src/app/[slug]/AddClubTokenButton.tsx": [
-      "GREEN_SURFACE|408|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
-      "PURPLE_DRIFT|408|\"linear-gradient(135deg, rgba(0,255,190,0.12), rgba(125,92,255,0.12))\",",
-      "PURPLE_DRIFT|602|: \"linear-gradient(135deg, rgba(0,210,190,0.30), rgba(125,92,255,0.24))\","
-    ],
-    "src/app/[slug]/ClubOwnerEmptyBlock.tsx": [
-      "GREEN_GLOW|162|boxShadow: \"0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)\",",
-      "GREEN_SURFACE|92|\"linear-gradient(145deg, rgba(255,255,255,0.040), rgba(0,255,190,0.024))\",",
-      "PURPLE_DRIFT|161|border: \"1px solid rgba(125,92,255,0.16)\","
-    ],
-    "src/app/[slug]/ClubQuickAddMenu.tsx": [
-      "PURPLE_DRIFT|318|color: \"rgba(125,92,255,0.82)\","
-    ],
-    "src/app/[slug]/OwnerClubToolbar.tsx": [
-      "GREEN_SURFACE|86|\"linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))\",",
-      "PURPLE_DRIFT|86|\"linear-gradient(135deg, rgba(0,255,190,0.10), rgba(125,92,255,0.12))\","
+      "BRAND_COLOR_HARDCODE|998|CLUBBER_ACTION|box-shadow: 0 0 0 3px rgba(42, 134, 148, 0.12);"
     ],
     "src/app/[slug]/page.tsx": [
       "BRAND_COLOR_HARDCODE|1048|CLUBBER_ACTION|border: \"1px solid rgba(42,134,148,0.72)\",",
@@ -501,8 +451,7 @@
     ],
     "src/components/network/ProfessionalConnectButton.tsx": [
       "BRAND_COLOR_HARDCODE|59|PRO_INDIGO|background: \"linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))\",",
-      "BRAND_COLOR_HARDCODE|68|PRO_DEEP|background: \"rgba(15,23,42,0.76)\",",
-      "GREEN_SURFACE|76|background: \"rgba(20,184,166,0.12)\","
+      "BRAND_COLOR_HARDCODE|68|PRO_DEEP|background: \"rgba(15,23,42,0.76)\","
     ],
     "src/components/network/ProfessionalFollowButton.tsx": [
       "BRAND_COLOR_HARDCODE|54|PRO_INDIGO|\"linear-gradient(135deg, rgba(37,99,235,0.92), rgba(79,70,229,0.72))\",",

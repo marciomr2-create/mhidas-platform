@@ -2130,7 +2130,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__action--primary {
-          border-color: rgba(45,212,191,0.72);
+          border-color: color-mix(in srgb, var(--mhidas-clubber-action) 72%, transparent);
           background: var(--mhidas-clubber-action-strong);
           box-shadow: 0 10px 24px var(--mhidas-border);
         }
@@ -2265,7 +2265,7 @@ export default function EventTribeHub({
         }
 
         .event-tribe-hub__request-form textarea:focus {
-          border-color: rgba(45,212,191,0.58);
+          border-color: color-mix(in srgb, var(--mhidas-clubber-action) 58%, transparent);
           box-shadow: 0 0 0 3px var(--mhidas-border);
         }
 

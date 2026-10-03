@@ -77,7 +77,7 @@ function pageShellStyle(): CSSProperties {
   return {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 86% 8%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #030712 46%, #050505 100%)",
+      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--mhidas-pro-indigo) 12%, transparent), transparent 30%), linear-gradient(180deg, #020617 0%, #030712 46%, #050505 100%)",
     color: "#F8FAFC",
   };
 }

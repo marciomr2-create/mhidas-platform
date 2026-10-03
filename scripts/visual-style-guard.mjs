@@ -4,6 +4,19 @@ import path from "node:path";
 const root = process.cwd();
 const baselinePath = path.join(root, "config", "visual-style-debt-baseline.json");
 const tokenPath = path.join(root, "src", "app", "mhidas-visual-tokens.css");
+const foundationPath = path.join(
+  root,
+  "src",
+  "app",
+  "useclubbers-ui-foundation.css"
+);
+
+const proVisualPath = path.join(
+  root,
+  "src",
+  "lib",
+  "proVisualStandard.ts"
+);
 
 const canonicalTokens = {
   "--mhidas-bg-main": "#050505",
@@ -50,11 +63,10 @@ const canonicalBrandColors = [
 const forbiddenHex = [
   "#00FFBE", "#00F5C8", "#00DCEC", "#5EEAD4", "#2DD4BF",
   "#7C5CFF", "#7D5CFF", "#3A227A", "#08717B", "#04171C", "#10091F",
-  "#9FD9E0",
 ];
 
 const greenPattern =
-  /(#00FFBE|#00F5C8|#00DCEC|#5EEAD4|#2DD4BF|#14B8A6|#0D9488|rgba\(\s*0\s*,\s*(?:245|255)\s*,\s*(?:190|200)\s*,|rgba\(\s*0\s*,\s*220\s*,\s*255\s*,|rgba\(\s*20\s*,\s*184\s*,\s*166\s*,|rgba\(\s*13\s*,\s*148\s*,\s*136\s*,)/i;
+  /(#00FFBE|#00F5C8|#00DCEC|#5EEAD4|#2DD4BF|#14B8A6|#0D9488|#A7F3D0|#CCFBF1|#99F6E4|rgba\(\s*0\s*,\s*(?:210|220|245|255)\s*,\s*(?:190|200|255)\s*,|rgba\(\s*45\s*,\s*212\s*,\s*191\s*,|rgba\(\s*20\s*,\s*184\s*,\s*166\s*,|rgba\(\s*13\s*,\s*148\s*,\s*136\s*,|rgba\(\s*196\s*,\s*255\s*,\s*235\s*,)/i;
 
 const purplePattern =
   /(#7C5CFF|#7D5CFF|#3A227A|#10091F|rgba\(\s*(?:124|125|132)\s*,\s*92\s*,\s*255\s*,)/i;
@@ -136,6 +148,12 @@ function classifyFile(file) {
     const hasGreen = greenPattern.test(line);
     const hasPurple = purplePattern.test(line);
 
+    if (hasGreen) {
+      violations.add(
+        `LEGACY_GREEN_COLOR|${index + 1}|${compact}`
+      );
+    }
+
     if (
       rel !==
       "src/app/mhidas-visual-tokens.css"
@@ -211,6 +229,75 @@ function scan() {
   return result;
 }
 
+function validateInteractionContract() {
+  if (!fs.existsSync(foundationPath)) {
+    throw new Error(
+      "VISUAL_FOUNDATION_FILE_MISSING"
+    );
+  }
+
+  const text =
+    fs.readFileSync(
+      foundationPath,
+      "utf8"
+    );
+
+  const required = [
+    "USECLUBBERS CANONICAL INTERACTION CONTRACT V2",
+    ".uc-ui-interactive",
+    ":active:not(:disabled)",
+    ":focus-visible:not(:disabled)",
+    '[aria-pressed="true"]',
+    "var(--mhidas-mode-action",
+    "box-shadow:",
+    "prefers-reduced-motion",
+  ];
+
+  for (const marker of required) {
+    if (!text.includes(marker)) {
+      throw new Error(
+        "INTERACTION_CONTRACT_MISSING"
+      );
+    }
+  }
+}
+
+function validateProVisualStandard() {
+  if (!fs.existsSync(proVisualPath)) {
+    throw new Error(
+      "PRO_VISUAL_STANDARD_MISSING"
+    );
+  }
+
+  const text =
+    fs.readFileSync(
+      proVisualPath,
+      "utf8"
+    );
+
+  if (greenPattern.test(text)) {
+    throw new Error(
+      "PRO_VISUAL_LEGACY_GREEN"
+    );
+  }
+
+  const required = [
+    'accentBlue: "#93C5FD"',
+    'accentCyan: "#67E8F9"',
+    'successText: "#BFDBFE"',
+    'successBorder: "rgba(96, 165, 250, 0.36)"',
+    '"linear-gradient(135deg, rgba(37,99,235,0.20), rgba(15,23,42,0.78))"',
+  ];
+
+  for (const marker of required) {
+    if (!text.includes(marker)) {
+      throw new Error(
+        "PRO_VISUAL_STANDARD_MISMATCH"
+      );
+    }
+  }
+}
+
 function validateTokens() {
   if (!fs.existsSync(tokenPath)) {
     throw new Error("VISUAL_TOKENS_FILE_MISSING");
@@ -247,6 +334,16 @@ function writeBaseline(snapshot) {
         "FORBIDDEN_OUTSIDE_CANONICAL_VISUAL_TOKENS",
       public_static_visual_scan:
         "ENABLED",
+      legacy_green_any_usage:
+        "FORBIDDEN",
+      progress_aux_text:
+        "#9FD9E0_ALLOWED",
+      interaction_contract:
+        "USECLUBBERS_CANONICAL_INTERACTION_CONTRACT_V2",
+      legacy_green_complete:
+        "FORBIDDEN",
+      pro_accent_family:
+        "BLUE_INDIGO",
     },
     debt: snapshot,
   };
@@ -254,6 +351,8 @@ function writeBaseline(snapshot) {
 }
 
 validateTokens();
+validateInteractionContract();
+validateProVisualStandard();
 const current = scan();
 
 if (process.argv.includes("--write-baseline")) {

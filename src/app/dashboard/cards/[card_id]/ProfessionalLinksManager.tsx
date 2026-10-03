@@ -178,12 +178,12 @@ function compactRowStyle(
   return {
     borderRadius: 16,
     border: isActive
-      ? "1px solid rgba(45,212,191,0.34)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 34%, transparent)"
       : isExpanded
         ? `1px solid ${PRO_BORDER_STRONG}`
         : `1px solid ${PRO_BORDER}`,
     background: isActive
-      ? "linear-gradient(135deg, rgba(13,148,136,0.10), rgba(15,23,42,0.72))"
+      ? "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 10%, transparent), rgba(15,23,42,0.72))"
       : "rgba(15,23,42,0.62)",
     overflow: "hidden",
   };
@@ -233,8 +233,8 @@ function buttonStyle(options?: {
   let border = `1px solid ${PRO_BORDER}`;
 
   if (primary) {
-    background = "linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)";
-    border = "1px solid rgba(45,212,191,0.34)";
+    background = "linear-gradient(135deg, var(--mhidas-pro-blue) 0%, var(--mhidas-pro-indigo) 100%)";
+    border = "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 34%, transparent)";
   }
 
   if (danger) {
@@ -266,9 +266,9 @@ function switchStyle(active: boolean, disabled: boolean): CSSProperties {
     height: 30,
     borderRadius: 999,
     border: active
-      ? "1px solid rgba(45,212,191,0.44)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 44%, transparent)"
       : `1px solid ${PRO_BORDER}`,
-    background: active ? "#0D9488" : "rgba(51,65,85,0.8)",
+    background: active ? "var(--mhidas-pro-blue)" : "rgba(51,65,85,0.8)",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.55 : 1,
     padding: 0,
@@ -297,11 +297,11 @@ function messageStyle(kind: "success" | "error"): CSSProperties {
     borderRadius: 14,
     border:
       kind === "success"
-        ? "1px solid rgba(45,212,191,0.3)"
+        ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 30%, transparent)"
         : "1px solid rgba(248,113,113,0.3)",
     background:
-      kind === "success" ? "rgba(13,148,136,0.12)" : "rgba(127,29,29,0.18)",
-    color: kind === "success" ? "#CCFBF1" : "#FECACA",
+      kind === "success" ? "color-mix(in srgb, var(--mhidas-pro-blue) 12%, transparent)" : "rgba(127,29,29,0.18)",
+    color: kind === "success" ? "color-mix(in srgb, var(--mhidas-pro-blue) 32%, white)" : "#FECACA",
     lineHeight: 1.5,
   };
 }
@@ -319,13 +319,13 @@ function autosaveStatusStyle(status: AutosaveStatus): CSSProperties {
       ? "1px solid rgba(248,113,113,0.3)"
       : isDirty || isSaving
         ? "1px solid rgba(96,165,250,0.30)"
-        : "1px solid rgba(45,212,191,0.3)",
+        : "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 30%, transparent)",
     background: isError
       ? "rgba(127,29,29,0.18)"
       : isDirty || isSaving
         ? "rgba(30,64,175,0.16)"
-        : "rgba(13,148,136,0.12)",
-    color: isError ? "#FECACA" : isDirty || isSaving ? "#DBEAFE" : "#CCFBF1",
+        : "color-mix(in srgb, var(--mhidas-pro-blue) 12%, transparent)",
+    color: isError ? "#FECACA" : isDirty || isSaving ? "#DBEAFE" : "color-mix(in srgb, var(--mhidas-pro-blue) 32%, white)",
     lineHeight: 1.5,
     fontSize: 13,
     fontWeight: 800,
@@ -850,7 +850,7 @@ export default function ProfessionalLinksManager({ cardId }: Props) {
                       <span
                         style={{
                           color: draft.isActive
-                            ? "#5EEAD4"
+                            ? "color-mix(in srgb, var(--mhidas-pro-blue) 48%, white)"
                             : PRO_TEXT_SECONDARY,
                           fontSize: 12,
                           fontWeight: 850,
