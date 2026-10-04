@@ -10,6 +10,11 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { createBrowserClient } from "@/utils/supabase/client";
+import {
+  mergeEventOfflinePackagePayload,
+  readEventOfflinePackagePayload,
+} from "@/lib/offline/eventOfflineClient";
 
 type StructuredRideMeetHubProps = {
   eventGroupId: string;
@@ -203,6 +208,35 @@ type MutationPayload = {
   ride_id?: string;
   meetup_id?: string;
 };
+
+type StructuredMeetupOfflinePayload = {
+  structured_meetups_cached_at?: unknown;
+  structured_meetups?: unknown;
+  structured_meetup_members?: unknown;
+  structured_meetup_people?: unknown;
+  structured_meetup_set_contexts?: unknown;
+  structured_meetup_set_options?: unknown;
+  structured_meetup_viewer_user_id?: unknown;
+};
+
+async function resolveLocalUserId():
+  Promise<string> {
+  try {
+    const supabase =
+      createBrowserClient();
+
+    const {
+      data: { session },
+    } =
+      await supabase.auth.getSession();
+
+    return (
+      session?.user?.id?.trim() ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
 
 type ActivePanel = "rides" | "meetups";
 
@@ -679,12 +713,130 @@ export default function StructuredRideMeetHub({
 
     setLoading(true);
 
-    try {
-      const query = new URLSearchParams({
-        event_group_id: eventGroupId,
-      });
+    const localUserId =
+      await resolveLocalUserId();
 
-      const [ridePayload, meetupPayload, officialSetOptions] =
+    let cachedLoaded = false;
+
+    if (localUserId) {
+      try {
+        const cached =
+          await readEventOfflinePackagePayload(
+            localUserId,
+            eventGroupId
+          );
+
+        if (cached) {
+          const offline =
+            cached as StructuredMeetupOfflinePayload;
+
+          const hasMeetupCache =
+            typeof offline
+              .structured_meetups_cached_at ===
+            "string";
+
+          if (hasMeetupCache) {
+            const cachedMeetups =
+              Array.isArray(
+                offline.structured_meetups
+              )
+                ? offline.structured_meetups as
+                    MeetupRow[]
+                : [];
+
+            const cachedMembers =
+              Array.isArray(
+                offline.structured_meetup_members
+              )
+                ? offline
+                    .structured_meetup_members as
+                    MeetupMemberRow[]
+                : [];
+
+            const cachedPeople =
+              Array.isArray(
+                offline.structured_meetup_people
+              )
+                ? offline
+                    .structured_meetup_people as
+                    ClubberPersonRow[]
+                : [];
+
+            const cachedContexts =
+              Array.isArray(
+                offline
+                  .structured_meetup_set_contexts
+              )
+                ? offline
+                    .structured_meetup_set_contexts as
+                    MeetupSetContext[]
+                : [];
+
+            const cachedOptions =
+              Array.isArray(
+                offline
+                  .structured_meetup_set_options
+              )
+                ? offline
+                    .structured_meetup_set_options as
+                    MeetupSetOption[]
+                : [];
+
+            const cachedViewer =
+              normalizeText(
+                offline
+                  .structured_meetup_viewer_user_id
+              ) ||
+              localUserId;
+
+            setViewerUserId(
+              cachedViewer
+            );
+
+            setPeople(
+              cachedPeople
+            );
+
+            setMeetups(
+              cachedMeetups
+            );
+
+            setMeetupMembers(
+              cachedMembers
+            );
+
+            setMeetupRequests(
+              []
+            );
+
+            setMeetupSetContexts(
+              cachedContexts
+            );
+
+            setMeetupSetOptions(
+              cachedOptions
+            );
+
+            cachedLoaded = true;
+          }
+        }
+      } catch {
+        // Local cache is auxiliary.
+      }
+    }
+
+    try {
+      const query =
+        new URLSearchParams({
+          event_group_id:
+            eventGroupId,
+        });
+
+      const [
+        ridePayload,
+        meetupPayload,
+        officialSetOptions,
+      ] =
         await Promise.all([
           fetchReadPayload<RideReadPayload>(
             `/api/event-rides?${query.toString()}`
@@ -693,47 +845,159 @@ export default function StructuredRideMeetHub({
             `/api/event-meetups?${query.toString()}`
           ),
           canonicalEventId
-            ? fetchMeetupSetOptions(canonicalEventId)
+            ? fetchMeetupSetOptions(
+                canonicalEventId
+              )
             : Promise.resolve([]),
         ]);
 
       const resolvedViewer =
-        normalizeText(ridePayload.viewer_user_id) ||
-        normalizeText(meetupPayload.viewer_user_id);
+        normalizeText(
+          ridePayload.viewer_user_id
+        ) ||
+        normalizeText(
+          meetupPayload.viewer_user_id
+        );
 
-      const peopleByUserId = new Map<string, ClubberPersonRow>();
+      const peopleByUserId =
+        new Map<
+          string,
+          ClubberPersonRow
+        >();
 
-      for (const person of [
-        ...(ridePayload.people ?? []),
-        ...(meetupPayload.people ?? []),
-      ]) {
-        if (!peopleByUserId.has(person.user_id)) {
-          peopleByUserId.set(person.user_id, person);
+      for (
+        const person
+        of [
+          ...(ridePayload.people ?? []),
+          ...(meetupPayload.people ?? []),
+        ]
+      ) {
+        if (
+          !peopleByUserId.has(
+            person.user_id
+          )
+        ) {
+          peopleByUserId.set(
+            person.user_id,
+            person
+          );
         }
       }
 
-      setViewerUserId(resolvedViewer);
-      setPeople(Array.from(peopleByUserId.values()));
-      setRides(ridePayload.rides ?? []);
-      setRideMembers(ridePayload.members ?? []);
-      setRideRequests(ridePayload.requests ?? []);
-      setMeetups(meetupPayload.meetups ?? []);
-      setMeetupMembers(meetupPayload.members ?? []);
-      setMeetupRequests(meetupPayload.requests ?? []);
-      setMeetupSetContexts(meetupPayload.set_contexts ?? []);
-      setMeetupSetOptions(officialSetOptions);
+      const resolvedPeople =
+        Array.from(
+          peopleByUserId.values()
+        );
+
+      const resolvedMeetups =
+        meetupPayload.meetups ??
+        [];
+
+      const resolvedMeetupMembers =
+        meetupPayload.members ??
+        [];
+
+      const resolvedContexts =
+        meetupPayload.set_contexts ??
+        [];
+
+      setViewerUserId(
+        resolvedViewer
+      );
+
+      setPeople(
+        resolvedPeople
+      );
+
+      setRides(
+        ridePayload.rides ?? []
+      );
+
+      setRideMembers(
+        ridePayload.members ?? []
+      );
+
+      setRideRequests(
+        ridePayload.requests ?? []
+      );
+
+      setMeetups(
+        resolvedMeetups
+      );
+
+      setMeetupMembers(
+        resolvedMeetupMembers
+      );
+
+      setMeetupRequests(
+        meetupPayload.requests ??
+        []
+      );
+
+      setMeetupSetContexts(
+        resolvedContexts
+      );
+
+      setMeetupSetOptions(
+        officialSetOptions
+      );
+
+      const cacheUserId =
+        resolvedViewer ||
+        localUserId;
+
+      if (cacheUserId) {
+        try {
+          await mergeEventOfflinePackagePayload({
+            userId:
+              cacheUserId,
+            eventGroupId,
+            patch: {
+              structured_meetups_cached_at:
+                new Date()
+                  .toISOString(),
+              structured_meetups:
+                resolvedMeetups,
+              structured_meetup_members:
+                resolvedMeetupMembers,
+              structured_meetup_people:
+                resolvedPeople,
+              structured_meetup_set_contexts:
+                resolvedContexts,
+              structured_meetup_set_options:
+                officialSetOptions,
+              structured_meetup_viewer_user_id:
+                cacheUserId,
+            },
+          });
+        } catch {
+          // Network data remains authoritative.
+        }
+      }
     } catch (error) {
-      setFeedback({
-        tone: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar caronas e encontros.",
-      });
+      if (cachedLoaded) {
+        setFeedback({
+          tone: "info",
+          message:
+            "Sem conexão. Mostrando os encontros salvos neste aparelho.",
+        });
+      } else {
+        setFeedback({
+          tone: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar caronas e encontros.",
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [canonicalEventId, eventGroupId, isAuthenticated]);
+  }, [
+    canonicalEventId,
+    eventGroupId,
+    isAuthenticated,
+  ]);
 
   useEffect(() => {
     void loadData();

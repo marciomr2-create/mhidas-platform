@@ -1038,86 +1038,170 @@
     pointer-events: none;
   }
 }
-/* USECLUBBERS CANONICAL BUTTON + END-OF-PAGE CONTRACT V1
-   FINAL AUTHORITY FOR CANONICAL ACTION CAPSULES.
-   Product rule:
-   - white text;
-   - transparent background at rest and interaction;
-   - neutral border at rest;
-   - petroleum-blue border on hover/focus/touch/selected state;
-   - border is the only color signal;
-   - no filled action backgrounds;
-   - Desktop and Mobile share the same interaction contract;
-   - shared pages always keep visible clearance after the final content.
+/* USECLUBBERS CANONICAL INTERACTION CONTRACT V2
+   FINAL AUTHORITY FOR CLUBBER/PRO INTERACTION LANGUAGE.
+
+   - dark neutral surfaces at rest;
+   - no legacy green surfaces or glows;
+   - mode accent lives in words, borders, focus and signaling;
+   - selected state never becomes a large colored surface;
+   - Clubber petroleum-blue border may illuminate subtly;
+   - interactive strong/title text gains mode accent;
+   - Desktop: hover, focus-visible and active;
+   - Mobile: active, selected and aria-pressed;
+   - movement is short and subtle;
+   - reduced-motion is respected.
 */
+
 .uc-ui-button,
 .uc-ui-button--primary,
-.uc-ui-button--quiet {
-  background: transparent !important;
-  color: #ffffff !important;
+.uc-ui-button--quiet,
+.uc-ui-interactive {
+  background: var(--mhidas-card-secondary) !important;
+  color: var(--mhidas-text-primary) !important;
   border-color: var(--mhidas-border-strong) !important;
   box-shadow: none !important;
   filter: none !important;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    transform 120ms ease !important;
+}
+
+.uc-ui-button strong,
+.uc-ui-interactive strong,
+.uc-ui-button [data-uc-accent],
+.uc-ui-interactive [data-uc-accent] {
+  color: inherit;
+  transition: color 140ms ease;
 }
 
 .uc-ui-button:hover:not(:disabled),
-.uc-ui-button:focus:not(:disabled),
 .uc-ui-button:focus-visible:not(:disabled),
 .uc-ui-button:active:not(:disabled),
 .uc-ui-button.is-active:not(:disabled),
 .uc-ui-button[aria-pressed="true"]:not(:disabled),
-.uc-ui-button[aria-current="page"]:not(:disabled) {
-  background: transparent !important;
-  color: #ffffff !important;
-  border-color: #2a8694 !important;
-  box-shadow: none !important;
-  filter: none !important;
+.uc-ui-button[aria-current="page"]:not(:disabled),
+.uc-ui-interactive:hover:not(:disabled),
+.uc-ui-interactive:focus-visible:not(:disabled),
+.uc-ui-interactive:active:not(:disabled),
+.uc-ui-interactive.is-active:not(:disabled),
+.uc-ui-interactive[aria-pressed="true"]:not(:disabled),
+.uc-ui-interactive[aria-current="page"]:not(:disabled) {
+  background: var(--mhidas-card-secondary) !important;
+  color: var(--mhidas-text-primary) !important;
+  border-color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    ) !important;
+  box-shadow:
+    0 0 0 1px
+      color-mix(
+        in srgb,
+        var(
+          --mhidas-mode-action,
+          var(--mhidas-clubber-action)
+        ) 36%,
+        transparent
+      ),
+    0 0 12px
+      color-mix(
+        in srgb,
+        var(
+          --mhidas-mode-action,
+          var(--mhidas-clubber-action)
+        ) 14%,
+        transparent
+      ) !important;
   outline: none;
-  transform: none !important;
 }
 
-.uc-verification-page-shell .uc-verification-actions .uc-ui-button,
-.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button {
-  background: transparent !important;
-  color: #ffffff !important;
-  border-color: var(--mhidas-border-strong) !important;
-  box-shadow: none !important;
-  filter: none !important;
-  transform: none !important;
+.uc-ui-button:hover:not(:disabled) strong,
+.uc-ui-button:focus-visible:not(:disabled) strong,
+.uc-ui-button:active:not(:disabled) strong,
+.uc-ui-button.is-active:not(:disabled) strong,
+.uc-ui-button[aria-pressed="true"]:not(:disabled) strong,
+.uc-ui-button[aria-current="page"]:not(:disabled) strong,
+.uc-ui-interactive:hover:not(:disabled) strong,
+.uc-ui-interactive:focus-visible:not(:disabled) strong,
+.uc-ui-interactive:active:not(:disabled) strong,
+.uc-ui-interactive.is-active:not(:disabled) strong,
+.uc-ui-interactive[aria-pressed="true"]:not(:disabled) strong,
+.uc-ui-interactive[aria-current="page"]:not(:disabled) strong,
+.uc-ui-button:hover:not(:disabled) [data-uc-accent],
+.uc-ui-button:focus-visible:not(:disabled) [data-uc-accent],
+.uc-ui-button:active:not(:disabled) [data-uc-accent],
+.uc-ui-interactive:hover:not(:disabled) [data-uc-accent],
+.uc-ui-interactive:focus-visible:not(:disabled) [data-uc-accent],
+.uc-ui-interactive:active:not(:disabled) [data-uc-accent] {
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    ) !important;
 }
 
-.uc-verification-page-shell .uc-verification-actions .uc-ui-button:hover:not(:disabled),
-.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus:not(:disabled),
-.uc-verification-page-shell .uc-verification-actions .uc-ui-button:focus-visible:not(:disabled),
-.uc-verification-page-shell .uc-verification-actions .uc-ui-button:active:not(:disabled),
-.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:hover:not(:disabled),
-.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus:not(:disabled),
-.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:focus-visible:not(:disabled),
-.uc-verification-page-shell .uc-verification-request-actions .uc-ui-button:active:not(:disabled) {
-  background: transparent !important;
-  color: #ffffff !important;
-  border-color: #2a8694 !important;
-  box-shadow: none !important;
-  filter: none !important;
-  transform: none !important;
-  outline: none;
+@media (hover: hover) and (pointer: fine) {
+  .uc-ui-button:hover:not(:disabled),
+  .uc-ui-interactive:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+  }
+}
+
+.uc-ui-button:active:not(:disabled),
+.uc-ui-interactive:active:not(:disabled) {
+  transform: scale(0.995) !important;
 }
 
 .uc-verification-choice {
-  background: transparent !important;
+  background: var(--mhidas-card-secondary) !important;
   border-color: var(--mhidas-border-strong) !important;
   box-shadow: none !important;
 }
 
 .uc-verification-choice:hover:not(:disabled),
-.uc-verification-choice:focus:not(:disabled),
 .uc-verification-choice:focus-visible:not(:disabled),
 .uc-verification-choice:active:not(:disabled),
 .uc-verification-choice.is-active:not(:disabled) {
-  background: transparent !important;
-  border-color: #2a8694 !important;
-  box-shadow: none !important;
+  background: var(--mhidas-card-secondary) !important;
+  border-color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    ) !important;
+  box-shadow:
+    0 0 0 1px
+      color-mix(
+        in srgb,
+        var(
+          --mhidas-mode-action,
+          var(--mhidas-clubber-action)
+        ) 30%,
+        transparent
+      ) !important;
   outline: none;
+}
+
+.uc-verification-choice:hover:not(:disabled) strong,
+.uc-verification-choice:focus-visible:not(:disabled) strong,
+.uc-verification-choice:active:not(:disabled) strong,
+.uc-verification-choice.is-active:not(:disabled) strong {
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    ) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uc-ui-button,
+  .uc-ui-interactive,
+  .uc-verification-choice {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 .uc-ui-mobile-end-space {
@@ -1132,6 +1216,7 @@
     height: calc(96px + env(safe-area-inset-bottom));
   }
 }
+
 /* R8E-J UI-01/02 REVIEWER STATUS + SEMANTIC MESSAGES START */
 .uc-verification-page-shell .uc-verification-state {
   display: grid;

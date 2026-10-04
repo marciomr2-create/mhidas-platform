@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "check:encoding": "node scripts/check-encoding.mjs",
-    "prebuild": "npm run check:encoding",
+    "prebuild": "npm run check:encoding && npm run visual:guard",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

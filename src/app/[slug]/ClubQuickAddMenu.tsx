@@ -189,7 +189,7 @@ export default function ClubQuickAddMenu({
           fontWeight: 300,
           lineHeight: 1,
           cursor: "pointer",
-          textShadow: "0 0 20px rgba(0,255,190,0.25)",
+          textShadow: "0 0 16px color-mix(in srgb, var(--mhidas-clubber-action) 22%, transparent)",
         }}
       >
         +
@@ -296,7 +296,7 @@ export default function ClubQuickAddMenu({
                 fontSize: 10,
                 fontWeight: 900,
                 letterSpacing: 1.25,
-                color: "rgba(0,255,190,0.72)",
+                color: "var(--mhidas-clubber-action)",
               }}
             >
               MÚSICA
@@ -315,7 +315,7 @@ export default function ClubQuickAddMenu({
                 fontSize: 10,
                 fontWeight: 900,
                 letterSpacing: 1.25,
-                color: "rgba(125,92,255,0.82)",
+                color: "var(--mhidas-clubber-action)",
               }}
             >
               CENA
@@ -340,7 +340,7 @@ export default function ClubQuickAddMenu({
                 fontSize: 10,
                 fontWeight: 900,
                 letterSpacing: 1.25,
-                color: "rgba(0,220,255,0.78)",
+                color: "var(--mhidas-clubber-action)",
               }}
             >
               AGENDA

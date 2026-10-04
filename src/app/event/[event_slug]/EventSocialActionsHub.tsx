@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  scrollInteractionResult,
+} from "@/lib/ui/interactionContinuity";
 import EventPresenceStatusHub from "./EventPresenceStatusHub";
+import EventReunionHub from "./EventReunionHub";
 import EventTribeHub from "./EventTribeHub";
 import StructuredRideMeetHub from "./StructuredRideMeetHub";
 
@@ -14,31 +22,30 @@ type EventSocialActionsHubProps = {
 
 type ActiveView =
   | "presence"
+  | "reunion"
   | "groups"
   | "rides"
   | "meetups"
   | null;
 
-const actionStyle = (
-  active: boolean
-): React.CSSProperties => ({
+const actionStyle: React.CSSProperties = {
   width: "100%",
   minHeight: 72,
   display: "grid",
   alignContent: "center",
   gap: 4,
   padding: "14px 16px",
-  border: active
-    ? "1px solid rgba(42,134,148,0.72)"
-    : "1px solid rgba(255,255,255,0.10)",
-  borderRadius: 12,
-  background: active
-    ? "rgba(42,134,148,0.14)"
-    : "#111111",
-  color: "#F8FAFC",
+  border:
+    "1px solid var(--mhidas-border-strong)",
+  borderRadius:
+    "var(--mhidas-radius-md)",
+  background:
+    "var(--mhidas-card-secondary)",
+  color:
+    "var(--mhidas-text-primary)",
   textAlign: "left",
   cursor: "pointer",
-});
+};
 
 export default function EventSocialActionsHub({
   eventGroupId,
@@ -50,6 +57,32 @@ export default function EventSocialActionsHub({
     activeView,
     setActiveView,
   ] = useState<ActiveView>(null);
+
+  const responseRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  useEffect(() => {
+    if (!activeView) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          scrollInteractionResult(
+            responseRef.current
+          );
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [activeView]);
 
   function toggleView(
     view: Exclude<
@@ -108,7 +141,7 @@ export default function EventSocialActionsHub({
         >
           <span
             style={{
-              color: "#2A8694",
+              color: "var(--mhidas-mode-action, var(--mhidas-clubber-action))",
               fontSize: 11,
               fontWeight: 900,
               letterSpacing:
@@ -154,7 +187,7 @@ export default function EventSocialActionsHub({
             gap: 10,
           }}
         >
-          <button
+          <button className="uc-ui-interactive"
             type="button"
             aria-pressed={
               activeView ===
@@ -165,10 +198,7 @@ export default function EventSocialActionsHub({
                 "presence"
               )
             }
-            style={actionStyle(
-              activeView ===
-                "presence"
-            )}
+            style={actionStyle}
           >
             <strong
               style={{
@@ -189,7 +219,38 @@ export default function EventSocialActionsHub({
             </span>
           </button>
 
-          <button
+          <button className="uc-ui-interactive"
+            type="button"
+            aria-pressed={
+              activeView ===
+              "reunion"
+            }
+            onClick={() =>
+              toggleView(
+                "reunion"
+              )
+            }
+            style={actionStyle}
+          >
+            <strong
+              style={{
+                fontSize: 16,
+              }}
+            >
+              ME PERDI!
+            </strong>
+
+            <span
+              style={{
+                color:
+                  "#CBD5E1",
+                fontSize: 12,
+              }}
+            >
+              Encontre uma pessoa ou sua turma
+            </span>
+          </button>
+          <button className="uc-ui-interactive"
             type="button"
             aria-pressed={
               activeView ===
@@ -198,9 +259,7 @@ export default function EventSocialActionsHub({
             onClick={() =>
               toggleView("groups")
             }
-            style={actionStyle(
-              activeView === "groups"
-            )}
+            style={actionStyle}
           >
             <strong
               style={{
@@ -221,7 +280,7 @@ export default function EventSocialActionsHub({
             </span>
           </button>
 
-          <button
+          <button className="uc-ui-interactive"
             type="button"
             aria-pressed={
               activeView ===
@@ -230,9 +289,7 @@ export default function EventSocialActionsHub({
             onClick={() =>
               toggleView("rides")
             }
-            style={actionStyle(
-              activeView === "rides"
-            )}
+            style={actionStyle}
           >
             <strong
               style={{
@@ -253,7 +310,7 @@ export default function EventSocialActionsHub({
             </span>
           </button>
 
-          <button
+          <button className="uc-ui-interactive"
             type="button"
             aria-pressed={
               activeView ===
@@ -264,10 +321,7 @@ export default function EventSocialActionsHub({
                 "meetups"
               )
             }
-            style={actionStyle(
-              activeView ===
-                "meetups"
-            )}
+            style={actionStyle}
           >
             <strong
               style={{
@@ -291,13 +345,29 @@ export default function EventSocialActionsHub({
 
         {activeView ? (
           <div
+            ref={responseRef}
             style={{
               marginTop: 14,
+              scrollMarginTop: 16,
               borderTop:
                 "1px solid rgba(255,255,255,0.08)",
               paddingTop: 14,
             }}
           >
+            {activeView ===
+            "reunion" ? (
+              <EventReunionHub
+                eventGroupId={
+                  eventGroupId
+                }
+                eventReturnTo={
+                  eventReturnTo
+                }
+                isAuthenticated={
+                  isAuthenticated
+                }
+              />
+            ) : null}
             {activeView ===
             "presence" ? (
               <EventPresenceStatusHub

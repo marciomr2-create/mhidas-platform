@@ -27,7 +27,7 @@ function pageContainerStyle(): CSSProperties {
     minHeight: "100vh",
     color: "#f8fafc",
     background:
-      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.14), transparent 26%), linear-gradient(180deg, #020617 0%, #050816 46%, #070b14 100%)",
+      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.24), transparent 30%), radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--mhidas-pro-indigo) 14%, transparent), transparent 26%), linear-gradient(180deg, #020617 0%, #050816 46%, #070b14 100%)",
   };
 }
 
@@ -89,15 +89,15 @@ function buttonStyle(variant: "primary" | "secondary" = "secondary"): CSSPropert
     padding: "10px 13px",
     borderRadius: 14,
     border: isPrimary
-      ? "1px solid rgba(20,184,166,0.38)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-indigo) 38%, transparent)"
       : "1px solid rgba(148,163,184,0.22)",
     background: isPrimary
-      ? "linear-gradient(135deg, rgba(13,148,136,0.98), rgba(20,184,166,0.86))"
+      ? "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 98%, transparent), color-mix(in srgb, var(--mhidas-pro-indigo) 86%, transparent))"
       : "rgba(15,23,42,0.82)",
     color: "#f8fafc",
     textDecoration: "none",
     fontWeight: 850,
-    boxShadow: isPrimary ? "0 14px 34px rgba(13,148,136,0.18)" : "none",
+    boxShadow: isPrimary ? "0 14px 34px color-mix(in srgb, var(--mhidas-pro-blue) 18%, transparent)" : "none",
     whiteSpace: "nowrap",
   };
 }

@@ -9,6 +9,7 @@ import { createPublicClient } from "@/utils/supabase/public";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 import EventParticipantsFilter from "./EventParticipantsFilter";
 import EventSocialActionsHub from "./EventSocialActionsHub";
+import EventOfflineRuntime from "./EventOfflineRuntime";
 import EventSocialAgenda from "./EventSocialAgenda";
 import TicketIntentButton from "./TicketIntentButton";
 import TicketPurchaseAction from "./TicketPurchaseAction";
@@ -4393,7 +4394,10 @@ export default async function EventPage({ params, searchParams }: PageProps) {
       </section>
 
       {canonicalEvent?.id ? (
-        <EventSocialAgenda canonicalEventId={canonicalEvent.id} />
+        <EventSocialAgenda
+          canonicalEventId={canonicalEvent.id}
+          eventGroupId={eventGroup?.group_id ?? null}
+        />
       ) : null}
 
       {eventGroup?.group_id ? (
@@ -4607,6 +4611,14 @@ export default async function EventPage({ params, searchParams }: PageProps) {
 
         </>
       )}
+
+      {eventGroup?.group_id ? (
+        <EventOfflineRuntime
+          eventGroupId={eventGroup.group_id}
+          eventSlug={eventSlug}
+          eventTitle={heroTitle}
+        />
+      ) : null}
 
       {eventGroup?.group_id ? (
         <EventSocialActionsHub

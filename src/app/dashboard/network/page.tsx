@@ -231,10 +231,10 @@ function primaryButtonStyle(): CSSProperties {
 function successButtonStyle(): CSSProperties {
   return {
     ...buttonStyle(),
-    border: "1px solid rgba(45,212,191,0.30)",
+    border: "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 30%, transparent)",
     background:
-      "linear-gradient(135deg, rgba(20,184,166,0.88), rgba(13,148,136,0.92))",
-    boxShadow: "0 12px 30px rgba(20,184,166,0.16)",
+      "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-indigo) 88%, transparent), color-mix(in srgb, var(--mhidas-pro-blue) 92%, transparent))",
+    boxShadow: "0 12px 30px color-mix(in srgb, var(--mhidas-pro-indigo) 16%, transparent)",
   };
 }
 

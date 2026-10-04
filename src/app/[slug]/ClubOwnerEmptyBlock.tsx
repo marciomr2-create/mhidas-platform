@@ -87,9 +87,9 @@ export default function ClubOwnerEmptyBlock({
       style={{
         padding: standalone ? 16 : 14,
         borderRadius: standalone ? 22 : 18,
-        border: "1px solid rgba(0,255,190,0.10)",
+        border: "1px solid var(--mhidas-border)",
         background:
-          "linear-gradient(145deg, rgba(255,255,255,0.040), rgba(0,255,190,0.024))",
+          "var(--mhidas-card-secondary)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -154,12 +154,12 @@ export default function ClubOwnerEmptyBlock({
     <section
       className="uc-section"
       style={{
-        background: "linear-gradient(145deg, rgba(14,12,28,0.58), rgba(3,4,10,0.42))",
+        background: "var(--mhidas-card-dark)",
         borderRadius: 24,
         padding: 20,
         marginTop: 20,
-        border: "1px solid rgba(125,92,255,0.16)",
-        boxShadow: "0 20px 58px rgba(0,0,0,0.28), inset 0 0 26px rgba(0,255,190,0.014)",
+        border: "1px solid var(--mhidas-border)",
+        boxShadow: "0 20px 58px rgba(0,0,0,0.28)",
       }}
     >
       {content}

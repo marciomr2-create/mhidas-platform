@@ -166,7 +166,7 @@ function pageStyle(): CSSProperties {
     minHeight: "100svh",
     color: PRO_TEXT,
     background:
-      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.22), transparent 34%), radial-gradient(circle at 82% 12%, rgba(20,184,166,0.12), transparent 30%), linear-gradient(180deg, #020617 0%, #050B18 48%, #020617 100%)",
+      "radial-gradient(circle at 18% 0%, rgba(37,99,235,0.22), transparent 34%), radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--mhidas-pro-indigo) 12%, transparent), transparent 30%), linear-gradient(180deg, #020617 0%, #050B18 48%, #020617 100%)",
   };
 }
 
@@ -247,9 +247,9 @@ function networkReturnButtonStyle(): CSSProperties {
   return {
     ...topNavigationButtonBaseStyle(),
     gridColumn: "1 / -1",
-    border: "1px solid rgba(45,212,191,0.36)",
-    background: "linear-gradient(135deg, rgba(13,148,136,0.22), rgba(15,23,42,0.78))",
-    color: "#A7F3D0",
+    border: "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 36%, transparent)",
+    background: "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 22%, transparent), rgba(15,23,42,0.78))",
+    color: "color-mix(in srgb, var(--mhidas-pro-blue) 38%, white)",
   };
 }
 
@@ -402,10 +402,10 @@ function primaryButtonStyle(): CSSProperties {
 function whatsappButtonStyle(): CSSProperties {
   return {
     ...professionalActionBaseStyle(),
-    border: "1px solid rgba(45,212,191,0.42)",
-    background: "linear-gradient(135deg, rgba(13,148,136,0.92), rgba(20,184,166,0.62))",
+    border: "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 42%, transparent)",
+    background: "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 92%, transparent), color-mix(in srgb, var(--mhidas-pro-indigo) 62%, transparent))",
     color: "#ECFEFF",
-    boxShadow: "0 0 0 1px rgba(45,212,191,0.10) inset, 0 16px 30px rgba(20,184,166,0.16)",
+    boxShadow: "0 0 0 1px color-mix(in srgb, var(--mhidas-pro-blue) 10%, transparent) inset, 0 16px 30px color-mix(in srgb, var(--mhidas-pro-indigo) 16%, transparent)",
   };
 }
 
@@ -577,10 +577,10 @@ function channelCardStyle(isFirst: boolean): CSSProperties {
     padding: 15,
     borderRadius: 18,
     border: isFirst
-      ? "1px solid rgba(45,212,191,0.36)"
+      ? "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 36%, transparent)"
       : `1px solid ${PRO_BORDER}`,
     background: isFirst
-      ? "linear-gradient(135deg, rgba(13,148,136,0.18), rgba(15,23,42,0.78))"
+      ? "linear-gradient(135deg, color-mix(in srgb, var(--mhidas-pro-blue) 18%, transparent), rgba(15,23,42,0.78))"
       : "rgba(15,23,42,0.70)",
     color: PRO_TEXT,
     textDecoration: "none",
@@ -637,9 +637,9 @@ function softNoteStyle(): CSSProperties {
     marginTop: 16,
     padding: 14,
     borderRadius: 18,
-    border: "1px solid rgba(45,212,191,0.20)",
-    background: "rgba(13,148,136,0.10)",
-    color: "#CCFBF1",
+    border: "1px solid color-mix(in srgb, var(--mhidas-pro-blue) 20%, transparent)",
+    background: "color-mix(in srgb, var(--mhidas-pro-blue) 10%, transparent)",
+    color: "color-mix(in srgb, var(--mhidas-pro-blue) 32%, white)",
     fontSize: 13,
     fontWeight: 750,
     lineHeight: 1.55,
@@ -1209,7 +1209,7 @@ export default async function ProPublicPage({ params, searchParams }: PageProps)
               position: "absolute",
               inset: -120,
               background:
-                "radial-gradient(circle at 84% 18%, rgba(59,130,246,0.32), transparent 24%), radial-gradient(circle at 18% 88%, rgba(45,212,191,0.14), transparent 26%)",
+                "radial-gradient(circle at 84% 18%, rgba(59,130,246,0.32), transparent 24%), radial-gradient(circle at 18% 88%, color-mix(in srgb, var(--mhidas-pro-blue) 14%, transparent), transparent 26%)",
               pointerEvents: "none",
             }}
           />

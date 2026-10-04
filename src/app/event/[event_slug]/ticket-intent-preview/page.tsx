@@ -77,7 +77,7 @@ function pageStyle(): React.CSSProperties {
   return {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top, rgba(125,92,255,0.28), transparent 36%), #050505",
+      "var(--mhidas-bg-main)",
     color: "#ffffff",
     padding: "28px 18px 42px",
     fontFamily:
@@ -109,11 +109,11 @@ function cardStyle(): React.CSSProperties {
 function badgeStyle(): React.CSSProperties {
   return {
     width: "fit-content",
-    border: "1px solid rgba(0,255,190,0.26)",
+    border: "1px solid color-mix(in srgb, var(--mhidas-clubber-action) 42%, transparent)",
     borderRadius: 999,
     padding: "8px 11px",
-    color: "rgba(196,255,235,0.96)",
-    background: "rgba(0,255,190,0.09)",
+    color: "var(--mhidas-clubber-action)",
+    background: "var(--mhidas-card-secondary)",
     fontSize: 11,
     fontWeight: 900,
     letterSpacing: "0.04em",
