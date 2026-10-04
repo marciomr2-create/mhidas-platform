@@ -27,6 +27,16 @@ import {
   putReunionOfflineSnapshot,
   type EventOfflineOperationType,
 } from "@/lib/offline/eventOfflineStore";
+import {
+  scrollInteractionResult,
+} from "@/lib/ui/interactionContinuity";
+
+type InteractionScrollIntent =
+  | "mode"
+  | "person"
+  | "meetup"
+  | "status"
+  | "navigation";
 
 type Props = {
   eventGroupId: string;
@@ -490,6 +500,36 @@ export default function EventReunionHub({
     offlineQueuePending,
     setOfflineQueuePending,
   ] = useState(false);
+
+  const scrollIntentRef =
+    useRef<
+      InteractionScrollIntent | null
+    >(null);
+
+  const modeResultRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const selectedPersonResultRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const selectedMeetupResultRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const statusResultRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  const navigationResultRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
 
   const watchRef =
     useRef<
@@ -1946,6 +1986,203 @@ export default function EventReunionHub({
     sharingDevice,
   ]);
 
+  useEffect(() => {
+    if (
+      scrollIntentRef.current !==
+        "mode" ||
+      loading ||
+      !mode ||
+      !modeResultRef.current
+    ) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (
+            scrollIntentRef.current !==
+            "mode"
+          ) {
+            return;
+          }
+
+          scrollInteractionResult(
+            modeResultRef.current
+          );
+
+          scrollIntentRef.current =
+            null;
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [loading, mode]);
+
+  useEffect(() => {
+    if (
+      scrollIntentRef.current !==
+        "person" ||
+      !selectedPerson ||
+      !selectedPersonResultRef.current
+    ) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (
+            scrollIntentRef.current !==
+            "person"
+          ) {
+            return;
+          }
+
+          scrollInteractionResult(
+            selectedPersonResultRef.current
+          );
+
+          scrollIntentRef.current =
+            null;
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [
+    personId,
+    selectedPerson,
+  ]);
+
+  useEffect(() => {
+    if (
+      scrollIntentRef.current !==
+        "meetup" ||
+      !selectedMeetup ||
+      !selectedMeetupResultRef.current
+    ) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (
+            scrollIntentRef.current !==
+            "meetup"
+          ) {
+            return;
+          }
+
+          scrollInteractionResult(
+            selectedMeetupResultRef.current
+          );
+
+          scrollIntentRef.current =
+            null;
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [
+    meetupId,
+    selectedMeetup,
+  ]);
+
+  useEffect(() => {
+    if (
+      scrollIntentRef.current !==
+        "status" ||
+      (
+        !message &&
+        !offlineQueuePending
+      ) ||
+      !statusResultRef.current
+    ) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (
+            scrollIntentRef.current !==
+            "status"
+          ) {
+            return;
+          }
+
+          scrollInteractionResult(
+            statusResultRef.current
+          );
+
+          scrollIntentRef.current =
+            null;
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [
+    message,
+    offlineQueuePending,
+  ]);
+
+  useEffect(() => {
+    if (
+      scrollIntentRef.current !==
+        "navigation" ||
+      !navigating ||
+      !targetLocation ||
+      !navigationResultRef.current
+    ) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          if (
+            scrollIntentRef.current !==
+            "navigation"
+          ) {
+            return;
+          }
+
+          scrollInteractionResult(
+            navigationResultRef.current
+          );
+
+          scrollIntentRef.current =
+            null;
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [
+    navigating,
+    targetLocation,
+  ]);
+
   async function run(
     task:
       () => Promise<void>
@@ -1967,6 +2204,9 @@ export default function EventReunionHub({
   }
 
   async function requestPerson() {
+    scrollIntentRef.current =
+      "status";
+
     if (
       !personId ||
       sharedMeetups.length ===
@@ -2015,6 +2255,9 @@ export default function EventReunionHub({
     consentId: string,
     accept: boolean
   ) {
+    scrollIntentRef.current =
+      "status";
+
     await run(async () => {
       const intent = {
         action:
@@ -2106,6 +2349,9 @@ export default function EventReunionHub({
   async function setGroupSharing(
     active: boolean
   ) {
+    scrollIntentRef.current =
+      "status";
+
     if (!selectedMeetup) {
       return;
     }
@@ -2253,6 +2499,9 @@ export default function EventReunionHub({
   }
 
   async function stopSharing() {
+    scrollIntentRef.current =
+      "status";
+
     await run(async () => {
       for (
         const consent
@@ -2347,6 +2596,9 @@ export default function EventReunionHub({
   }
 
   async function markGroupHere() {
+    scrollIntentRef.current =
+      "status";
+
     if (
       !selectedMeetup ||
       !canSetPoint
@@ -2484,6 +2736,9 @@ export default function EventReunionHub({
       return;
     }
 
+    scrollIntentRef.current =
+      "navigation";
+
     try {
       await attachHeading();
     } catch {
@@ -2498,6 +2753,9 @@ export default function EventReunionHub({
   }
 
   function activateLocation() {
+    scrollIntentRef.current =
+      "status";
+
     if (
       ownActive.length > 0 &&
       ensureWatch(true)
@@ -2641,6 +2899,12 @@ export default function EventReunionHub({
         </p>
       </header>
 
+      <div
+        ref={statusResultRef}
+        style={{
+          scrollMarginTop: 16,
+        }}
+      >
       {offlineQueuePending ? (
         <p
           className="event-reunion__card"
@@ -2660,6 +2924,8 @@ export default function EventReunionHub({
           {message}
         </p>
       ) : null}
+
+      </div>
 
       {incoming.length > 0 ? (
         <div className="event-reunion__card">
@@ -2788,6 +3054,9 @@ export default function EventReunionHub({
             "person"
           }
           onClick={() => {
+            scrollIntentRef.current =
+              "mode";
+
             setMode(
               "person"
             );
@@ -2822,6 +3091,9 @@ export default function EventReunionHub({
             "meetup"
           }
           onClick={() => {
+            scrollIntentRef.current =
+              "mode";
+
             setMode(
               "meetup"
             );
@@ -2857,7 +3129,13 @@ export default function EventReunionHub({
 
       {!loading &&
       mode === "person" ? (
-        <div className="event-reunion__card">
+        <div
+          ref={modeResultRef}
+          className="event-reunion__card"
+          style={{
+            scrollMarginTop: 16,
+          }}
+        >
           <strong>
             {
               "Quem voc\u00ea quer encontrar?"
@@ -2886,6 +3164,9 @@ export default function EventReunionHub({
                       person.user_id
                     }
                     onClick={() => {
+                      scrollIntentRef.current =
+                        "person";
+
                       setPersonId(
                         person.user_id
                       );
@@ -2914,7 +3195,13 @@ export default function EventReunionHub({
           )}
 
           {selectedPerson ? (
-            <div className="event-reunion__card">
+            <div
+              ref={selectedPersonResultRef}
+              className="event-reunion__card"
+              style={{
+                scrollMarginTop: 16,
+              }}
+            >
               <strong>
                 {
                   selectedPerson
@@ -2983,7 +3270,13 @@ export default function EventReunionHub({
 
       {!loading &&
       mode === "meetup" ? (
-        <div className="event-reunion__card">
+        <div
+          ref={modeResultRef}
+          className="event-reunion__card"
+          style={{
+            scrollMarginTop: 16,
+          }}
+        >
           <strong>
             Qual turma?
           </strong>
@@ -3012,6 +3305,9 @@ export default function EventReunionHub({
                         .meetup_id
                     }
                     onClick={() => {
+                      scrollIntentRef.current =
+                        "meetup";
+
                       setMeetupId(
                         meetup
                           .meetup_id
@@ -3047,7 +3343,13 @@ export default function EventReunionHub({
           )}
 
           {selectedMeetup ? (
-            <div className="event-reunion__card">
+            <div
+              ref={selectedMeetupResultRef}
+              className="event-reunion__card"
+              style={{
+                scrollMarginTop: 16,
+              }}
+            >
               <strong>
                 {
                   selectedMeetup
@@ -3213,7 +3515,13 @@ export default function EventReunionHub({
 
       {navigating &&
       targetLocation ? (
-        <div className="event-reunion__card">
+        <div
+          ref={navigationResultRef}
+          className="event-reunion__card"
+          style={{
+            scrollMarginTop: 16,
+          }}
+        >
           {navigation &&
           navigation
             .guidance_mode !==

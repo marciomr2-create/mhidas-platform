@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  scrollInteractionResult,
+} from "@/lib/ui/interactionContinuity";
 import EventPresenceStatusHub from "./EventPresenceStatusHub";
 import EventReunionHub from "./EventReunionHub";
 import EventTribeHub from "./EventTribeHub";
@@ -50,6 +57,32 @@ export default function EventSocialActionsHub({
     activeView,
     setActiveView,
   ] = useState<ActiveView>(null);
+
+  const responseRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  useEffect(() => {
+    if (!activeView) {
+      return;
+    }
+
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          scrollInteractionResult(
+            responseRef.current
+          );
+        }
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame
+      );
+    };
+  }, [activeView]);
 
   function toggleView(
     view: Exclude<
@@ -312,8 +345,10 @@ export default function EventSocialActionsHub({
 
         {activeView ? (
           <div
+            ref={responseRef}
             style={{
               marginTop: 14,
+              scrollMarginTop: 16,
               borderTop:
                 "1px solid rgba(255,255,255,0.08)",
               paddingTop: 14,
