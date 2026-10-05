@@ -1,0 +1,304 @@
+.page {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.hero {
+  min-width: 0;
+  min-height: 250px;
+  display: flex;
+  align-items: end;
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid var(--mhidas-border);
+  border-radius: var(--mhidas-radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(14, 14, 14, 0.98),
+      rgba(17, 17, 17, 0.92)
+    );
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 7px;
+  width: min(100%, 720px);
+  min-width: 0;
+}
+
+.eyebrow,
+.cardLabel {
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    );
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.eventTitle {
+  margin: 0;
+  color: var(--mhidas-text-primary);
+  font-size: clamp(28px, 9vw, 44px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.heroMeta {
+  margin: 0;
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.summaryGrid,
+.socialGrid,
+.peopleGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.summaryCard,
+.item,
+.stateCard,
+.closing {
+  min-width: 0;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 7px;
+}
+
+.summaryCard strong,
+.item strong,
+.stateCard strong {
+  color: var(--mhidas-text-primary);
+  font-size: 17px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.summaryCard p,
+.item p,
+.stateCard p,
+.closing p {
+  margin: 0;
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.stateCard {
+  display: grid;
+  gap: 12px;
+}
+
+.stateCard :global(.uc-ui-button) {
+  justify-self: start;
+}
+
+.section {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.sectionHeading {
+  display: grid;
+  gap: 6px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.sectionHeading h2,
+.closing h2 {
+  margin: 0;
+  color: var(--mhidas-text-primary);
+  font-size: clamp(22px, 6vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.sectionHeading p {
+  margin: 0;
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.item {
+  display: grid;
+  gap: 7px;
+}
+
+.itemHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.itemHeading strong {
+  min-width: 0;
+}
+
+.time {
+  flex: 0 0 auto;
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    );
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.meta {
+  color: var(--mhidas-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.empty,
+.notice {
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--mhidas-border);
+  border-radius: var(--mhidas-radius-md);
+  background: var(--mhidas-card-secondary);
+  color: var(--mhidas-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  border-left:
+    2px solid
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    );
+}
+
+.person {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid var(--mhidas-border-strong);
+  border-radius: var(--mhidas-radius-md);
+  background: var(--mhidas-card-secondary);
+  color: var(--mhidas-text-primary);
+  text-decoration: none;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--mhidas-border-strong);
+  border-radius: 50%;
+  background: var(--mhidas-card-secondary);
+  background-size: cover;
+  background-position: center;
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    );
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.personCopy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.personCopy strong {
+  overflow-wrap: anywhere;
+}
+
+.networkBadge {
+  width: fit-content;
+  max-width: 100%;
+  color:
+    var(
+      --mhidas-mode-action,
+      var(--mhidas-clubber-action)
+    );
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.closing {
+  display: grid;
+  gap: 10px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.actions :global(.uc-ui-button) {
+  min-height: 44px;
+}
+
+@media (min-width: 760px) {
+  .page {
+    gap: 20px;
+  }
+
+  .hero {
+    min-height: 330px;
+    padding: 28px;
+    background-position: center 42%;
+  }
+
+  .summaryGrid,
+  .socialGrid,
+  .peopleGrid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .section {
+    gap: 16px;
+  }
+}

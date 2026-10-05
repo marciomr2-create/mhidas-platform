@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import EventMemoryEntryLink from "./EventMemoryEntryLink";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/utils/supabase/client";
 import {
@@ -807,6 +808,8 @@ export default function EventSocialAgenda({
             Veja os horários oficiais e marque quem você quer ver. Sua agenda
             fica só com o que importa para você.
           </p>
+
+          <EventMemoryEntryLink />
         </div>
 
 
