@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readCanonicalPublicEventBySlug } from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
+import {
+  readCanonicalEventGroupBridge,
+  readCanonicalPublicEventBySlug,
+} from "@/app/api/official-events/canonical/_shared/canonicalPublicEventReadFoundation";
 import { readCanonicalEventAgenda } from "@/lib/events/canonicalEventAgendaRead";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
@@ -7,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-const ROUTE_VERSION = "mvp2-event-memory-me-read-v1";
+const ROUTE_VERSION = "mvp2-event-memory-me-read-v2";
 
 type EventGroupRow = {
   group_id: string;
@@ -201,6 +204,54 @@ export async function GET(
     const canonicalEventId =
       canonicalEvent.id;
 
+    const bridgeRead =
+      await readCanonicalEventGroupBridge(
+        canonicalEventId
+      );
+
+    if (!bridgeRead.ok) {
+      return errorResponse(
+        "event_group_bridge_read_failed",
+        500
+      );
+    }
+
+    const bridgeEventGroupIds =
+      bridgeRead.event_group_ids;
+
+    const eventGroupSelect =
+      "group_id,event_name,event_slug,event_date,event_image_url,city_base";
+
+    const eventGroupQuery =
+      bridgeEventGroupIds.length === 0
+        ? supabase
+            .from("event_groups")
+            .select(eventGroupSelect)
+            .eq("event_slug", eventSlug)
+            .limit(1)
+        : bridgeEventGroupIds.length === 1
+          ? supabase
+              .from("event_groups")
+              .select(eventGroupSelect)
+              .eq(
+                "group_id",
+                bridgeEventGroupIds[0]
+              )
+              .limit(1)
+          : supabase
+              .from("event_groups")
+              .select(eventGroupSelect)
+              .in(
+                "group_id",
+                bridgeEventGroupIds
+              )
+              .eq("event_slug", eventSlug)
+              .order(
+                "group_id",
+                { ascending: true }
+              )
+              .limit(1);
+
     const [
       personalAgendaResult,
       eventGroupResult,
@@ -217,13 +268,7 @@ export async function GET(
         )
         .eq("status", "saved"),
 
-      supabase
-        .from("event_groups")
-        .select(
-          "group_id,event_name,event_slug,event_date,event_image_url,city_base"
-        )
-        .eq("event_slug", eventSlug)
-        .limit(1),
+      eventGroupQuery,
 
       supabase
         .from("club_event_checkins")
@@ -289,6 +334,18 @@ export async function GET(
 
     const eventGroupId =
       eventGroup?.group_id ?? null;
+
+    const eventGroupResolution =
+      bridgeEventGroupIds.length === 0
+        ? "legacy_slug_fallback_no_link"
+        : bridgeEventGroupIds.length === 1
+          ? eventGroupId ===
+            bridgeEventGroupIds[0]
+            ? "canonical_bridge_single"
+            : "canonical_bridge_single_not_visible"
+          : eventGroup
+            ? "canonical_bridge_multiple_slug_match"
+            : "canonical_bridge_multiple_no_visible_slug_match";
 
     const savedSetIds =
       personalAgenda.map(
@@ -643,6 +700,13 @@ export async function GET(
       event_group:
         eventGroup,
 
+      event_group_resolution: {
+        strategy:
+          eventGroupResolution,
+        bridge_link_count:
+          bridgeEventGroupIds.length,
+      },
+
       presence: {
         checked_in:
           checkIns.length > 0,
@@ -701,6 +765,10 @@ export async function GET(
         other_member_lists_included:
           false,
         global_event_bridge_created:
+          true,
+        canonical_bridge_read_only:
+          true,
+        canonical_bridge_direct_client_access:
           false,
       },
 

@@ -9,6 +9,7 @@ export const CANONICAL_PUBLIC_EVENT_OFFICIAL_IMAGE_READ_VERSION =
 
 const TABLES = {
   canonicalEvents: "canonical_events",
+  eventGroupCanonicalLinks: "event_group_canonical_links",
   canonicalEventSources: "canonical_event_sources",
   canonicalEventSearchDocuments: "canonical_event_search_documents",
   canonicalEventFeatureFeeds: "canonical_event_feature_feeds",
@@ -29,6 +30,14 @@ const FEATURE_FEED_SELECT =
 export type CanonicalPublicEventReadInput = {
   eventSlug?: string | null;
   canonicalEventId?: string | null;
+};
+
+export type CanonicalEventGroupBridgeReadResult = {
+  ok: boolean;
+  canonical_event_id: string | null;
+  event_group_ids: string[];
+  database_write_performed: false;
+  error: string | null;
 };
 
 export type CanonicalPublicEventOfficialImage = {
@@ -754,6 +763,77 @@ async function fetchFeatureFeeds(
     .filter(
       (record): record is CanonicalPublicEventFeatureFeed => record !== null
     );
+}
+
+export async function readCanonicalEventGroupBridge(
+  canonicalEventId: string
+): Promise<CanonicalEventGroupBridgeReadResult> {
+  const normalizedCanonicalEventId =
+    normalizeString(canonicalEventId);
+
+  if (!normalizedCanonicalEventId) {
+    return {
+      ok: false,
+      canonical_event_id: null,
+      event_group_ids: [],
+      database_write_performed: false,
+      error: "canonical_event_id_required",
+    };
+  }
+
+  try {
+    const supabase = createAdminSupabaseClient();
+
+    const response = await supabase
+      .from(TABLES.eventGroupCanonicalLinks)
+      .select("event_group_id")
+      .eq(
+        "canonical_event_id",
+        normalizedCanonicalEventId
+      )
+      .order(
+        "event_group_id",
+        { ascending: true }
+      )
+      .limit(100);
+
+    if (response.error) {
+      throw response.error;
+    }
+
+    const eventGroupIds =
+      asRecordArray(response.data as unknown)
+        .map((record) =>
+          getRecordString(
+            record,
+            "event_group_id"
+          )
+        )
+        .filter(
+          (value): value is string =>
+            value !== null
+        );
+
+    return {
+      ok: true,
+      canonical_event_id:
+        normalizedCanonicalEventId,
+      event_group_ids:
+        eventGroupIds,
+      database_write_performed: false,
+      error: null,
+    };
+  } catch {
+    return {
+      ok: false,
+      canonical_event_id:
+        normalizedCanonicalEventId,
+      event_group_ids: [],
+      database_write_performed: false,
+      error:
+        "event_group_canonical_bridge_read_failed",
+    };
+  }
 }
 
 export async function readCanonicalPublicEvent(
